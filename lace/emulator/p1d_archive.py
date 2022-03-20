@@ -24,8 +24,8 @@ class archiveP1D(object):
 
         # SHOULD UPDATE DOCSTRING WITH ALL THESE ARGUMENTS
 
-        assert ('LYA_EMU_REPO' in os.environ),'export LYA_EMU_REPO'
-        repo=os.environ['LYA_EMU_REPO']
+        assert ('LACE_REPO' in os.environ),'export LACE_REPO'
+        repo=os.environ['LACE_REPO']
 
         self.basedir=basedir
         self.fulldir=repo+basedir
@@ -36,7 +36,7 @@ class archiveP1D(object):
         if skewers_label:
             self.skewers_label=skewers_label
         else:
-            self.skewers_label='Ns100_wM0.07'
+            self.skewers_label='Ns500_wM0.05'
         self.verbose=verbose
         self.drop_tau_rescalings=drop_tau_rescalings
         self.drop_temp_rescalings=drop_temp_rescalings

@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 description = "Lyman-alpha forest flux power spectrum emulator"
-version="2.0.1"
+version="1.0.1"
 
 setup(name="lace",
     version=version,
