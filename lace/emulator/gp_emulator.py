@@ -527,7 +527,7 @@ class GPEmulator:
         when testing on different sims and with different training sets """
 
         ## Load saved emulator dictionary
-        repo=os.environ['LYA_EMU_REPO']
+        repo=os.environ['LACE_REPO']
         emulator_path=repo+self.archive.basedir+"/emulator.json"
 
         with open(emulator_path,"r") as fp:
