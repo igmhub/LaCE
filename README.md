@@ -36,18 +36,29 @@ The following modules are required:
 
 On a fresh terminal:
 
-module load python 
-conda create -n lace_env python=3.8 pip
-source activate lace_env
-pip install gpy configobj
-pip install camb
+`module load python`
 
-git clone git@github.com:igmhub/LaCE.git
-cd LaCE
-python setup.py install
+`conda create -n lace_env python=3.8 pip`
 
-pip install ipykernel
-python -m ipykernel install --user --name lace_env --display-name lace_env
+`source activate lace_env`
+
+`pip install gpy configobj`
+
+`pip install camb`
+
+Followed by:
+
+`git clone git@github.com:igmhub/LaCE.git`
+
+`cd LaCE`
+
+`python setup.py install`
+
+If you want to use notebooks via JupyterHub, you'll also need:
+
+`pip install ipykernel`
+
+`python -m ipykernel install --user --name lace_env --display-name lace_env`
 
 
 ## Emulator parameters:
