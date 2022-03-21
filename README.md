@@ -30,6 +30,25 @@ The following modules are required:
 
 `classylss` (not at this point, I think)
 
+### Installation at NERSC
+
+(Instructions by Andreu Font-Ribera on March 21st 2022)
+
+On a fresh terminal:
+
+module load python 
+conda create -n lace_env python=3.8 pip
+source activate lace_env
+pip install gpy configobj
+pip install camb
+
+git clone git@github.com:igmhub/LaCE.git
+cd LaCE
+python setup.py install
+
+pip install ipykernel
+python -m ipykernel install --user --name lace_env --display-name lace_env
+
 
 ## Emulator parameters:
 These are the parameters that describe each individual P1D(k) power spectrum. We have detached these from redshift and traditional cosmology parameters.
