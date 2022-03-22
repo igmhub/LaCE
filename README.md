@@ -42,7 +42,7 @@ On a fresh terminal:
 
 `source activate lace_env`
 
-`pip install gpy configobj`
+`pip install gpy configobj matplotlib`
 
 `pip install camb`
 
