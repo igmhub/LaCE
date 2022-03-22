@@ -25,7 +25,7 @@ class archiveP1D(object):
         # SHOULD UPDATE DOCSTRING WITH ALL THESE ARGUMENTS
 
         assert ('LACE_REPO' in os.environ),'export LACE_REPO'
-        repo=os.environ['LACE_REPO']
+        repo=os.environ['LACE_REPO']+'/'
 
         self.basedir=basedir
         self.fulldir=repo+basedir
