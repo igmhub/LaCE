@@ -71,7 +71,7 @@ These are the parameters that describe each individual P1D(k) power spectrum. We
 
 `alpha_p` is the running of the linear power spectrum at k_p
 
-`f_p`is the (scale-independent) logarithmic growth rate
+`f_p` is the (scale-independent) logarithmic growth rate
 
 The current version of the emulator, relased in this repo, does not emulate `alpha_p` and `f_p`. However, these parameters are stored in the P1D archive.
 
