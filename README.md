@@ -60,16 +60,31 @@ If you want to use notebooks via JupyterHub, you'll also need:
 
 
 ## Emulator parameters:
+
 These are the parameters that describe each individual P1D(k) power spectrum. We have detached these from redshift and traditional cosmology parameters.
 
-`sigT_Mpc`
-`alpha_p`
-`n_p`
-`gamma`
-`Delta2_p`
-`mF`
-`f_p`
-`kF_Mpc`
+#### Cosmological parameters:
+
+`Delta2_p` is the amplitude of the (dimensionless) linear spectrum at k_p = 0.7 1/Mpc
+
+`n_p` is the slope of the linear power spectrum at k_p
+
+`alpha_p` is the running of the linear power spectrum at k_p
+
+`f_p`is the (scale-independent) logarithmic growth rate
+
+The current version of the emulator, relased in this repo, does not emulate `alpha_p` and `f_p`. However, these parameters are stored in the P1D archive.
+
+#### IGM parameters:
+
+`mF` is the mean transmitted flux fraction in the box (mean flux)
+
+`sigT_Mpc` is the thermal broadening scale in comoving units, computed from `T_0` in the temperature-density relation
+
+`gamma` is the slope of the temperature-density relation
+
+`kF_Mpc` is the filtering length (or pressure smoothing scale) in inverse comoving units
+
 
 ## Saving and loading emulator hyperparameters
 
