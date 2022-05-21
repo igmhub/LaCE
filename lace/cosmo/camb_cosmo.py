@@ -294,7 +294,7 @@ def dkms_dhMpc(cosmo,z,camb_results=None):
 def shift_primordial_pivot(cosmo_dict,pivot_scalar):
     """ Shift the value of A_s calculated at a new pivot point.
         It used to be used in test_simulation if using a different pivot
-        than stored in JSON, but it now deprecated.
+        than stored in JSON, but it is now deprecated.
         Currently assumes zero running """
 
     # some old sims did not store pivot scalar (was 0.05 by default)
