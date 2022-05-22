@@ -4,6 +4,7 @@ import pickle
 import matplotlib.pyplot as plt
 import os
 import json
+import time
 from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
 from lace.emulator import p1d_archive
@@ -226,18 +227,22 @@ class GPEmulator:
     def train(self):
         ''' Train the GP emulator '''
 
-
         if self.emu_per_k:
+            start = time.time()
             for gp in self.gp:
                 gp.initialize_parameter()
                 print("Training GP on %d points" % len(self.archive.data))
                 status = gp.optimize(messages=False)
                 print("Optimised")
+            end = time.time()
+            print("all GPs optimised in {0:.2f} seconds".format(end-start))
         else:
+            start = time.time()
             self.gp.initialize_parameter()
             print("Training GP on %d points" % len(self.archive.data))
             status = self.gp.optimize(messages=False)
-            print("Optimised")
+            end = time.time()
+            print("GPs optimised in {0:.2f} seconds".format(end-start))
 
         self.trained=True
 
