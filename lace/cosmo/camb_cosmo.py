@@ -292,15 +292,29 @@ def dkms_dhMpc(cosmo,z,camb_results=None):
 
 
 def shift_primordial_pivot(cosmo_dict,pivot_scalar):
-    """ Shift the value of A_s calculated at a new
-    pivot scale. Currently assumes zero running """
+    """ Shift the value of A_s calculated at a new pivot point.
+        It used to be used in test_simulation if using a different pivot
+        than stored in JSON, but it is now deprecated.
+        Currently assumes zero running """
 
+    # some old sims did not store pivot scalar (was 0.05 by default)
     if "pivot_scalar" in cosmo_dict.keys():
         pivot_old=cosmo_dict["pivot_scalar"]
     else:
         pivot_old=0.05
 
+    if pivot_scalar==pivot_old:
+        return cosmo_dict
+    else:
+        print('re-scale primordial power; old / new = {} / {} 1/Mpc'.format(
+                    pivot_old,pivot_scalar))
+
+    # make sure we do not have running in dictionary!
+    assert "nrun" not in cosmo_dict,"update shift_primordial_pivot"
+
+    # compute new amplitude of primordial power
     new_As=cosmo_dict["As"]*(pivot_scalar/pivot_old)**(cosmo_dict["ns"]-1)
+
     ## Update dictionary with new As and pivot
     cosmo_dict["As"]=new_As
     cosmo_dict["pivot_scalar"]=pivot_scalar
