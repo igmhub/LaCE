@@ -46,7 +46,7 @@ On a fresh terminal:
 
 Followed by:
 
-`git clone git@github.com:igmhub/LaCE.git`
+`git clone https://github.com/igmhub/LaCE.git`
 
 `cd LaCE`
 
