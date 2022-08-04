@@ -318,7 +318,7 @@ class GPEmulator:
         return out_pred,out_err
 
 
-    def emulate_p1d_Mpc(self,model,k_Mpc,return_covar=False,z=None):
+    def emulate_p1d_Mpc(self,model,k_Mpc,return_covar=False,z=None,old_cov=True):
         '''
         Method to return the trained P(k) for an arbitrary set of k bins
         by interpolating the trained data
@@ -343,7 +343,18 @@ class GPEmulator:
             poly=np.poly1d(pred)
             err=np.abs(err)
             interpolated_P=np.exp(poly(np.log(k_Mpc)))
-            err=(err[0]*interpolated_P**4+err[1]*interpolated_P**3+err[2]*interpolated_P**2+err[3]*interpolated_P)
+            if old_cov:
+                ## Old covariance
+                err=(err[0]*interpolated_P**4+err[1]*interpolated_P**3+err[2]*interpolated_P**2+err[3]*interpolated_P)
+            else:
+                print("Coefficients:",pred)
+                print("Coefficient error:",err)
+                ## New covariance
+                err2=(interpolated_P**2)*(err[0]*(np.log(k_Mpc)**4)+
+                                          err[1]*(np.log(k_Mpc)**3)+
+                                          err[2]*(np.log(k_Mpc)**2)+
+                                          err[3]*(np.log(k_Mpc))+err[4])
+                err=np.sqrt(err2)
             covar = np.outer(err, err)
         if return_covar==True:
             if self.emu_type=="k_bin":
