@@ -48,6 +48,12 @@ Followed by:
 
 `git clone git@github.com:igmhub/LaCE.git`
 
+or
+
+`git clone https://github.com/igmhub/LaCE.git`
+
+then 
+
 `cd LaCE`
 
 `python setup.py install`
