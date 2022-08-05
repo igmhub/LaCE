@@ -281,7 +281,8 @@ class GPEmulator:
 
     def predict(self,model,z=None):
         ''' Return P1D or polyfit coeffs for a given parameter set
-        For the k bin emulator this will be in the training k bins '''
+        For the k bin emulator this will be in the training k bins
+        Option to pass 'z' for rescaling is not fully tested. '''
 
         if self.trained==False:
             print("Emulator not trained, cannot make a prediction")
@@ -297,18 +298,19 @@ class GPEmulator:
             if np.sum(isin)==len(param): ## Check all parameters
                 print("Emulator call is inside training set!!!")
 
+        # emu_per_k and reduce_var_* options only valid for k_bin emulator
         if self.emu_per_k:
             pred=np.array([])
-            err=np.array([])
+            var=np.array([])
             for gp in self.gp:
-                pred_single,err_single=gp.predict(np.array(param).reshape(1,-1))
+                pred_single,var_single=gp.predict(np.array(param).reshape(1,-1))
                 pred=np.append(pred,pred_single)
-                err=np.append(err,err_single)
+                var=np.append(var,var_single)
         else:
-            pred,err=self.gp.predict(np.array(param).reshape(1,-1))
+            pred,var=self.gp.predict(np.array(param).reshape(1,-1))
 
         out_pred=np.ndarray.flatten((pred+1)*self.scalefactors)
-        out_err=np.ndarray.flatten(np.sqrt(err)*self.scalefactors)
+        out_err=np.ndarray.flatten(np.sqrt(var)*self.scalefactors)
 
         if self.reduce_var_k:
             out_pred*=1./(1+self.training_k_bins)
@@ -323,10 +325,13 @@ class GPEmulator:
         return out_pred,out_err
 
 
-    def emulate_p1d_Mpc(self,model,k_Mpc,return_covar=False,z=None):
+    def emulate_p1d_Mpc(self,model,k_Mpc,return_covar=False,z=None,
+                old_cov=False):
         '''
         Method to return the trained P(k) for an arbitrary set of k bins
-        by interpolating the trained data
+        by interpolating the trained data.
+        Option for reducing variance with z rescaling is not fully tested.
+        Kept option old_cov=True only to reproduce old (bad) results.
         '''
         try:
             if max(k_Mpc)>max(self.training_k_bins):
@@ -338,33 +343,52 @@ class GPEmulator:
                 print(max(k_Mpc))
                 print(max(self.training_k_bins))
                 print("Warning! Your requested k bins are higher than the training values.")
-        pred,err=self.predict(model,z)
-        ## Use cubic interpolation to return prediction for arbitrary
-        ## k bins
+
+        # get raw prediction from GPy object
+        gp_pred,gp_err=self.predict(model,z)
+
         if self.emu_type=="k_bin":
-            interpolator=interp1d(self.training_k_bins,pred,"cubic")
-            interpolated_P=interpolator(k_Mpc)
-        elif self.emu_type=="polyfit":
-            poly=np.poly1d(pred)
-            err=np.abs(err)
-            interpolated_P=np.exp(poly(np.log(k_Mpc)))
-            err=(err[0]*interpolated_P**4+err[1]*interpolated_P**3+err[2]*interpolated_P**2+err[3]*interpolated_P)
-            covar = np.outer(err, err)
-        if return_covar==True:
-            if self.emu_type=="k_bin":
-                error_interp=interp1d(self.training_k_bins,err, "cubic")
-                error=error_interp(k_Mpc)
-                if self.emu_per_k:
-                    covar=np.diag(error**2)
-                else:
-                    ## For now, assume that we have fully correlated errors
-                    ## when using same hyperparams
-                    covar = np.outer(error, error)
-                return interpolated_P, covar
+            # interpolate predictions to input k values
+            interpolator=interp1d(self.training_k_bins,gp_pred,
+                        kind="cubic",fill_value="extrapolate")
+            p1d=interpolator(k_Mpc)
+            if not return_covar:
+                return p1d
+            # compute emulator covariance
+            err_interp=interp1d(self.training_k_bins,gp_err,
+                        kind="cubic",fill_value="extrapolate")
+            p1d_err=err_interp(k_Mpc)
+            if self.emu_per_k:
+                covar=np.diag(p1d_err**2)
             else:
-                return interpolated_P, covar
+                # assume fully correlated errors when using same hyperparams
+                covar=np.outer(p1d_err,p1d_err)
+            return p1d, covar
+
+        elif self.emu_type=="polyfit":
+            # gp_pred here are just the coefficients of the polynomial
+            poly=np.poly1d(gp_pred)
+            p1d=np.exp(poly(np.log(k_Mpc)))
+            if not return_covar:
+                return p1d
+            if old_cov:
+                # old covariance (should not be used)
+                err=np.abs(gp_err)
+                err=(err[0]*p1d**4+err[1]*p1d**3+err[2]*p1d**2+err[3]*p1d)
+                covar=np.outer(err,err)
+            else:
+                # first estimate error on y=log P
+                lk=np.log(k_Mpc)
+                erry2=((gp_err[0]*lk**4)**2 + (gp_err[1]*lk**3)**2
+                            + (gp_err[2]*lk**2)**2 + (gp_err[3]*lk)**2
+                            + gp_err[4]**2)
+                # compute error on P
+                err=p1d*np.sqrt(erry2)
+                covar=np.outer(err,err)
+            return p1d, covar
+
         else:
-            return interpolated_P
+            raise ValueError('wrong emulator type')
 
 
     def get_nearest_distance(self,model,z=None):
