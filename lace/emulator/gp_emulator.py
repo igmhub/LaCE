@@ -23,7 +23,7 @@ class GPEmulator:
                 drop_temp_rescalings=False,keep_every_other_rescaling=False,
                 undersample_z=1,emu_type="k_bin",z_max=5,z_list=None,
                 passarchive=None,set_noise_var=1e-3,asymmetric_kernel=False,
-                checkHulls=False,set_hyperparams=None,
+                check_hull=False,set_hyperparams=None,
                 paramLimits=None,rbf_only=False,
                 emu_per_k=False,
                 reduce_var_k=False,
@@ -81,12 +81,12 @@ class GPEmulator:
         if train==True:
             self.train()
 
-
-        self.checkHulls=checkHulls
-        if self.checkHulls:
+        # to check if emulator calls are in convex hull
+        if check_hull:
             self.hull=Delaunay(self.X_param_grid)
         else:
             self.hull=None
+
         self.emulators=None ## Flag that this is an individual emulator object
 
 
@@ -270,13 +270,9 @@ class GPEmulator:
 
 
     def check_in_hull(self,model):
-        param=[]
-        for aa, par in enumerate(self.paramList):
-            ## Rescale input parameters
-            param.append(model[par])
-            param[aa]=(param[aa]-self.paramLimits[aa,0])/(self.paramLimits[aa,1]-self.paramLimits[aa,0])
-        
-        return self.hull.find_simplex(np.array(param).reshape(1,-1))<0
+        param=self.return_unit_call(model)
+        outside_hull=self.hull.find_simplex(np.array(param).reshape(1,-1))<0
+        return (not outside_hull)
         
 
     def predict(self,model,z=None):
@@ -343,6 +339,11 @@ class GPEmulator:
                 print(max(k_Mpc))
                 print(max(self.training_k_bins))
                 print("Warning! Your requested k bins are higher than the training values.")
+
+        if self.hull:
+            # check if outside the convex hull
+            if not self.check_in_hull(model):
+                print(z,'outside hull',model)
 
         # get raw prediction from GPy object
         gp_pred,gp_err=self.predict(model,z)
