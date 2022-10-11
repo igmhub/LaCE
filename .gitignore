@@ -1,0 +1,4 @@
+build/*
+dist/*
+notebooks/.ipynb_checkpoints/
+lace.egg-info/
