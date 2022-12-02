@@ -136,7 +136,7 @@ def set_fast_camb_options(pars):
     pars.SourceTerms.use_21cm_mK = False
 
 
-def get_camb_results(pars,zs=None,fast_camb=False,camb_kmax_Mpc=30):
+def get_camb_results(pars,zs=None,fast_camb=False,camb_kmax_Mpc=30.):
     """Call camb.get_results, the slowest function in CAMB calls.
         - pars: CAMBparams object describing the cosmology
         - zs (optional): redshifts where we want to evaluate the linear power
