@@ -91,7 +91,7 @@ class archiveP1D(object):
             ## If selected k_p is same as in the archive, do not recompute
             update_kp=False
         else:
-            # will trigger slow code, might be good to check that kp has indeed changed
+            # will trigger slow code, could check that kp has indeed changed
             update_kp=True
 
         if pick_sim_number is not None:
@@ -130,8 +130,7 @@ class archiveP1D(object):
                 # setup CAMB object
                 sim_cosmo=camb_cosmo.get_cosmology_from_dictionary(sim_cosmo_dict)
                 # compute linear power parameters at each z (in Mpc units)
-                linP_zs=fit_linP.get_linP_Mpc_zs(sim_cosmo,zs,self.kp_Mpc,
-                        include_f_p=True)
+                linP_zs=fit_linP.get_linP_Mpc_zs(sim_cosmo,zs,self.kp_Mpc)
                 print('update linP_zs',linP_zs)
                 pair_data['linP_zs']=list(linP_zs)
             else:
@@ -147,10 +146,7 @@ class archiveP1D(object):
                 snap_p1d_data['Delta2_p'] = linP_params['Delta2_p']
                 snap_p1d_data['n_p'] = linP_params['n_p']
                 snap_p1d_data['alpha_p'] = linP_params['alpha_p']
-                if 'f' in linP_params:
-                    snap_p1d_data['f_p'] = linP_params['f']
-                else:
-                    snap_p1d_data['f_p'] = linP_params['f_p']
+                snap_p1d_data['f_p'] = linP_params['f_p']
                 snap_p1d_data['z']=zs[snap]
 
                 # check if we have extracted skewers yet
