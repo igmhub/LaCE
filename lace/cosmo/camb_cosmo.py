@@ -6,7 +6,6 @@ import camb
 
 # specify global settings to CAMB calls
 camb_kmin_Mpc=1.e-4
-camb_kmax_Mpc=30.0
 camb_npoints=1000
 camb_fluid=8
 # no need to go beyond this k_Mpc when fitting linear power only
@@ -137,11 +136,12 @@ def set_fast_camb_options(pars):
     pars.SourceTerms.use_21cm_mK = False
 
 
-def get_camb_results(pars,zs=None,fast_camb=False):
+def get_camb_results(pars,zs=None,fast_camb=False,camb_kmax_Mpc=30):
     """Call camb.get_results, the slowest function in CAMB calls.
         - pars: CAMBparams object describing the cosmology
         - zs (optional): redshifts where we want to evaluate the linear power
-        - fast_camb (optional): tune settings for fast computations"""
+        - fast_camb (optional): tune settings for fast computations
+        - camb_kmax_Mpc (optional): maximum k to compute power spectrum"""
 
     if zs is not None:
         # check if we want to use fast version
