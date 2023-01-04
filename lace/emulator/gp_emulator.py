@@ -557,6 +557,10 @@ class GPEmulator:
         on the full suite of sims, and allows us to standardise our emulator
         when testing on different sims and with different training sets """
 
+        # the only stored emulator is for old settings (obsolete)
+        if (self.asymmetric_kernel or self.rbf_only):
+            raise ValueError('can not load emulator')
+
         ## Load saved emulator dictionary
         repo=os.environ['LACE_REPO']+'/'
         emulator_path=repo+self.archive.basedir+"/emulator.json"
