@@ -17,7 +17,8 @@ class GPEmulator:
     a given P_1D(k) for the same k-bins used in training.
     GPEmulator.predict takes models in a dictionary format currently.
     """
-    def __init__(self,basedir=None,p1d_label=None,skewers_label=None,
+    def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
+                p1d_label=None,skewers_label=None,
                 max_archive_size=None,verbose=False,kmax_Mpc=10.0,
                 paramList=None,train=False,drop_tau_rescalings=False,
                 drop_temp_rescalings=False,keep_every_other_rescaling=False,

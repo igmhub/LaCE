@@ -11,7 +11,8 @@ from lace.cosmo import fit_linP
 class archiveP1D(object):
     """Book-keeping of flux P1D measured in a suite of simulations."""
 
-    def __init__(self,basedir=None,p1d_label=None,skewers_label=None,
+    def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
+                p1d_label=None,skewers_label=None,
                 drop_tau_rescalings=False,drop_temp_rescalings=False,
                 keep_every_other_rescaling=False,nearest_tau=False,
                 max_archive_size=None,undersample_z=1,verbose=False,
