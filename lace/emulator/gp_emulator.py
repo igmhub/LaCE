@@ -17,14 +17,15 @@ class GPEmulator:
     a given P_1D(k) for the same k-bins used in training.
     GPEmulator.predict takes models in a dictionary format currently.
     """
-    def __init__(self,basedir=None,p1d_label=None,skewers_label=None,
+    def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
+                p1d_label=None,skewers_label=None,
                 max_archive_size=None,verbose=False,kmax_Mpc=10.0,
-                paramList=None,train=False,drop_tau_rescalings=False,
-                drop_temp_rescalings=False,keep_every_other_rescaling=False,
+                paramList=None,train=True,drop_tau_rescalings=True,
+                drop_temp_rescalings=True,keep_every_other_rescaling=False,
                 undersample_z=1,emu_type="k_bin",z_max=5,z_list=None,
-                passarchive=None,set_noise_var=1e-3,asymmetric_kernel=False,
+                passarchive=None,set_noise_var=1e-3,asymmetric_kernel=True,
                 check_hull=False,set_hyperparams=None,
-                paramLimits=None,rbf_only=False,
+                paramLimits=None,rbf_only=True,
                 emu_per_k=False,
                 reduce_var_k=False,
                 reduce_var_z=False,
@@ -555,6 +556,10 @@ class GPEmulator:
         for the given sim suite. This is the set of hyperparams trained
         on the full suite of sims, and allows us to standardise our emulator
         when testing on different sims and with different training sets """
+
+        # the only stored emulator is for old settings (obsolete)
+        if (self.asymmetric_kernel or self.rbf_only):
+            raise ValueError('can not load emulator')
 
         ## Load saved emulator dictionary
         repo=os.environ['LACE_REPO']+'/'
