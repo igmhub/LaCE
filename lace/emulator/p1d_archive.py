@@ -448,6 +448,10 @@ class archiveP1D(object):
                 for ii in range(N):
                     _dict[key + flag][ii] = _data[ii][key]
 
+        for key in _dict.keys():
+            print(key)
+            setattr(self, key, _dict[key])
+
         return
 
     def _keep_every_other_rescaling(self):
