@@ -9,17 +9,14 @@ from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 
 
-class archiveP1D(object):
-    """Book-keeping of flux P1D measured in a suite of simulations."""
+class archivePD(object):
+    """Book-keeping of flux P1D & P3D measurements from a suite of simulations."""
 
     def __init__(
         self,
-        basedir="/lace/emulator/sim_suites/Australia20/",
+        basedir="/lace/emulator/sim_suites/post_768/",
         p1d_label=None,
         skewers_label=None,
-        drop_tau_rescalings=True,
-        drop_temp_rescalings=True,
-        keep_every_other_rescaling=False,
         nearest_tau=False,
         max_archive_size=None,
         undersample_z=1,
@@ -51,10 +48,8 @@ class archiveP1D(object):
         if skewers_label:
             self.skewers_label = skewers_label
         else:
-            self.skewers_label = "Ns500_wM0.05"
+            self.skewers_label = "Ns768_wM0.05"
         self.verbose = verbose
-        self.drop_tau_rescalings = drop_tau_rescalings
-        self.drop_temp_rescalings = drop_temp_rescalings
         self.nearest_tau = nearest_tau
         self.z_max = z_max
         self.undersample_cube = undersample_cube
@@ -63,14 +58,11 @@ class archiveP1D(object):
         self.kp_Mpc = kp_Mpc
 
         self._load_data(
-            drop_tau_rescalings,
-            drop_temp_rescalings,
             max_archive_size,
             undersample_z,
             no_skewers,
             pick_sim_number,
             self.drop_sim_number,
-            keep_every_other_rescaling,
             z_max,
             undersample_cube,
             nsamples,
@@ -84,14 +76,11 @@ class archiveP1D(object):
 
     def _load_data(
         self,
-        drop_tau_rescalings,
-        drop_temp_rescalings,
         max_archive_size,
         undersample_z,
         no_skewers,
         pick_sim_number,
         drop_sim_number,
-        keep_every_other_rescaling,
         z_max,
         undersample_cube,
         nsamples=None,
@@ -271,94 +260,51 @@ class archiveP1D(object):
                             )
                             raise ValueError("different k_Mpc in minus/plus")
 
-                        if multiple_axes == False:
-                            # average plus + minus stats
-                            plus_pp = plus_data["p1d_data"][pp]
-                            minus_pp = minus_data["p1d_data"][pp]
-                            plus_mF = plus_pp["mF"]
-                            minus_mF = minus_pp["mF"]
-                            pair_mF = 0.5 * (plus_mF + minus_mF)
-                            p1d_data["mF"] = pair_mF
-                            p1d_data["T0"] = 0.5 * (
-                                plus_pp["sim_T0"] + minus_pp["sim_T0"]
-                            )
-                            p1d_data["gamma"] = 0.5 * (
-                                plus_pp["sim_gamma"] + minus_pp["sim_gamma"]
-                            )
-                            p1d_data["sigT_Mpc"] = 0.5 * (
-                                plus_pp["sim_sigT_Mpc"] + minus_pp["sim_sigT_Mpc"]
-                            )
-                            # store also scalings used (not present in old versions)
-                            if "sim_scale_T0" in plus_pp:
-                                p1d_data["scale_T0"] = plus_pp["sim_scale_T0"]
-                            if "sim_scale_gamma" in plus_pp:
-                                p1d_data["scale_gamma"] = plus_pp["sim_scale_gamma"]
-                            # store also filtering length (not present in old versions)
-                            if "kF_Mpc" in plus_pp:
-                                p1d_data["kF_Mpc"] = 0.5 * (
-                                    plus_pp["kF_Mpc"] + minus_pp["kF_Mpc"]
-                                )
-                            p1d_data["scale_tau"] = plus_pp["scale_tau"]
-                            # compute average of < F F >, not <delta delta>
-                            plus_p1d = np.array(plus_pp["p1d_Mpc"])
-                            minus_p1d = np.array(minus_pp["p1d_Mpc"])
-                            pair_p1d = (
-                                0.5
-                                * (plus_p1d * plus_mF**2 + minus_p1d * minus_mF**2)
-                                / pair_mF**2
-                            )
-                            p1d_data["k_Mpc"] = k_Mpc
-                            p1d_data["p1d_Mpc"] = pair_p1d
-                            self.data.append(p1d_data)
-                        else:
-                            if ind_axis == 0:
-                                temp_p1d_data = copy.deepcopy(p1d_data)
-                                for ind_key in range(len(keys_copy_in)):
-                                    key_in = keys_copy_in[ind_key]
-                                    key_out = keys_copy_out[ind_key]
-                                    _temp = len(
-                                        np.shape(plus_data["p1d_data"][pp][key_in])
-                                    )
-                                    if _temp == 0:
-                                        temp_p1d_data[key_out] = 0
-                                    else:
-                                        temp_p1d_data[key_out] = (
-                                            np.array(plus_data["p1d_data"][pp][key_in])[
-                                                ...
-                                            ]
-                                            * 0
-                                        )
-
-                            for ind_phase in range(2):
-                                if ind_phase == 0:
-                                    temp_data = plus_data["p1d_data"][pp]
+                        if ind_axis == 0:
+                            temp_p1d_data = copy.deepcopy(p1d_data)
+                            for ind_key in range(len(keys_copy_in)):
+                                key_in = keys_copy_in[ind_key]
+                                key_out = keys_copy_out[ind_key]
+                                _temp = len(np.shape(plus_data["p1d_data"][pp][key_in]))
+                                if _temp == 0:
+                                    temp_p1d_data[key_out] = 0
                                 else:
-                                    temp_data = minus_data["p1d_data"][pp]
+                                    temp_p1d_data[key_out] = (
+                                        np.array(plus_data["p1d_data"][pp][key_in])[...]
+                                        * 0
+                                    )
 
-                                for ind_key in range(len(keys_copy_in)):
-                                    key_in = keys_copy_in[ind_key]
-                                    key_out = keys_copy_out[ind_key]
-                                    if (
-                                        (key_in == "sim_scale_T0")
-                                        | (key_in == "sim_scale_gamma")
-                                        | (key_in == "sim_scale_tau")
-                                    ):
-                                        if key_in in temp_data:
-                                            p1d_data[key_out] = temp_data[key_in]
-                                            temp_p1d_data[key_out] = temp_data[key_in]
+                        for ind_phase in range(2):
+                            if ind_phase == 0:
+                                temp_data = plus_data["p1d_data"][pp]
+                            else:
+                                temp_data = minus_data["p1d_data"][pp]
+
+                            for ind_key in range(len(keys_copy_in)):
+                                key_in = keys_copy_in[ind_key]
+                                key_out = keys_copy_out[ind_key]
+                                if (
+                                    (key_in == "sim_scale_T0")
+                                    | (key_in == "sim_scale_gamma")
+                                    | (key_in == "sim_scale_tau")
+                                ):
+                                    if key_in in temp_data:
+                                        p1d_data[key_out] = temp_data[key_in]
+                                        temp_p1d_data[key_out] = temp_data[key_in]
+                                else:
+                                    p1d_data[key_out] = np.array(temp_data[key_in])
+                                    if key_out != "p1d_Mpc":
+                                        temp_p1d_data[key_out] += np.array(
+                                            temp_data[key_in]
+                                        )
                                     else:
-                                        p1d_data[key_out] = np.array(temp_data[key_in])
-                                        if key_out != "p1d_Mpc":
-                                            temp_p1d_data[key_out] += np.array(
-                                                temp_data[key_in]
-                                            )
-                                        else:
-                                            # compute average of < F F >, not <delta delta>
-                                            temp_p1d_data["p1d_Mpc"] += (
-                                                np.array(temp_data["p1d_Mpc"])
-                                                * temp_data["mF"] ** 2
-                                            )
-                                self.data_all.append(p1d_data)
+                                        # compute average of < F F >, not <delta delta>
+                                        temp_p1d_data["p1d_Mpc"] += (
+                                            np.array(temp_data["p1d_Mpc"])
+                                            * temp_data["mF"] ** 2
+                                        )
+                            self.data_all.append(p1d_data)
+
                 if multiple_axes == True:
                     # average measurements from different axes and phases
                     mF2 = 0
@@ -374,19 +320,6 @@ class archiveP1D(object):
                             # compute average of < F F >, not <delta delta>
                             temp_p1d_data["p1d_Mpc"] /= mF2
                     self.data.append(temp_p1d_data)
-
-        if keep_every_other_rescaling:
-            if self.verbose:
-                print("will keep every other rescaling in archive")
-            self._keep_every_other_rescaling()
-        if drop_tau_rescalings:
-            if self.verbose:
-                print("will drop tau scalings from archive")
-            self._drop_tau_rescalings()
-        if drop_temp_rescalings:
-            if self.verbose:
-                print("will drop temperature scalings from archive")
-            self._drop_temperature_rescalings()
 
         if max_archive_size is not None:
             Ndata = len(self.data)
@@ -451,57 +384,6 @@ class archiveP1D(object):
         for key in _dict.keys():
             setattr(self, key, _dict[key])
 
-        return
-
-    def _keep_every_other_rescaling(self):
-        """Keep only every other rescaled entry"""
-
-        # select scalings that we want to keep
-        keep_tau_scales = np.unique([x["scale_tau"] for x in self.data])[::2]
-        keep_T0_scales = np.unique([x["scale_T0"] for x in self.data])[::2]
-        keep_gamma_scales = np.unique([x["scale_gamma"] for x in self.data])[::2]
-
-        # keep only entries with correct scalings
-        data = [
-            x
-            for x in self.data
-            if (
-                (x["scale_tau"] in keep_tau_scales)
-                & (x["scale_T0"] in keep_T0_scales)
-                & (x["scale_gamma"] in keep_gamma_scales)
-            )
-        ]
-
-        self.data = data
-        return
-
-    def _drop_tau_rescalings(self):
-        """Keep only entries with scale_tau=1"""
-
-        data = [x for x in self.data if x["scale_tau"] == 1.0]
-        self.data = data
-        return
-
-    def _keep_nearest_tau(self):
-        """Keep only entries with the nearest tau scalings
-        Hardcoding this to 0.7 and 1.4 for now, which we used
-        in the 200 x 256**3 suite"""
-
-        data = [
-            x
-            for x in self.data
-            if x["scale_tau"] == 1.0 or x["scale_tau"] == 0.7 or x["scale_tau"] == 1.4
-        ]
-        self.data = data
-        return
-
-    def _drop_temperature_rescalings(self):
-        """Keep only entries with scale_T0=1 and scale_gamma=1"""
-
-        data = [
-            x for x in self.data if ((x["scale_T0"] == 1.0) & (x["scale_gamma"] == 1.0))
-        ]
-        self.data = data
         return
 
     def print_entry(
