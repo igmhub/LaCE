@@ -15,9 +15,8 @@ class archivePD(object):
     def __init__(
         self,
         basedir="/lace/emulator/sim_suites/post_768/",
+        skewers_label="Ns768_wM0.05",
         p1d_label=None,
-        skewers_label=None,
-        nearest_tau=False,
         max_archive_size=None,
         undersample_z=1,
         verbose=False,
@@ -50,7 +49,6 @@ class archivePD(object):
         else:
             self.skewers_label = "Ns768_wM0.05"
         self.verbose = verbose
-        self.nearest_tau = nearest_tau
         self.z_max = z_max
         self.undersample_cube = undersample_cube
         self.drop_sim_number = drop_sim_number
@@ -68,9 +66,6 @@ class archivePD(object):
             nsamples,
             multiple_axes=multiple_axes,
         )
-
-        if nearest_tau:
-            self._keep_nearest_tau()
 
         return
 
@@ -107,6 +102,7 @@ class archivePD(object):
             "scale_tau",
             "sim_scale_T0",
             "sim_scale_gamma",
+            "p3d_data",
         ]
         keys_copy_out = [
             "mF",
@@ -119,6 +115,9 @@ class archivePD(object):
             "scale_tau",
             "scale_T0",
             "scale_gamma",
+            "k3_Mpc",
+            "mu3",
+            "p3d_Mpc",
         ]
         self.multiple_axes = multiple_axes
 
@@ -215,12 +214,9 @@ class archivePD(object):
 
                 # make sure that we have skewers for this snapshot (z < zmax)
                 for ind_axis in range(n_axes):
-                    if multiple_axes == False:
-                        temp_skewers_label = self.skewers_label
-                    else:
-                        temp_skewers_label = (
-                            self.skewers_label + "_axis" + str(ind_axis + 1)
-                        )
+                    temp_skewers_label = (
+                        self.skewers_label + "_axis" + str(ind_axis + 1)
+                    )
 
                     # check if we have extracted skewers yet
                     if no_skewers:
@@ -250,21 +246,23 @@ class archivePD(object):
                     for pp in range(Npp):
                         # deep copy of dictionary (thread safe, why not)
                         p1d_data = json.loads(json.dumps(snap_p1d_data))
-                        k_Mpc = np.array(plus_data["p1d_data"][pp]["k_Mpc"])
-                        if len(k_Mpc) != len(minus_data["p1d_data"][pp]["k_Mpc"]):
+
+                        # check if both phases use the same kbins
+                        _flag = np.allclose(
+                            plus_data["p1d_data"][pp]["k_Mpc"],
+                            minus_data["p1d_data"][pp]["k_Mpc"],
+                        )
+                        if _flag == False:
                             print(sample, snap, pp)
-                            print(
-                                len(k_Mpc),
-                                "!=",
-                                len(minus_data["p1d_data"][pp]["k_Mpc"]),
-                            )
                             raise ValueError("different k_Mpc in minus/plus")
 
+                        # we initiate the average of all phases and axes here
                         if ind_axis == 0:
                             temp_p1d_data = copy.deepcopy(p1d_data)
                             for ind_key in range(len(keys_copy_in)):
                                 key_in = keys_copy_in[ind_key]
                                 key_out = keys_copy_out[ind_key]
+
                                 _temp = len(np.shape(plus_data["p1d_data"][pp][key_in]))
                                 if _temp == 0:
                                     temp_p1d_data[key_out] = 0
@@ -273,13 +271,33 @@ class archivePD(object):
                                         np.array(plus_data["p1d_data"][pp][key_in])[...]
                                         * 0
                                     )
+                            temp_p1d_data["p3d_Mpc"] = (
+                                np.array(
+                                    plus_data["p1d_data"][pp]["p3d_data"]["p3d_Mpc"]
+                                )[...]
+                                * 0
+                            )
+                            temp_p1d_data["k3_Mpc"] = (
+                                np.array(
+                                    plus_data["p1d_data"][pp]["p3d_data"]["k_Mpc"]
+                                )[...]
+                                * 0
+                            )
+                            temp_p1d_data["mu3"] = (
+                                np.array(plus_data["p1d_data"][pp]["p3d_data"]["mu"])[
+                                    ...
+                                ]
+                                * 0
+                            )
 
+                        # iterate over phases
                         for ind_phase in range(2):
                             if ind_phase == 0:
                                 temp_data = plus_data["p1d_data"][pp]
                             else:
                                 temp_data = minus_data["p1d_data"][pp]
 
+                            # iterate over properties
                             for ind_key in range(len(keys_copy_in)):
                                 key_in = keys_copy_in[ind_key]
                                 key_out = keys_copy_out[ind_key]
@@ -291,6 +309,23 @@ class archivePD(object):
                                     if key_in in temp_data:
                                         p1d_data[key_out] = temp_data[key_in]
                                         temp_p1d_data[key_out] = temp_data[key_in]
+                                elif key_in == "p3d_data":
+                                    # all axes
+                                    p1d_data["p3d_Mpc"] = np.array(
+                                        temp_data["p3d_data"]["p3d_Mpc"]
+                                    )
+                                    p1d_data["k3_Mpc"] = np.array(
+                                        temp_data["p3d_data"]["k_Mpc"]
+                                    )
+                                    p1d_data["mu3"] = np.array(
+                                        temp_data["p3d_data"]["mu"]
+                                    )
+                                    # for average
+                                    temp_p1d_data["p3d_Mpc"] += (
+                                        p1d_data["p3d_Mpc"] * temp_data["mF"] ** 2
+                                    )
+                                    temp_p1d_data["k3_Mpc"] += p1d_data["k3_Mpc"]
+                                    temp_p1d_data["mu3"] += p1d_data["mu3"]
                                 else:
                                     p1d_data[key_out] = np.array(temp_data[key_in])
                                     if key_out != "p1d_Mpc":
@@ -310,15 +345,23 @@ class archivePD(object):
                     mF2 = 0
                     # ntot = nphases x naxes
                     ntot = 6
-                    for ind_key in range(5):
-                        key = keys_copy_out[ind_key]
-                        if key == "mF":
-                            mF2 += temp_p1d_data["mF"] ** 2
-                        if key != "p1d_Mpc":
-                            temp_p1d_data[key_out] /= ntot
+                    for ind_key in range(len(keys_copy_out)):
+                        if (
+                            (ind_key != "scale_tau")
+                            & (ind_key != "scale_T0")
+                            & (ind_key != "scale_gamma")
+                        ):
+                            pass
                         else:
+                            key = keys_copy_out[ind_key]
+                            if key == "mF":
+                                mF2 += temp_p1d_data[key] ** 2
                             # compute average of < F F >, not <delta delta>
-                            temp_p1d_data["p1d_Mpc"] /= mF2
+                            if (key == "p1d_Mpc") | (key == "p3d_Mpc"):
+                                temp_p1d_data[key] /= mF2
+                            else:
+                                temp_p1d_data[key_out] /= ntot
+
                     self.data.append(temp_p1d_data)
 
         if max_archive_size is not None:
@@ -354,6 +397,9 @@ class archivePD(object):
             "kF_Mpc",
             "k_Mpc",
             "p1d_Mpc",
+            "k3_Mpc",
+            "mu3",
+            "p3d_Mpc",
         ]
 
         if self.multiple_axes == True:
@@ -374,10 +420,16 @@ class archivePD(object):
             for key in list_keys:
                 if key not in _data[0]:
                     continue
-                if (key != "k_Mpc") & (key != "p1d_Mpc"):
+                if (
+                    (key != "k_Mpc")
+                    & (key != "p1d_Mpc")
+                    & (key != "k3_Mpc")
+                    & (key != "mu3")
+                    & (key != "p3d_Mpc")
+                ):
                     _dict[key + flag] = np.zeros(N)
                 else:
-                    _dict[key + flag] = np.zeros((N, _data[0][key].shape[0]))
+                    _dict[key + flag] = np.zeros((N, *_data[0][key].shape))
                 for ii in range(N):
                     _dict[key + flag][ii] = _data[ii][key]
 
