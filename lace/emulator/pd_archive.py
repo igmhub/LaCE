@@ -27,7 +27,7 @@ class archivePD(object):
         nsamples=None,
         undersample_cube=1,
         kp_Mpc=None,
-        multiple_axes=False,
+        multiple_axes=True,
     ):
         """Load archive from base sim directory and (optional) label
         identifying skewer configuration (number, width).
@@ -223,6 +223,7 @@ class archivePD(object):
                         self.data_all.append(snap_p1d_data)
                         continue
 
+                    # open sim_plus
                     plus_p1d_json = pair_dir + "/sim_plus/{}_{}_{}.json".format(
                         self.p1d_label, snap, temp_skewers_label
                     )
@@ -233,10 +234,16 @@ class archivePD(object):
                     # open file with 1D power measured in snapshot for sim_plus
                     with open(plus_p1d_json) as json_file:
                         plus_data = json.load(json_file)
-                    # open file with 1D power measured in snapshot for sim_minus
+
+                    # open sim_minus
                     minus_p1d_json = pair_dir + "/sim_minus/{}_{}_{}.json".format(
                         self.p1d_label, snap, temp_skewers_label
                     )
+                    if not os.path.isfile(minus_p1d_json):
+                        if self.verbose:
+                            print(minus_p1d_json, "snapshot does not have p1d")
+                        continue
+                    # open file with 1D power measured in snapshot for sim_minus
                     with open(minus_p1d_json) as json_file:
                         minus_data = json.load(json_file)
 
@@ -244,9 +251,6 @@ class archivePD(object):
                     Npp = len(plus_data["p1d_data"])
                     # read info for each post-process
                     for pp in range(Npp):
-                        # deep copy of dictionary (thread safe, why not)
-                        p1d_data = json.loads(json.dumps(snap_p1d_data))
-
                         # check if both phases use the same kbins
                         _flag = np.allclose(
                             plus_data["p1d_data"][pp]["k_Mpc"],
@@ -258,7 +262,7 @@ class archivePD(object):
 
                         # we initiate the average of all phases and axes here
                         if ind_axis == 0:
-                            temp_p1d_data = copy.deepcopy(p1d_data)
+                            temp_p1d_data = json.loads(json.dumps(snap_p1d_data))
                             for ind_key in range(len(keys_copy_in)):
                                 key_in = keys_copy_in[ind_key]
                                 key_out = keys_copy_out[ind_key]
@@ -296,6 +300,9 @@ class archivePD(object):
                                 temp_data = plus_data["p1d_data"][pp]
                             else:
                                 temp_data = minus_data["p1d_data"][pp]
+
+                            # deep copy of dictionary (thread safe, why not)
+                            p1d_data = json.loads(json.dumps(snap_p1d_data))
 
                             # iterate over properties
                             for ind_key in range(len(keys_copy_in)):
@@ -338,6 +345,11 @@ class archivePD(object):
                                             np.array(temp_data["p1d_Mpc"])
                                             * temp_data["mF"] ** 2
                                         )
+                            # import pdb
+
+                            # print(p1d_data["p1d_Mpc"][:4])
+
+                            # pdb.set_trace()
                             self.data_all.append(p1d_data)
 
                 if multiple_axes == True:
