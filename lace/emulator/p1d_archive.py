@@ -31,7 +31,6 @@ class archiveP1D(object):
         nsamples=None,
         undersample_cube=1,
         kp_Mpc=None,
-        multiple_axes=False,
     ):
         """Load archive from base sim directory and (optional) label
         identifying skewer configuration (number, width).
@@ -74,7 +73,6 @@ class archiveP1D(object):
             z_max,
             undersample_cube,
             nsamples,
-            multiple_axes=multiple_axes,
         )
 
         if nearest_tau:
@@ -95,43 +93,11 @@ class archiveP1D(object):
         z_max,
         undersample_cube,
         nsamples=None,
-        multiple_axes=False,
     ):
         """Setup archive by looking at all measured power spectra in sims"""
 
         # each measured power will have a dictionary, stored here
-        # we store here the average power of two phases and, if available,
-        # multiple axes
         self.data = []
-        # here we store the power of each phase and axis separately
-        self.data_all = []
-
-        # keys in output dictionary
-        keys_copy_in = [
-            "mF",
-            "sim_T0",
-            "sim_gamma",
-            "sim_sigT_Mpc",
-            "kF_Mpc",
-            "k_Mpc",
-            "p1d_Mpc",
-            "scale_tau",
-            "sim_scale_T0",
-            "sim_scale_gamma",
-        ]
-        keys_copy_out = [
-            "mF",
-            "T0",
-            "gamma",
-            "sigT_Mpc",
-            "kF_Mpc",
-            "k_Mpc",
-            "p1d_Mpc",
-            "scale_tau",
-            "scale_T0",
-            "scale_gamma",
-        ]
-        self.multiple_axes = multiple_axes
 
         # read file containing information about latin hyper-cube
         cube_json = self.fulldir + "/latin_hypercube.json"
@@ -201,11 +167,6 @@ class archiveP1D(object):
                 if self.verbose:
                     print("Use linP_zs from parameter.json")
 
-            if multiple_axes == False:
-                n_axes = 1
-            else:
-                n_axes = 3
-
             # to make lighter emulators, we might undersample redshifts
             for snap in range(0, Nz, undersample_z):
                 if zs[snap] > z_max:
@@ -225,155 +186,72 @@ class archiveP1D(object):
                     continue
 
                 # make sure that we have skewers for this snapshot (z < zmax)
-                for ind_axis in range(n_axes):
-                    if multiple_axes == False:
-                        temp_skewers_label = self.skewers_label
-                    else:
-                        temp_skewers_label = (
-                            self.skewers_label + "_axis" + str(ind_axis + 1)
+                plus_p1d_json = pair_dir + "/sim_plus/{}_{}_{}.json".format(
+                    self.p1d_label, snap, self.skewers_label
+                )
+                if not os.path.isfile(plus_p1d_json):
+                    if self.verbose:
+                        print(plus_p1d_json, "snapshot does not have p1d")
+                    continue
+                # open file with 1D power measured in snapshot for sim_plus
+                with open(plus_p1d_json) as json_file:
+                    plus_data = json.load(json_file)
+                # open file with 1D power measured in snapshot for sim_minus
+                minus_p1d_json = pair_dir + "/sim_minus/{}_{}_{}.json".format(
+                    self.p1d_label, snap, self.skewers_label
+                )
+                with open(minus_p1d_json) as json_file:
+                    minus_data = json.load(json_file)
+
+                # number of post-process rescalings for each snapshot
+                Npp = len(plus_data["p1d_data"])
+                # read info for each post-process
+                for pp in range(Npp):
+                    # deep copy of dictionary (thread safe, why not)
+                    p1d_data = json.loads(json.dumps(snap_p1d_data))
+                    k_Mpc = np.array(plus_data["p1d_data"][pp]["k_Mpc"])
+                    if len(k_Mpc) != len(minus_data["p1d_data"][pp]["k_Mpc"]):
+                        print(sample, snap, pp)
+                        print(
+                            len(k_Mpc), "!=", len(minus_data["p1d_data"][pp]["k_Mpc"])
                         )
-
-                    # check if we have extracted skewers yet
-                    if no_skewers:
-                        self.data_all.append(snap_p1d_data)
-                        continue
-
-                    plus_p1d_json = pair_dir + "/sim_plus/{}_{}_{}.json".format(
-                        self.p1d_label, snap, temp_skewers_label
+                        raise ValueError("different k_Mpc in minus/plus")
+                    # average plus + minus stats
+                    plus_pp = plus_data["p1d_data"][pp]
+                    minus_pp = minus_data["p1d_data"][pp]
+                    plus_mF = plus_pp["mF"]
+                    minus_mF = minus_pp["mF"]
+                    pair_mF = 0.5 * (plus_mF + minus_mF)
+                    p1d_data["mF"] = pair_mF
+                    p1d_data["T0"] = 0.5 * (plus_pp["sim_T0"] + minus_pp["sim_T0"])
+                    p1d_data["gamma"] = 0.5 * (
+                        plus_pp["sim_gamma"] + minus_pp["sim_gamma"]
                     )
-                    if not os.path.isfile(plus_p1d_json):
-                        if self.verbose:
-                            print(plus_p1d_json, "snapshot does not have p1d")
-                        continue
-                    # open file with 1D power measured in snapshot for sim_plus
-                    with open(plus_p1d_json) as json_file:
-                        plus_data = json.load(json_file)
-                    # open file with 1D power measured in snapshot for sim_minus
-                    minus_p1d_json = pair_dir + "/sim_minus/{}_{}_{}.json".format(
-                        self.p1d_label, snap, temp_skewers_label
+                    p1d_data["sigT_Mpc"] = 0.5 * (
+                        plus_pp["sim_sigT_Mpc"] + minus_pp["sim_sigT_Mpc"]
                     )
-                    with open(minus_p1d_json) as json_file:
-                        minus_data = json.load(json_file)
-
-                    # number of post-process rescalings for each snapshot
-                    Npp = len(plus_data["p1d_data"])
-                    # read info for each post-process
-                    for pp in range(Npp):
-                        # deep copy of dictionary (thread safe, why not)
-                        p1d_data = json.loads(json.dumps(snap_p1d_data))
-                        k_Mpc = np.array(plus_data["p1d_data"][pp]["k_Mpc"])
-                        if len(k_Mpc) != len(minus_data["p1d_data"][pp]["k_Mpc"]):
-                            print(sample, snap, pp)
-                            print(
-                                len(k_Mpc),
-                                "!=",
-                                len(minus_data["p1d_data"][pp]["k_Mpc"]),
-                            )
-                            raise ValueError("different k_Mpc in minus/plus")
-
-                        if multiple_axes == False:
-                            # average plus + minus stats
-                            plus_pp = plus_data["p1d_data"][pp]
-                            minus_pp = minus_data["p1d_data"][pp]
-                            plus_mF = plus_pp["mF"]
-                            minus_mF = minus_pp["mF"]
-                            pair_mF = 0.5 * (plus_mF + minus_mF)
-                            p1d_data["mF"] = pair_mF
-                            p1d_data["T0"] = 0.5 * (
-                                plus_pp["sim_T0"] + minus_pp["sim_T0"]
-                            )
-                            p1d_data["gamma"] = 0.5 * (
-                                plus_pp["sim_gamma"] + minus_pp["sim_gamma"]
-                            )
-                            p1d_data["sigT_Mpc"] = 0.5 * (
-                                plus_pp["sim_sigT_Mpc"] + minus_pp["sim_sigT_Mpc"]
-                            )
-                            # store also scalings used (not present in old versions)
-                            if "sim_scale_T0" in plus_pp:
-                                p1d_data["scale_T0"] = plus_pp["sim_scale_T0"]
-                            if "sim_scale_gamma" in plus_pp:
-                                p1d_data["scale_gamma"] = plus_pp["sim_scale_gamma"]
-                            # store also filtering length (not present in old versions)
-                            if "kF_Mpc" in plus_pp:
-                                p1d_data["kF_Mpc"] = 0.5 * (
-                                    plus_pp["kF_Mpc"] + minus_pp["kF_Mpc"]
-                                )
-                            p1d_data["scale_tau"] = plus_pp["scale_tau"]
-                            # compute average of < F F >, not <delta delta>
-                            plus_p1d = np.array(plus_pp["p1d_Mpc"])
-                            minus_p1d = np.array(minus_pp["p1d_Mpc"])
-                            pair_p1d = (
-                                0.5
-                                * (plus_p1d * plus_mF**2 + minus_p1d * minus_mF**2)
-                                / pair_mF**2
-                            )
-                            p1d_data["k_Mpc"] = k_Mpc
-                            p1d_data["p1d_Mpc"] = pair_p1d
-                            self.data.append(p1d_data)
-                        else:
-                            if ind_axis == 0:
-                                temp_p1d_data = copy.deepcopy(p1d_data)
-                                for ind_key in range(len(keys_copy_in)):
-                                    key_in = keys_copy_in[ind_key]
-                                    key_out = keys_copy_out[ind_key]
-                                    _temp = len(
-                                        np.shape(plus_data["p1d_data"][pp][key_in])
-                                    )
-                                    if _temp == 0:
-                                        temp_p1d_data[key_out] = 0
-                                    else:
-                                        temp_p1d_data[key_out] = (
-                                            np.array(plus_data["p1d_data"][pp][key_in])[
-                                                ...
-                                            ]
-                                            * 0
-                                        )
-
-                            for ind_phase in range(2):
-                                if ind_phase == 0:
-                                    temp_data = plus_data["p1d_data"][pp]
-                                else:
-                                    temp_data = minus_data["p1d_data"][pp]
-
-                                for ind_key in range(len(keys_copy_in)):
-                                    key_in = keys_copy_in[ind_key]
-                                    key_out = keys_copy_out[ind_key]
-                                    if (
-                                        (key_in == "sim_scale_T0")
-                                        | (key_in == "sim_scale_gamma")
-                                        | (key_in == "sim_scale_tau")
-                                    ):
-                                        if key_in in temp_data:
-                                            p1d_data[key_out] = temp_data[key_in]
-                                            temp_p1d_data[key_out] = temp_data[key_in]
-                                    else:
-                                        p1d_data[key_out] = np.array(temp_data[key_in])
-                                        if key_out != "p1d_Mpc":
-                                            temp_p1d_data[key_out] += np.array(
-                                                temp_data[key_in]
-                                            )
-                                        else:
-                                            # compute average of < F F >, not <delta delta>
-                                            temp_p1d_data["p1d_Mpc"] += (
-                                                np.array(temp_data["p1d_Mpc"])
-                                                * temp_data["mF"] ** 2
-                                            )
-                                self.data_all.append(p1d_data)
-                if multiple_axes == True:
-                    # average measurements from different axes and phases
-                    mF2 = 0
-                    # ntot = nphases x naxes
-                    ntot = 6
-                    for ind_key in range(5):
-                        key = keys_copy_out[ind_key]
-                        if key == "mF":
-                            mF2 += temp_p1d_data["mF"] ** 2
-                        if key != "p1d_Mpc":
-                            temp_p1d_data[key_out] /= ntot
-                        else:
-                            # compute average of < F F >, not <delta delta>
-                            temp_p1d_data["p1d_Mpc"] /= mF2
-                    self.data.append(temp_p1d_data)
+                    # store also scalings used (not present in old versions)
+                    if "sim_scale_T0" in plus_pp:
+                        p1d_data["scale_T0"] = plus_pp["sim_scale_T0"]
+                    if "sim_scale_gamma" in plus_pp:
+                        p1d_data["scale_gamma"] = plus_pp["sim_scale_gamma"]
+                    # store also filtering length (not present in old versions)
+                    if "kF_Mpc" in plus_pp:
+                        p1d_data["kF_Mpc"] = 0.5 * (
+                            plus_pp["kF_Mpc"] + minus_pp["kF_Mpc"]
+                        )
+                    p1d_data["scale_tau"] = plus_pp["scale_tau"]
+                    # compute average of < F F >, not <delta delta>
+                    plus_p1d = np.array(plus_pp["p1d_Mpc"])
+                    minus_p1d = np.array(minus_pp["p1d_Mpc"])
+                    pair_p1d = (
+                        0.5
+                        * (plus_p1d * plus_mF**2 + minus_p1d * minus_mF**2)
+                        / pair_mF**2
+                    )
+                    p1d_data["k_Mpc"] = k_Mpc
+                    p1d_data["p1d_Mpc"] = pair_p1d
+                    self.data.append(p1d_data)
 
         if keep_every_other_rescaling:
             if self.verbose:
@@ -409,47 +287,24 @@ class archiveP1D(object):
     def _store_param_arrays(self):
         """create 1D arrays with all entries for a given parameter."""
 
-        list_keys = [
-            "Delta2_p",
-            "n_p",
-            "alpha_p",
-            "f_p",
-            "z",
-            "mF",
-            "sigT_Mpc",
-            "gamma",
-            "kF_Mpc",
-            "k_Mpc",
-            "p1d_Mpc",
-        ]
+        N = len(self.data)
 
-        if self.multiple_axes == True:
-            n_it = 2
-        else:
-            n_it = 1
+        # store linear power parameters
+        self.Delta2_p = np.array([self.data[i]["Delta2_p"] for i in range(N)])
+        self.n_p = np.array([self.data[i]["n_p"] for i in range(N)])
+        self.alpha_p = np.array([self.data[i]["alpha_p"] for i in range(N)])
+        self.f_p = np.array([self.data[i]["f_p"] for i in range(N)])
+        self.z = np.array([self.data[i]["z"] for i in range(N)])
 
-        _dict = {}
-        for it in range(n_it):
-            if it == 0:
-                _data = self.data
-                flag = ""
-            else:
-                _data = self.data_all
-                flag = "_all"
-
-            N = len(_data)
-            for key in list_keys:
-                if key not in _data[0]:
-                    continue
-                if (key != "k_Mpc") & (key != "p1d_Mpc"):
-                    _dict[key + flag] = np.zeros(N)
-                else:
-                    _dict[key + flag] = np.zeros((N, _data[0][key].shape[0]))
-                for ii in range(N):
-                    _dict[key + flag][ii] = _data[ii][key]
-
-        for key in _dict.keys():
-            setattr(self, key, _dict[key])
+        # store IGM parameters (if present)
+        if "mF" in self.data[0]:
+            self.mF = np.array([self.data[i]["mF"] for i in range(N)])
+        if "sigT_Mpc" in self.data[0]:
+            self.sigT_Mpc = np.array([self.data[i]["sigT_Mpc"] for i in range(N)])
+        if "gamma" in self.data[0]:
+            self.gamma = np.array([self.data[i]["gamma"] for i in range(N)])
+        if "kF_Mpc" in self.data[0]:
+            self.kF_Mpc = np.array([self.data[i]["kF_Mpc"] for i in range(N)])
 
         return
 
