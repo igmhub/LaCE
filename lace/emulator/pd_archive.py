@@ -3,6 +3,7 @@ import copy
 import sys
 import os
 import json
+from itertools import product
 import matplotlib.pyplot as plt
 from lace.setup_simulations import read_genic
 from lace.cosmo import camb_cosmo
@@ -28,6 +29,7 @@ class archivePD(object):
         undersample_cube=1,
         kp_Mpc=None,
         multiple_axes=True,
+        n_phases=2,
     ):
         """Load archive from base sim directory and (optional) label
         identifying skewer configuration (number, width).
@@ -54,6 +56,13 @@ class archivePD(object):
         self.drop_sim_number = drop_sim_number
         # pivot point used in linP parameters
         self.kp_Mpc = kp_Mpc
+        self.n_phases = n_phases
+        self.multiple_axes = multiple_axes
+
+        if multiple_axes == False:
+            self.n_axes = 1
+        else:
+            self.n_axes = 3
 
         self._load_data(
             max_archive_size,
@@ -64,7 +73,6 @@ class archivePD(object):
             z_max,
             undersample_cube,
             nsamples,
-            multiple_axes=multiple_axes,
         )
 
         return
@@ -79,7 +87,6 @@ class archivePD(object):
         z_max,
         undersample_cube,
         nsamples=None,
-        multiple_axes=False,
     ):
         """Setup archive by looking at all measured power spectra in sims"""
 
@@ -116,7 +123,6 @@ class archivePD(object):
             "mu3",
             "p3d_Mpc",
         ]
-        self.multiple_axes = multiple_axes
 
         # read file containing information about latin hyper-cube
         cube_json = self.fulldir + "/latin_hypercube.json"
@@ -186,11 +192,6 @@ class archivePD(object):
                 if self.verbose:
                     print("Use linP_zs from parameter.json")
 
-            if multiple_axes == False:
-                n_axes = 1
-            else:
-                n_axes = 3
-
             # to make lighter emulators, we might undersample redshifts
             for snap in range(0, Nz, undersample_z):
                 if zs[snap] > z_max:
@@ -205,7 +206,7 @@ class archivePD(object):
                 snap_p1d_data["z"] = zs[snap]
 
                 # make sure that we have skewers for this snapshot (z < zmax)
-                for ind_axis in range(n_axes):
+                for ind_axis in range(self.n_axes):
                     temp_skewers_label = (
                         self.skewers_label + "_axis" + str(ind_axis + 1)
                     )
@@ -262,8 +263,12 @@ class archivePD(object):
 
                             # deep copy of dictionary (thread safe, why not)
                             p1d_data = json.loads(json.dumps(snap_p1d_data))
-                            p1d_data["phase"] = ind_phase
-                            p1d_data["axis"] = ind_axis
+                            # identify simulation
+                            p1d_data["ind_sim"] = sample
+                            p1d_data["ind_z"] = snap
+                            p1d_data["ind_phase"] = ind_phase
+                            p1d_data["ind_axis"] = ind_axis
+                            p1d_data["ind_tau"] = pp
 
                             # iterate over properties
                             for ind_key in range(len(keys_copy_in)):
@@ -318,13 +323,16 @@ class archivePD(object):
         """create 1D arrays with all entries for a given parameter."""
 
         list_keys = [
+            "ind_sim",
+            "ind_tau",
+            "ind_z",
+            "ind_phase",
+            "ind_axis",
             "Delta2_p",
             "n_p",
             "alpha_p",
             "f_p",
             "z",
-            "phase",
-            "axis",
             "mF",
             "sigT_Mpc",
             "gamma",
@@ -359,7 +367,132 @@ class archivePD(object):
         for key in _dict.keys():
             setattr(self, key, _dict[key])
 
-        return
+    def average_over_samples(self, flag="all"):
+        """Compute averages over either phases, axes, or all
+
+        Compute average of p1d, p3d, and mean flux
+        """
+
+        keys_same = [
+            "ind_sim",
+            "ind_tau",
+            "ind_z",
+            "ind_phase",
+            "ind_axis",
+            "Delta2_p",
+            "n_p",
+            "alpha_p",
+            "f_p",
+            "z",
+            "T0",
+            "gamma",
+            "sigT_Mpc",
+            "kF_Mpc",
+            "scale_tau",
+            "scale_T0",
+            "scale_gamma",
+        ]
+
+        keys_merge = [
+            "mF",
+            "k_Mpc",
+            "p1d_Mpc",
+            "k3_Mpc",
+            "mu3",
+            "p3d_Mpc",
+        ]
+
+        # get number of simulations, scalings, and redshifts
+        n_sims = np.unique(self.ind_sim).shape[0]
+        n_tau = np.unique(self.ind_tau).shape[0]
+        n_z = np.unique(self.ind_z).shape[0]
+
+        # tot_nsam: number of samples per cosmology
+        if flag == "all":
+            tot_nsam = self.n_phases * self.n_axes
+            loop = list(
+                product(
+                    np.arange(n_sims),
+                    np.arange(n_tau),
+                    np.arange(n_z),
+                )
+            )
+        elif flag == "phases":
+            tot_nsam = self.n_phases
+            loop = list(
+                product(
+                    np.arange(n_sims),
+                    np.arange(n_tau),
+                    np.arange(n_z),
+                    np.arange(self.n_axes),
+                )
+            )
+        elif flag == "axes":
+            tot_nsam = self.n_axes
+            loop = list(
+                product(
+                    np.arange(n_sims),
+                    np.arange(n_tau),
+                    np.arange(n_z),
+                    np.arange(self.n_phases),
+                )
+            )
+
+        nloop = len(loop)
+
+        list_new = []
+        for ind_loop in range(nloop):
+            if flag == "all":
+                ind_sim, ind_tau, ind_z = loop[ind_loop]
+                ind_merge = np.argwhere(
+                    (self.ind_sim == ind_sim)
+                    & (self.ind_tau == ind_tau)
+                    & (self.ind_z == ind_z)
+                )[:, 0]
+            elif flag == "phases":
+                ind_sim, ind_tau, ind_z, ind_axis = loop[ind_loop]
+                ind_merge = np.argwhere(
+                    (self.ind_sim == ind_sim)
+                    & (self.ind_tau == ind_tau)
+                    & (self.ind_z == ind_z)
+                    & (self.ind_axis == ind_axis)
+                )[:, 0]
+            elif flag == "axes":
+                ind_sim, ind_tau, ind_z, ind_phase = loop[ind_loop]
+                ind_merge = np.argwhere(
+                    (self.ind_sim == ind_sim)
+                    & (self.ind_tau == ind_tau)
+                    & (self.ind_z == ind_z)
+                    & (self.ind_phase == ind_phase)
+                )[:, 0]
+
+            dict_av = {}
+            for key in keys_same:
+                dict_av[key] = self.data[ind_merge[0]][key]
+
+            for key in keys_merge:
+                if key == "mF":
+                    mean = 0
+                else:
+                    mean = np.zeros_like(self.data[ind_merge[0]][key])
+
+                for imerge in range(tot_nsam):
+                    if (key == "p1d_Mpc") | (key == "p3d_Mpc"):
+                        mean += (
+                            self.data[ind_merge[imerge]][key]
+                            * self.data[ind_merge[imerge]]["mF"] ** 2
+                        )
+                    else:
+                        mean += self.data[ind_merge[imerge]][key]
+
+                if (key == "p1d_Mpc") | (key == "p3d_Mpc"):
+                    dict_av[key] = mean / dict_av["mF"] ** 2 / tot_nsam
+                else:
+                    dict_av[key] = mean / tot_nsam
+
+            list_new.append(dict_av)
+
+        setattr(self, "data_av_" + flag, list_new)
 
     def print_entry(
         self,
