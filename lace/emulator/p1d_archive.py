@@ -11,7 +11,6 @@ from lace.cosmo import fit_linP
 class archiveP1D(object):
     """Book-keeping of flux P1D measured in a suite of simulations."""
 
-<<<<<<< HEAD
     def __init__(self,basedir=None,p1d_label=None,skewers_label=None,
                 drop_tau_rescalings=False,drop_temp_rescalings=False,
                 keep_every_other_rescaling=False,nearest_tau=False,
@@ -19,28 +18,6 @@ class archiveP1D(object):
                 no_skewers=False,pick_sim_number=None,drop_sim_number=None,
                 drop_snap_number=None,z_max=5.,nsamples=None,undersample_cube=1,
                 kp_Mpc=None,drop_redshift=None,pick_redshift=None):
-=======
-    def __init__(
-        self,
-        basedir="/lace/emulator/sim_suites/Australia20/",
-        p1d_label=None,
-        skewers_label=None,
-        drop_tau_rescalings=True,
-        drop_temp_rescalings=True,
-        keep_every_other_rescaling=False,
-        nearest_tau=False,
-        max_archive_size=None,
-        undersample_z=1,
-        verbose=False,
-        no_skewers=False,
-        pick_sim_number=None,
-        drop_sim_number=None,
-        z_max=5.0,
-        nsamples=None,
-        undersample_cube=1,
-        kp_Mpc=None,
-    ):
->>>>>>> a94a2e5ee8642991919c33203f52a5609fc4f4d0
         """Load archive from base sim directory and (optional) label
             identifying skewer configuration (number, width).
             If kp_Mpc is specified, recompute linP params in archive"""
@@ -69,7 +46,6 @@ class archiveP1D(object):
         self.drop_sim_number=drop_sim_number
         self.drop_snap_number=drop_snap_number
         # pivot point used in linP parameters
-<<<<<<< HEAD
         self.kp_Mpc=kp_Mpc 
         self.drop_redshift=drop_redshift
         self.pick_redshift=pick_redshift
@@ -80,30 +56,11 @@ class archiveP1D(object):
                             keep_every_other_rescaling,
                             z_max,undersample_cube,nsamples)
         
-=======
-        self.kp_Mpc = kp_Mpc
-
-        self._load_data(
-            drop_tau_rescalings,
-            drop_temp_rescalings,
-            max_archive_size,
-            undersample_z,
-            no_skewers,
-            pick_sim_number,
-            self.drop_sim_number,
-            keep_every_other_rescaling,
-            z_max,
-            undersample_cube,
-            nsamples,
-        )
-
->>>>>>> a94a2e5ee8642991919c33203f52a5609fc4f4d0
         if nearest_tau:
             self._keep_nearest_tau()
 
         return
 
-<<<<<<< HEAD
 
     def _load_data(self,drop_tau_rescalings,drop_temp_rescalings,
                             max_archive_size,undersample_z,no_skewers,
@@ -114,26 +71,6 @@ class archiveP1D(object):
 
         # each measured power will have a dictionary, stored here
         self.data=[]
-=======
-    def _load_data(
-        self,
-        drop_tau_rescalings,
-        drop_temp_rescalings,
-        max_archive_size,
-        undersample_z,
-        no_skewers,
-        pick_sim_number,
-        drop_sim_number,
-        keep_every_other_rescaling,
-        z_max,
-        undersample_cube,
-        nsamples=None,
-    ):
-        """Setup archive by looking at all measured power spectra in sims"""
-
-        # each measured power will have a dictionary, stored here
-        self.data = []
->>>>>>> a94a2e5ee8642991919c33203f52a5609fc4f4d0
 
         # read file containing information about latin hyper-cube
         cube_json=self.fulldir+'/latin_hypercube.json'
@@ -204,21 +141,12 @@ class archiveP1D(object):
                 # setup CAMB object
                 sim_cosmo=camb_cosmo.get_cosmology_from_dictionary(sim_cosmo_dict)
                 # compute linear power parameters at each z (in Mpc units)
-<<<<<<< HEAD
                 linP_zs=fit_linP.get_linP_Mpc_zs(sim_cosmo,zs,self.kp_Mpc,
                         include_f_p=True)
                 print('update linP_zs',linP_zs)
                 pair_data['linP_zs']=list(linP_zs)
             else:
                 if self.verbose: print('Use linP_zs from parameter.json')
-=======
-                linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
-                print("update linP_zs", linP_zs)
-                pair_data["linP_zs"] = list(linP_zs)
-            else:
-                if self.verbose:
-                    print("Use linP_zs from parameter.json")
->>>>>>> a94a2e5ee8642991919c33203f52a5609fc4f4d0
 
             # to make lighter emulators, we might undersample redshifts
             for snap in range(0,Nz,undersample_z):       
@@ -242,26 +170,16 @@ class archiveP1D(object):
                     continue
 
                 # make sure that we have skewers for this snapshot (z < zmax)
-<<<<<<< HEAD
                 plus_p1d_json=pair_dir+'/sim_plus/{}_{}_{}.json'.format(
                                 self.p1d_label,snap,self.skewers_label)
                 if not os.path.isfile(plus_p1d_json):
                     if self.verbose:
                         print(plus_p1d_json,'snapshot does not have p1d')
-=======
-                plus_p1d_json = pair_dir + "/sim_plus/{}_{}_{}.json".format(
-                    self.p1d_label, snap, self.skewers_label
-                )
-                if not os.path.isfile(plus_p1d_json):
-                    if self.verbose:
-                        print(plus_p1d_json, "snapshot does not have p1d")
->>>>>>> a94a2e5ee8642991919c33203f52a5609fc4f4d0
                     continue
                 # open file with 1D power measured in snapshot for sim_plus
                 with open(plus_p1d_json) as json_file:
                     plus_data = json.load(json_file)
                 # open file with 1D power measured in snapshot for sim_minus
-<<<<<<< HEAD
                 minus_p1d_json=pair_dir+'/sim_minus/{}_{}_{}.json'.format(
                                 self.p1d_label,snap,self.skewers_label)
                 with open(minus_p1d_json) as json_file: 
@@ -269,21 +187,10 @@ class archiveP1D(object):
 
                 # number of post-process rescalings for each snapshot
                 Npp=len(plus_data['p1d_data'])
-=======
-                minus_p1d_json = pair_dir + "/sim_minus/{}_{}_{}.json".format(
-                    self.p1d_label, snap, self.skewers_label
-                )
-                with open(minus_p1d_json) as json_file:
-                    minus_data = json.load(json_file)
-
-                # number of post-process rescalings for each snapshot
-                Npp = len(plus_data["p1d_data"])
->>>>>>> a94a2e5ee8642991919c33203f52a5609fc4f4d0
                 # read info for each post-process
                 for pp in range(Npp):
                     # deep copy of dictionary (thread safe, why not)
                     p1d_data = json.loads(json.dumps(snap_p1d_data))
-<<<<<<< HEAD
                     k_Mpc = np.array(plus_data['p1d_data'][pp]['k_Mpc'])
                     if len(k_Mpc) != len(minus_data['p1d_data'][pp]['k_Mpc']):
                         print(sample,snap,pp)
@@ -320,51 +227,6 @@ class archiveP1D(object):
                     p1d_data['k_Mpc'] = k_Mpc
                     p1d_data['p1d_Mpc'] = pair_p1d
                     self.data.append(p1d_data)                
-=======
-                    k_Mpc = np.array(plus_data["p1d_data"][pp]["k_Mpc"])
-                    if len(k_Mpc) != len(minus_data["p1d_data"][pp]["k_Mpc"]):
-                        print(sample, snap, pp)
-                        print(
-                            len(k_Mpc), "!=", len(minus_data["p1d_data"][pp]["k_Mpc"])
-                        )
-                        raise ValueError("different k_Mpc in minus/plus")
-                    # average plus + minus stats
-                    plus_pp = plus_data["p1d_data"][pp]
-                    minus_pp = minus_data["p1d_data"][pp]
-                    plus_mF = plus_pp["mF"]
-                    minus_mF = minus_pp["mF"]
-                    pair_mF = 0.5 * (plus_mF + minus_mF)
-                    p1d_data["mF"] = pair_mF
-                    p1d_data["T0"] = 0.5 * (plus_pp["sim_T0"] + minus_pp["sim_T0"])
-                    p1d_data["gamma"] = 0.5 * (
-                        plus_pp["sim_gamma"] + minus_pp["sim_gamma"]
-                    )
-                    p1d_data["sigT_Mpc"] = 0.5 * (
-                        plus_pp["sim_sigT_Mpc"] + minus_pp["sim_sigT_Mpc"]
-                    )
-                    # store also scalings used (not present in old versions)
-                    if "sim_scale_T0" in plus_pp:
-                        p1d_data["scale_T0"] = plus_pp["sim_scale_T0"]
-                    if "sim_scale_gamma" in plus_pp:
-                        p1d_data["scale_gamma"] = plus_pp["sim_scale_gamma"]
-                    # store also filtering length (not present in old versions)
-                    if "kF_Mpc" in plus_pp:
-                        p1d_data["kF_Mpc"] = 0.5 * (
-                            plus_pp["kF_Mpc"] + minus_pp["kF_Mpc"]
-                        )
-                    p1d_data["scale_tau"] = plus_pp["scale_tau"]
-                    # compute average of < F F >, not <delta delta>
-                    plus_p1d = np.array(plus_pp["p1d_Mpc"])
-                    minus_p1d = np.array(minus_pp["p1d_Mpc"])
-                    pair_p1d = (
-                        0.5
-                        * (plus_p1d * plus_mF**2 + minus_p1d * minus_mF**2)
-                        / pair_mF**2
-                    )
-                    p1d_data["k_Mpc"] = k_Mpc
-                    p1d_data["p1d_Mpc"] = pair_p1d
-                    self.data.append(p1d_data)
->>>>>>> a94a2e5ee8642991919c33203f52a5609fc4f4d0
 
         if keep_every_other_rescaling:
             if self.verbose: print('will keep every other rescaling in archive')
@@ -394,7 +256,6 @@ class archiveP1D(object):
 
         return
 
-<<<<<<< HEAD
 
     def _store_param_arrays(self):
         """ create 1D arrays with all entries for a given parameter. """
@@ -417,29 +278,6 @@ class archiveP1D(object):
             self.gamma=np.array([self.data[i]['gamma'] for i in range(N)])
         if 'kF_Mpc' in self.data[0]:
             self.kF_Mpc=np.array([self.data[i]['kF_Mpc'] for i in range(N)])
-=======
-    def _store_param_arrays(self):
-        """create 1D arrays with all entries for a given parameter."""
-
-        N = len(self.data)
-
-        # store linear power parameters
-        self.Delta2_p = np.array([self.data[i]["Delta2_p"] for i in range(N)])
-        self.n_p = np.array([self.data[i]["n_p"] for i in range(N)])
-        self.alpha_p = np.array([self.data[i]["alpha_p"] for i in range(N)])
-        self.f_p = np.array([self.data[i]["f_p"] for i in range(N)])
-        self.z = np.array([self.data[i]["z"] for i in range(N)])
-
-        # store IGM parameters (if present)
-        if "mF" in self.data[0]:
-            self.mF = np.array([self.data[i]["mF"] for i in range(N)])
-        if "sigT_Mpc" in self.data[0]:
-            self.sigT_Mpc = np.array([self.data[i]["sigT_Mpc"] for i in range(N)])
-        if "gamma" in self.data[0]:
-            self.gamma = np.array([self.data[i]["gamma"] for i in range(N)])
-        if "kF_Mpc" in self.data[0]:
-            self.kF_Mpc = np.array([self.data[i]["kF_Mpc"] for i in range(N)])
->>>>>>> a94a2e5ee8642991919c33203f52a5609fc4f4d0
 
         return
 
