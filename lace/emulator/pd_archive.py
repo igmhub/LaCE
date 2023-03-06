@@ -84,11 +84,8 @@ class archivePD(object):
         """Setup archive by looking at all measured power spectra in sims"""
 
         # each measured power will have a dictionary, stored here
-        # we store here the average power of two phases and, if available,
-        # multiple axes
+        # we store the power of each phase and axis separately
         self.data = []
-        # here we store the power of each phase and axis separately
-        self.data_all = []
 
         # keys in output dictionary
         keys_copy_in = [
@@ -207,11 +204,6 @@ class archivePD(object):
                 snap_p1d_data["f_p"] = linP_params["f_p"]
                 snap_p1d_data["z"] = zs[snap]
 
-                # check if we have extracted skewers yet
-                if no_skewers:
-                    self.data.append(snap_p1d_data)
-                    continue
-
                 # make sure that we have skewers for this snapshot (z < zmax)
                 for ind_axis in range(n_axes):
                     temp_skewers_label = (
@@ -220,7 +212,7 @@ class archivePD(object):
 
                     # check if we have extracted skewers yet
                     if no_skewers:
-                        self.data_all.append(snap_p1d_data)
+                        self.data.append(snap_p1d_data)
                         continue
 
                     # open sim_plus
@@ -231,7 +223,7 @@ class archivePD(object):
                         if self.verbose:
                             print(plus_p1d_json, "snapshot does not have p1d")
                         continue
-                    # open file with 1D power measured in snapshot for sim_plus
+                    # open file with 1D and 3D power measured in snapshot for sim_plus
                     with open(plus_p1d_json) as json_file:
                         plus_data = json.load(json_file)
 
@@ -243,7 +235,8 @@ class archivePD(object):
                         if self.verbose:
                             print(minus_p1d_json, "snapshot does not have p1d")
                         continue
-                    # open file with 1D power measured in snapshot for sim_minus
+
+                    # open file with 1D and 3D power measured in snapshot for sim_minus
                     with open(minus_p1d_json) as json_file:
                         minus_data = json.load(json_file)
 
@@ -260,40 +253,6 @@ class archivePD(object):
                             print(sample, snap, pp)
                             raise ValueError("different k_Mpc in minus/plus")
 
-                        # we initiate the average of all phases and axes here
-                        if ind_axis == 0:
-                            temp_p1d_data = json.loads(json.dumps(snap_p1d_data))
-                            for ind_key in range(len(keys_copy_in)):
-                                key_in = keys_copy_in[ind_key]
-                                key_out = keys_copy_out[ind_key]
-
-                                _temp = len(np.shape(plus_data["p1d_data"][pp][key_in]))
-                                if _temp == 0:
-                                    temp_p1d_data[key_out] = 0
-                                else:
-                                    temp_p1d_data[key_out] = (
-                                        np.array(plus_data["p1d_data"][pp][key_in])[...]
-                                        * 0
-                                    )
-                            temp_p1d_data["p3d_Mpc"] = (
-                                np.array(
-                                    plus_data["p1d_data"][pp]["p3d_data"]["p3d_Mpc"]
-                                )[...]
-                                * 0
-                            )
-                            temp_p1d_data["k3_Mpc"] = (
-                                np.array(
-                                    plus_data["p1d_data"][pp]["p3d_data"]["k_Mpc"]
-                                )[...]
-                                * 0
-                            )
-                            temp_p1d_data["mu3"] = (
-                                np.array(plus_data["p1d_data"][pp]["p3d_data"]["mu"])[
-                                    ...
-                                ]
-                                * 0
-                            )
-
                         # iterate over phases
                         for ind_phase in range(2):
                             if ind_phase == 0:
@@ -303,6 +262,8 @@ class archivePD(object):
 
                             # deep copy of dictionary (thread safe, why not)
                             p1d_data = json.loads(json.dumps(snap_p1d_data))
+                            p1d_data["phase"] = ind_phase
+                            p1d_data["axis"] = ind_axis
 
                             # iterate over properties
                             for ind_key in range(len(keys_copy_in)):
@@ -315,7 +276,6 @@ class archivePD(object):
                                 ):
                                     if key_in in temp_data:
                                         p1d_data[key_out] = temp_data[key_in]
-                                        temp_p1d_data[key_out] = temp_data[key_in]
                                 elif key_in == "p3d_data":
                                     # all axes
                                     p1d_data["p3d_Mpc"] = np.array(
@@ -327,54 +287,14 @@ class archivePD(object):
                                     p1d_data["mu3"] = np.array(
                                         temp_data["p3d_data"]["mu"]
                                     )
-                                    # for average
-                                    temp_p1d_data["p3d_Mpc"] += (
-                                        p1d_data["p3d_Mpc"] * temp_data["mF"] ** 2
-                                    )
-                                    temp_p1d_data["k3_Mpc"] += p1d_data["k3_Mpc"]
-                                    temp_p1d_data["mu3"] += p1d_data["mu3"]
                                 else:
                                     p1d_data[key_out] = np.array(temp_data[key_in])
-                                    if key_out != "p1d_Mpc":
-                                        temp_p1d_data[key_out] += np.array(
-                                            temp_data[key_in]
-                                        )
-                                    else:
-                                        # compute average of < F F >, not <delta delta>
-                                        temp_p1d_data["p1d_Mpc"] += (
-                                            np.array(temp_data["p1d_Mpc"])
-                                            * temp_data["mF"] ** 2
-                                        )
                             # import pdb
 
                             # print(p1d_data["p1d_Mpc"][:4])
 
                             # pdb.set_trace()
-                            self.data_all.append(p1d_data)
-
-                if multiple_axes == True:
-                    # average measurements from different axes and phases
-                    mF2 = 0
-                    # ntot = nphases x naxes
-                    ntot = 6
-                    for ind_key in range(len(keys_copy_out)):
-                        if (
-                            (ind_key != "scale_tau")
-                            & (ind_key != "scale_T0")
-                            & (ind_key != "scale_gamma")
-                        ):
-                            pass
-                        else:
-                            key = keys_copy_out[ind_key]
-                            if key == "mF":
-                                mF2 += temp_p1d_data[key] ** 2
-                            # compute average of < F F >, not <delta delta>
-                            if (key == "p1d_Mpc") | (key == "p3d_Mpc"):
-                                temp_p1d_data[key] /= mF2
-                            else:
-                                temp_p1d_data[key_out] /= ntot
-
-                    self.data.append(temp_p1d_data)
+                            self.data.append(p1d_data)
 
         if max_archive_size is not None:
             Ndata = len(self.data)
@@ -403,6 +323,8 @@ class archivePD(object):
             "alpha_p",
             "f_p",
             "z",
+            "phase",
+            "axis",
             "mF",
             "sigT_Mpc",
             "gamma",
@@ -414,36 +336,25 @@ class archivePD(object):
             "p3d_Mpc",
         ]
 
-        if self.multiple_axes == True:
-            n_it = 2
-        else:
-            n_it = 1
-
+        # put measurements in arrays
         _dict = {}
-        for it in range(n_it):
-            if it == 0:
-                _data = self.data
-                flag = ""
+        N = len(self.data)
+        for key in list_keys:
+            if key not in self.data[0]:
+                continue
+            elif (
+                (key != "k_Mpc")
+                & (key != "p1d_Mpc")
+                & (key != "k3_Mpc")
+                & (key != "mu3")
+                & (key != "p3d_Mpc")
+            ):
+                _dict[key] = np.zeros(N)
             else:
-                _data = self.data_all
-                flag = "_all"
+                _dict[key] = np.zeros((N, *self.data[0][key].shape))
 
-            N = len(_data)
-            for key in list_keys:
-                if key not in _data[0]:
-                    continue
-                if (
-                    (key != "k_Mpc")
-                    & (key != "p1d_Mpc")
-                    & (key != "k3_Mpc")
-                    & (key != "mu3")
-                    & (key != "p3d_Mpc")
-                ):
-                    _dict[key + flag] = np.zeros(N)
-                else:
-                    _dict[key + flag] = np.zeros((N, *_data[0][key].shape))
-                for ii in range(N):
-                    _dict[key + flag][ii] = _data[ii][key]
+            for ii in range(N):
+                _dict[key][ii] = self.data[ii][key]
 
         for key in _dict.keys():
             setattr(self, key, _dict[key])
