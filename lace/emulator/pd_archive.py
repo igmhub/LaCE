@@ -255,7 +255,7 @@ class archivePD(object):
                             raise ValueError("different k_Mpc in minus/plus")
 
                         # iterate over phases
-                        for ind_phase in range(2):
+                        for ind_phase in range(self.n_phases):
                             if ind_phase == 0:
                                 temp_data = plus_data["p1d_data"][pp]
                             else:
@@ -384,10 +384,10 @@ class archivePD(object):
             "alpha_p",
             "f_p",
             "z",
-            "T0",
-            "gamma",
-            "sigT_Mpc",
-            "kF_Mpc",
+            # "T0",
+            # "gamma",
+            # "sigT_Mpc",
+            # "kF_Mpc",
             "scale_tau",
             "scale_T0",
             "scale_gamma",
@@ -395,6 +395,10 @@ class archivePD(object):
 
         keys_merge = [
             "mF",
+            "T0",
+            "gamma",
+            "sigT_Mpc",
+            "kF_Mpc",
             "k_Mpc",
             "p1d_Mpc",
             "k3_Mpc",
@@ -471,7 +475,13 @@ class archivePD(object):
                 dict_av[key] = self.data[ind_merge[0]][key]
 
             for key in keys_merge:
-                if key == "mF":
+                if (
+                    (key == "mF")
+                    | (key == "T0")
+                    | (key == "gamma")
+                    | (key == "sigT_Mpc")
+                    | (key == "kF_Mpc")
+                ):
                     mean = 0
                 else:
                     mean = np.zeros_like(self.data[ind_merge[0]][key])
