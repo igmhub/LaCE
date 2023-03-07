@@ -412,18 +412,18 @@ class archivePD(object):
             tot_nsam = self.n_phases * self.n_axes
             loop = list(
                 product(
-                    np.arange(n_sims),
-                    np.arange(n_tau),
-                    np.arange(n_z),
+                    np.unique(self.ind_sim).astype(int),
+                    np.unique(self.ind_tau).astype(int),
+                    np.unique(self.ind_z).astype(int),
                 )
             )
         elif flag == "phases":
             tot_nsam = self.n_phases
             loop = list(
                 product(
-                    np.arange(n_sims),
-                    np.arange(n_tau),
-                    np.arange(n_z),
+                    np.unique(self.ind_sim).astype(int),
+                    np.unique(self.ind_tau).astype(int),
+                    np.unique(self.ind_z).astype(int),
                     np.arange(self.n_axes),
                 )
             )
@@ -431,9 +431,9 @@ class archivePD(object):
             tot_nsam = self.n_axes
             loop = list(
                 product(
-                    np.arange(n_sims),
-                    np.arange(n_tau),
-                    np.arange(n_z),
+                    np.unique(self.ind_sim).astype(int),
+                    np.unique(self.ind_tau).astype(int),
+                    np.unique(self.ind_z).astype(int),
                     np.arange(self.n_phases),
                 )
             )
