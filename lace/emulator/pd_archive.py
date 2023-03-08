@@ -504,6 +504,26 @@ class archivePD(object):
 
         setattr(self, "data_av_" + flag, list_new)
 
+    def input_emulator(self, flag="all"):
+        archive_both = []
+        if flag == "all":
+            for ii in range(len(self.data)):
+                archive_both.append(self.data[ii])
+            for ii in range(len(self.data_av_all)):
+                archive_both.append(self.data_av_all[ii])
+        elif flag == "phases":
+            for ii in range(len(self.data_av_phases)):
+                archive_both.append(self.data_av_phases[ii])
+            for ii in range(len(self.data_av_all)):
+                archive_both.append(self.data_av_all[ii])
+        elif flag == "axes":
+            for ii in range(len(self.data_av_axes)):
+                archive_both.append(self.data_av_axes[ii])
+            for ii in range(len(self.data_av_all)):
+                archive_both.append(self.data_av_all[ii])
+
+        return archive_both
+
     def print_entry(
         self,
         entry,
