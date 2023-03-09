@@ -522,7 +522,7 @@ class archivePD(object):
             for ii in range(len(self.data_av_all)):
                 archive_both.append(self.data_av_all[ii])
 
-        return archive_both
+        setattr(self, "data_input_" + flag, archive_both)
 
     def print_entry(
         self,
