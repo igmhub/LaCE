@@ -5,6 +5,7 @@ import os
 import json
 from itertools import product
 import matplotlib.pyplot as plt
+from lace_manager.setup_simulations import read_gadget
 from lace.setup_simulations import read_genic
 from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
@@ -22,8 +23,8 @@ class archivePD(object):
         undersample_z=1,
         verbose=False,
         no_skewers=False,
-        pick_sim_number=None,
-        drop_sim_number=None,
+        pick_sim=None,
+        drop_sim=None,
         z_max=5.0,
         nsamples=None,
         undersample_cube=1,
@@ -53,7 +54,7 @@ class archivePD(object):
         self.verbose = verbose
         self.z_max = z_max
         self.undersample_cube = undersample_cube
-        self.drop_sim_number = drop_sim_number
+        self.drop_sim = drop_sim
         # pivot point used in linP parameters
         self.kp_Mpc = kp_Mpc
         self.n_phases = n_phases
@@ -68,8 +69,8 @@ class archivePD(object):
             max_archive_size,
             undersample_z,
             no_skewers,
-            pick_sim_number,
-            self.drop_sim_number,
+            pick_sim,
+            self.drop_sim,
             z_max,
             undersample_cube,
             nsamples,
@@ -82,8 +83,8 @@ class archivePD(object):
         max_archive_size,
         undersample_z,
         no_skewers,
-        pick_sim_number,
-        drop_sim_number,
+        pick_sim,
+        drop_sim,
         z_max,
         undersample_cube,
         nsamples=None,
@@ -149,15 +150,19 @@ class archivePD(object):
             # will trigger slow code, could check that kp has indeed changed
             update_kp = True
 
-        if pick_sim_number is not None:
-            start = pick_sim_number
-            self.nsamples = pick_sim_number + 1
+        if pick_sim is not None:
+            if np.issubdtype(type(pick_sim), np.integer):
+                start = pick_sim
+                self.nsamples = pick_sim_number + 1
+            else:
+                start = 0
+                self.nsamples = 1
         else:
             start = 0
 
         # read info from all sims, all snapshots, all rescalings
         for sample in range(start, self.nsamples, undersample_cube):
-            if sample is drop_sim_number:
+            if sample is drop_sim:
                 continue
             # store parameters for simulation pair / model
             sim_params = self.cube_data["samples"]["%d" % sample]
@@ -165,15 +170,48 @@ class archivePD(object):
                 print(sample, "sample has sim params =", sim_params)
 
             # read number of snapshots (should be the same in all sims)
-            pair_dir = self.fulldir + "/sim_pair_%d" % sample
-            pair_json = pair_dir + "/parameter.json"
-            with open(pair_json) as json_file:
-                pair_data = json.load(json_file)
-            zs = pair_data["zs"]
-            Nz = len(zs)
-            if self.verbose:
-                print("simulation has %d redshifts" % Nz)
-                print("undersample_z =", undersample_z)
+            ind_sim = sample
+            if pick_sim is not None:
+                if np.issubdtype(type(pick_sim), np.integer) == False:
+                    if pick_sim == "h":
+                        tag_sample = "sim_pair_h"
+                        ind_sim = 100
+                    elif pick_sim == "nu":
+                        tag_sample = "nu_sim"
+                        ind_sim = 101
+                    else:
+                        raise ValueError("pick_sim must be a number, h or nu")
+            else:
+                tag_sample = "sim_pair_" + str(sample)
+
+            if (tag_sample == "sim_pair_h") | (tag_sample == "nu_sim"):
+                # read zs values
+                pair_dir = self.fulldir + "/" + tag_sample
+                file = pair_dir + "/sim_plus/paramfile.gadget"
+                sim_config = read_gadget.read_gadget_paramfile(file)
+                zs = read_gadget.snapshot_redshifts(sim_config)
+                Nz = len(zs)
+
+                # compute linP_zs parameters
+                # setup cosmology from GenIC file
+                genic_fname = pair_dir + "/sim_plus/paramfile.genic"
+                sim_cosmo_dict = read_genic.camb_from_genic(genic_fname)
+                # setup CAMB object
+                sim_cosmo = camb_cosmo.get_cosmology_from_dictionary(sim_cosmo_dict)
+                # compute linear power parameters at each z (in Mpc units)
+                linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
+                linP_zs = list(linP_zs)
+            else:
+                pair_dir = self.fulldir + "/" + tag_sample
+                pair_json = pair_dir + "/parameter.json"
+                with open(pair_json) as json_file:
+                    pair_data = json.load(json_file)
+                zs = pair_data["zs"]
+                Nz = len(zs)
+                linP_zs = pair_data["linP_zs"]
+                if self.verbose:
+                    print("simulation has %d redshifts" % Nz)
+                    print("undersample_z =", undersample_z)
 
             # overwrite linP parameters stored in parameter.json
             if update_kp:
@@ -187,7 +225,7 @@ class archivePD(object):
                 # compute linear power parameters at each z (in Mpc units)
                 linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
                 print("update linP_zs", linP_zs)
-                pair_data["linP_zs"] = list(linP_zs)
+                linP_zs = list(linP_zs)
             else:
                 if self.verbose:
                     print("Use linP_zs from parameter.json")
@@ -197,7 +235,7 @@ class archivePD(object):
                 if zs[snap] > z_max:
                     continue
                 # get linear power parameters describing snapshot
-                linP_params = pair_data["linP_zs"][snap]
+                linP_params = linP_zs[snap]
                 snap_p1d_data = {}
                 snap_p1d_data["Delta2_p"] = linP_params["Delta2_p"]
                 snap_p1d_data["n_p"] = linP_params["n_p"]
@@ -251,7 +289,7 @@ class archivePD(object):
                             minus_data["p1d_data"][pp]["k_Mpc"],
                         )
                         if _flag == False:
-                            print(sample, snap, pp)
+                            print(tag_sample, snap, pp)
                             raise ValueError("different k_Mpc in minus/plus")
 
                         # iterate over phases
@@ -264,7 +302,7 @@ class archivePD(object):
                             # deep copy of dictionary (thread safe, why not)
                             p1d_data = json.loads(json.dumps(snap_p1d_data))
                             # identify simulation
-                            p1d_data["ind_sim"] = sample
+                            p1d_data["ind_sim"] = ind_sim
                             p1d_data["ind_z"] = snap
                             p1d_data["ind_phase"] = ind_phase
                             p1d_data["ind_axis"] = ind_axis
