@@ -31,6 +31,7 @@ class archivePD(object):
         kp_Mpc=None,
         multiple_axes=True,
         n_phases=2,
+        old_params=True,
     ):
         """Load archive from base sim directory and (optional) label
         identifying skewer configuration (number, width).
@@ -59,6 +60,12 @@ class archivePD(object):
         self.kp_Mpc = kp_Mpc
         self.n_phases = n_phases
         self.multiple_axes = multiple_axes
+        self.old_params = old_params
+
+        if self.old_params == False:
+            self.fulldir_params = self.fulldir
+        else:
+            self.fulldir_params = repo + "/lace/emulator/sim_suites/Australia20/"
 
         if multiple_axes == False:
             self.n_axes = 1
@@ -107,7 +114,6 @@ class archivePD(object):
             "scale_tau",
             "sim_scale_T0",
             "sim_scale_gamma",
-            "p3d_data",
         ]
         keys_copy_out = [
             "mF",
@@ -120,10 +126,12 @@ class archivePD(object):
             "scale_tau",
             "scale_T0",
             "scale_gamma",
-            "k3_Mpc",
-            "mu3",
-            "p3d_Mpc",
         ]
+        if self.basedir != "lace/emulator/sim_suites/Australia20/":
+            keys_copy_in.append("p3d_data")
+            keys_copy_out.append("k3_Mpc")
+            keys_copy_out.append("mu3")
+            keys_copy_out.append("p3d_Mpc")
 
         # read file containing information about latin hyper-cube
         cube_json = self.fulldir + "/latin_hypercube.json"
@@ -186,12 +194,11 @@ class archivePD(object):
 
             if (tag_sample == "sim_pair_h") | (tag_sample == "nu_sim"):
                 # read zs values
-                pair_dir = self.fulldir + "/" + tag_sample
+                pair_dir = self.fulldir_params + "/" + tag_sample
                 file = pair_dir + "/sim_plus/paramfile.gadget"
                 sim_config = read_gadget.read_gadget_paramfile(file)
                 zs = read_gadget.snapshot_redshifts(sim_config)
                 Nz = len(zs)
-
                 # compute linP_zs parameters
                 # setup cosmology from GenIC file
                 genic_fname = pair_dir + "/sim_plus/paramfile.genic"
@@ -202,7 +209,7 @@ class archivePD(object):
                 linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
                 linP_zs = list(linP_zs)
             else:
-                pair_dir = self.fulldir + "/" + tag_sample
+                pair_dir = self.fulldir_params + "/" + tag_sample
                 pair_json = pair_dir + "/parameter.json"
                 with open(pair_json) as json_file:
                     pair_data = json.load(json_file)
@@ -245,39 +252,67 @@ class archivePD(object):
 
                 # make sure that we have skewers for this snapshot (z < zmax)
                 for ind_axis in range(self.n_axes):
-                    temp_skewers_label = (
-                        self.skewers_label + "_axis" + str(ind_axis + 1)
-                    )
+                    if self.basedir == "lace/emulator/sim_suites/Australia20/":
+                        temp_skewers_label = self.skewers_label
+                    else:
+                        temp_skewers_label = (
+                            self.skewers_label + "_axis" + str(ind_axis + 1)
+                        )
 
                     # check if we have extracted skewers yet
                     if no_skewers:
                         self.data.append(snap_p1d_data)
                         continue
 
-                    # open sim_plus
-                    plus_p1d_json = pair_dir + "/sim_plus/{}_{}_{}.json".format(
-                        self.p1d_label, snap, temp_skewers_label
-                    )
-                    if not os.path.isfile(plus_p1d_json):
-                        if self.verbose:
-                            print(plus_p1d_json, "snapshot does not have p1d")
-                        continue
-                    # open file with 1D and 3D power measured in snapshot for sim_plus
-                    with open(plus_p1d_json) as json_file:
-                        plus_data = json.load(json_file)
+                    # we get parameters from Chris' post-processing (ii = 1)
+                    for ii in range(2):
+                        if ii == 0:
+                            pair_dir = self.fulldir + "/" + tag_sample
+                            p1d_label = self.p1d_label
+                            _temp_skewers_label = temp_skewers_label
+                        else:
+                            pair_dir = self.fulldir_params + "/" + tag_sample
+                            if self.old_params == False:
+                                p1d_label = self.p1d_label
+                                _temp_skewers_label = temp_skewers_label
+                            else:
+                                p1d_label = "p1d"
+                                _temp_skewers_label = "Ns500_wM0.05"
 
-                    # open sim_minus
-                    minus_p1d_json = pair_dir + "/sim_minus/{}_{}_{}.json".format(
-                        self.p1d_label, snap, temp_skewers_label
-                    )
-                    if not os.path.isfile(minus_p1d_json):
-                        if self.verbose:
-                            print(minus_p1d_json, "snapshot does not have p1d")
-                        continue
+                        # open sim_plus and sim_minus (P1D + P3D & params)
+                        for jj in range(self.n_phases):
+                            if jj == 0:
+                                _phase = "/sim_plus/"
+                            else:
+                                _phase = "/sim_minus/"
 
-                    # open file with 1D and 3D power measured in snapshot for sim_minus
-                    with open(minus_p1d_json) as json_file:
-                        minus_data = json.load(json_file)
+                            phase_p1d_json = (
+                                pair_dir
+                                + _phase
+                                + p1d_label
+                                + "_"
+                                + str(snap)
+                                + "_"
+                                + _temp_skewers_label
+                                + ".json"
+                            )
+                            # print(phase_p1d_json)
+                            if not os.path.isfile(phase_p1d_json):
+                                if self.verbose:
+                                    print(phase_p1d_json, "snapshot does not have p1d")
+                                continue
+                            # open file with 1D and 3D power measured in snapshot for sim_plus
+                            with open(phase_p1d_json) as json_file:
+                                _data = json.load(json_file)
+
+                            if (ii == 0) & (jj == 0):
+                                plus_data = copy.deepcopy(_data)
+                            elif (ii == 0) & (jj == 1):
+                                minus_data = copy.deepcopy(_data)
+                            elif (ii == 1) & (jj == 0):
+                                plus_param = copy.deepcopy(_data)
+                            elif (ii == 1) & (jj == 1):
+                                minus_param = copy.deepcopy(_data)
 
                     # number of post-process rescalings for each snapshot
                     Npp = len(plus_data["p1d_data"])
@@ -296,8 +331,10 @@ class archivePD(object):
                         for ind_phase in range(self.n_phases):
                             if ind_phase == 0:
                                 temp_data = plus_data["p1d_data"][pp]
+                                temp_param = plus_param["p1d_data"][pp]
                             else:
                                 temp_data = minus_data["p1d_data"][pp]
+                                temp_param = minus_param["p1d_data"][pp]
 
                             # deep copy of dictionary (thread safe, why not)
                             p1d_data = json.loads(json.dumps(snap_p1d_data))
@@ -330,13 +367,11 @@ class archivePD(object):
                                     p1d_data["mu3"] = np.array(
                                         temp_data["p3d_data"]["mu"]
                                     )
-                                else:
+                                elif (key_in == "p1d_Mpc") | (key_in == "k_Mpc"):
                                     p1d_data[key_out] = np.array(temp_data[key_in])
-                            # import pdb
+                                else:
+                                    p1d_data[key_out] = temp_param[key_in]
 
-                            # print(p1d_data["p1d_Mpc"][:4])
-
-                            # pdb.set_trace()
                             self.data.append(p1d_data)
 
         if max_archive_size is not None:
@@ -400,7 +435,16 @@ class archivePD(object):
                 _dict[key] = np.zeros((N, *self.data[0][key].shape))
 
             for ii in range(N):
-                _dict[key][ii] = self.data[ii][key]
+                if (
+                    (key != "k_Mpc")
+                    & (key != "p1d_Mpc")
+                    & (key != "k3_Mpc")
+                    & (key != "mu3")
+                    & (key != "p3d_Mpc")
+                ):
+                    _dict[key][ii] = self.data[ii][key]
+                else:
+                    _dict[key][ii] = self.data[ii][key][: _dict[key][ii].shape[0]]
 
         for key in _dict.keys():
             setattr(self, key, _dict[key])
@@ -422,10 +466,6 @@ class archivePD(object):
             "alpha_p",
             "f_p",
             "z",
-            # "T0",
-            # "gamma",
-            # "sigT_Mpc",
-            # "kF_Mpc",
             "scale_tau",
             "scale_T0",
             "scale_gamma",
@@ -439,10 +479,11 @@ class archivePD(object):
             "kF_Mpc",
             "k_Mpc",
             "p1d_Mpc",
-            "k3_Mpc",
-            "mu3",
-            "p3d_Mpc",
         ]
+        if self.basedir != "lace/emulator/sim_suites/Australia20/":
+            keys_merge.append("k3_Mpc")
+            keys_merge.append("mu3")
+            keys_merge.append("p3d_Mpc")
 
         # get number of simulations, scalings, and redshifts
         n_sims = np.unique(self.ind_sim).shape[0]
