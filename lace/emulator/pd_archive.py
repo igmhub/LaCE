@@ -214,9 +214,11 @@ class archivePD(object):
             else:
                 if sample < 30:
                     pair_dir = self.fulldir_params + "/" + tag_sample
+                    pair_json = pair_dir + "/parameter.json"
                 else:
                     pair_dir = self.fulldir_params + "/" + tag_sample_p
-                pair_json = pair_dir + "/parameter.json"
+                    pair_json = pair_dir + "/parameter_redundant.json"
+
                 with open(pair_json) as json_file:
                     pair_data = json.load(json_file)
                 zs = pair_data["zs"]
