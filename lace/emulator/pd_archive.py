@@ -189,8 +189,11 @@ class archivePD(object):
                         ind_sim = 101
                     else:
                         raise ValueError("pick_sim must be a number, h or nu")
+            elif sample < 30:
+                tag_sample = "sim_pair_" + str(sample)
             else:
                 tag_sample = "sim_pair_" + str(sample)
+                tag_sample_p = "central"
 
             if (tag_sample == "sim_pair_h") | (tag_sample == "nu_sim"):
                 # read zs values
@@ -209,7 +212,10 @@ class archivePD(object):
                 linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
                 linP_zs = list(linP_zs)
             else:
-                pair_dir = self.fulldir_params + "/" + tag_sample
+                if sample < 30:
+                    pair_dir = self.fulldir_params + "/" + tag_sample
+                else:
+                    pair_dir = self.fulldir_params + "/" + tag_sample_p
                 pair_json = pair_dir + "/parameter.json"
                 with open(pair_json) as json_file:
                     pair_data = json.load(json_file)
@@ -276,6 +282,9 @@ class archivePD(object):
                                 p1d_label = self.p1d_label
                                 _temp_skewers_label = temp_skewers_label
                             else:
+                                if sample == 30:
+                                    pair_dir = self.fulldir_params + "/" + tag_sample_p
+
                                 p1d_label = "p1d"
                                 _temp_skewers_label = "Ns500_wM0.05"
 
