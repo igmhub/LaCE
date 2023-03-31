@@ -16,9 +16,7 @@ class archivePD(object):
 
     def __init__(
         self,
-        basedir="/lace/emulator/sim_suites/post_768/",
-        skewers_label="Ns768_wM0.05",
-        p1d_label=None,
+        post_processing="768",
         max_archive_size=None,
         undersample_z=1,
         verbose=False,
@@ -29,9 +27,7 @@ class archivePD(object):
         nsamples=None,
         undersample_cube=1,
         kp_Mpc=None,
-        multiple_axes=True,
-        n_phases=2,
-        old_params=True,
+        params_500=True,
     ):
         """Load archive from base sim directory and (optional) label
         identifying skewer configuration (number, width).
@@ -42,42 +38,47 @@ class archivePD(object):
         assert "LACE_REPO" in os.environ, "export LACE_REPO"
         repo = os.environ["LACE_REPO"] + "/"
 
-        self.basedir = basedir
-        self.fulldir = repo + basedir
-        if p1d_label:
-            self.p1d_label = p1d_label
-        else:
+        self.post_processing = post_processing
+        if post_processing == "500":
+            self.basedir = "/lace/emulator/sim_suites/Australia20/"
+            self.skewers_label = "Ns500_wM0.05"
+            self.skewers_label_p = "Ns500_wM0.05"
             self.p1d_label = "p1d"
-        if skewers_label:
-            self.skewers_label = skewers_label
-        else:
+            self.p1d_label_p = self.p1d_label
+            self.n_phases = 2
+            self.n_axes = 1
+        elif post_processing == "768":
+            self.basedir = "/lace/emulator/sim_suites/post_768/"
             self.skewers_label = "Ns768_wM0.05"
+            self.p1d_label = "p1d_stau"
+            if params_500:
+                self.skewers_label_p = "Ns500_wM0.05"
+                self.p1d_label_p = "p1d"
+            else:
+                self.skewers_label_p = "Ns768_wM0.05"
+                self.p1d_label_p = self.p1d_label
+            self.n_phases = 2
+            self.n_axes = 3
+
+        self.fulldir = repo + self.basedir
         self.verbose = verbose
         self.z_max = z_max
         self.undersample_cube = undersample_cube
-        self.drop_sim = drop_sim
         # pivot point used in linP parameters
         self.kp_Mpc = kp_Mpc
-        self.n_phases = n_phases
-        self.multiple_axes = multiple_axes
-        self.old_params = old_params
+        self.params_500 = params_500
 
-        if self.old_params == False:
+        if self.params_500 == False:
             self.fulldir_params = self.fulldir
         else:
             self.fulldir_params = repo + "/lace/emulator/sim_suites/Australia20/"
-
-        if multiple_axes == False:
-            self.n_axes = 1
-        else:
-            self.n_axes = 3
 
         self._load_data(
             max_archive_size,
             undersample_z,
             no_skewers,
             pick_sim,
-            self.drop_sim,
+            drop_sim,
             z_max,
             undersample_cube,
             nsamples,
@@ -127,7 +128,8 @@ class archivePD(object):
             "scale_T0",
             "scale_gamma",
         ]
-        if self.basedir != "lace/emulator/sim_suites/Australia20/":
+        # we also have P3D data for the 768 post-processing
+        if self.post_processing == "768":
             keys_copy_in.append("p3d_data")
             keys_copy_out.append("k3_Mpc")
             keys_copy_out.append("mu3")
@@ -179,25 +181,45 @@ class archivePD(object):
 
             # read number of snapshots (should be the same in all sims)
             ind_sim = sample
+            # if we want to read an special simulation: h and nu available now
             if pick_sim is not None:
                 if np.issubdtype(type(pick_sim), np.integer) == False:
                     if pick_sim == "h":
                         tag_sample = "sim_pair_h"
+                        tag_sample_p = tag_sample
                         ind_sim = 100
                     elif pick_sim == "nu":
                         tag_sample = "nu_sim"
+                        tag_sample_p = tag_sample
                         ind_sim = 101
+                    elif (pick_sim == "central") | (pick_sim == 30):
+                        if self.post_processing == "768":
+                            tag_sample = "sim_pair_30"
+                            tag_sample_p = "central"
+                        elif self.post_processing == "500":
+                            tag_sample = "central"
+                            tag_sample_p = tag_sample
+                        ind_sim = 30
                     else:
-                        raise ValueError("pick_sim must be a number, h or nu")
-            elif sample < 30:
-                tag_sample = "sim_pair_" + str(sample)
+                        raise ValueError("pick_sim must be a number, h, nu, or central")
             else:
-                tag_sample = "sim_pair_" + str(sample)
-                tag_sample_p = "central"
+                if ind_sim != 30:
+                    tag_sample = "sim_pair_" + str(sample)
+                    tag_sample_p = tag_sample
+                    tag_param = "parameter.json"
+                else:
+                    # only important for 768 post_processing
+                    tag_sample = "sim_pair_" + str(sample)
+                    if self.params_500:
+                        tag_sample_p = "central"
+                        tag_param = "parameter_redundant.json"
+                    else:
+                        tag_sample_p = tag_sample
+                        tag_param = "parameter.json"
 
             if (tag_sample == "sim_pair_h") | (tag_sample == "nu_sim"):
                 # read zs values
-                pair_dir = self.fulldir_params + "/" + tag_sample
+                pair_dir = self.fulldir_params + "/" + tag_sample_p
                 file = pair_dir + "/sim_plus/paramfile.gadget"
                 sim_config = read_gadget.read_gadget_paramfile(file)
                 zs = read_gadget.snapshot_redshifts(sim_config)
@@ -212,12 +234,8 @@ class archivePD(object):
                 linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
                 linP_zs = list(linP_zs)
             else:
-                if sample < 30:
-                    pair_dir = self.fulldir_params + "/" + tag_sample
-                    pair_json = pair_dir + "/parameter.json"
-                else:
-                    pair_dir = self.fulldir_params + "/" + tag_sample_p
-                    pair_json = pair_dir + "/parameter_redundant.json"
+                pair_dir = self.fulldir_params + "/" + tag_sample_p
+                pair_json = pair_dir + "/" + tag_param
 
                 with open(pair_json) as json_file:
                     pair_data = json.load(json_file)
@@ -260,101 +278,113 @@ class archivePD(object):
 
                 # make sure that we have skewers for this snapshot (z < zmax)
                 for ind_axis in range(self.n_axes):
-                    if self.basedir == "lace/emulator/sim_suites/Australia20/":
-                        temp_skewers_label = self.skewers_label
-                    else:
-                        temp_skewers_label = (
-                            self.skewers_label + "_axis" + str(ind_axis + 1)
-                        )
-
                     # check if we have extracted skewers yet
                     if no_skewers:
                         self.data.append(snap_p1d_data)
                         continue
 
-                    # we get parameters from Chris' post-processing (ii = 1)
+                    arr_phase = []
+                    phase_data = []
+                    phase_params = []
+                    # for ii == 0, we extract P1D and P3D measurements
+                    # for ii == 1, we extract cosmology and IGM parameters
                     for ii in range(2):
+                        # extract measurements
                         if ii == 0:
                             pair_dir = self.fulldir + "/" + tag_sample
                             p1d_label = self.p1d_label
-                            _temp_skewers_label = temp_skewers_label
+
+                            if self.post_processing == "500":
+                                _skewers_label = self.skewers_label
+                            else:
+                                _skewers_label = (
+                                    self.skewers_label + "_axis" + str(ind_axis + 1)
+                                )
+                        # extract params
                         else:
-                            pair_dir = self.fulldir_params + "/" + tag_sample
-                            if self.old_params == False:
-                                p1d_label = self.p1d_label
-                                _temp_skewers_label = temp_skewers_label
+                            pair_dir = self.fulldir_params + "/" + tag_sample_p
+                            p1d_label = self.p1d_label_p
+
+                            if self.params_500:
+                                _skewers_label = self.skewers_label_p
                             else:
-                                if sample == 30:
-                                    pair_dir = self.fulldir_params + "/" + tag_sample_p
+                                _skewers_label = (
+                                    self.skewers_label_p + "_axis" + str(ind_axis + 1)
+                                )
 
-                                p1d_label = "p1d"
-                                _temp_skewers_label = "Ns500_wM0.05"
+                        # this is necessary because we have different files with mF scalings
+                        if self.post_processing == 500:
+                            nit = 1
+                        else:
+                            nit = 2
 
-                        # open sim_plus and sim_minus (P1D + P3D & params)
-                        for jj in range(self.n_phases):
-                            if jj == 0:
-                                _phase = "/sim_plus/"
-                            else:
-                                _phase = "/sim_minus/"
+                        for it in range(nit):
+                            # only important for post_processing 768
+                            if (ii == 0) & (it == 1):
+                                p1d_label = "p1d_setau"
+                            # open sim_plus and sim_minus (P1D + P3D & params)
+                            for jj in range(self.n_phases):
+                                if jj == 0:
+                                    _phase = "/sim_plus/"
+                                else:
+                                    _phase = "/sim_minus/"
 
-                            phase_p1d_json = (
-                                pair_dir
-                                + _phase
-                                + p1d_label
-                                + "_"
-                                + str(snap)
-                                + "_"
-                                + _temp_skewers_label
-                                + ".json"
-                            )
-                            # print(phase_p1d_json)
-                            if not os.path.isfile(phase_p1d_json):
-                                if self.verbose:
-                                    print(phase_p1d_json, "snapshot does not have p1d")
-                                continue
-                            # open file with 1D and 3D power measured in snapshot for sim_plus
-                            with open(phase_p1d_json) as json_file:
-                                _data = json.load(json_file)
+                                phase_p1d_json = (
+                                    pair_dir
+                                    + _phase
+                                    + p1d_label
+                                    + "_"
+                                    + str(snap)
+                                    + "_"
+                                    + _skewers_label
+                                    + ".json"
+                                )
+                                # print(phase_p1d_json)
+                                if not os.path.isfile(phase_p1d_json):
+                                    print(phase_p1d_json, "NOT FOUND!")
+                                    continue
+                                    if self.verbose:
+                                        print(
+                                            phase_p1d_json, "snapshot does not have p1d"
+                                        )
+                                    continue
+                                # open file with 1D and 3D power measured in snapshot for sim_plus
+                                with open(phase_p1d_json) as json_file:
+                                    _data = json.load(json_file)
 
-                            if (ii == 0) & (jj == 0):
-                                plus_data = copy.deepcopy(_data)
-                            elif (ii == 0) & (jj == 1):
-                                minus_data = copy.deepcopy(_data)
-                            elif (ii == 1) & (jj == 0):
-                                plus_param = copy.deepcopy(_data)
-                            elif (ii == 1) & (jj == 1):
-                                minus_param = copy.deepcopy(_data)
+                                if ii == 0:
+                                    phase_data.append(_data)
+                                    arr_phase.append(jj)
+                                else:
+                                    phase_params.append(_data)
 
-                    # number of post-process rescalings for each snapshot
-                    Npp = len(plus_data["p1d_data"])
-                    # read info for each post-process
-                    for pp in range(Npp):
-                        # check if both phases use the same kbins
-                        _flag = np.allclose(
-                            plus_data["p1d_data"][pp]["k_Mpc"],
-                            minus_data["p1d_data"][pp]["k_Mpc"],
-                        )
-                        if _flag == False:
-                            print(tag_sample, snap, pp)
-                            raise ValueError("different k_Mpc in minus/plus")
+                    # total number of scalings
+                    # n_scalings_tot = 0
+                    # for ii in range(0, n_phases, 2):
+                    #     n_scalings_tot += len(phase_data[ind_phase]["p1d_data"])
 
-                        # iterate over phases
-                        for ind_phase in range(self.n_phases):
-                            if ind_phase == 0:
-                                temp_data = plus_data["p1d_data"][pp]
-                                temp_param = plus_param["p1d_data"][pp]
-                            else:
-                                temp_data = minus_data["p1d_data"][pp]
-                                temp_param = minus_param["p1d_data"][pp]
+                    # iterate over phases
+                    n_phases = len(phase_data)
+                    for ind_phase in range(n_phases):
+                        # iterate over scalings
+                        n_scalings = len(phase_data[ind_phase]["p1d_data"])
+                        if ind_phase < 2:
+                            ind_scaling = 0
+                        else:
+                            ind_scaling = len(phase_data[0]["p1d_data"])
+
+                        for pp in range(n_scalings):
+                            temp_data = phase_data[ind_phase]["p1d_data"][pp]
+                            temp_param = phase_params[ind_phase]["p1d_data"][pp]
 
                             # deep copy of dictionary (thread safe, why not)
                             p1d_data = json.loads(json.dumps(snap_p1d_data))
                             # identify simulation
                             p1d_data["ind_sim"] = ind_sim
                             p1d_data["ind_z"] = snap
-                            p1d_data["ind_phase"] = ind_phase
+                            p1d_data["ind_phase"] = arr_phase[ind_phase]
                             p1d_data["ind_axis"] = ind_axis
-                            p1d_data["ind_tau"] = pp
+                            p1d_data["ind_tau"] = ind_scaling + pp
 
                             # iterate over properties
                             for ind_key in range(len(keys_copy_in)):
