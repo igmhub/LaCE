@@ -163,7 +163,7 @@ class archivePD(object):
         if pick_sim is not None:
             if np.issubdtype(type(pick_sim), np.integer):
                 start = pick_sim
-                self.nsamples = pick_sim_number + 1
+                self.nsamples = pick_sim + 1
             else:
                 start = 0
                 self.nsamples = 1
@@ -185,29 +185,51 @@ class archivePD(object):
             if pick_sim is not None:
                 if np.issubdtype(type(pick_sim), np.integer) == False:
                     if pick_sim == "h":
-                        tag_sample = "sim_pair_h"
-                        tag_sample_p = tag_sample
+                        if self.post_processing == "768":
+                            tag_sample = "sim_pair_h"
+                        else:
+                            tag_sample = "h_sim"
+                        if self.params_500:
+                            tag_sample_p = "h_sim"
+                        else:
+                            tag_sample_p = tag_sample
                         ind_sim = 100
                     elif pick_sim == "nu":
                         tag_sample = "nu_sim"
                         tag_sample_p = tag_sample
                         ind_sim = 101
-                    elif (pick_sim == "central") | (pick_sim == 30):
+                    elif pick_sim == "central":
                         if self.post_processing == "768":
                             tag_sample = "sim_pair_30"
-                            tag_sample_p = "central"
-                        elif self.post_processing == "500":
+                        else:
                             tag_sample = "central"
+                        if self.params_500:
+                            tag_sample_p = "central"
+                            tag_param = "parameter_redundant.json"
+                        else:
                             tag_sample_p = tag_sample
+                            tag_param = "parameter.json"
                         ind_sim = 30
+                elif np.issubdtype(type(pick_sim), np.integer) == True:
+                    if pick_sim == 30:
+                        if self.post_processing == "768":
+                            tag_sample = "sim_pair_30"
+                        else:
+                            tag_sample = "central"
+                        if self.params_500:
+                            tag_sample_p = "central"
+                            tag_param = "parameter_redundant.json"
+                        else:
+                            tag_sample_p = tag_sample
+                            tag_param = "parameter.json"
                     else:
-                        raise ValueError("pick_sim must be a number, h, nu, or central")
-            else:
-                if ind_sim != 30:
-                    tag_sample = "sim_pair_" + str(sample)
-                    tag_sample_p = tag_sample
-                    tag_param = "parameter.json"
+                        tag_sample = "sim_pair_" + str(pick_sim)
+                        tag_sample_p = tag_sample
+                        tag_param = "parameter.json"
                 else:
+                    raise ValueError("pick_sim must be a number, h, nu, or central")
+            else:
+                if ind_sim == 30:
                     # only important for 768 post_processing
                     tag_sample = "sim_pair_" + str(sample)
                     if self.params_500:
@@ -216,8 +238,12 @@ class archivePD(object):
                     else:
                         tag_sample_p = tag_sample
                         tag_param = "parameter.json"
+                else:
+                    tag_sample = "sim_pair_" + str(sample)
+                    tag_sample_p = tag_sample
+                    tag_param = "parameter.json"
 
-            if (tag_sample == "sim_pair_h") | (tag_sample == "nu_sim"):
+            if (pick_sim == "h") | (pick_sim == "nu"):
                 # read zs values
                 pair_dir = self.fulldir_params + "/" + tag_sample_p
                 file = pair_dir + "/sim_plus/paramfile.gadget"
@@ -313,7 +339,7 @@ class archivePD(object):
                                 )
 
                         # this is necessary because we have different files with mF scalings
-                        if self.post_processing == 500:
+                        if self.post_processing == "500":
                             nit = 1
                         else:
                             nit = 2
@@ -341,7 +367,6 @@ class archivePD(object):
                                 )
                                 # print(phase_p1d_json)
                                 if not os.path.isfile(phase_p1d_json):
-                                    print(phase_p1d_json, "NOT FOUND!")
                                     continue
                                     if self.verbose:
                                         print(
@@ -521,7 +546,7 @@ class archivePD(object):
             "k_Mpc",
             "p1d_Mpc",
         ]
-        if self.basedir != "lace/emulator/sim_suites/Australia20/":
+        if self.post_processing == "768":
             keys_merge.append("k3_Mpc")
             keys_merge.append("mu3")
             keys_merge.append("p3d_Mpc")
