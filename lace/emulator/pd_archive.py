@@ -174,6 +174,8 @@ class archivePD(object):
         for sample in range(start, self.nsamples, undersample_cube):
             if sample is drop_sim:
                 continue
+            elif (sample == 30) & (drop_sim is "central"):
+                continue
             # store parameters for simulation pair / model
             sim_params = self.cube_data["samples"]["%d" % sample]
             if self.verbose:
