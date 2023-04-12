@@ -309,14 +309,17 @@ class archivePD(object):
                         self.data.append(snap_p1d_data)
                         continue
 
+                    # we iterate now to extract data from P1D
+                    # we need to iterate twice because we may want to extract
+                    # gamma and T0 from old post-processing
                     arr_phase = []
                     phase_data = []
                     phase_params = []
-                    # for ii == 0, we extract P1D and P3D measurements
-                    # for ii == 1, we extract cosmology and IGM parameters
-                    for ii in range(2):
+                    # for _ind_save == 0, we extract P1D and P3D measurements
+                    # for _ind_save == 1, we extract cosmology and IGM parameters
+                    for _ind_save in range(2):
                         # extract measurements
-                        if ii == 0:
+                        if _ind_save == 0:
                             pair_dir = self.fulldir + "/" + tag_sample
                             p1d_label = self.p1d_label
 
@@ -338,19 +341,21 @@ class archivePD(object):
                                     self.skewers_label_p + "_axis" + str(ind_axis + 1)
                                 )
 
-                        # this is necessary because we have different files with mF scalings
-                        if self.post_processing == "500":
-                            nit = 1
-                        else:
+                        # the following loop is necessary because we have
+                        # different number of files with mF scalings for each
+                        # post-processing
+                        if (_ind_save == 0) & (self.post_processing == "768"):
                             nit = 2
+                        else:
+                            nit = 1
 
                         for it in range(nit):
                             # only important for post_processing 768
-                            if (ii == 0) & (it == 1):
+                            if (_ind_save == 0) & (it == 1):
                                 p1d_label = "p1d_setau"
                             # open sim_plus and sim_minus (P1D + P3D & params)
-                            for jj in range(self.n_phases):
-                                if jj == 0:
+                            for _ind_phase in range(self.n_phases):
+                                if _ind_phase == 0:
                                     _phase = "/sim_plus/"
                                 else:
                                     _phase = "/sim_minus/"
@@ -365,9 +370,8 @@ class archivePD(object):
                                     + _skewers_label
                                     + ".json"
                                 )
-                                # print(phase_p1d_json)
+
                                 if not os.path.isfile(phase_p1d_json):
-                                    continue
                                     if self.verbose:
                                         print(
                                             phase_p1d_json, "snapshot does not have p1d"
@@ -377,18 +381,32 @@ class archivePD(object):
                                 with open(phase_p1d_json) as json_file:
                                     _data = json.load(json_file)
 
-                                if ii == 0:
+                                # print(
+                                #     _ind_save,
+                                #     it,
+                                #     _ind_phase,
+                                #     phase_p1d_json,
+                                #     len(_data["p1d_data"]),
+                                # )
+
+                                if _ind_save == 0:
                                     phase_data.append(_data)
-                                    arr_phase.append(jj)
+                                    arr_phase.append(_ind_phase)
                                 else:
                                     phase_params.append(_data)
 
                     # total number of scalings
-                    # n_scalings_tot = 0
-                    # for ii in range(0, n_phases, 2):
-                    #     n_scalings_tot += len(phase_data[ind_phase]["p1d_data"])
+                    # n_scalings_tot0 = 0
+                    # n_scalings_tot1 = 0
+                    # print(len(phase_data))
+                    # print(len(phase_params))
+                    # for ind_phase in range(0, len(phase_data), 2):
+                    #     n_scalings_tot0 += len(phase_data[ind_phase]["p1d_data"])
+                    # for ind_phase in range(len(phase_params)):
+                    #     n_scalings_tot1 += len(phase_params[ind_phase]["p1d_data"])
+                    # print(n_scalings_tot0, n_scalings_tot1)
 
-                    # iterate over phases
+                    # iterate over phase_data
                     n_phases = len(phase_data)
                     for ind_phase in range(n_phases):
                         # iterate over scalings
@@ -400,14 +418,15 @@ class archivePD(object):
 
                         for pp in range(n_scalings):
                             temp_data = phase_data[ind_phase]["p1d_data"][pp]
-                            temp_param = phase_params[ind_phase]["p1d_data"][pp]
+                            _ind_phase = arr_phase[ind_phase]
+                            temp_param = phase_params[_ind_phase]["p1d_data"][0]
 
                             # deep copy of dictionary (thread safe, why not)
                             p1d_data = json.loads(json.dumps(snap_p1d_data))
                             # identify simulation
                             p1d_data["ind_sim"] = ind_sim
                             p1d_data["ind_z"] = snap
-                            p1d_data["ind_phase"] = arr_phase[ind_phase]
+                            p1d_data["ind_phase"] = _ind_phase
                             p1d_data["ind_axis"] = ind_axis
                             p1d_data["ind_tau"] = ind_scaling + pp
 
@@ -419,6 +438,7 @@ class archivePD(object):
                                     (key_in == "sim_scale_T0")
                                     | (key_in == "sim_scale_gamma")
                                     | (key_in == "sim_scale_tau")
+                                    | (key_in == "mF")
                                 ):
                                     if key_in in temp_data:
                                         p1d_data[key_out] = temp_data[key_in]
