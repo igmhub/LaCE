@@ -317,6 +317,7 @@ class archivePD(object):
                     arr_phase = []
                     phase_data = []
                     phase_params = []
+                    # explanation
                     # for _ind_save == 0, we extract P1D and P3D measurements
                     # for _ind_save == 1, we extract cosmology and IGM parameters
                     for _ind_save in range(2):
@@ -383,30 +384,11 @@ class archivePD(object):
                                 with open(phase_p1d_json) as json_file:
                                     _data = json.load(json_file)
 
-                                # print(
-                                #     _ind_save,
-                                #     it,
-                                #     _ind_phase,
-                                #     phase_p1d_json,
-                                #     len(_data["p1d_data"]),
-                                # )
-
                                 if _ind_save == 0:
                                     phase_data.append(_data)
                                     arr_phase.append(_ind_phase)
                                 else:
                                     phase_params.append(_data)
-
-                    # total number of scalings
-                    # n_scalings_tot0 = 0
-                    # n_scalings_tot1 = 0
-                    # print(len(phase_data))
-                    # print(len(phase_params))
-                    # for ind_phase in range(0, len(phase_data), 2):
-                    #     n_scalings_tot0 += len(phase_data[ind_phase]["p1d_data"])
-                    # for ind_phase in range(len(phase_params)):
-                    #     n_scalings_tot1 += len(phase_params[ind_phase]["p1d_data"])
-                    # print(n_scalings_tot0, n_scalings_tot1)
 
                     # iterate over phase_data
                     n_phases = len(phase_data)
@@ -439,7 +421,7 @@ class archivePD(object):
                                 if (
                                     (key_in == "sim_scale_T0")
                                     | (key_in == "sim_scale_gamma")
-                                    | (key_in == "sim_scale_tau")
+                                    | (key_in == "scale_tau")
                                     | (key_in == "mF")
                                 ):
                                     if key_in in temp_data:
