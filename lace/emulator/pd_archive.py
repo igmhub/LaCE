@@ -35,6 +35,39 @@ class archivePD(object):
 
         # SHOULD UPDATE DOCSTRING WITH ALL THESE ARGUMENTS
 
+        option_list = [
+            "h",
+            "nu",
+            "central",
+            "diffseed",
+            "curved",
+            "diffigm",
+            "running",
+        ]
+        for ii in range(31):
+            option_list.append(ii)
+        option_list = np.array(option_list)
+
+        # check if simulations pick_sim and drop_sim available
+        if pick_sim is not None:
+            if np.any(option_list == pick_sim) == False:
+                print(
+                    "The simulation "
+                    + str(pick_sim)
+                    + " is not available. Simulations available:"
+                )
+                print(option_list)
+                raise ValueError("Simulation pick_sim not available")
+        if drop_sim is not None:
+            if np.any(option_list == drop_sim) == False:
+                print(
+                    "The simulation "
+                    + str(drop_sim)
+                    + " is not available. Simulations available:"
+                )
+                print(option_list)
+                raise ValueError("Simulation drop_sim not available")
+
         assert "LACE_REPO" in os.environ, "export LACE_REPO"
         repo = os.environ["LACE_REPO"] + "/"
 
@@ -210,6 +243,30 @@ class archivePD(object):
                         else:
                             tag_sample_p = tag_sample
                         ind_sim = 102
+                    elif pick_sim == "curved":
+                        tag_sample = "curved_003"
+                        tag_sample_p = tag_sample
+                        ind_sim = 103
+                    elif pick_sim == "diffigm":
+                        if self.post_processing == "768":
+                            tag_sample = "P18"
+                        else:
+                            tag_sample = "P18_sim"
+                        if self.params_500:
+                            tag_sample_p = "P18_sim"
+                        else:
+                            tag_sample_p = tag_sample
+                        ind_sim = 104
+                    elif pick_sim == "running":
+                        if self.post_processing == "768":
+                            tag_sample = "running"
+                        else:
+                            tag_sample = "running_sim"
+                        if self.params_500:
+                            tag_sample_p = "running_sim"
+                        else:
+                            tag_sample_p = tag_sample
+                        ind_sim = 105
                     elif pick_sim == "central":
                         if self.post_processing == "768":
                             tag_sample = "sim_pair_30"
@@ -255,7 +312,14 @@ class archivePD(object):
                     tag_sample_p = tag_sample
                     tag_param = "parameter.json"
 
-            if (pick_sim == "h") | (pick_sim == "nu") | (pick_sim == "diffseed"):
+            if (
+                (pick_sim == "h")
+                | (pick_sim == "nu")
+                | (pick_sim == "diffseed")
+                | (pick_sim == "diffigm")
+                | (pick_sim == "running")
+                | (pick_sim == "curved")
+            ):
                 # read zs values
                 pair_dir = self.fulldir_params + "/" + tag_sample_p
                 file = pair_dir + "/sim_plus/paramfile.gadget"
