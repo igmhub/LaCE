@@ -200,6 +200,16 @@ class archivePD(object):
                         tag_sample = "nu_sim"
                         tag_sample_p = tag_sample
                         ind_sim = 101
+                    elif pick_sim == "diffseed":
+                        if self.post_processing == "768":
+                            tag_sample = "diffSeed"
+                        else:
+                            tag_sample = "diffSeed_sim"
+                        if self.params_500:
+                            tag_sample_p = "diffSeed_sim"
+                        else:
+                            tag_sample_p = tag_sample
+                        ind_sim = 102
                     elif pick_sim == "central":
                         if self.post_processing == "768":
                             tag_sample = "sim_pair_30"
@@ -245,7 +255,7 @@ class archivePD(object):
                     tag_sample_p = tag_sample
                     tag_param = "parameter.json"
 
-            if (pick_sim == "h") | (pick_sim == "nu"):
+            if (pick_sim == "h") | (pick_sim == "nu") | (pick_sim == "diffseed"):
                 # read zs values
                 pair_dir = self.fulldir_params + "/" + tag_sample_p
                 file = pair_dir + "/sim_plus/paramfile.gadget"
