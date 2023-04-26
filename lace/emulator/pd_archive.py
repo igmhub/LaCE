@@ -35,38 +35,38 @@ class archivePD(object):
 
         # SHOULD UPDATE DOCSTRING WITH ALL THESE ARGUMENTS
 
-        option_list = [
-            "h",
-            "nu",
-            "central",
-            "diffseed",
-            "curved",
-            "diffigm",
-            "running",
-        ]
-        for ii in range(31):
-            option_list.append(ii)
-        option_list = np.array(option_list)
+        # option_list = [
+        #     "h",
+        #     "nu",
+        #     "central",
+        #     "diffseed",
+        #     "curved",
+        #     "diffigm",
+        #     "running",
+        # ]
+        # for ii in range(31):
+        #     option_list.append(ii)
+        # option_list = np.array(option_list)
 
-        # check if simulations pick_sim and drop_sim available
-        if pick_sim is not None:
-            if np.any(option_list == pick_sim) == False:
-                print(
-                    "The simulation "
-                    + str(pick_sim)
-                    + " is not available. Simulations available:"
-                )
-                print(option_list)
-                raise ValueError("Simulation pick_sim not available")
-        if drop_sim is not None:
-            if np.any(option_list == drop_sim) == False:
-                print(
-                    "The simulation "
-                    + str(drop_sim)
-                    + " is not available. Simulations available:"
-                )
-                print(option_list)
-                raise ValueError("Simulation drop_sim not available")
+        # # check if simulations pick_sim and drop_sim available
+        # if pick_sim is not None:
+        #     if np.any(option_list == pick_sim) == False:
+        #         print(
+        #             "The simulation "
+        #             + str(pick_sim)
+        #             + " is not available. Simulations available:"
+        #         )
+        #         print(option_list)
+        #         raise ValueError("Simulation pick_sim not available")
+        # if drop_sim is not None:
+        #     if np.any(option_list == drop_sim) == False:
+        #         print(
+        #             "The simulation "
+        #             + str(drop_sim)
+        #             + " is not available. Simulations available:"
+        #         )
+        #         print(option_list)
+        #         raise ValueError("Simulation drop_sim not available")
 
         assert "LACE_REPO" in os.environ, "export LACE_REPO"
         repo = os.environ["LACE_REPO"] + "/"
