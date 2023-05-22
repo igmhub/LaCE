@@ -8,6 +8,8 @@ import time
 from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
 from lace.emulator import p1d_archive
+from lace.emulator import pd_archive
+
 from lace.emulator import poly_p1d
 
 class GPEmulator:
@@ -22,7 +24,7 @@ class GPEmulator:
                 max_archive_size=None,verbose=False,kmax_Mpc=10.0,
                 paramList=None,train=True,drop_tau_rescalings=True,
                 drop_temp_rescalings=True,keep_every_other_rescaling=False,
-                undersample_z=1,emu_type="k_bin",z_max=5,z_list=None,
+                undersample_z=1,emu_type="polyfit",z_max=4.5,z_list=None,
                 passarchive=None,set_noise_var=1e-3,asymmetric_kernel=True,
                 check_hull=False,set_hyperparams=None,
                 paramLimits=None,rbf_only=True,
@@ -30,7 +32,8 @@ class GPEmulator:
                 reduce_var_k=False,
                 reduce_var_z=False,
                 reduce_var_mf=False,
-                key_data='data'):
+                ndeg=5,
+                key_data='data_av_all', postprocessing='768', drop_sim=None):
 
         self.kmax_Mpc=kmax_Mpc
         self.basedir=basedir
@@ -45,6 +48,7 @@ class GPEmulator:
         self.asymmetric_kernel=asymmetric_kernel
         self.z_max=z_max
         self.paramLimits=paramLimits
+        self.postprocessing=postprocessing
         self.crossval=False ## Flag to check whether or not a prediction is
                             ## inside the training set
         self.rbf_only=rbf_only
@@ -53,16 +57,35 @@ class GPEmulator:
         self.reduce_var_z=reduce_var_z ## Emulate P1D(k)/(1+z)^3.8
         self.reduce_var_mf=reduce_var_mf ## Emulate P1D(k)*<F>^2.5
         self.key_data=key_data
+        self.ndeg=ndeg
 
         # read all files with P1D measured in simulation suite
         if passarchive==None:
             self.custom_archive=False
-            self.archive=p1d_archive.archiveP1D(basedir,p1d_label,skewers_label,
+            if self.postprocessing=='500':
+                self.archive=p1d_archive.archiveP1D(basedir,p1d_label,skewers_label,
                         max_archive_size=self.max_archive_size,verbose=verbose,
                         drop_tau_rescalings=drop_tau_rescalings,
                         drop_temp_rescalings=drop_temp_rescalings,z_max=self.z_max,
                         keep_every_other_rescaling=keep_every_other_rescaling,
                         undersample_z=undersample_z)
+                
+            elif self.postprocessing=='768':
+                archive=pd_archive.archivePD(z_max=4.5,nsamples=30, drop_sim=drop_sim)
+                
+                archive.average_over_samples(flag="all")
+                archive.average_over_samples(flag="phases")
+                archive.average_over_samples(flag="axes")
+                archive.input_emulator(flag="all")
+                archive.input_emulator(flag="phases")
+                archive.input_emulator(flag="axes")
+                if drop_tau_rescalings==True:
+                    archive.data_av_all = [d for d in archive.data_av_all if d['scale_tau'] == 1] 
+                self.archive=archive
+                
+            else:
+                raise('Available archives are "500" and "768"')
+                
         else:
             self.custom_archive=True
             if self.verbose:
@@ -72,6 +95,7 @@ class GPEmulator:
         ## Find max k bin
         self.k_bin=np.max(np.where(getattr(self.archive, self.key_data)[0]["k_Mpc"]<self.kmax_Mpc))+1
         self.training_k_bins=getattr(self.archive, self.key_data)[0]["k_Mpc"][1:self.k_bin]
+        
         ## If none, take all parameters
         if paramList==None:
         	self.paramList=['mF', 'sigT_Mpc', 'gamma', 'kF_Mpc', 'Delta2_p', 'n_p']
@@ -114,8 +138,8 @@ class GPEmulator:
         ''' Method to get the Y training points in the form of polyfit 
         coefficients '''
 
-        self._fit_p1d_in_archive(4,self.kmax_Mpc)
-        coeffs=np.empty([len(getattr(self.archive, self.key_data)),5]) ## Hardcoded to use 4th degree polynomial
+        self._fit_p1d_in_archive(self.ndeg,self.kmax_Mpc)
+        coeffs=np.empty([len(getattr(self.archive, self.key_data)),self.ndeg+1]) ## Hardcoded to use 4th degree polynomial
         for aa in range(len(getattr(self.archive, self.key_data))):
             coeffs[aa]=getattr(self.archive, self.key_data)[aa]['fit_p1d'] ## Collect P1D data for all k bins
 
