@@ -42,7 +42,7 @@ class NNEmulator:
         train (bool): Wheather to train the emulator or not. Default True. If False, a model path must is required.
     """
     
-    def __init__(self, paramList, kmax_Mpc=4, zmax=4.5, ndeg=5, nepochs=100,step_size=75, postprocessing='768', Nsim=30, train=True, list_archives=['data'], initial_weights_path=None,drop_sim=None, drop_z=None, pick_z=None, save_path=None, drop_rescalings=False, model_path=None):
+    def __init__(self, paramList, kmax_Mpc=4, zmax=4.5, ndeg=5, nepochs=100,step_size=75, postprocessing='768', Nsim=30, train=True, list_archives=['data'], initial_weights=True,drop_sim=None, drop_z=None, pick_z=None, save_path=None, drop_rescalings=False, model_path=None):
         
         self.emuparams = paramList
         self.zmax = zmax
@@ -61,8 +61,14 @@ class NNEmulator:
         self.Nsim = Nsim
         self.device= torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.save_path=save_path
-        self.initial_weights_path=initial_weights_path
-
+        
+        self.initial_weights=initial_weights
+        if initial_weights==True:
+            if self.kmax_Mpc == 4:
+                self.initial_weights_path='./initial_params/initial_weights.pt'
+            if self.kmax_Mpc == 8:
+                self.initial_weights_path='./initial_params/initial_weights_extended.pt'
+                
         self.key_list=list_archives
         
         if train==True:
@@ -292,8 +298,8 @@ class NNEmulator:
         self.log_KMpc=log_KMpc_train
 
         self.emulator = nn_architecture.MDNemulator_polyfit(nhidden=5, ndeg=self.ndeg)
-        if self.initial_weights_path!=None:
-            initial_weights = torch.load(elf.initial_weights_path, map_location='cpu')
+        if self.initial_weights=True:
+            initial_weights = torch.load(self.initial_weights_path, map_location='cpu')
             self.emulator.load_state_dict(initial_weights)
             
 
