@@ -2,3 +2,5 @@ build/*
 dist/*
 notebooks/.ipynb_checkpoints/
 lace.egg-info/
+/nfs/pic.es/user/l/lcabayol/DESI/LaCE/lace/emulator/NNmodels/*
+/nfs/pic.es/user/l/lcabayol/DESI/LaCE/lace/emulator/NNmodels_extended/*
