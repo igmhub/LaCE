@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import time 
-
+import sys
 import sklearn
 
 # LaCE modules
@@ -14,14 +14,15 @@ from lace.cosmo import fit_linP
 from lace.emulator import poly_p1d
 
 
+
 import torch
 from torch.utils.data import DataLoader, dataset, TensorDataset
 from torch import nn, optim
 from torch.optim import lr_scheduler
 
 from lace.emulator import nn_architecture
-
 cosmo_fid=camb_cosmo.get_cosmology()
+sys.path.append('emulator.py')
 
 class NNEmulator:
     """A class for training an emulator.
@@ -62,12 +63,19 @@ class NNEmulator:
         self.device= torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.save_path=save_path
         
+        
+        self.module_path = '../lace/emulator/'
+        
+        
         self.initial_weights=initial_weights
+        
         if initial_weights==True:
+            dir_path = os.path.join(self.module_path, 'initial_params')
+            
             if self.kmax_Mpc == 4:
-                self.initial_weights_path='./initial_params/initial_weights.pt'
+                self.initial_weights_path=os.path.join(dir_path,'initial_weights.pt')
             if self.kmax_Mpc == 8:
-                self.initial_weights_path='./initial_params/initial_weights_extended.pt'
+                self.initial_weights_path=os.path.join(dir_path,'initial_weights_extended.pt')
                 
         self.key_list=list_archives
         
@@ -80,7 +88,8 @@ class NNEmulator:
                 raise Exception("If train==False, model path is required.")
                 
             else:
-                initial_weights = torch.load(self.model_path, map_location='cpu') 
+                
+                initial_weights = torch.load(os.path.join(self.module_path,self.model_path), map_location='cpu') 
                 self.emulator = nn_architecture.MDNemulator_polyfit(nhidden=5, ndeg=self.ndeg)
                 self.emulator.load_state_dict(initial_weights)
                 self.emulator.to(self.device)
@@ -88,7 +97,10 @@ class NNEmulator:
                 
                 self.k_Mpc, self.Nz, self.k_bin, kMpc_train = self._obtain_sim_params()
 
-                self.log_KMpc=log_KMpc_train
+                self.log_KMpc = torch.log10(kMpc_train).to(self.device) 
+                self._obtain_paramLims()
+                
+        
 
                 
                 return
@@ -135,6 +147,12 @@ class NNEmulator:
  
         paramlims = np.concatenate((data.min(0).reshape(len(data.min(0)), 1), data.max(0).reshape(len(data.max(0)), 1)), 1)
         self.paramLims = paramlims  
+        
+
+        training_label = [{key: value for key, value in getattr(sim_all, 'data')[i].items() if key in ['p1d_Mpc']} for i in range(len(getattr(sim_all, 'data')))]
+        training_label = [list(training_label[i].values())[0][1:(self.k_bin+1)].tolist() for i in range(len(getattr(sim_all, 'data')))]
+        training_label = np.array(training_label)
+        self.yscalings = np.median(training_label)     
 
     def _obtain_sim_params(self):
         """
@@ -298,7 +316,7 @@ class NNEmulator:
         self.log_KMpc=log_KMpc_train
 
         self.emulator = nn_architecture.MDNemulator_polyfit(nhidden=5, ndeg=self.ndeg)
-        if self.initial_weights=True:
+        if self.initial_weights==True:
             initial_weights = torch.load(self.initial_weights_path, map_location='cpu')
             self.emulator.load_state_dict(initial_weights)
             
