@@ -21,7 +21,7 @@ class GPEmulator:
     """
     def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
                 p1d_label=None,skewers_label=None,
-                max_archive_size=None,verbose=False,kmax_Mpc=10.0,
+                max_archive_size=None,verbose=False,kmax_Mpc=4.0,
                 paramList=None,train=True,drop_tau_rescalings=True,
                 drop_temp_rescalings=True,keep_every_other_rescaling=False,
                 undersample_z=1,emu_type="polyfit",z_max=4.5,z_list=None,
@@ -33,7 +33,7 @@ class GPEmulator:
                 reduce_var_z=False,
                 reduce_var_mf=False,
                 ndeg=5,
-                key_data='data_av_all', postprocessing='768', drop_sim=None):
+                key_data=None, postprocessing='768', drop_sim=None):
 
         self.kmax_Mpc=kmax_Mpc
         self.basedir=basedir
@@ -56,7 +56,10 @@ class GPEmulator:
         self.reduce_var_k=reduce_var_k ## Emulate (1+k)P1D(k)
         self.reduce_var_z=reduce_var_z ## Emulate P1D(k)/(1+z)^3.8
         self.reduce_var_mf=reduce_var_mf ## Emulate P1D(k)*<F>^2.5
-        self.key_data=key_data
+        if self.postprocessing=='768':
+            self.key_data='data_av_all'
+        elif self.postprocessing=='500':
+            self.key_data='data'
         self.ndeg=ndeg
 
         # read all files with P1D measured in simulation suite
