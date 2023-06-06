@@ -1,9 +1,7 @@
 import sys
 from lace.emulator import gp_emulator
-
-#from lace.emulator import nn_emulator
-sys.path.append('nn_emulator.py')
-from nn_emulator import NNEmulator
+sys.path.append('emulator.py')
+from lace.emulator import nn_emulator
 
 
 class P1Demulator:
@@ -47,7 +45,7 @@ class P1Demulator:
 
         if self.emu_algorithm == 'NN':
             # If emu_algorithm is 'NN', create an instance of NNEmulator and assign it to the emulator attribute
-            self.emulator = NNEmulator(
+            self.emulator = nn_emulator.NNEmulator(
                 paramList=paramList,
                 kmax_Mpc=4,
                 zmax=4.5,
