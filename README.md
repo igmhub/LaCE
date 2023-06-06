@@ -28,6 +28,8 @@ The following modules are required:
 
 `classylss` (not at this point, I think)
 
+`pytorch'
+
 ### Installation at NERSC
 
 (Instructions by Andreu Font-Ribera on March 21st 2022)
@@ -94,5 +96,24 @@ The current version of the emulator, relased in this repo, does not emulate `alp
 
 ## Saving and loading emulator hyperparameters
 
-The default operation of the emulator is currently to optimise a new set of hyperparameters on whichever training set it is initialised with. However, one can also run with the `train=False` flag, and use GPEmulator.load_default(). This will load a standardised set of hyperparameters (along with the appropriate parameter rescalings for the X training data) that are optimised on the entire suite.
+The current version of LaCE consists in two emulators, a GP and a NN. It is possible to work on both independently, e.g:
+
+- Train the NN from scratch from predefined weights and save it in a specified path: 
+emulator = NNEmulator(emuparams,list_archives=['data_input_axes','data_input_phases'], ndeg=5, save_path=f'/nfs/pic.es/user/l/lcabayol/DESI/LaCE/lace/emulator/NNmodels/test.pt')
+
+- Load a trained NN emulator:
+emulator = NNEmulator(emuparams, model_path=f'NNmodels/test.pt', train=False)
+
+- Train the GP emulator:
+emulator = GPEmulator()
+
+It is also possible to call a class containing the two emulators and specify the one that should be used: 
+P1Demulator(emu_algorithm='NN')
+
+The notebook 'Tutorial_emulator.ipynb' shows different examples of how to call the different versions of the emulator. 
+
+Currently, there are also two versions of the post-processing of the LaCE simulations. By default, the emulators use the new post-processing as defined in arxiv.org/pdf/2305.19064.pdf.
+To use the post-processing used and defined in arxiv.org/abs/2011.15127, one should specify postprocessing='500'.
+
+#The default operation of the emulator is currently to optimise a new set of hyperparameters on whichever training set it is initialised with. However, one can also run with the `train=False` flag, and use GPEmulator.load_default(). This will load a standardised set of hyperparameters (along with the appropriate parameter rescalings for the X training data) that are optimised on the entire suite.
 
