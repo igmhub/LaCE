@@ -112,6 +112,19 @@ class archivePND(object):
 
         ## check input
 
+        # check if sim_suite available
+        sim_suite_all = ["Pedersen21", "Cabayol23", "768_768"]
+        try:
+            if sim_suite in sim_suite_all:
+                pass
+            else:
+                print(
+                    "Invalid sim_suite value. Available options: ",
+                    sim_suite_all,
+                )
+        except:
+            print("An error occurred while checking the sim_suite value.")
+
         # get list of simulations available for this suite
         _ = get_sim_option_list(sim_suite)
         self.sim_option_list, self.sim_especial_list, self.sim_option_dict = _
@@ -179,7 +192,7 @@ class archivePND(object):
                 "sim_scale_T0",
                 "sim_scale_gamma",
             ]
-            if (self.sim_suite == "Cabayol23") | (self.sim_suite == "768_768"):
+            if self.also_P3D:
                 keys_copy_in.append("p3d_data")
         return keys_copy_in
 
@@ -209,7 +222,7 @@ class archivePND(object):
                 "scale_T0",
                 "scale_gamma",
             ]
-            if (self.sim_suite == "Cabayol23") | (self.sim_suite == "768_768"):
+            if self.also_P3D:
                 keys_copy_out.append("k3d_Mpc ")
                 keys_copy_out.append("mu3d ")
                 keys_copy_out.append("p3d_Mpc")
@@ -244,12 +257,14 @@ class archivePND(object):
             self.sk_label = "Ns500_wM0.05"
             # Only important for LaCE post-processing. Reading parameters
             # describing the simulations from here. This is only important for
-            # Cabayol23, as it reads these parameters from the Pedersen21 postprocessing.
+            # Cabayol23, as it reads these parameters from the Pedersen21 post-processing.
             # It was implemented this way because the code used to compute these values,
             # fake_spectra, changed between Pedersen21 and Cabayol23
             self.basedir_params = "/lace/emulator/sim_suites/Australia20/"
             self.p1d_label_params = self.p1d_label
             self.sk_label_params = "Ns500_wM0.05"
+            # if files include P3D measurements
+            self.also_P3D = False
         elif sim_suite == "Cabayol23":
             self.basedir = "/lace/emulator/sim_suites/post_768/"
             self.n_phases = 2
@@ -259,6 +274,7 @@ class archivePND(object):
             self.basedir_params = "/lace/emulator/sim_suites/Australia20/"
             self.p1d_label_params = "p1d"
             self.sk_label_params = "Ns500_wM0.05"
+            self.also_P3D = True
         elif sim_suite == "768_768":
             self.basedir = "/lace/emulator/sim_suites/post_768/"
             self.n_phases = 2
@@ -268,6 +284,7 @@ class archivePND(object):
             self.basedir_params = "/lace/emulator/sim_suites/post_768/"
             self.p1d_label_params = self.p1d_label
             self.sk_label_params = "Ns768_wM0.05"
+            self.also_P3D = True
 
         ## get path of the repo
 
@@ -630,10 +647,12 @@ class archivePND(object):
                     _ = self._get_data(ind_axis, snap, tag_sample, tag_sample_params)
                     phase_data, phase_params, arr_phase = _
 
-                    # iterate over phase_data (if any)
+                    # iterate over phases
                     for ind_phase in range(len(phase_data)):
                         # iterate over scalings
                         n_scalings = len(phase_data[ind_phase]["p1d_data"])
+                        # TO BE UPDATED IF MORE THAN TWO FILES WITH TAU-SCALINGS FOR
+                        # EACH SIMULATION
                         if ind_phase % 2 == 0:
                             floor_scaling = 0
                         else:
@@ -780,7 +799,8 @@ class archivePND(object):
             "k_Mpc",
             "p1d_Mpc",
         ]
-        if (self.sim_suite == "Cabayol23") | (self.sim_suite == "768_768"):
+
+        if self.also_P3D:
             keys_merge.append("k3d_Mpc ")
             keys_merge.append("mu3d ")
             keys_merge.append("p3d_Mpc")
