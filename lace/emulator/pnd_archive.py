@@ -11,7 +11,7 @@ from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 
 
-class archivePD(object):
+class archivePND(object):
     """Book-keeping of flux P1D & P3D measurements from a suite of simulations."""
 
     def __init__(
