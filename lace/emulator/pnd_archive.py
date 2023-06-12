@@ -58,78 +58,25 @@ def get_sim_option_list(sim_suite):
     return sim_option_list, sim_especial_list, sim_option_dict
 
 
-def get_keys_input_dict(sim_suite):
-    """
-    Get dictionary with the name of the target properties from the simulation suite.
-
-    Args:
-        sim_suite (str): Name of the simulation suite.
-
-    Returns:
-        list: List of keys for the input dictionary.
-
-    """
-    if (
-        (sim_suite == "Pedersen21")
-        | (sim_suite == "Cabayol23")
-        | (sim_suite == "768_768")
-    ):
-        # keys input file
-        keys_copy_in = [
-            "mF",
-            "sim_T0",
-            "sim_gamma",
-            "sim_sigT_Mpc",
-            "kF_Mpc",
-            "k_Mpc",
-            "p1d_Mpc",
-            "scale_tau",
-            "sim_scale_T0",
-            "sim_scale_gamma",
-        ]
-        if (sim_suite == "Cabayol23") | (sim_suite == "768_768"):
-            keys_copy_in.append("p3d_data")
-    return keys_copy_in
-
-
-def get_keys_output_dict(sim_suite):
-    """
-    Get dictionary with the name of the properties to return from bookkeeping.
-
-    Args:
-        sim_suite (str): Name of the simulation suite.
-
-    Returns:
-        list: List of keys for the output dictionary.
-
-    """
-    if (
-        (sim_suite == "Pedersen21")
-        | (sim_suite == "Cabayol23")
-        | (sim_suite == "768_768")
-    ):
-        # keys input file
-        keys_copy_out = [
-            "mF",
-            "T0",
-            "gamma",
-            "sigT_Mpc",
-            "kF_Mpc",
-            "k_Mpc",
-            "p1d_Mpc",
-            "scale_tau",
-            "scale_T0",
-            "scale_gamma",
-        ]
-        if (sim_suite == "Cabayol23") | (sim_suite == "768_768"):
-            keys_copy_out.append("k3d_Mpc ")
-            keys_copy_out.append("mu3d ")
-            keys_copy_out.append("p3d_Mpc")
-    return keys_copy_out
-
-
 class archivePND(object):
-    """Book-keeping of flux P1D & P3D measurements from a suite of simulations."""
+    """
+    Book-keeping of flux P1D & P3D measurements from a suite of simulations.
+
+    Methods:
+        __init__(self, sim_suite, linP_dir)
+        _get_info_sim_suite(self, sim_suite)
+        _get_sim_info(self, target_sim)
+        _get_nz_linP(self, target_sim, pair_dir, tag_param, update_kp)
+        _get_file_names(self, ind_axis, tag_phase, snap, tag_sample, tag_sample_params)
+        _get_data(self, ind_axis, snap, tag_sample, tag_sample_params)
+        _load_data(self, pick_sim, drop_sim, z_max, nsamples=None)
+        _store_param_arrays(self)
+        average_over_samples(self, flag="all")
+        input_emulator(self, flag="all")
+        print_entry(self, entry, fiducial_keys=True)
+        plot_samples(self, param_1, param_2, tau_scalings=True, temp_scalings=True)
+        plot_3D_samples(self, param_1, param_2, param_3, tau_scalings=True, temp_scalings=True)
+    """
 
     def __init__(
         self,
@@ -202,14 +149,71 @@ class archivePND(object):
         self.kp_Mpc = kp_Mpc
         self.verbose = verbose
 
-        self._load_data(
-            pick_sim,
-            drop_sim,
-            z_max,
-            nsamples,
-        )
+        self._load_data(pick_sim, drop_sim, z_max, nsamples)
 
         return
+
+    def _get_keys_input_dict(self):
+        """
+        Get dictionary with the name of the target properties from the simulation suite.
+
+        Returns:
+            list: List of keys for the input dictionary.
+
+        """
+        if (
+            (self.sim_suite == "Pedersen21")
+            | (self.sim_suite == "Cabayol23")
+            | (self.sim_suite == "768_768")
+        ):
+            # keys input file
+            keys_copy_in = [
+                "mF",
+                "sim_T0",
+                "sim_gamma",
+                "sim_sigT_Mpc",
+                "kF_Mpc",
+                "k_Mpc",
+                "p1d_Mpc",
+                "scale_tau",
+                "sim_scale_T0",
+                "sim_scale_gamma",
+            ]
+            if (self.sim_suite == "Cabayol23") | (self.sim_suite == "768_768"):
+                keys_copy_in.append("p3d_data")
+        return keys_copy_in
+
+    def _get_keys_output_dict(self):
+        """
+        Get dictionary with the name of the properties to return from bookkeeping.
+
+        Returns:
+            list: List of keys for the output dictionary.
+
+        """
+        if (
+            (self.sim_suite == "Pedersen21")
+            | (self.sim_suite == "Cabayol23")
+            | (self.sim_suite == "768_768")
+        ):
+            # keys input file
+            keys_copy_out = [
+                "mF",
+                "T0",
+                "gamma",
+                "sigT_Mpc",
+                "kF_Mpc",
+                "k_Mpc",
+                "p1d_Mpc",
+                "scale_tau",
+                "scale_T0",
+                "scale_gamma",
+            ]
+            if (self.sim_suite == "Cabayol23") | (self.sim_suite == "768_768"):
+                keys_copy_out.append("k3d_Mpc ")
+                keys_copy_out.append("mu3d ")
+                keys_copy_out.append("p3d_Mpc")
+        return keys_copy_out
 
     def _get_info_sim_suite(self, sim_suite):
         """
@@ -526,13 +530,7 @@ class archivePND(object):
                     phase_params.append(json.load(json_file))
         return phase_data, phase_params, arr_phase
 
-    def _load_data(
-        self,
-        pick_sim,
-        drop_sim,
-        z_max,
-        nsamples=None,
-    ):
+    def _load_data(self, pick_sim, drop_sim, z_max, nsamples=None):
         """
         Setup the archive by gathering information from all measured power spectra in the simulations.
 
@@ -551,8 +549,8 @@ class archivePND(object):
         # P1D and P3D measurements and info about simulations
         self.data = []
 
-        keys_copy_in = get_keys_input_dict(self.sim_suite)
-        keys_copy_out = get_keys_output_dict(self.sim_suite)
+        keys_copy_in = self._get_keys_input_dict()
+        keys_copy_out = self._get_keys_output_dict()
 
         # read file containing information about simulation suite
         cube_json = self.fulldir + "/latin_hypercube.json"
@@ -923,22 +921,23 @@ class archivePND(object):
 
         setattr(self, "data_input_" + flag, archive_both)
 
-    def print_entry(
-        self,
-        entry,
-        keys=[
-            "z",
-            "Delta2_p",
-            "n_p",
-            "alpha_p",
-            "f_p",
-            "mF",
-            "sigT_Mpc",
-            "gamma",
-            "kF_Mpc",
-        ],
-    ):
+    def print_entry(self, entry, fiducial_keys=True):
         """Print basic information about a particular entry in the archive"""
+
+        if fiducial_keys is True:
+            keys = [
+                "z",
+                "Delta2_p",
+                "n_p",
+                "alpha_p",
+                "f_p",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "kF_Mpc",
+            ]
+        else:
+            keys = fiducial_keys
 
         if entry >= len(self.data):
             raise ValueError("{} entry does not exist in archive".format(entry))
