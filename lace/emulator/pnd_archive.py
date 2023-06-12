@@ -23,6 +23,8 @@ def get_sim_option_list(sim_suite):
             - sim_option_list (list): List of simulation options available for the specified simulation suite.
             - sim_especial_list (list): List of special simulation options available for the specified simulation suite.
             - sim_option_dict (dict): Dictionary mapping simulation options to their corresponding values.
+    Note:
+        To be modified for new suite.
 
     """
     if (
@@ -113,7 +115,7 @@ class archivePND(object):
 
         ## check input
 
-        # check if sim_suite available
+        # check if sim_suite available (To be modified for new suite)
         sim_suite_all = ["Pedersen21", "Cabayol23", "768_768"]
         try:
             if sim_suite in sim_suite_all:
@@ -175,6 +177,9 @@ class archivePND(object):
         Returns:
             list: List of keys for the input dictionary.
 
+        Note:
+            To be modified for new suite.
+
         """
         if (
             (self.sim_suite == "Pedersen21")
@@ -204,6 +209,9 @@ class archivePND(object):
 
         Returns:
             list: List of keys for the output dictionary.
+
+        Note:
+            To be modified for new suite.
 
         """
         if (
@@ -242,6 +250,9 @@ class archivePND(object):
 
         Raises:
             AssertionError: If the environment variable "LACE_REPO" is not set.
+
+        Note:
+            To be modified for new suite.
 
         """
 
@@ -309,6 +320,8 @@ class archivePND(object):
                 - tag_sample_params (str): Simulation tag for the selected simulation option in parameter files.
                 - tag_param (str): Tag for the parameter file.
 
+        Note:
+            To be modified for new suite.
         """
         if (
             (self.sim_suite == "Pedersen21")
@@ -447,6 +460,9 @@ class archivePND(object):
                 - data_json (list): List of file names for data JSON files.
                 - param_json (str): File name for parameter JSON file.
 
+        Note:
+            To be modified for new suite.
+
         """
 
         if (
@@ -524,6 +540,10 @@ class archivePND(object):
                 - phase_data (list): List of dictionaries containing the data for each phase.
                 - phase_params (list): List of dictionaries containing the parameter information for each phase.
                 - arr_phase (list): List of phase indices corresponding to each data entry.
+
+
+        Note:
+            To be modified for new suite.
 
         """
         phase_data = []
