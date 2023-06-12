@@ -19,7 +19,10 @@ def get_sim_option_list(sim_suite):
         sim_suite (str): Name of the simulation suite.
 
     Returns:
-        list: List of simulation options available for the specified simulation suite.
+        tuple: A tuple containing the following elements:
+            - sim_option_list (list): List of simulation options available for the specified simulation suite.
+            - sim_especial_list (list): List of special simulation options available for the specified simulation suite.
+            - sim_option_dict (dict): Dictionary mapping simulation options to their corresponding values.
 
     """
     if (
@@ -57,7 +60,7 @@ def get_sim_option_list(sim_suite):
 
 def get_keys_input_dict(sim_suite):
     """
-    Get the keys for the input dictionary based on the simulation suite.
+    Get dictionary with the name of the target properties from the simulation suite.
 
     Args:
         sim_suite (str): Name of the simulation suite.
@@ -91,7 +94,7 @@ def get_keys_input_dict(sim_suite):
 
 def get_keys_output_dict(sim_suite):
     """
-    Get the keys for the output dictionary based on the simulation suite.
+    Get dictionary with the name of the properties to return from bookkeeping.
 
     Args:
         sim_suite (str): Name of the simulation suite.
@@ -270,7 +273,20 @@ class archivePND(object):
         self.fulldir = repo + self.basedir
         self.fulldir_params = repo + self.basedir_params
 
-    def _get_sim_info(self, pick_sim):
+    def _get_sim_info(self, target_sim):
+        """
+        Get simulation information based on the specified simulation suite and selected simulation option.
+
+        Args:
+            target_sim (int or str): Selected simulation.
+
+        Returns:
+            tuple: A tuple containing the simulation tags for the selected simulation option.
+                - tag_sample (str): Simulation tag for the selected simulation option.
+                - tag_sample_params (str): Simulation tag for the selected simulation option in parameter files.
+                - tag_param (str): Tag for the parameter file.
+
+        """
         if (
             (self.sim_suite == "Pedersen21")
             | (self.sim_suite == "Cabayol23")
@@ -324,19 +340,35 @@ class archivePND(object):
                 dict_conv_params = dict_conv
                 tag_param = "parameter.json"
 
-            if (pick_sim in self.sim_especial_list) or (pick_sim == 30):
-                tag_sample = dict_conv[pick_sim]
-                tag_sample_params = dict_conv_params[pick_sim]
+            if (target_sim in self.sim_especial_list) or (target_sim == 30):
+                tag_sample = dict_conv[target_sim]
+                tag_sample_params = dict_conv_params[target_sim]
             else:
-                tag_sample = "sim_pair_" + str(pick_sim)
+                tag_sample = "sim_pair_" + str(target_sim)
                 tag_sample_params = tag_sample
                 tag_param = "parameter.json"
 
         return tag_sample, tag_sample_params, tag_param
 
-    def _get_nz_linP(self, pick_sim, pair_dir, tag_param, update_kp):
+    def _get_nz_linP(self, target_sim, pair_dir, tag_param, update_kp):
+        """
+        Get the redshifts and linear power spectrum for the specified simulation.
+
+        Args:
+            target_sim (int or str): Selected simulation.
+            pair_dir (str): Directory path of the simulation pair.
+            tag_param (str): Tag for the parameter file.
+            update_kp (bool): Flag indicating whether to update the linear power parameters.
+
+        Returns:
+            tuple: A tuple containing the redshifts and linear power parameters.
+                - zs (list): List of redshift values.
+                - linP_zs (list): List of linear power spectrum at each redshift.
+
+        """
+
         # read zs values and compute/read linP_zs
-        if pick_sim in self.sim_especial_list or pick_sim == 30:
+        if (target_sim in self.sim_especial_list) | (target_sim == 30):
             gadget_fname = pair_dir + "/sim_plus/paramfile.gadget"
             sim_config = read_gadget.read_gadget_paramfile(gadget_fname)
             zs = read_gadget.snapshot_redshifts(sim_config)
@@ -377,6 +409,23 @@ class archivePND(object):
         return zs, linP_zs
 
     def _get_file_names(self, ind_axis, tag_phase, snap, tag_sample, tag_sample_params):
+        """
+        Get the file names for the specified simulation parameters and snapshot.
+
+        Args:
+            ind_axis (int): Index of the simulation axis.
+            tag_phase (str): Tag for the simulation phase.
+            snap (int): Snapshot number.
+            tag_sample (str): Simulation tag for the selected simulation option.
+            tag_sample_params (str): Simulation tag for the selected simulation option in parameter files.
+
+        Returns:
+            tuple: A tuple containing the file names for data and parameter JSON files.
+                - data_json (list): List of file names for data JSON files.
+                - param_json (str): File name for parameter JSON file.
+
+        """
+
         if (
             (self.sim_suite == "Pedersen21")
             | (self.sim_suite == "Cabayol23")
@@ -432,6 +481,22 @@ class archivePND(object):
         return data_json, param_json
 
     def _get_data(self, ind_axis, snap, tag_sample, tag_sample_params):
+        """
+        Get the data and parameter information for the specified simulation parameters and snapshot.
+
+        Args:
+            ind_axis (int): Index of the simulation axis.
+            snap (int): Snapshot number.
+            tag_sample (str): Simulation tag for the selected simulation option.
+            tag_sample_params (str): Simulation tag for the selected simulation option in parameter files.
+
+        Returns:
+            tuple: A tuple containing the data and parameter information.
+                - phase_data (list): List of dictionaries containing the data for each phase.
+                - phase_params (list): List of dictionaries containing the parameter information for each phase.
+                - arr_phase (list): List of phase indices corresponding to each data entry.
+
+        """
         phase_data = []
         phase_params = []
         arr_phase = []
@@ -468,7 +533,19 @@ class archivePND(object):
         z_max,
         nsamples=None,
     ):
-        """Setup archive by looking at all measured power spectra in sims"""
+        """
+        Setup the archive by gathering information from all measured power spectra in the simulations.
+
+        Args:
+            pick_sim (int or str): The simulation index or special simulation identifier to start the loop from. Default is None.
+            drop_sim (int or str): The simulation index or special simulation identifier to skip during the loop. Default is None.
+            z_max (float): The maximum redshift value to consider for the power spectra.
+            nsamples (int, optional): The number of samples in the simulation suite. If not specified, it is read from the simulation suite. Default is None.
+
+        Returns:
+            None
+
+        """
 
         # All samples have an entry in this list. This entry is dictionary includes
         # P1D and P3D measurements and info about simulations
@@ -611,10 +688,14 @@ class archivePND(object):
         # create 1D arrays with all entries for a given parameter
         self._store_param_arrays()
 
-        return
-
     def _store_param_arrays(self):
-        """create 1D arrays with all entries for a given parameter."""
+        """
+        Create 1D arrays with all entries for a given parameter.
+
+        Returns:
+            None
+
+        """
 
         list_keys = [
             "ind_sim",
@@ -657,9 +738,23 @@ class archivePND(object):
             setattr(self, key, _dict[key])
 
     def average_over_samples(self, flag="all"):
-        """Compute averages over either phases, axes, or all
+        """
+        Compute averages over either phases, axes, or all.
 
-        Compute average of p1d, p3d, and mean flux
+        Args:
+            flag (str): Flag indicating the type of averaging. Valid options are:
+                - "all": Compute averages over all phases, axes, and simulations.
+                - "phases": Compute averages over phases and simulations, keeping axes fixed.
+                - "axes": Compute averages over axes and simulations, keeping phases fixed.
+                (default: "all")
+
+        Returns:
+            None
+
+        Note:
+            This method attaches a new attribute named "data_av_{flag}" to the class,
+            containing the computed averages.
+
         """
 
         keys_same = [
@@ -791,6 +886,24 @@ class archivePND(object):
         setattr(self, "data_av_" + flag, list_new)
 
     def input_emulator(self, flag="all"):
+        """
+        Generate an input emulator based on the specified flag.
+
+        Args:
+            flag (str): Flag indicating the type of input emulator to generate. Valid options are:
+                - "all": Combine both the original data and averaged data over all phases, axes, and simulations.
+                - "phases": Combine the averaged data over phases and the original data.
+                - "axes": Combine the averaged data over axes and the original data.
+                (default: "all")
+
+        Returns:
+            None
+
+        Note:
+            This method attaches a new attribute named "data_input_{flag}" to the class,
+            containing the generated input emulator.
+
+        """
         archive_both = []
         if flag == "all":
             for ii in range(len(self.data)):
@@ -921,63 +1034,3 @@ class archivePND(object):
         plt.show()
 
         return
-
-    def sub_archive_mf(self, min_mf=0.0, max_mf=1.0):
-        """Return copy of archive, with entries in a given mean flux range."""
-
-        # make copy of archive
-        copy_archive = copy.deepcopy(self)
-        copy_archive.min_mf = min_mf
-        copy_archive.max_mf = max_mf
-
-        print(len(copy_archive.data), "initial entries")
-
-        # select entries in a given mean flux range
-        new_data = [
-            d for d in copy_archive.data if (d["mF"] < max_mf and d["mF"] > min_mf)
-        ]
-
-        if self.verbose:
-            print("use %d/%d entries" % (len(new_data), len(self.data)))
-
-        # store new sub-data
-        copy_archive.data = new_data
-
-        # re-create 1D arrays with all entries for a given parameter
-        copy_archive._store_param_arrays()
-
-        return copy_archive
-
-    def get_param_values(self, param, tau_scalings=True, temp_scalings=True):
-        """Return values for a given parameter, including rescalings or not."""
-
-        N = len(self.data)
-        # mask post-process scalings (optional)
-        if not tau_scalings:
-            mask_tau = [x["scale_tau"] == 1.0 for x in self.data]
-        else:
-            mask_tau = [True] * N
-        if not temp_scalings:
-            mask_temp = [
-                (x["scale_T0"] == 1.0) & (x["scale_gamma"] == 1.0) for x in self.data
-            ]
-        else:
-            mask_temp = [True] * N
-
-        # figure out values of param in archive
-        values = np.array(
-            [self.data[i][param] for i in range(N) if (mask_tau[i] & mask_temp[i])]
-        )
-
-        return values
-
-    def get_simulation_cosmology(self, sim_num):
-        """Get cosmology used in a given simulation in suite"""
-
-        # setup cosmology from GenIC file
-        dir_name = self.fulldir + "/sim_pair_" + str(sim_num)
-        file_name = dir_name + "/sim_plus/paramfile.genic"
-        sim_cosmo_dict = read_genic.camb_from_genic(file_name)
-        sim_cosmo = camb_cosmo.get_cosmology_from_dictionary(sim_cosmo_dict)
-
-        return sim_cosmo
