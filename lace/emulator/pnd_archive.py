@@ -11,132 +11,67 @@ from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 
 
-class archivePND(object):
-    """Book-keeping of flux P1D & P3D measurements from a suite of simulations."""
+def get_sim_option_list(sim_suite):
+    """
+    Get the simulation option list based on the specified simulation suite.
 
-    def __init__(
-        self,
-        post_processing="768",
-        max_archive_size=None,
-        undersample_z=1,
-        verbose=False,
-        no_skewers=False,
-        pick_sim=None,
-        drop_sim=None,
-        z_max=5.0,
-        nsamples=None,
-        undersample_cube=1,
-        kp_Mpc=None,
-        params_500=True,
+    Args:
+        sim_suite (str): Name of the simulation suite.
+
+    Returns:
+        list: List of simulation options available for the specified simulation suite.
+
+    """
+    if (
+        (sim_suite == "Pedersen21")
+        | (sim_suite == "Cabayol23")
+        | (sim_suite == "768_768")
     ):
-        """Load archive from base sim directory and (optional) label
-        identifying skewer configuration (number, width).
-        If kp_Mpc is specified, recompute linP params in archive"""
+        sim_option_list = [
+            "h",
+            "nu",
+            "central",
+            "diffseed",
+            "curved",
+            "diffigm",
+            "running",
+        ]
+        sim_especial_list = sim_option_list.copy()
 
-        # SHOULD UPDATE DOCSTRING WITH ALL THESE ARGUMENTS
+        sim_option_dict = {
+            "h": 100,
+            "nu": 101,
+            "central": 30,
+            "diffseed": 102,
+            "curved": 103,
+            "diffigm": 104,
+            "running": 105,
+        }
 
-        # option_list = [
-        #     "h",
-        #     "nu",
-        #     "central",
-        #     "diffseed",
-        #     "curved",
-        #     "diffigm",
-        #     "running",
-        # ]
-        # for ii in range(31):
-        #     option_list.append(ii)
-        # option_list = np.array(option_list)
+        for ii in range(31):
+            sim_option_list.append(ii)
+            sim_option_dict[ii] = ii
 
-        # # check if simulations pick_sim and drop_sim available
-        # if pick_sim is not None:
-        #     if np.any(option_list == pick_sim) == False:
-        #         print(
-        #             "The simulation "
-        #             + str(pick_sim)
-        #             + " is not available. Simulations available:"
-        #         )
-        #         print(option_list)
-        #         raise ValueError("Simulation pick_sim not available")
-        # if drop_sim is not None:
-        #     if np.any(option_list == drop_sim) == False:
-        #         print(
-        #             "The simulation "
-        #             + str(drop_sim)
-        #             + " is not available. Simulations available:"
-        #         )
-        #         print(option_list)
-        #         raise ValueError("Simulation drop_sim not available")
+    return sim_option_list, sim_especial_list, sim_option_dict
 
-        assert "LACE_REPO" in os.environ, "export LACE_REPO"
-        repo = os.environ["LACE_REPO"] + "/"
 
-        self.post_processing = post_processing
-        if post_processing == "500":
-            self.basedir = "/lace/emulator/sim_suites/Australia20/"
-            self.skewers_label = "Ns500_wM0.05"
-            self.skewers_label_p = "Ns500_wM0.05"
-            self.p1d_label = "p1d"
-            self.p1d_label_p = self.p1d_label
-            self.n_phases = 2
-            self.n_axes = 1
-        elif post_processing == "768":
-            self.basedir = "/lace/emulator/sim_suites/post_768/"
-            self.skewers_label = "Ns768_wM0.05"
-            self.p1d_label = "p1d_stau"
-            if params_500:
-                self.skewers_label_p = "Ns500_wM0.05"
-                self.p1d_label_p = "p1d"
-            else:
-                self.skewers_label_p = "Ns768_wM0.05"
-                self.p1d_label_p = self.p1d_label
-            self.n_phases = 2
-            self.n_axes = 3
+def get_keys_input_dict(sim_suite):
+    """
+    Get the keys for the input dictionary based on the simulation suite.
 
-        self.fulldir = repo + self.basedir
-        self.verbose = verbose
-        self.z_max = z_max
-        self.undersample_cube = undersample_cube
-        # pivot point used in linP parameters
-        self.kp_Mpc = kp_Mpc
-        self.params_500 = params_500
+    Args:
+        sim_suite (str): Name of the simulation suite.
 
-        if self.params_500 == False:
-            self.fulldir_params = self.fulldir
-        else:
-            self.fulldir_params = repo + "/lace/emulator/sim_suites/Australia20/"
+    Returns:
+        list: List of keys for the input dictionary.
 
-        self._load_data(
-            max_archive_size,
-            undersample_z,
-            no_skewers,
-            pick_sim,
-            drop_sim,
-            z_max,
-            undersample_cube,
-            nsamples,
-        )
-
-        return
-
-    def _load_data(
-        self,
-        max_archive_size,
-        undersample_z,
-        no_skewers,
-        pick_sim,
-        drop_sim,
-        z_max,
-        undersample_cube,
-        nsamples=None,
+    """
+    if (
+        (sim_suite == "Pedersen21")
+        | (sim_suite == "Cabayol23")
+        | (sim_suite == "768_768")
     ):
-        """Setup archive by looking at all measured power spectra in sims"""
-
-        # each measured power will have a dictionary, stored here
-        # we store the power of each phase and axis separately
-        self.data = []
-
-        # keys in output dictionary
+        # keys input file
         keys_copy_in = [
             "mF",
             "sim_T0",
@@ -149,6 +84,28 @@ class archivePND(object):
             "sim_scale_T0",
             "sim_scale_gamma",
         ]
+        if (sim_suite == "Cabayol23") | (sim_suite == "768_768"):
+            keys_copy_in.append("p3d_data")
+    return keys_copy_in
+
+
+def get_keys_output_dict(sim_suite):
+    """
+    Get the keys for the output dictionary based on the simulation suite.
+
+    Args:
+        sim_suite (str): Name of the simulation suite.
+
+    Returns:
+        list: List of keys for the output dictionary.
+
+    """
+    if (
+        (sim_suite == "Pedersen21")
+        | (sim_suite == "Cabayol23")
+        | (sim_suite == "768_768")
+    ):
+        # keys input file
         keys_copy_out = [
             "mF",
             "T0",
@@ -161,212 +118,423 @@ class archivePND(object):
             "scale_T0",
             "scale_gamma",
         ]
-        # we also have P3D data for the 768 post-processing
-        if self.post_processing == "768":
-            keys_copy_in.append("p3d_data")
-            keys_copy_out.append("k3_Mpc")
-            keys_copy_out.append("mu3")
+        if (sim_suite == "Cabayol23") | (sim_suite == "768_768"):
+            keys_copy_out.append("k3d_Mpc ")
+            keys_copy_out.append("mu3d ")
             keys_copy_out.append("p3d_Mpc")
+    return keys_copy_out
 
-        # read file containing information about latin hyper-cube
+
+class archivePND(object):
+    """Book-keeping of flux P1D & P3D measurements from a suite of simulations."""
+
+    def __init__(
+        self,
+        sim_suite="Cabayol23",
+        pick_sim=None,
+        drop_sim=None,
+        nsamples=None,
+        z_max=5.0,
+        kp_Mpc=None,
+        verbose=False,
+    ):
+        """
+        Initialize the archivePND object.
+
+        Args:
+            sim_suite (str): Name of the simulation suite. Default is "Cabayol23".
+            pick_sim (None or int): Optional. Simulation to pick from the available options.
+                Raises a ValueError if the simulation is not available. Default is None.
+            drop_sim (None or int): Optional. Simulation to drop from the available options.
+                Raises a ValueError if the simulation is not available. Default is None.
+            nsamples (None or int): Optional. Maximum number of samples to load from each simulation.
+                Default is None, which loads all samples.
+            z_max (float): Optional. Maximum redshift value to consider when loading data. Default is 5.0.
+            kp_Mpc (None or float): Optional. Pivot point used in linear power parameters.
+                If specified, the parameters will be recomputed in the archive. Default is None.
+            verbose (bool): Optional. Verbosity flag. If True, print additional information during loading.
+                Default is False.
+
+        Returns:
+            None
+
+        """
+
+        ## check input
+
+        # get list of simulations available for this suite
+        _ = get_sim_option_list(sim_suite)
+        self.sim_option_list, self.sim_especial_list, self.sim_option_dict = _
+
+        # check if the value of pick_sim within simulations available
+        if pick_sim is not None:
+            try:
+                if pick_sim in self.sim_option_list:
+                    pass
+                else:
+                    print(
+                        "Invalid pick_sim value. Available options: ",
+                        self.sim_option_list,
+                    )
+            except:
+                print("An error occurred while checking the pick_sim value.")
+
+        # check if the value of drop_sim within simulations available
+        if drop_sim is not None:
+            try:
+                if drop_sim in self.sim_option_list:
+                    pass
+                else:
+                    print(
+                        "Invalid drop_sim value. Available options: ",
+                        self.sim_option_list,
+                    )
+            except:
+                print("An error occurred while checking the drop_sim value.")
+
+        ## get info from simulation suite
+        self._get_info_sim_suite(sim_suite)
+
+        # pivot point used in linP parameters
+        self.kp_Mpc = kp_Mpc
+        self.verbose = verbose
+
+        self._load_data(
+            pick_sim,
+            drop_sim,
+            z_max,
+            nsamples,
+        )
+
+        return
+
+    def _get_info_sim_suite(self, sim_suite):
+        """
+        Get information about the simulation suite and set corresponding attributes.
+
+        Args:
+            sim_suite (str): Name of the simulation suite.
+
+        Returns:
+            None
+
+        Raises:
+            AssertionError: If the environment variable "LACE_REPO" is not set.
+
+        """
+
+        self.sim_suite = sim_suite
+
+        if sim_suite == "Pedersen21":
+            # directory of the post-processing within LaCE
+            self.basedir = "/lace/emulator/sim_suites/Australia20/"
+            # number of simulation phases (fix-and-paired IC)
+            self.n_phases = 2
+            # number of simulation axes in the post-processing
+            self.n_axes = 1
+            # internal labels specifying the name of the post-processing files
+            self.p1d_label = "p1d"
+            self.sk_label = "Ns500_wM0.05"
+            # Only important for LaCE post-processing. Reading parameters
+            # describing the simulations from here. This is only important for
+            # Cabayol23, as it reads these parameters from the Pedersen21 postprocessing.
+            # It was implemented this way because the code used to compute these values,
+            # fake_spectra, changed between Pedersen21 and Cabayol23
+            self.basedir_params = "/lace/emulator/sim_suites/Australia20/"
+            self.p1d_label_params = self.p1d_label
+            self.sk_label_params = "Ns500_wM0.05"
+        elif sim_suite == "Cabayol23":
+            self.basedir = "/lace/emulator/sim_suites/post_768/"
+            self.n_phases = 2
+            self.n_axes = 3
+            self.p1d_label = "p1d_stau"
+            self.sk_label = "Ns768_wM0.05"
+            self.basedir_params = "/lace/emulator/sim_suites/Australia20/"
+            self.p1d_label_params = "p1d"
+            self.sk_label_params = "Ns500_wM0.05"
+        elif sim_suite == "768_768":
+            self.basedir = "/lace/emulator/sim_suites/post_768/"
+            self.n_phases = 2
+            self.n_axes = 3
+            self.p1d_label = "p1d_stau"
+            self.sk_label = "Ns768_wM0.05"
+            self.basedir_params = "/lace/emulator/sim_suites/post_768/"
+            self.p1d_label_params = self.p1d_label
+            self.sk_label_params = "Ns768_wM0.05"
+
+        ## get path of the repo
+
+        assert "LACE_REPO" in os.environ, "export LACE_REPO"
+        repo = os.environ["LACE_REPO"] + "/"
+
+        self.fulldir = repo + self.basedir
+        self.fulldir_params = repo + self.basedir_params
+
+    def _get_sim_info(self, pick_sim):
+        if (
+            (self.sim_suite == "Pedersen21")
+            | (self.sim_suite == "Cabayol23")
+            | (self.sim_suite == "768_768")
+        ):
+            if self.sim_suite == "Pedersen21":
+                dict_conv = {
+                    "central": "central",
+                    "diffSeed_sim": "diffSeed_sim",
+                    "h": "h_sim",
+                    "nu": "nu_sim",
+                    "curved": "curved_003",
+                    "running": "running_sim",
+                    "diffigm": "P18_sim",
+                }
+                dict_conv_params = dict_conv
+                tag_param = "parameter_redundant.json"
+            elif self.sim_suite == "Cabayol23":
+                dict_conv = {
+                    "central": "sim_pair_30",
+                    30: "sim_pair_30",
+                    "diffSeed": "diffSeed",
+                    "h": "sim_pair_h",
+                    "nu": "nu_sim",
+                    "curved": "curved_003",
+                    "running": "running",
+                    "diffigm": "P18",
+                }
+                dict_conv_params = {
+                    "central": "central",
+                    30: "central",
+                    "diffSeed_sim": "diffSeed_sim",
+                    "h": "h_sim",
+                    "nu": "nu_sim",
+                    "curved": "curved_003",
+                    "running": "running_sim",
+                    "diffigm": "P18_sim",
+                }
+                tag_param = "parameter_redundant.json"
+            else:
+                dict_conv = {
+                    "central": "sim_pair_30",
+                    30: "sim_pair_30",
+                    "diffSeed": "diffSeed",
+                    "h": "sim_pair_h",
+                    "nu": "nu_sim",
+                    "curved": "curved_003",
+                    "running": "running",
+                    "diffigm": "P18",
+                }
+                dict_conv_params = dict_conv
+                tag_param = "parameter.json"
+
+            if (pick_sim in self.sim_especial_list) or (pick_sim == 30):
+                tag_sample = dict_conv[pick_sim]
+                tag_sample_params = dict_conv_params[pick_sim]
+            else:
+                tag_sample = "sim_pair_" + str(pick_sim)
+                tag_sample_params = tag_sample
+                tag_param = "parameter.json"
+
+        return tag_sample, tag_sample_params, tag_param
+
+    def _get_nz_linP(self, pick_sim, pair_dir, tag_param, update_kp):
+        # read zs values and compute/read linP_zs
+        if pick_sim in self.sim_especial_list or pick_sim == 30:
+            gadget_fname = pair_dir + "/sim_plus/paramfile.gadget"
+            sim_config = read_gadget.read_gadget_paramfile(gadget_fname)
+            zs = read_gadget.snapshot_redshifts(sim_config)
+            # compute linP_zs parameters
+            # setup cosmology from GenIC file
+            genic_fname = pair_dir + "/sim_plus/paramfile.genic"
+            sim_cosmo_dict = read_genic.camb_from_genic(genic_fname)
+            # setup CAMB object
+            sim_cosmo = camb_cosmo.get_cosmology_from_dictionary(sim_cosmo_dict)
+            # compute linear power parameters at each z (in Mpc units)
+            linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
+            linP_zs = list(linP_zs)
+        else:
+            pair_json = pair_dir + "/" + tag_param
+
+            with open(pair_json) as json_file:
+                pair_data = json.load(json_file)
+            zs = pair_data["zs"]
+            linP_zs = pair_data["linP_zs"]
+
+        # overwrite linP parameters stored in parameter.json
+        if update_kp:
+            print("overwritting linP_zs in parameter.json")
+            # setup cosmology from GenIC file
+            genic_fname = pair_dir + "/sim_plus/paramfile.genic"
+            print("read cosmology from GenIC", genic_fname)
+            sim_cosmo_dict = read_genic.camb_from_genic(genic_fname)
+            # setup CAMB object
+            sim_cosmo = camb_cosmo.get_cosmology_from_dictionary(sim_cosmo_dict)
+            # compute linear power parameters at each z (in Mpc units)
+            linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
+            print("update linP_zs", linP_zs)
+            linP_zs = list(linP_zs)
+        else:
+            if self.verbose:
+                print("Use linP_zs from parameter.json")
+
+        return zs, linP_zs
+
+    def _get_file_names(self, ind_axis, tag_phase, snap, tag_sample, tag_sample_params):
+        if (
+            (self.sim_suite == "Pedersen21")
+            | (self.sim_suite == "Cabayol23")
+            | (self.sim_suite == "768_768")
+        ):
+            if self.sim_suite == "Pedersen21":
+                _sk_label_data = self.sk_label
+                _sk_label_params = self.sk_label_params
+                # different number of mF scalings for each post-processing
+                n_it_files = 1
+            elif self.sim_suite == "Cabayol23":
+                _sk_label_data = self.sk_label + "_axis" + str(ind_axis + 1)
+                _sk_label_params = self.sk_label_params
+                n_it_files = 2
+            else:
+                _sk_label_data = self.sk_label + "_axis" + str(ind_axis + 1)
+                _sk_label_params = self.sk_label_params + "_axis" + str(ind_axis + 1)
+                n_it_files = 2
+
+            data_json = []
+
+            for it in range(n_it_files):
+                if it == 0:
+                    p1d_label = self.p1d_label
+                else:
+                    p1d_label = "p1d_setau"
+                data_json.append(
+                    self.fulldir
+                    + "/"
+                    + tag_sample
+                    + tag_phase
+                    + p1d_label
+                    + "_"
+                    + str(snap)
+                    + "_"
+                    + _sk_label_data
+                    + ".json"
+                )
+
+            param_json = (
+                self.fulldir_params
+                + "/"
+                + tag_sample_params
+                + tag_phase
+                + self.p1d_label_params
+                + "_"
+                + str(snap)
+                + "_"
+                + _sk_label_params
+                + ".json"
+            )
+
+        return data_json, param_json
+
+    def _get_data(self, ind_axis, snap, tag_sample, tag_sample_params):
+        phase_data = []
+        phase_params = []
+        arr_phase = []
+
+        if (
+            (self.sim_suite == "Pedersen21")
+            | (self.sim_suite == "Cabayol23")
+            | (self.sim_suite == "768_768")
+        ):
+            # open sim_plus and sim_minus (P1D + P3D & params)
+            for _ind_phase in range(self.n_phases):
+                if _ind_phase == 0:
+                    tag_phase = "/sim_plus/"
+                else:
+                    tag_phase = "/sim_minus/"
+
+                data_json, param_json = self._get_file_names(
+                    ind_axis, tag_phase, snap, tag_sample, tag_sample_params
+                )
+
+                # open file with 1D and 3D power measured
+                for it in range(len(data_json)):
+                    with open(data_json[it]) as json_file:
+                        phase_data.append(json.load(json_file))
+                        arr_phase.append(_ind_phase)
+                with open(param_json) as json_file:
+                    phase_params.append(json.load(json_file))
+        return phase_data, phase_params, arr_phase
+
+    def _load_data(
+        self,
+        pick_sim,
+        drop_sim,
+        z_max,
+        nsamples=None,
+    ):
+        """Setup archive by looking at all measured power spectra in sims"""
+
+        # All samples have an entry in this list. This entry is dictionary includes
+        # P1D and P3D measurements and info about simulations
+        self.data = []
+
+        keys_copy_in = get_keys_input_dict(self.sim_suite)
+        keys_copy_out = get_keys_output_dict(self.sim_suite)
+
+        # read file containing information about simulation suite
         cube_json = self.fulldir + "/latin_hypercube.json"
-        with open(cube_json) as json_file:
-            self.cube_data = json.load(json_file)
-        if self.verbose:
-            print("latin hyper-cube data", self.cube_data)
-        if nsamples is None:
-            self.nsamples = self.cube_data["nsamples"]
+        try:
+            with open(cube_json) as json_file:
+                self.cube_data = json.load(json_file)
+        except FileNotFoundError:
+            print(f"Error: Cube JSON file '{cube_json}' not found.")
         else:
-            self.nsamples = nsamples
-        if self.verbose:
-            print("simulation suite has %d samples" % self.nsamples)
+            # read nsamples from simulation suite if not specified
+            if nsamples is None:
+                self.nsamples = self.cube_data["nsamples"]
+                if self.verbose:
+                    print("simulation suite has %d samples" % self.nsamples)
+            else:
+                self.nsamples = nsamples
 
-        # read pivot point from simulation suite if not specified
-        if self.kp_Mpc is None:
-            n_star = self.cube_data["param_space"]["n_star"]
-            self.kp_Mpc = n_star["kp_Mpc"]
-            update_kp = False
-        elif self.kp_Mpc == self.cube_data["param_space"]["n_star"]["kp_Mpc"]:
-            ## If selected k_p is same as in the archive, do not recompute
-            update_kp = False
-        else:
-            # will trigger slow code, could check that kp has indeed changed
-            update_kp = True
+            # read pivot point from simulation suite if not specified
+            if self.kp_Mpc is None:
+                n_star = self.cube_data["param_space"]["n_star"]
+                self.kp_Mpc = n_star["kp_Mpc"]
+                update_kp = False
+            elif self.kp_Mpc == self.cube_data["param_space"]["n_star"]["kp_Mpc"]:
+                ## If selected k_p is same as in the archive, do not recompute
+                update_kp = False
+            else:
+                # will trigger slow code, could check that kp has indeed changed
+                update_kp = True
 
+        # if pick_sim selected, start the loop at
         if pick_sim is not None:
             if np.issubdtype(type(pick_sim), np.integer):
-                start = pick_sim
+                start = pick_sim  # pick_sim (if integer)
                 self.nsamples = pick_sim + 1
             else:
-                start = 0
+                start = 0  # pick_sim (if str because it is an special simulation)
                 self.nsamples = 1
         else:
             start = 0
 
+        ## read data
         # read info from all sims, all snapshots, all rescalings
-        for sample in range(start, self.nsamples, undersample_cube):
-            if sample is drop_sim:
+        # iterate over simulations
+        for ind_sim in range(start, self.nsamples):
+            if ind_sim is drop_sim:
                 continue
-            elif (sample == 30) & (drop_sim is "central"):
+            elif (ind_sim == 30) & (drop_sim == "central"):
                 continue
-            # store parameters for simulation pair / model
-            sim_params = self.cube_data["samples"]["%d" % sample]
-            if self.verbose:
-                print(sample, "sample has sim params =", sim_params)
 
-            # read number of snapshots (should be the same in all sims)
-            ind_sim = sample
-            # if we want to read an special simulation: h and nu available now
             if pick_sim is not None:
-                if np.issubdtype(type(pick_sim), np.integer) == False:
-                    if pick_sim == "h":
-                        if self.post_processing == "768":
-                            tag_sample = "sim_pair_h"
-                        else:
-                            tag_sample = "h_sim"
-                        if self.params_500:
-                            tag_sample_p = "h_sim"
-                        else:
-                            tag_sample_p = tag_sample
-                        ind_sim = 100
-                    elif pick_sim == "nu":
-                        tag_sample = "nu_sim"
-                        tag_sample_p = tag_sample
-                        ind_sim = 101
-                    elif pick_sim == "diffseed":
-                        if self.post_processing == "768":
-                            tag_sample = "diffSeed"
-                        else:
-                            tag_sample = "diffSeed_sim"
-                        if self.params_500:
-                            tag_sample_p = "diffSeed_sim"
-                        else:
-                            tag_sample_p = tag_sample
-                        ind_sim = 102
-                    elif pick_sim == "curved":
-                        tag_sample = "curved_003"
-                        tag_sample_p = tag_sample
-                        ind_sim = 103
-                    elif pick_sim == "diffigm":
-                        if self.post_processing == "768":
-                            tag_sample = "P18"
-                        else:
-                            tag_sample = "P18_sim"
-                        if self.params_500:
-                            tag_sample_p = "P18_sim"
-                        else:
-                            tag_sample_p = tag_sample
-                        ind_sim = 104
-                    elif pick_sim == "running":
-                        if self.post_processing == "768":
-                            tag_sample = "running"
-                        else:
-                            tag_sample = "running_sim"
-                        if self.params_500:
-                            tag_sample_p = "running_sim"
-                        else:
-                            tag_sample_p = tag_sample
-                        ind_sim = 105
-                    elif pick_sim == "central":
-                        if self.post_processing == "768":
-                            tag_sample = "sim_pair_30"
-                        else:
-                            tag_sample = "central"
-                        if self.params_500:
-                            tag_sample_p = "central"
-                            tag_param = "parameter_redundant.json"
-                        else:
-                            tag_sample_p = tag_sample
-                            tag_param = "parameter.json"
-                        ind_sim = 30
-                elif np.issubdtype(type(pick_sim), np.integer) == True:
-                    if pick_sim == 30:
-                        if self.post_processing == "768":
-                            tag_sample = "sim_pair_30"
-                        else:
-                            tag_sample = "central"
-                        if self.params_500:
-                            tag_sample_p = "central"
-                            tag_param = "parameter_redundant.json"
-                        else:
-                            tag_sample_p = tag_sample
-                            tag_param = "parameter.json"
-                    else:
-                        tag_sample = "sim_pair_" + str(pick_sim)
-                        tag_sample_p = tag_sample
-                        tag_param = "parameter.json"
-                else:
-                    raise ValueError("pick_sim must be a number, h, nu, or central")
+                _ = self._get_sim_info(pick_sim)
             else:
-                if ind_sim == 30:
-                    # only important for 768 post_processing
-                    tag_sample = "sim_pair_" + str(sample)
-                    if self.params_500:
-                        tag_sample_p = "central"
-                        tag_param = "parameter_redundant.json"
-                    else:
-                        tag_sample_p = tag_sample
-                        tag_param = "parameter.json"
-                else:
-                    tag_sample = "sim_pair_" + str(sample)
-                    tag_sample_p = tag_sample
-                    tag_param = "parameter.json"
+                _ = self._get_sim_info(ind_sim)
+            tag_sample, tag_sample_params, tag_param = _
+            pair_dir = self.fulldir_params + "/" + tag_sample_params
+            zs, linP_zs = self._get_nz_linP(pick_sim, pair_dir, tag_param, update_kp)
 
-            if (
-                (pick_sim == "h")
-                | (pick_sim == "nu")
-                | (pick_sim == "diffseed")
-                | (pick_sim == "diffigm")
-                | (pick_sim == "running")
-                | (pick_sim == "curved")
-            ):
-                # read zs values
-                pair_dir = self.fulldir_params + "/" + tag_sample_p
-                file = pair_dir + "/sim_plus/paramfile.gadget"
-                sim_config = read_gadget.read_gadget_paramfile(file)
-                zs = read_gadget.snapshot_redshifts(sim_config)
-                Nz = len(zs)
-                # compute linP_zs parameters
-                # setup cosmology from GenIC file
-                genic_fname = pair_dir + "/sim_plus/paramfile.genic"
-                sim_cosmo_dict = read_genic.camb_from_genic(genic_fname)
-                # setup CAMB object
-                sim_cosmo = camb_cosmo.get_cosmology_from_dictionary(sim_cosmo_dict)
-                # compute linear power parameters at each z (in Mpc units)
-                linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
-                linP_zs = list(linP_zs)
-            else:
-                pair_dir = self.fulldir_params + "/" + tag_sample_p
-                pair_json = pair_dir + "/" + tag_param
-
-                with open(pair_json) as json_file:
-                    pair_data = json.load(json_file)
-                zs = pair_data["zs"]
-                Nz = len(zs)
-                linP_zs = pair_data["linP_zs"]
-                if self.verbose:
-                    print("simulation has %d redshifts" % Nz)
-                    print("undersample_z =", undersample_z)
-
-            # overwrite linP parameters stored in parameter.json
-            if update_kp:
-                print("overwritting linP_zs in parameter.json")
-                # setup cosmology from GenIC file
-                genic_fname = pair_dir + "/sim_plus/paramfile.genic"
-                print("read cosmology from GenIC", genic_fname)
-                sim_cosmo_dict = read_genic.camb_from_genic(genic_fname)
-                # setup CAMB object
-                sim_cosmo = camb_cosmo.get_cosmology_from_dictionary(sim_cosmo_dict)
-                # compute linear power parameters at each z (in Mpc units)
-                linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
-                print("update linP_zs", linP_zs)
-                linP_zs = list(linP_zs)
-            else:
-                if self.verbose:
-                    print("Use linP_zs from parameter.json")
-
-            # to make lighter emulators, we might undersample redshifts
-            for snap in range(0, Nz, undersample_z):
+            # iterate over snapshots
+            for snap in range(len(zs)):
                 if zs[snap] > z_max:
                     continue
                 # get linear power parameters describing snapshot
@@ -378,101 +546,23 @@ class archivePND(object):
                 snap_p1d_data["f_p"] = linP_params["f_p"]
                 snap_p1d_data["z"] = zs[snap]
 
-                # make sure that we have skewers for this snapshot (z < zmax)
+                # iterate over axes
                 for ind_axis in range(self.n_axes):
-                    # check if we have extracted skewers yet
-                    if no_skewers:
-                        self.data.append(snap_p1d_data)
-                        continue
+                    # extract power spectrum measurements
+                    # we iterate now to extract data from
 
-                    # we iterate now to extract data from P1D
-                    # we need to iterate twice because we may want to extract
-                    # gamma and T0 from old post-processing
-                    arr_phase = []
-                    phase_data = []
-                    phase_params = []
-                    # explanation
-                    # for _ind_save == 0, we extract P1D and P3D measurements
-                    # for _ind_save == 1, we extract cosmology and IGM parameters
-                    for _ind_save in range(2):
-                        # extract measurements
-                        if _ind_save == 0:
-                            pair_dir = self.fulldir + "/" + tag_sample
-                            p1d_label = self.p1d_label
+                    # read data from simulations
+                    _ = self._get_data(ind_axis, snap, tag_sample, tag_sample_params)
+                    phase_data, phase_params, arr_phase = _
 
-                            if self.post_processing == "500":
-                                _skewers_label = self.skewers_label
-                            else:
-                                _skewers_label = (
-                                    self.skewers_label + "_axis" + str(ind_axis + 1)
-                                )
-                        # extract params
-                        else:
-                            pair_dir = self.fulldir_params + "/" + tag_sample_p
-                            p1d_label = self.p1d_label_p
-
-                            if self.params_500:
-                                _skewers_label = self.skewers_label_p
-                            else:
-                                _skewers_label = (
-                                    self.skewers_label_p + "_axis" + str(ind_axis + 1)
-                                )
-
-                        # the following loop is necessary because we have
-                        # different number of files with mF scalings for each
-                        # post-processing
-                        if (_ind_save == 0) & (self.post_processing == "768"):
-                            nit = 2
-                        else:
-                            nit = 1
-
-                        for it in range(nit):
-                            # only important for post_processing 768
-                            if (_ind_save == 0) & (it == 1):
-                                p1d_label = "p1d_setau"
-                            # open sim_plus and sim_minus (P1D + P3D & params)
-                            for _ind_phase in range(self.n_phases):
-                                if _ind_phase == 0:
-                                    _phase = "/sim_plus/"
-                                else:
-                                    _phase = "/sim_minus/"
-
-                                phase_p1d_json = (
-                                    pair_dir
-                                    + _phase
-                                    + p1d_label
-                                    + "_"
-                                    + str(snap)
-                                    + "_"
-                                    + _skewers_label
-                                    + ".json"
-                                )
-
-                                if not os.path.isfile(phase_p1d_json):
-                                    if self.verbose:
-                                        print(
-                                            phase_p1d_json, "snapshot does not have p1d"
-                                        )
-                                    continue
-                                # open file with 1D and 3D power measured in snapshot for sim_plus
-                                with open(phase_p1d_json) as json_file:
-                                    _data = json.load(json_file)
-
-                                if _ind_save == 0:
-                                    phase_data.append(_data)
-                                    arr_phase.append(_ind_phase)
-                                else:
-                                    phase_params.append(_data)
-
-                    # iterate over phase_data
-                    n_phases = len(phase_data)
-                    for ind_phase in range(n_phases):
+                    # iterate over phase_data (if any)
+                    for ind_phase in range(len(phase_data)):
                         # iterate over scalings
                         n_scalings = len(phase_data[ind_phase]["p1d_data"])
-                        if ind_phase < 2:
-                            ind_scaling = 0
+                        if ind_phase % 2 == 0:
+                            floor_scaling = 0
                         else:
-                            ind_scaling = len(phase_data[0]["p1d_data"])
+                            floor_scaling = len(phase_data[0]["p1d_data"])
 
                         for pp in range(n_scalings):
                             temp_data = phase_data[ind_phase]["p1d_data"][pp]
@@ -486,7 +576,7 @@ class archivePND(object):
                             p1d_data["ind_z"] = snap
                             p1d_data["ind_phase"] = _ind_phase
                             p1d_data["ind_axis"] = ind_axis
-                            p1d_data["ind_tau"] = ind_scaling + pp
+                            p1d_data["ind_tau"] = floor_scaling + pp
 
                             # iterate over properties
                             for ind_key in range(len(keys_copy_in)):
@@ -505,10 +595,10 @@ class archivePND(object):
                                     p1d_data["p3d_Mpc"] = np.array(
                                         temp_data["p3d_data"]["p3d_Mpc"]
                                     )
-                                    p1d_data["k3_Mpc"] = np.array(
+                                    p1d_data["k3d_Mpc "] = np.array(
                                         temp_data["p3d_data"]["k_Mpc"]
                                     )
-                                    p1d_data["mu3"] = np.array(
+                                    p1d_data["mu3d "] = np.array(
                                         temp_data["p3d_data"]["mu"]
                                     )
                                 elif (key_in == "p1d_Mpc") | (key_in == "k_Mpc"):
@@ -517,19 +607,6 @@ class archivePND(object):
                                     p1d_data[key_out] = temp_param[key_in]
 
                             self.data.append(p1d_data)
-
-        if max_archive_size is not None:
-            Ndata = len(self.data)
-            if Ndata > max_archive_size:
-                if self.verbose:
-                    print("will keep only", max_archive_size, "entries")
-                keep = np.random.randint(0, Ndata, max_archive_size)
-                keep_data = [self.data[i] for i in keep]
-                self.data = keep_data
-
-        N = len(self.data)
-        if self.verbose:
-            print("archive setup, containing %d entries" % len(self.data))
 
         # create 1D arrays with all entries for a given parameter
         self._store_param_arrays()
@@ -545,20 +622,6 @@ class archivePND(object):
             "ind_z",
             "ind_phase",
             "ind_axis",
-            "Delta2_p",
-            "n_p",
-            "alpha_p",
-            "f_p",
-            "z",
-            "mF",
-            "sigT_Mpc",
-            "gamma",
-            "kF_Mpc",
-            "k_Mpc",
-            "p1d_Mpc",
-            "k3_Mpc",
-            "mu3",
-            "p3d_Mpc",
         ]
 
         # put measurements in arrays
@@ -570,8 +633,8 @@ class archivePND(object):
             elif (
                 (key != "k_Mpc")
                 & (key != "p1d_Mpc")
-                & (key != "k3_Mpc")
-                & (key != "mu3")
+                & (key != "k3d_Mpc ")
+                & (key != "mu3d ")
                 & (key != "p3d_Mpc")
             ):
                 _dict[key] = np.zeros(N)
@@ -582,8 +645,8 @@ class archivePND(object):
                 if (
                     (key != "k_Mpc")
                     & (key != "p1d_Mpc")
-                    & (key != "k3_Mpc")
-                    & (key != "mu3")
+                    & (key != "k3d_Mpc ")
+                    & (key != "mu3d ")
                     & (key != "p3d_Mpc")
                 ):
                     _dict[key][ii] = self.data[ii][key]
@@ -624,9 +687,9 @@ class archivePND(object):
             "k_Mpc",
             "p1d_Mpc",
         ]
-        if self.post_processing == "768":
-            keys_merge.append("k3_Mpc")
-            keys_merge.append("mu3")
+        if (self.sim_suite == "Cabayol23") | (self.sim_suite == "768_768"):
+            keys_merge.append("k3d_Mpc ")
+            keys_merge.append("mu3d ")
             keys_merge.append("p3d_Mpc")
 
         # get number of simulations, scalings, and redshifts
