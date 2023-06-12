@@ -93,9 +93,10 @@ class archivePND(object):
 
         Args:
             sim_suite (str): Name of the simulation suite. Default is "Cabayol23".
-            pick_sim (None or int): Optional. Simulation to pick from the available options.
+                Raises a ValueError if the simulation suite is not available.
+            pick_sim (None, int, or str): Optional. Simulation to pick from the available options.
                 Raises a ValueError if the simulation is not available. Default is None.
-            drop_sim (None or int): Optional. Simulation to drop from the available options.
+            drop_sim (None, int, or str): Optional. Simulation to drop from the available options.
                 Raises a ValueError if the simulation is not available. Default is None.
             nsamples (None or int): Optional. Maximum number of samples to load from each simulation.
                 Default is None, which loads all samples.
@@ -162,6 +163,7 @@ class archivePND(object):
         self.kp_Mpc = kp_Mpc
         self.verbose = verbose
 
+        ## load power spectrum measurements from suite
         self._load_data(pick_sim, drop_sim, z_max, nsamples)
 
         return
