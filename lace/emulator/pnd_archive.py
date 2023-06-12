@@ -31,23 +31,23 @@ def get_sim_option_list(sim_suite):
         | (sim_suite == "768_768")
     ):
         sim_option_list = [
-            "h",
-            "nu",
+            "growth",
+            "neutrinos",
             "central",
-            "diffseed",
+            "seed",
             "curved",
-            "diffigm",
+            "reionization",
             "running",
         ]
         sim_especial_list = sim_option_list.copy()
 
         sim_option_dict = {
-            "h": 100,
-            "nu": 101,
+            "growth": 100,
+            "neutrinos": 101,
             "central": 30,
-            "diffseed": 102,
+            "seed": 102,
             "curved": 103,
-            "diffigm": 104,
+            "reionization": 104,
             "running": 105,
         }
 
@@ -318,12 +318,12 @@ class archivePND(object):
             if self.sim_suite == "Pedersen21":
                 dict_conv = {
                     "central": "central",
-                    "diffSeed_sim": "diffSeed_sim",
-                    "h": "h_sim",
-                    "nu": "nu_sim",
+                    "seed": "diffSeed_sim",
+                    "growth": "h_sim",
+                    "neutrinos": "nu_sim",
                     "curved": "curved_003",
                     "running": "running_sim",
-                    "diffigm": "P18_sim",
+                    "reionization": "P18_sim",
                 }
                 dict_conv_params = dict_conv
                 tag_param = "parameter_redundant.json"
@@ -331,34 +331,34 @@ class archivePND(object):
                 dict_conv = {
                     "central": "sim_pair_30",
                     30: "sim_pair_30",
-                    "diffSeed": "diffSeed",
-                    "h": "sim_pair_h",
-                    "nu": "nu_sim",
+                    "seed": "diffSeed",
+                    "growth": "sim_pair_h",
+                    "neutrinos": "nu_sim",
                     "curved": "curved_003",
                     "running": "running",
-                    "diffigm": "P18",
+                    "reionization": "P18",
                 }
                 dict_conv_params = {
                     "central": "central",
                     30: "central",
-                    "diffSeed_sim": "diffSeed_sim",
-                    "h": "h_sim",
-                    "nu": "nu_sim",
+                    "seed": "diffSeed_sim",
+                    "growth": "h_sim",
+                    "neutrinos": "nu_sim",
                     "curved": "curved_003",
                     "running": "running_sim",
-                    "diffigm": "P18_sim",
+                    "reionization": "P18_sim",
                 }
                 tag_param = "parameter_redundant.json"
             else:
                 dict_conv = {
                     "central": "sim_pair_30",
                     30: "sim_pair_30",
-                    "diffSeed": "diffSeed",
-                    "h": "sim_pair_h",
-                    "nu": "nu_sim",
+                    "seed": "diffSeed",
+                    "growth": "sim_pair_h",
+                    "neutrinos": "nu_sim",
                     "curved": "curved_003",
                     "running": "running",
-                    "diffigm": "P18",
+                    "reionization": "P18",
                 }
                 dict_conv_params = dict_conv
                 tag_param = "parameter.json"
@@ -459,14 +459,20 @@ class archivePND(object):
                 _sk_label_params = self.sk_label_params
                 # different number of mF scalings for each post-processing
                 n_it_files = 1
-            elif self.sim_suite == "Cabayol23":
-                _sk_label_data = self.sk_label + "_axis" + str(ind_axis + 1)
-                _sk_label_params = self.sk_label_params
-                n_it_files = 2
             else:
                 _sk_label_data = self.sk_label + "_axis" + str(ind_axis + 1)
-                _sk_label_params = self.sk_label_params + "_axis" + str(ind_axis + 1)
-                n_it_files = 2
+                if self.sim_suite == "Cabayol23":
+                    _sk_label_params = self.sk_label_params
+                else:
+                    _sk_label_params = (
+                        self.sk_label_params + "_axis" + str(ind_axis + 1)
+                    )
+                # for these simulations with have one file with all scalings, for others 2
+                sim_one_scaling = ["diffSeed", "P18", "running", "curved_003"]
+                if tag_sample in sim_one_scaling:
+                    n_it_files = 1
+                else:
+                    n_it_files = 2
 
             data_json = []
 
