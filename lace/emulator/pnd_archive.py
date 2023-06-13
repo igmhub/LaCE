@@ -649,13 +649,16 @@ class archivePND(object):
         for ind_sim in range(start, self.nsamples):
             if ind_sim is drop_sim:
                 continue
-            elif (ind_sim == 30) & (drop_sim == "central"):
+            # we want to drop central simulation when reading hypercube
+            elif ind_sim == 30:
                 continue
 
             if pick_sim is not None:
                 _ = self._get_sim_info(pick_sim)
+                out_ind_sim = self.sim_option_dict[pick_sim]
             else:
                 _ = self._get_sim_info(ind_sim)
+                out_ind_sim = ind_sim
             tag_sample, tag_sample_params, tag_param = _
             pair_dir = self.fulldir_params + "/" + tag_sample_params
             zs, linP_zs = self._get_nz_linP(pick_sim, pair_dir, tag_param, update_kp)
@@ -702,7 +705,7 @@ class archivePND(object):
                             # deep copy of dictionary (thread safe, why not)
                             p1d_data = json.loads(json.dumps(snap_p1d_data))
                             # identify simulation
-                            p1d_data["ind_sim"] = ind_sim
+                            p1d_data["ind_sim"] = out_ind_sim
                             p1d_data["ind_z"] = snap
                             p1d_data["ind_phase"] = _ind_phase
                             p1d_data["ind_axis"] = ind_axis
