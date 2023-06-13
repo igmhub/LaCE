@@ -233,8 +233,8 @@ class archivePND(object):
                 "scale_gamma",
             ]
             if self.also_P3D:
-                keys_copy_out.append("k3d_Mpc ")
-                keys_copy_out.append("mu3d ")
+                keys_copy_out.append("k3d_Mpc")
+                keys_copy_out.append("mu3d")
                 keys_copy_out.append("p3d_Mpc")
         return keys_copy_out
 
@@ -573,6 +573,7 @@ class archivePND(object):
                         arr_phase.append(_ind_phase)
                 with open(param_json) as json_file:
                     phase_params.append(json.load(json_file))
+
         return phase_data, phase_params, arr_phase
 
     def _load_data(self, pick_sim, drop_sim, z_max, nsamples=None):
@@ -676,14 +677,15 @@ class archivePND(object):
                     phase_data, phase_params, arr_phase = _
 
                     # iterate over phases
-                    for ind_phase in range(len(phase_data)):
+                    len_phase_data = len(phase_data)
+                    for ind_phase in range(len_phase_data):
                         # iterate over scalings
                         n_scalings = len(phase_data[ind_phase]["p1d_data"])
                         # TO BE UPDATED IF MORE THAN TWO FILES WITH TAU-SCALINGS FOR
                         # EACH SIMULATION
-                        if ind_phase % 2 == 0:
+                        if (len_phase_data == 2) | (ind_phase % 2 == 0):
                             floor_scaling = 0
-                        else:
+                        elif (len_phase_data > 2) & (ind_phase % 2 != 0):
                             floor_scaling = len(phase_data[0]["p1d_data"])
 
                         for pp in range(n_scalings):
@@ -717,10 +719,10 @@ class archivePND(object):
                                     p1d_data["p3d_Mpc"] = np.array(
                                         temp_data["p3d_data"]["p3d_Mpc"]
                                     )
-                                    p1d_data["k3d_Mpc "] = np.array(
+                                    p1d_data["k3d_Mpc"] = np.array(
                                         temp_data["p3d_data"]["k_Mpc"]
                                     )
-                                    p1d_data["mu3d "] = np.array(
+                                    p1d_data["mu3d"] = np.array(
                                         temp_data["p3d_data"]["mu"]
                                     )
                                 elif (key_in == "p1d_Mpc") | (key_in == "k_Mpc"):
@@ -759,8 +761,8 @@ class archivePND(object):
             elif (
                 (key != "k_Mpc")
                 & (key != "p1d_Mpc")
-                & (key != "k3d_Mpc ")
-                & (key != "mu3d ")
+                & (key != "k3d_Mpc")
+                & (key != "mu3d")
                 & (key != "p3d_Mpc")
             ):
                 _dict[key] = np.zeros(N)
@@ -771,8 +773,8 @@ class archivePND(object):
                 if (
                     (key != "k_Mpc")
                     & (key != "p1d_Mpc")
-                    & (key != "k3d_Mpc ")
-                    & (key != "mu3d ")
+                    & (key != "k3d_Mpc")
+                    & (key != "mu3d")
                     & (key != "p3d_Mpc")
                 ):
                     _dict[key][ii] = self.data[ii][key]
@@ -829,8 +831,8 @@ class archivePND(object):
         ]
 
         if self.also_P3D:
-            keys_merge.append("k3d_Mpc ")
-            keys_merge.append("mu3d ")
+            keys_merge.append("k3d_Mpc")
+            keys_merge.append("mu3d")
             keys_merge.append("p3d_Mpc")
 
         # get number of simulations, scalings, and redshifts
