@@ -8,11 +8,9 @@ import time
 from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
 from lace.emulator import p1d_archive
-<<<<<<< HEAD
-from lace.emulator import pd_archive
 
-=======
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
+from lace.emulator import pnd_archive
+
 from lace.emulator import poly_p1d
 
 class GPEmulator:
@@ -24,30 +22,21 @@ class GPEmulator:
     """
     def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
                 p1d_label=None,skewers_label=None,
-<<<<<<< HEAD
                 max_archive_size=None,verbose=False,kmax_Mpc=4.0,
                 paramList=None,train=True,drop_tau_rescalings=True,
                 drop_temp_rescalings=True,keep_every_other_rescaling=False,
-                undersample_z=1,emu_type="polyfit",z_max=4.5,z_list=None,
-=======
-                max_archive_size=None,verbose=False,kmax_Mpc=10.0,
-                paramList=None,train=True,drop_tau_rescalings=True,
-                drop_temp_rescalings=True,keep_every_other_rescaling=False,
-                undersample_z=1,emu_type="k_bin",z_max=5,z_list=None,
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
+                undersample_z=1,emu_type="polyfit",z_max=4.5,z_list=None, 
                 passarchive=None,set_noise_var=1e-3,asymmetric_kernel=True,
                 check_hull=False,set_hyperparams=None,
                 paramLimits=None,rbf_only=True,
                 emu_per_k=False,
                 reduce_var_k=False,
                 reduce_var_z=False,
-<<<<<<< HEAD
                 reduce_var_mf=False,
                 ndeg=5,
-                key_data=None, postprocessing='768', drop_sim=None):
-=======
-                reduce_var_mf=False):
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
+                key_data='data_av_all', postprocessing='768', drop_sim=None):
+        
+
 
         self.kmax_Mpc=kmax_Mpc
         self.basedir=basedir
@@ -62,10 +51,7 @@ class GPEmulator:
         self.asymmetric_kernel=asymmetric_kernel
         self.z_max=z_max
         self.paramLimits=paramLimits
-<<<<<<< HEAD
         self.postprocessing=postprocessing
-=======
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
         self.crossval=False ## Flag to check whether or not a prediction is
                             ## inside the training set
         self.rbf_only=rbf_only
@@ -73,33 +59,30 @@ class GPEmulator:
         self.reduce_var_k=reduce_var_k ## Emulate (1+k)P1D(k)
         self.reduce_var_z=reduce_var_z ## Emulate P1D(k)/(1+z)^3.8
         self.reduce_var_mf=reduce_var_mf ## Emulate P1D(k)*<F>^2.5
-<<<<<<< HEAD
+
         if self.postprocessing=='768':
             self.key_data='data_av_all' ##Selects average of the three axes and two phases in the new postprocessing
         elif self.postprocessing=='500':
             self.key_data='data' ##Select data of the old postprocessing
         self.ndeg=ndeg
-=======
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
+
+
 
         # read all files with P1D measured in simulation suite
         if passarchive==None:
             self.custom_archive=False
-<<<<<<< HEAD
+
             if self.postprocessing=='500':
                 self.archive=p1d_archive.archiveP1D(basedir,p1d_label,skewers_label,
-=======
-            self.archive=p1d_archive.archiveP1D(basedir,p1d_label,skewers_label,
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
                         max_archive_size=self.max_archive_size,verbose=verbose,
                         drop_tau_rescalings=drop_tau_rescalings,
                         drop_temp_rescalings=drop_temp_rescalings,z_max=self.z_max,
                         keep_every_other_rescaling=keep_every_other_rescaling,
                         undersample_z=undersample_z)
-<<<<<<< HEAD
+
                 
             elif self.postprocessing=='768':
-                archive=pd_archive.archivePD(z_max=4.5,nsamples=30, drop_sim=drop_sim)
+                archive=pnd_archive.archivePD(z_max=4.5,nsamples=30, drop_sim=drop_sim)
                 
                 archive.average_over_samples(flag="all")
                 archive.average_over_samples(flag="phases")
@@ -114,8 +97,6 @@ class GPEmulator:
             else:
                 raise('Available archives are "500" and "768"')
                 
-=======
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
         else:
             self.custom_archive=True
             if self.verbose:
@@ -123,14 +104,10 @@ class GPEmulator:
             self.archive=passarchive
 
         ## Find max k bin
-<<<<<<< HEAD
+
         self.k_bin=np.max(np.where(getattr(self.archive, self.key_data)[0]["k_Mpc"]<self.kmax_Mpc))+1
         self.training_k_bins=getattr(self.archive, self.key_data)[0]["k_Mpc"][1:self.k_bin]
         
-=======
-        self.k_bin=np.max(np.where(self.archive.data[0]["k_Mpc"]<self.kmax_Mpc))+1
-        self.training_k_bins=self.archive.data[0]["k_Mpc"][1:self.k_bin]
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
         ## If none, take all parameters
         if paramList==None:
         	self.paramList=['mF', 'sigT_Mpc', 'gamma', 'kF_Mpc', 'Delta2_p', 'n_p']
@@ -156,7 +133,7 @@ class GPEmulator:
         ''' Method to get the Y training points in the form of the P1D
         at different k values '''
 
-<<<<<<< HEAD
+
         P1D_k=np.empty([len(getattr(self.archive, self.key_data)),self.k_bin-1])
         for aa in range(len(getattr(self.archive, self.key_data))):
             P1D_k[aa]=getattr(self.archive, self.key_data)[aa]['p1d_Mpc'][1:self.k_bin]
@@ -166,17 +143,6 @@ class GPEmulator:
                 P1D_k[aa]*=1./((1+getattr(self.archive, self.key_data)[aa]["z"])**3.8)
             if self.reduce_var_mf:
                 P1D_k[aa]*=((getattr(self.archive, self.key_data)[aa]["mF"])**2)
-=======
-        P1D_k=np.empty([len(self.archive.data),self.k_bin-1])
-        for aa in range(len(self.archive.data)):
-            P1D_k[aa]=self.archive.data[aa]['p1d_Mpc'][1:self.k_bin]
-            if self.reduce_var_k:
-                P1D_k[aa]*=(1+self.training_k_bins)
-            if self.reduce_var_z:
-                P1D_k[aa]*=1./((1+self.archive.data[aa]["z"])**3.8)
-            if self.reduce_var_mf:
-                P1D_k[aa]*=((self.archive.data[aa]["mF"])**2)
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
 
         return P1D_k
 
@@ -185,17 +151,10 @@ class GPEmulator:
         ''' Method to get the Y training points in the form of polyfit 
         coefficients '''
 
-<<<<<<< HEAD
         self._fit_p1d_in_archive(self.ndeg,self.kmax_Mpc)
         coeffs=np.empty([len(getattr(self.archive, self.key_data)),self.ndeg+1])
         for aa in range(len(getattr(self.archive, self.key_data))):
             coeffs[aa]=getattr(self.archive, self.key_data)[aa]['fit_p1d'] ## Collect P1D data for all k bins
-=======
-        self._fit_p1d_in_archive(4,self.kmax_Mpc)
-        coeffs=np.empty([len(self.archive.data),5]) ## Hardcoded to use 4th degree polynomial
-        for aa in range(len(self.archive.data)):
-            coeffs[aa]=self.archive.data[aa]['fit_p1d'] ## Collect P1D data for all k bins
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
 
         return coeffs
 
@@ -217,11 +176,8 @@ class GPEmulator:
         coefficients for the polyfit emulator '''
 
         ## Grid that will contain all training params
-<<<<<<< HEAD
+
         params=np.empty([len(getattr(self.archive, self.key_data)),len(paramList)])
-=======
-        params=np.empty([len(self.archive.data),len(paramList)])
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
 
         if self.emu_type=="k_bin":
             trainingPoints=self._training_points_k_bin(archive)
@@ -231,15 +187,9 @@ class GPEmulator:
             print("Unknown emulator type, terminating")
             quit()
 
-<<<<<<< HEAD
         for aa in range(len(getattr(self.archive, self.key_data))):
             for bb in range(len(paramList)):
                 params[aa][bb]=getattr(self.archive, self.key_data)[aa][paramList[bb]] ## Populate parameter grid
-=======
-        for aa in range(len(self.archive.data)):
-            for bb in range(len(paramList)):
-                params[aa][bb]=archive.data[aa][paramList[bb]] ## Populate parameter grid
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
 
         return params,trainingPoints
 
@@ -247,11 +197,7 @@ class GPEmulator:
     def _fit_p1d_in_archive(self,deg,kmax_Mpc):
         """For each entry in archive, fit polynomial to log(p1d)"""
         
-<<<<<<< HEAD
         for entry in getattr(self.archive, self.key_data):
-=======
-        for entry in self.archive.data:
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
             k_Mpc = entry['k_Mpc']
             p1d_Mpc = entry['p1d_Mpc']
             fit_p1d = poly_p1d.PolyP1D(k_Mpc,p1d_Mpc,kmin_Mpc=1.e-3,
@@ -272,11 +218,7 @@ class GPEmulator:
             self.paramLimits=self._get_param_limits(self.X_param_grid)
 
         ## Rescaling to unit volume
-<<<<<<< HEAD
         for cc in range(len(getattr(self.archive, self.key_data))):
-=======
-        for cc in range(len(self.archive.data)):
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
             self.X_param_grid[cc]=self._rescale_params(self.X_param_grid[cc],self.paramLimits)
         if self.verbose:
             print("Rescaled params to unity volume")
@@ -330,11 +272,8 @@ class GPEmulator:
             start = time.time()
             for gp in self.gp:
                 gp.initialize_parameter()
-<<<<<<< HEAD
+
                 print("Training GP on %d points" % len(getattr(self.archive, self.key_data)))
-=======
-                print("Training GP on %d points" % len(self.archive.data))
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
                 status = gp.optimize(messages=False)
                 print("Optimised")
             end = time.time()
@@ -342,11 +281,8 @@ class GPEmulator:
         else:
             start = time.time()
             self.gp.initialize_parameter()
-<<<<<<< HEAD
             print("Training GP on %d points" % len(getattr(self.archive, self.key_data)))
-=======
-            print("Training GP on %d points" % len(self.archive.data))
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
+
             status = self.gp.optimize(messages=False)
             end = time.time()
             print("GPs optimised in {0:.2f} seconds".format(end-start))
@@ -475,10 +411,6 @@ class GPEmulator:
 
         elif self.emu_type=="polyfit":
             # gp_pred here are just the coefficients of the polynomial
-<<<<<<< HEAD
-            print(gp_pred.shape)
-=======
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
             poly=np.poly1d(gp_pred)
             p1d=np.exp(poly(np.log(k_Mpc)))
             if not return_covar:
@@ -533,14 +465,8 @@ class GPEmulator:
         
         model_dict={}
         for param in self.paramList:
-<<<<<<< HEAD
             model_dict[param]=getattr(self.archive, self.key_data)[point_number][param]
         
-        print(model_dict)
-=======
-            model_dict[param]=self.archive.data[point_number][param]
-        
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
         return model_dict
 
 
