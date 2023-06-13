@@ -12,7 +12,7 @@ from lace.emulator import pd_archive
 from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 from lace.emulator import poly_p1d
-
+from lace.emulator import utils
 
 
 import torch
@@ -62,20 +62,18 @@ class NNEmulator:
         self.Nsim = Nsim
         self.device= torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.save_path=save_path
-        
-        
-        self.module_path = '../lace/emulator/'
+        self.lace_path = utils.ls_level(os.getcwd(), 2)
+        self.models_dir = os.path.join(self.lace_path,'/lace/emulator') 
         
         
         self.initial_weights=initial_weights
         
         if initial_weights==True:
-            dir_path = os.path.join(self.module_path, 'initial_params')
-            
+             
             if self.kmax_Mpc == 4:
-                self.initial_weights_path=os.path.join(dir_path,'initial_weights.pt')
+                self.initial_weights_path=os.path.join(self.lace_path,'lace/emulator/initial_params/initial_weights.pt')
             if self.kmax_Mpc == 8:
-                self.initial_weights_path=os.path.join(dir_path,'initial_weights_extended.pt')
+                self.initial_weights_path=os.path.join(self.lace_path,'lace/emulator/initial_params/initial_weights_extended.pt')
                 
         self.key_list=list_archives
         
@@ -89,7 +87,7 @@ class NNEmulator:
                 
             else:
                 
-                initial_weights = torch.load(os.path.join(self.module_path,self.model_path), map_location='cpu') 
+                initial_weights = torch.load(os.path.join(self.models_dir,self.model_path), map_location='cpu') 
                 self.emulator = nn_architecture.MDNemulator_polyfit(nhidden=5, ndeg=self.ndeg)
                 self.emulator.load_state_dict(initial_weights)
                 self.emulator.to(self.device)
@@ -99,10 +97,7 @@ class NNEmulator:
 
                 self.log_KMpc = torch.log10(kMpc_train).to(self.device) 
                 self._obtain_paramLims()
-                
-        
-
-                
+                        
                 return
             
 
