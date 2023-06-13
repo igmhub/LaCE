@@ -11,8 +11,14 @@ from lace.cosmo import fit_linP
 class archiveP1D(object):
     """Book-keeping of flux P1D measured in a suite of simulations."""
 
+<<<<<<< HEAD
     def __init__(self,basedir=None,p1d_label=None,skewers_label=None,
                 drop_tau_rescalings=False,drop_temp_rescalings=False,
+=======
+    def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
+                p1d_label=None,skewers_label=None,
+                drop_tau_rescalings=True,drop_temp_rescalings=True,
+>>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
                 keep_every_other_rescaling=False,nearest_tau=False,
                 max_archive_size=None,undersample_z=1,verbose=False,
                 no_skewers=False,pick_sim_number=None,drop_sim_number=None,
@@ -141,8 +147,12 @@ class archiveP1D(object):
                 # setup CAMB object
                 sim_cosmo=camb_cosmo.get_cosmology_from_dictionary(sim_cosmo_dict)
                 # compute linear power parameters at each z (in Mpc units)
+<<<<<<< HEAD
                 linP_zs=fit_linP.get_linP_Mpc_zs(sim_cosmo,zs,self.kp_Mpc,
                         include_f_p=True)
+=======
+                linP_zs=fit_linP.get_linP_Mpc_zs(sim_cosmo,zs,self.kp_Mpc)
+>>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
                 print('update linP_zs',linP_zs)
                 pair_data['linP_zs']=list(linP_zs)
             else:
@@ -158,10 +168,14 @@ class archiveP1D(object):
                 snap_p1d_data['Delta2_p'] = linP_params['Delta2_p']
                 snap_p1d_data['n_p'] = linP_params['n_p']
                 snap_p1d_data['alpha_p'] = linP_params['alpha_p']
+<<<<<<< HEAD
                 if 'f' in linP_params:
                     snap_p1d_data['f_p'] = linP_params['f']
                 else:
                     snap_p1d_data['f_p'] = linP_params['f_p']
+=======
+                snap_p1d_data['f_p'] = linP_params['f_p']
+>>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
                 snap_p1d_data['z']=zs[snap]
 
                 # check if we have extracted skewers yet

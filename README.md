@@ -28,8 +28,11 @@ The following modules are required:
 
 `classylss` (not at this point, I think)
 
+<<<<<<< HEAD
 `pytorch'
 
+=======
+>>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
 ### Installation at NERSC
 
 (Instructions by Andreu Font-Ribera on March 21st 2022)
@@ -96,6 +99,7 @@ The current version of the emulator, relased in this repo, does not emulate `alp
 
 ## Saving and loading emulator hyperparameters
 
+<<<<<<< HEAD
 The current version of LaCE consists in two emulators, a GP and a NN. It is possible to work on both independently, e.g:
 
 - Train the NN from scratch from predefined weights and save it in a specified path: 
@@ -114,4 +118,7 @@ The notebook 'Tutorial_emulator.ipynb' shows different examples of how to call t
 
 Currently, there are also two versions of the post-processing of the LaCE simulations. By default, the emulators use the new post-processing as defined in arxiv.org/pdf/2305.19064.pdf.
 To use the post-processing used and defined in arxiv.org/abs/2011.15127, one should specify postprocessing='500'.
+=======
+The default operation of the emulator is currently to optimise a new set of hyperparameters on whichever training set it is initialised with. However, one can also run with the `train=False` flag, and use GPEmulator.load_default(). This will load a standardised set of hyperparameters (along with the appropriate parameter rescalings for the X training data) that are optimised on the entire suite.
+>>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
 

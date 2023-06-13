@@ -2,5 +2,9 @@ build/*
 dist/*
 notebooks/.ipynb_checkpoints/
 lace.egg-info/
+<<<<<<< HEAD
 /nfs/pic.es/user/l/lcabayol/DESI/LaCE/lace/emulator/NNmodels/*
 /nfs/pic.es/user/l/lcabayol/DESI/LaCE/lace/emulator/NNmodels_extended/*
+=======
+__pycache__/
+>>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
