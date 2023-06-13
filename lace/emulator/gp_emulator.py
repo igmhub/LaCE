@@ -57,9 +57,9 @@ class GPEmulator:
         self.reduce_var_z=reduce_var_z ## Emulate P1D(k)/(1+z)^3.8
         self.reduce_var_mf=reduce_var_mf ## Emulate P1D(k)*<F>^2.5
         if self.postprocessing=='768':
-            self.key_data='data_av_all'
+            self.key_data='data_av_all' ##Selects average of the three axes and two phases in the new postprocessing
         elif self.postprocessing=='500':
-            self.key_data='data'
+            self.key_data='data' ##Select data of the old postprocessing
         self.ndeg=ndeg
 
         # read all files with P1D measured in simulation suite
@@ -142,7 +142,7 @@ class GPEmulator:
         coefficients '''
 
         self._fit_p1d_in_archive(self.ndeg,self.kmax_Mpc)
-        coeffs=np.empty([len(getattr(self.archive, self.key_data)),self.ndeg+1]) ## Hardcoded to use 4th degree polynomial
+        coeffs=np.empty([len(getattr(self.archive, self.key_data)),self.ndeg+1])
         for aa in range(len(getattr(self.archive, self.key_data))):
             coeffs[aa]=getattr(self.archive, self.key_data)[aa]['fit_p1d'] ## Collect P1D data for all k bins
 
@@ -398,6 +398,7 @@ class GPEmulator:
 
         elif self.emu_type=="polyfit":
             # gp_pred here are just the coefficients of the polynomial
+            print(gp_pred.shape)
             poly=np.poly1d(gp_pred)
             p1d=np.exp(poly(np.log(k_Mpc)))
             if not return_covar:
