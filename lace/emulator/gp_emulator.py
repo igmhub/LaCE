@@ -29,8 +29,7 @@ class GPEmulator:
                 emu_per_k=False,
                 reduce_var_k=False,
                 reduce_var_z=False,
-                reduce_var_mf=False,
-                key_data='data'):
+                reduce_var_mf=False):
 
         self.kmax_Mpc=kmax_Mpc
         self.basedir=basedir
@@ -52,7 +51,6 @@ class GPEmulator:
         self.reduce_var_k=reduce_var_k ## Emulate (1+k)P1D(k)
         self.reduce_var_z=reduce_var_z ## Emulate P1D(k)/(1+z)^3.8
         self.reduce_var_mf=reduce_var_mf ## Emulate P1D(k)*<F>^2.5
-        self.key_data=key_data
 
         # read all files with P1D measured in simulation suite
         if passarchive==None:
@@ -70,8 +68,8 @@ class GPEmulator:
             self.archive=passarchive
 
         ## Find max k bin
-        self.k_bin=np.max(np.where(getattr(self.archive, self.key_data)[0]["k_Mpc"]<self.kmax_Mpc))+1
-        self.training_k_bins=getattr(self.archive, self.key_data)[0]["k_Mpc"][1:self.k_bin]
+        self.k_bin=np.max(np.where(self.archive.data[0]["k_Mpc"]<self.kmax_Mpc))+1
+        self.training_k_bins=self.archive.data[0]["k_Mpc"][1:self.k_bin]
         ## If none, take all parameters
         if paramList==None:
         	self.paramList=['mF', 'sigT_Mpc', 'gamma', 'kF_Mpc', 'Delta2_p', 'n_p']
@@ -97,15 +95,15 @@ class GPEmulator:
         ''' Method to get the Y training points in the form of the P1D
         at different k values '''
 
-        P1D_k=np.empty([len(getattr(self.archive, self.key_data)),self.k_bin-1])
-        for aa in range(len(getattr(self.archive, self.key_data))):
-            P1D_k[aa]=getattr(self.archive, self.key_data)[aa]['p1d_Mpc'][1:self.k_bin]
+        P1D_k=np.empty([len(self.archive.data),self.k_bin-1])
+        for aa in range(len(self.archive.data)):
+            P1D_k[aa]=self.archive.data[aa]['p1d_Mpc'][1:self.k_bin]
             if self.reduce_var_k:
                 P1D_k[aa]*=(1+self.training_k_bins)
             if self.reduce_var_z:
-                P1D_k[aa]*=1./((1+getattr(self.archive, self.key_data)[aa]["z"])**3.8)
+                P1D_k[aa]*=1./((1+self.archive.data[aa]["z"])**3.8)
             if self.reduce_var_mf:
-                P1D_k[aa]*=((getattr(self.archive, self.key_data)[aa]["mF"])**2)
+                P1D_k[aa]*=((self.archive.data[aa]["mF"])**2)
 
         return P1D_k
 
@@ -115,9 +113,9 @@ class GPEmulator:
         coefficients '''
 
         self._fit_p1d_in_archive(4,self.kmax_Mpc)
-        coeffs=np.empty([len(getattr(self.archive, self.key_data)),5]) ## Hardcoded to use 4th degree polynomial
-        for aa in range(len(getattr(self.archive, self.key_data))):
-            coeffs[aa]=getattr(self.archive, self.key_data)[aa]['fit_p1d'] ## Collect P1D data for all k bins
+        coeffs=np.empty([len(self.archive.data),5]) ## Hardcoded to use 4th degree polynomial
+        for aa in range(len(self.archive.data)):
+            coeffs[aa]=self.archive.data[aa]['fit_p1d'] ## Collect P1D data for all k bins
 
         return coeffs
 
@@ -139,7 +137,7 @@ class GPEmulator:
         coefficients for the polyfit emulator '''
 
         ## Grid that will contain all training params
-        params=np.empty([len(getattr(self.archive, self.key_data)),len(paramList)])
+        params=np.empty([len(self.archive.data),len(paramList)])
 
         if self.emu_type=="k_bin":
             trainingPoints=self._training_points_k_bin(archive)
@@ -149,9 +147,9 @@ class GPEmulator:
             print("Unknown emulator type, terminating")
             quit()
 
-        for aa in range(len(getattr(self.archive, self.key_data))):
+        for aa in range(len(self.archive.data)):
             for bb in range(len(paramList)):
-                params[aa][bb]=getattr(self.archive, self.key_data)[aa][paramList[bb]] ## Populate parameter grid
+                params[aa][bb]=archive.data[aa][paramList[bb]] ## Populate parameter grid
 
         return params,trainingPoints
 
@@ -159,7 +157,7 @@ class GPEmulator:
     def _fit_p1d_in_archive(self,deg,kmax_Mpc):
         """For each entry in archive, fit polynomial to log(p1d)"""
         
-        for entry in getattr(self.archive, self.key_data):
+        for entry in self.archive.data:
             k_Mpc = entry['k_Mpc']
             p1d_Mpc = entry['p1d_Mpc']
             fit_p1d = poly_p1d.PolyP1D(k_Mpc,p1d_Mpc,kmin_Mpc=1.e-3,
@@ -180,7 +178,7 @@ class GPEmulator:
             self.paramLimits=self._get_param_limits(self.X_param_grid)
 
         ## Rescaling to unit volume
-        for cc in range(len(getattr(self.archive, self.key_data))):
+        for cc in range(len(self.archive.data)):
             self.X_param_grid[cc]=self._rescale_params(self.X_param_grid[cc],self.paramLimits)
         if self.verbose:
             print("Rescaled params to unity volume")
@@ -234,7 +232,7 @@ class GPEmulator:
             start = time.time()
             for gp in self.gp:
                 gp.initialize_parameter()
-                print("Training GP on %d points" % len(getattr(self.archive, self.key_data)))
+                print("Training GP on %d points" % len(self.archive.data))
                 status = gp.optimize(messages=False)
                 print("Optimised")
             end = time.time()
@@ -242,7 +240,7 @@ class GPEmulator:
         else:
             start = time.time()
             self.gp.initialize_parameter()
-            print("Training GP on %d points" % len(getattr(self.archive, self.key_data)))
+            print("Training GP on %d points" % len(self.archive.data))
             status = self.gp.optimize(messages=False)
             end = time.time()
             print("GPs optimised in {0:.2f} seconds".format(end-start))
@@ -425,9 +423,8 @@ class GPEmulator:
         
         model_dict={}
         for param in self.paramList:
-            model_dict[param]=getattr(self.archive, self.key_data)[point_number][param]
+            model_dict[param]=self.archive.data[point_number][param]
         
-        print(model_dict)
         return model_dict
 
 
