@@ -125,8 +125,10 @@ class archivePND(object):
                     "Invalid sim_suite value. Available options: ",
                     sim_suite_all,
                 )
+                raise
         except:
             print("An error occurred while checking the sim_suite value.")
+            raise
 
         # get list of simulations available for this suite
         _ = get_sim_option_list(sim_suite)
@@ -142,8 +144,10 @@ class archivePND(object):
                         "Invalid pick_sim value. Available options: ",
                         self.sim_option_list,
                     )
+                    raise
             except:
                 print("An error occurred while checking the pick_sim value.")
+                raise
 
         # check if the value of drop_sim within simulations available
         if drop_sim is not None:
@@ -155,8 +159,10 @@ class archivePND(object):
                         "Invalid drop_sim value. Available options: ",
                         self.sim_option_list,
                     )
+                    raise
             except:
                 print("An error occurred while checking the drop_sim value.")
+                raise
 
         ## get info from simulation suite
         self._get_info_sim_suite(sim_suite)
