@@ -5,15 +5,8 @@ class PolyP1D(object):
     """Polynomial describing P1D measured in a simulation."""
 
     def __init__(self,k_Mpc=None,P_Mpc=None,lnP_fit=None,
-<<<<<<< HEAD
-            kmin_Mpc=1.e-3,kmax_Mpc=10.0,deg=4,extrapolate=False):
+            kmin_Mpc=1.e-3,kmax_Mpc=10.0,deg=5):
         """Setup object either by passing measured power, or coefficients"""
-        
-        self.extrapolate=extrapolate
-=======
-            kmin_Mpc=1.e-3,kmax_Mpc=10.0,deg=4):
-        """Setup object either by passing measured power, or coefficients"""
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
 
         if k_Mpc is None:
             self._setup_from_coefficients(lnP_fit,kmin_Mpc)
@@ -29,18 +22,9 @@ class PolyP1D(object):
         self.lnP_fit = np.polyfit(np.log(k_Mpc[kfit]),np.log(P_Mpc[kfit]), deg)
         # store poly1d object
         self.lnP = np.poly1d(self.lnP_fit)
-<<<<<<< HEAD
-        
-        if self.extrapolate==False:
-            # remember minimum k used in fit (better not to extrapolate)
-            self.kmin_Mpc = min(k_Mpc[kfit])
-        elif self.extrapolate==True:
-            self.kmin_Mpc = 1e-3
-=======
+
         # remember minimum k used in fit (better not to extrapolate)
         self.kmin_Mpc = min(k_Mpc[kfit])
->>>>>>> ee194d2db97224f7da7be91dbb712b7c20b70b78
-
 
     def _setup_from_coefficients(self,lnP_fit,kmin_Mpc):
         """Setup object from coefficients"""
