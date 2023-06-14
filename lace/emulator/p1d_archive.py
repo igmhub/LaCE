@@ -14,7 +14,7 @@ class archiveP1D(object):
     def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
                 p1d_label=None,skewers_label=None,
                 drop_tau_rescalings=False,drop_temp_rescalings=True,
-                keep_every_other_rescaling=False,nearest_tau=False,
+                nearest_tau=False,
                 max_archive_size=None,undersample_z=1,verbose=False,
                 no_skewers=False,pick_sim_number=None,drop_sim_number=None,
                 drop_snap_number=None,z_max=5.,nsamples=None,undersample_cube=1,
@@ -53,8 +53,7 @@ class archiveP1D(object):
 
         self._load_data(drop_tau_rescalings,drop_temp_rescalings,
                             max_archive_size,undersample_z,no_skewers,
-                            pick_sim_number,self.drop_sim_number,
-                            keep_every_other_rescaling,
+                            pick_sim_number,self.drop_sim_number, 
                             z_max,undersample_cube,nsamples)
         
         if nearest_tau:
@@ -65,8 +64,7 @@ class archiveP1D(object):
 
     def _load_data(self,drop_tau_rescalings,drop_temp_rescalings,
                             max_archive_size,undersample_z,no_skewers,
-                            pick_sim_number,drop_sim_number,
-                            keep_every_other_rescaling,
+                            pick_sim_number,drop_sim_number, 
                             z_max,undersample_cube,nsamples=None):
         """Setup archive by looking at all measured power spectra in sims"""
 
@@ -228,9 +226,7 @@ class archiveP1D(object):
                     p1d_data['p1d_Mpc'] = pair_p1d
                     self.data.append(p1d_data)                
 
-        if keep_every_other_rescaling:
-            if self.verbose: print('will keep every other rescaling in archive')
-            self._keep_every_other_rescaling()
+      
         if drop_tau_rescalings:
             if self.verbose: print('will drop tau scalings from archive')
             self._drop_tau_rescalings()
@@ -282,22 +278,6 @@ class archiveP1D(object):
         return
 
 
-    def _keep_every_other_rescaling(self):
-        """Keep only every other rescaled entry"""
-
-        # select scalings that we want to keep
-        keep_tau_scales=np.unique([x['scale_tau'] for x in self.data])[::2]
-        keep_T0_scales=np.unique([x['scale_T0'] for x in self.data])[::2]
-        keep_gamma_scales=np.unique([x['scale_gamma'] for x in self.data])[::2]
-
-        # keep only entries with correct scalings
-        data = [x for x in self.data if (
-                            (x['scale_tau'] in keep_tau_scales) &
-                            (x['scale_T0'] in keep_T0_scales) &
-                            (x['scale_gamma'] in keep_gamma_scales))]
-
-        self.data = data
-        return
 
 
     def _drop_tau_rescalings(self):
