@@ -17,8 +17,8 @@ class archiveP1D(object):
                 keep_every_other_rescaling=False,nearest_tau=False,
                 max_archive_size=None,undersample_z=1,verbose=False,
                 no_skewers=False,pick_sim_number=None,drop_sim_number=None,
-                z_max=5.,nsamples=None,undersample_cube=1,
-                kp_Mpc=None):
+                drop_snap_number=None,z_max=5.,nsamples=None,undersample_cube=1,
+                kp_Mpc=None,drop_redshift=None,pick_redshift=None):
         """Load archive from base sim directory and (optional) label
             identifying skewer configuration (number, width).
             If kp_Mpc is specified, recompute linP params in archive"""
@@ -45,8 +45,11 @@ class archiveP1D(object):
         self.z_max=z_max
         self.undersample_cube=undersample_cube
         self.drop_sim_number=drop_sim_number
+        self.drop_snap_number=drop_snap_number
         # pivot point used in linP parameters
-        self.kp_Mpc=kp_Mpc
+        self.kp_Mpc=kp_Mpc 
+        self.drop_redshift=drop_redshift
+        self.pick_redshift=pick_redshift
 
         self._load_data(drop_tau_rescalings,drop_temp_rescalings,
                             max_archive_size,undersample_z,no_skewers,
@@ -92,7 +95,7 @@ class archiveP1D(object):
             ## If selected k_p is same as in the archive, do not recompute
             update_kp=False
         else:
-            # will trigger slow code, could check that kp has indeed changed
+            # will trigger slow code, might be good to check that kp has indeed changed
             update_kp=True
 
         if pick_sim_number is not None:
@@ -116,6 +119,14 @@ class archiveP1D(object):
             with open(pair_json) as json_file:  
                 pair_data = json.load(json_file)
             zs=pair_data['zs']
+            if (self.drop_redshift is not None)&(self.pick_redshift is not None):
+                raise ValueError('Cannot drop and pick a redshift simultaneosuly')
+            if self.drop_redshift is not None:
+                zs.remove(self.drop_redshift)
+                print('Removed redshift %s, now the redshift grid is %s'%(self.drop_redshift,zs))
+            elif self.pick_redshift is not None:
+                print('Pick only redshift %s'%self.pick_redshift)
+                zs = [self.pick_redshift]
             Nz=len(zs)
             if self.verbose:
                 print('simulation has %d redshifts'%Nz)
@@ -460,3 +471,4 @@ class archiveP1D(object):
         sim_cosmo=camb_cosmo.get_cosmology_from_dictionary(sim_cosmo_dict)
 
         return sim_cosmo
+
