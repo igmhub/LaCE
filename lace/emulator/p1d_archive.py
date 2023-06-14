@@ -15,7 +15,7 @@ class archiveP1D(object):
                 p1d_label=None,skewers_label=None,
                 drop_tau_rescalings=False,drop_temp_rescalings=True,
                 nearest_tau=False,
-                max_archive_size=None,undersample_z=1,verbose=False,
+                max_archive_size=None,verbose=False,
                 no_skewers=False,pick_sim_number=None,drop_sim_number=None,
                 drop_snap_number=None,z_max=5.,nsamples=None,undersample_cube=1,
                 kp_Mpc=None,drop_redshift=None,pick_redshift=None):
@@ -52,7 +52,7 @@ class archiveP1D(object):
         self.pick_redshift=pick_redshift
 
         self._load_data(drop_tau_rescalings,drop_temp_rescalings,
-                            max_archive_size,undersample_z,no_skewers,
+                            max_archive_size,no_skewers,
                             pick_sim_number,self.drop_sim_number, 
                             z_max,undersample_cube,nsamples)
         
@@ -63,7 +63,7 @@ class archiveP1D(object):
 
 
     def _load_data(self,drop_tau_rescalings,drop_temp_rescalings,
-                            max_archive_size,undersample_z,no_skewers,
+                            max_archive_size,no_skewers,
                             pick_sim_number,drop_sim_number, 
                             z_max,undersample_cube,nsamples=None):
         """Setup archive by looking at all measured power spectra in sims"""
@@ -128,7 +128,7 @@ class archiveP1D(object):
             Nz=len(zs)
             if self.verbose:
                 print('simulation has %d redshifts'%Nz)
-                print('undersample_z =',undersample_z)
+             
 
             # overwrite linP parameters stored in parameter.json
             if update_kp:
@@ -149,7 +149,7 @@ class archiveP1D(object):
                 if self.verbose: print('Use linP_zs from parameter.json')
 
             # to make lighter emulators, we might undersample redshifts
-            for snap in range(0,Nz,undersample_z):       
+            for snap in range(0,Nz):       
                 if zs[snap]>z_max:
                     continue
                 # get linear power parameters describing snapshot
