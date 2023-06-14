@@ -8,7 +8,7 @@ import sklearn
 
 # LaCE modules
 from lace.emulator import gp_emulator
-from lace.emulator import pd_archive
+from lace.emulator import pnd_archive
 from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 from lace.emulator import poly_p1d
@@ -248,9 +248,9 @@ class NNEmulator:
         """
         if self.postprocessing == '768':
             if self.drop_sim == None:
-                archive = pd_archive.archivePD(z_max=self.zmax, nsamples=30)
+                archive = pnd_archive.archivePND(z_max=self.zmax, nsamples=30)
             else: 
-                archive = pd_archive.archivePD(z_max=self.zmax, drop_sim=self.drop_sim, nsamples=30)
+                archive = pnd_archive.archivePND(z_max=self.zmax, drop_sim=self.drop_sim, nsamples=30)
                 
             
             # Average over samples
@@ -265,9 +265,9 @@ class NNEmulator:
 
         if self.postprocessing == '500':
             if self.drop_sim == None:
-                archive = pd_archive.archivePD(post_processing="500")
+                archive = pnd_archive.archivePND(post_processing="500")
             else: 
-                archive = pd_archive.archivePD(post_processing="500", drop_sim=self.drop_sim)
+                archive = pnd_archive.archivePND(post_processing="500", drop_sim=self.drop_sim)
                 
         if self.drop_z!=None:
             archive= self._drop_redshfit(archive)   
