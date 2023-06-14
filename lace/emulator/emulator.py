@@ -1,15 +1,15 @@
 import sys
- from lace.emulator import gp_emulator
- sys.path.append('emulator.py')
- from lace.emulator import nn_emulator
+from lace.emulator import gp_emulator
+sys.path.append('emulator.py')
+from lace.emulator import nn_emulator
 
 
- class P1Demulator:
-     def __init__(self, emu_algorithm='NN', paramList=['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc'], zmax=4.5, kmax_Mpc=4, ndeg=5, Nsim=30, train=True, emu_type='polyfit', list_archives=['data_input_axes', 'data_input_phases'], postprocessing='768', drop_rescalings=False, drop_sim=None, drop_z=None, passarchive=None, model_path=None, save_path=None):
-         """
-         Initializes the P1Demulator class.
+class P1Demulator:
+    def __init__(self, emu_algorithm='NN', paramList=['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc'], zmax=4.5, kmax_Mpc=4, ndeg=5, Nsim=30, train=True, emu_type='polyfit', list_archives=['data_input_axes', 'data_input_phases'], postprocessing='768', drop_rescalings=False, drop_sim=None, drop_z=None, passarchive=None, model_path=None, save_path=None):
+        """
+        Initializes the P1Demulator class.
 
-         Args:
+        Args:
              emu_algorithm (str): The emulator algorithm to use. Possibilities are Gaussian Process 'GP' and Neural Network (NN). Default is 'NN'.
              paramList (list): List of parameters. Default is ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc'].
              zmax (float): Maximum redshift. Default is 4.5.
@@ -28,24 +28,23 @@ import sys
              passarchive: (class) Archive to train the emulator. Only for the GP.
              model_path: (str) Path to a pretrained model. Default is None. Only for NN
              save_path: (str) Path to store the model. Default is None. Only for NN
-         """
-
-         self.emu_algorithm = emu_algorithm
-         self.paramList = paramList
-
-
-         if postprocessing == '500':
-             # If postprocessing is '500', print a warning message and modify list_archives
-             print('Warning: With the one-axis version of the post-processing, the only archive allowed is "data".\nModified to continue running')
-             list_archives = ['data']
-
-         if (postprocessing != '500')&(postprocessing != '768'):
-             raise ValueError('Available post-processings are "500" and "768"')
+        """
+        self.emu_algorithm = emu_algorithm
+        self.paramList = paramList
 
 
-         if self.emu_algorithm == 'NN':
-             # If emu_algorithm is 'NN', create an instance of NNEmulator and assign it to the emulator attribute
-             self.emulator = nn_emulator.NNEmulator(
+        if postprocessing == '500':
+            # If postprocessing is '500', print a warning message and modify list_archives
+            print('Warning: With the one-axis version of the post-processing, the only archive allowed is "data".\nModified to continue running')
+            list_archives = ['data']
+
+        if (postprocessing != '500')&(postprocessing != '768'):
+            raise ValueError('Available post-processings are "500" and "768"')
+
+
+        if self.emu_algorithm == 'NN':
+            # If emu_algorithm is 'NN', create an instance of NNEmulator and assign it to the emulator attribute
+            self.emulator = nn_emulator.NNEmulator(
                  paramList=paramList,
                  kmax_Mpc=4,
                  zmax=4.5,
@@ -65,9 +64,9 @@ import sys
              )
 
 
-         if self.emu_algorithm == 'GP':
-             # If emu_algorithm is 'GP', create an instance of GPEmulator and assign it to the emulator attribute
-             self.emulator = gp_emulator.GPEmulator(
+        if self.emu_algorithm == 'GP':
+            # If emu_algorithm is 'GP', create an instance of GPEmulator and assign it to the emulator attribute
+            self.emulator = gp_emulator.GPEmulator(
                  z_max=zmax,
                  kmax_Mpc=kmax_Mpc,
                  ndeg=ndeg,
@@ -78,5 +77,5 @@ import sys
                  emu_type=emu_type,
                  check_hull=False,
                  key_data=list_archives[0]
-             ) 
+            ) 
 
