@@ -11,14 +11,24 @@ from lace.cosmo import fit_linP
 class archiveP1D(object):
     """Book-keeping of flux P1D measured in a suite of simulations."""
 
-    def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
-                p1d_label=None,skewers_label=None,
-                drop_tau_rescalings=True,drop_temp_rescalings=True,
-                keep_every_other_rescaling=False,nearest_tau=False,
-                max_archive_size=None,undersample_z=1,verbose=False,
-                no_skewers=False,pick_sim_number=None,drop_sim_number=None,
-                drop_snap_number=None,z_max=5.,nsamples=None,undersample_cube=1,
-                kp_Mpc=None,drop_redshift=None,pick_redshift=None):
+    def __init__(
+		self,
+		basedir="/lace/emulator/sim_suites/Australia20/",
+                p1d_label=None,
+		skewers_label=None,
+                drop_tau_rescalings=True,
+		drop_temp_rescalings=True,
+                verbose=False,
+                no_skewers=False,
+		pick_sim_number=None,
+		drop_sim_number=None,
+                drop_snap_number=None,
+		z_max=4.5,
+		nsamples=None,
+                kp_Mpc=None,
+		drop_redshift=None,
+		pick_redshift=None
+		):
         """Load archive from base sim directory and (optional) label
             identifying skewer configuration (number, width).
             If kp_Mpc is specified, recompute linP params in archive"""
@@ -41,9 +51,7 @@ class archiveP1D(object):
         self.verbose=verbose
         self.drop_tau_rescalings=drop_tau_rescalings
         self.drop_temp_rescalings=drop_temp_rescalings
-        self.nearest_tau=nearest_tau
-        self.z_max=z_max
-        self.undersample_cube=undersample_cube
+        self.z_max=z_max 
         self.drop_sim_number=drop_sim_number
         self.drop_snap_number=drop_snap_number
         # pivot point used in linP parameters
@@ -51,23 +59,23 @@ class archiveP1D(object):
         self.drop_redshift=drop_redshift
         self.pick_redshift=pick_redshift
 
-        self._load_data(drop_tau_rescalings,drop_temp_rescalings,
-                            max_archive_size,undersample_z,no_skewers,
-                            pick_sim_number,self.drop_sim_number,
-                            keep_every_other_rescaling,
-                            z_max,undersample_cube,nsamples)
-        
-        if nearest_tau:
-            self._keep_nearest_tau()
+        self._load_data(drop_tau_rescalings,
+			    drop_temp_rescalings,
+                            no_skewers,
+                            pick_sim_number,
+			    self.drop_sim_number, 
+                            z_max,
+			    nsamples
+			    )
+         
 
         return
 
 
     def _load_data(self,drop_tau_rescalings,drop_temp_rescalings,
-                            max_archive_size,undersample_z,no_skewers,
+                            no_skewers,
                             pick_sim_number,drop_sim_number,
-                            keep_every_other_rescaling,
-                            z_max,undersample_cube,nsamples=None):
+                            z_max,nsamples=None):
         """Setup archive by looking at all measured power spectra in sims"""
 
         # each measured power will have a dictionary, stored here
@@ -105,7 +113,7 @@ class archiveP1D(object):
             start=0
 
         # read info from all sims, all snapshots, all rescalings
-        for sample in range(start,self.nsamples,undersample_cube):
+        for sample in range(start,self.nsamples):
             if sample is drop_sim_number:
                 continue
             # store parameters for simulation pair / model
@@ -130,7 +138,7 @@ class archiveP1D(object):
             Nz=len(zs)
             if self.verbose:
                 print('simulation has %d redshifts'%Nz)
-                print('undersample_z =',undersample_z)
+               
 
             # overwrite linP parameters stored in parameter.json
             if update_kp:
@@ -149,7 +157,7 @@ class archiveP1D(object):
                 if self.verbose: print('Use linP_zs from parameter.json')
 
             # to make lighter emulators, we might undersample redshifts
-            for snap in range(0,Nz,undersample_z):       
+            for snap in range(0,Nz):       
                 if zs[snap]>z_max:
                     continue
                 # get linear power parameters describing snapshot
@@ -225,9 +233,7 @@ class archiveP1D(object):
                     p1d_data['p1d_Mpc'] = pair_p1d
                     self.data.append(p1d_data)                
 
-        if keep_every_other_rescaling:
-            if self.verbose: print('will keep every other rescaling in archive')
-            self._keep_every_other_rescaling()
+        
         if drop_tau_rescalings:
             if self.verbose: print('will drop tau scalings from archive')
             self._drop_tau_rescalings()
@@ -235,14 +241,6 @@ class archiveP1D(object):
             if self.verbose: print('will drop temperature scalings from archive')
             self._drop_temperature_rescalings()
 
-        if max_archive_size is not None:
-            Ndata=len(self.data)
-            if Ndata > max_archive_size:
-                if self.verbose:
-                    print('will keep only',max_archive_size,'entries')
-                keep=np.random.randint(0,Ndata,max_archive_size)
-                keep_data=[self.data[i] for i in keep]
-                self.data=keep_data
 
         N=len(self.data)
         if self.verbose:
@@ -279,24 +277,6 @@ class archiveP1D(object):
         return
 
 
-    def _keep_every_other_rescaling(self):
-        """Keep only every other rescaled entry"""
-
-        # select scalings that we want to keep
-        keep_tau_scales=np.unique([x['scale_tau'] for x in self.data])[::2]
-        keep_T0_scales=np.unique([x['scale_T0'] for x in self.data])[::2]
-        keep_gamma_scales=np.unique([x['scale_gamma'] for x in self.data])[::2]
-
-        # keep only entries with correct scalings
-        data = [x for x in self.data if (
-                            (x['scale_tau'] in keep_tau_scales) &
-                            (x['scale_T0'] in keep_T0_scales) &
-                            (x['scale_gamma'] in keep_gamma_scales))]
-
-        self.data = data
-        return
-
-
     def _drop_tau_rescalings(self):
         """Keep only entries with scale_tau=1"""
 
@@ -304,16 +284,7 @@ class archiveP1D(object):
         self.data = data
         return
 
-    def _keep_nearest_tau(self):
-        """ Keep only entries with the nearest tau scalings
-        Hardcoding this to 0.7 and 1.4 for now, which we used
-        in the 200 x 256**3 suite"""
-
-        data = [x for x in self.data if x['scale_tau']==1.0 or x['scale_tau']==0.7 or x['scale_tau']==1.4]
-        self.data = data
-        return
-
-
+  
     def _drop_temperature_rescalings(self):
         """Keep only entries with scale_T0=1 and scale_gamma=1"""
 
