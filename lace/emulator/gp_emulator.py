@@ -61,9 +61,9 @@ class GPEmulator:
         if self.postprocessing=='768':
             self.key_data='data_av_all'#Selects average of the three axes and two phases in the new postprocessing
 
-         elif self.postprocessing=='500':
-             self.key_data='data' ##Select data of the old postprocessing
-         self.ndeg=ndeg
+        elif self.postprocessing=='500':
+            self.key_data='data' ##Select data of the old postprocessing
+        self.ndeg=ndeg
 
 
         # read all files with P1D measured in simulation suite
@@ -92,7 +92,7 @@ class GPEmulator:
                      archive.data_av_all = [d for d in archive.data_av_all if d['scale_tau'] == 1] 
                  self.archive=archive
 
-             else:
+            else:
                  raise('Available archives are "500" and "768"')
                       
         else:
@@ -102,8 +102,8 @@ class GPEmulator:
             self.archive=passarchive
 
         ## Find max k bin
-         self.k_bin=np.max(np.where(getattr(self.archive, self.key_data)[0]["k_Mpc"]<self.kmax_Mpc))+1
-         self.training_k_bins=getattr(self.archive, self.key_data)[0]["k_Mpc"][1:self.k_bin]    
+        self.k_bin=np.max(np.where(getattr(self.archive, self.key_data)[0]["k_Mpc"]<self.kmax_Mpc))+1
+        self.training_k_bins=getattr(self.archive, self.key_data)[0]["k_Mpc"][1:self.k_bin]    
    
         ## If none, take all parameters
         if paramList==None:
@@ -131,8 +131,8 @@ class GPEmulator:
         at different k values '''
 
         P1D_k=np.empty([len(getattr(self.archive, self.key_data)),self.k_bin-1])
-         for aa in range(len(getattr(self.archive, self.key_data))):
-             P1D_k[aa]=getattr(self.archive, self.key_data)[aa]['p1d_Mpc'][1:self.k_bin]
+        for aa in range(len(getattr(self.archive, self.key_data))):
+            P1D_k[aa]=getattr(self.archive, self.key_data)[aa]['p1d_Mpc'][1:self.k_bin]
 
 
         return P1D_k
