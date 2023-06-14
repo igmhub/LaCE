@@ -24,8 +24,7 @@ class GPEmulator:
                 p1d_label=None,skewers_label=None,
                 max_archive_size=None,verbose=False,kmax_Mpc=4.0,
                 paramList=None,train=True,drop_tau_rescalings=True,
-                drop_temp_rescalings=True,
-                undersample_z=1,emu_type="polyfit",z_max=4.5,z_list=None, 
+                drop_temp_rescalings=True,emu_type="polyfit",z_max=4.5,z_list=None, 
                 passarchive=None,set_noise_var=1e-3,asymmetric_kernel=True,
                 check_hull=False,set_hyperparams=None,
                 paramLimits=None,rbf_only=True,
@@ -45,7 +44,6 @@ class GPEmulator:
         self.max_archive_size=max_archive_size
         self.drop_tau_rescalings=drop_tau_rescalings
         self.drop_temp_rescalings=drop_temp_rescalings 
-        self.undersample_z=undersample_z
         self.verbose=verbose
         self.asymmetric_kernel=asymmetric_kernel
         self.z_max=z_max
@@ -75,8 +73,7 @@ class GPEmulator:
                 self.archive=p1d_archive.archiveP1D(basedir,p1d_label,skewers_label,
                         max_archive_size=self.max_archive_size,verbose=verbose,
                         drop_tau_rescalings=drop_tau_rescalings,
-                        drop_temp_rescalings=drop_temp_rescalings,z_max=self.z_max, 
-                        undersample_z=undersample_z)
+                        drop_temp_rescalings=drop_temp_rescalings,z_max=self.z_max)
 
                 
             elif self.postprocessing=='768':
@@ -496,8 +493,7 @@ class GPEmulator:
         initParams["emu_type"]=self.emu_type
         initParams["emu_noise"]=self.emu_noise
         initParams["drop_tau_rescalings"]=self.drop_tau_rescalings
-        initParams["drop_temp_rescalings"]=self.drop_temp_rescalings 
-        initParams["undersample_z"]=self.undersample_z
+        initParams["drop_temp_rescalings"]=self.drop_temp_rescalings  
         initParams["paramList"]=self.paramList
         initParams["asymmetric_kernel"]=self.asymmetric_kernel
         initParams["z_max"]=self.z_max
@@ -556,8 +552,7 @@ class GPEmulator:
         initParams["emu_type"]=self.emu_type
         initParams["emu_noise"]=self.emu_noise
         initParams["drop_tau_rescalings"]=self.drop_tau_rescalings
-        initParams["drop_temp_rescalings"]=self.drop_temp_rescalings 
-        initParams["undersample_z"]=self.undersample_z
+        initParams["drop_temp_rescalings"]=self.drop_temp_rescalings  
         initParams["paramList"]=self.paramList
         initParams["asymmetric_kernel"]=self.asymmetric_kernel
         initParams["z_max"]=self.z_max
