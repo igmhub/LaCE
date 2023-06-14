@@ -16,7 +16,7 @@ class archiveP1D(object):
                 drop_tau_rescalings=False,drop_temp_rescalings=True,
                 verbose=False,
                 no_skewers=False,pick_sim_number=None,drop_sim_number=None,
-                drop_snap_number=None,z_max=5.,nsamples=None,undersample_cube=1,
+                drop_snap_number=None,z_max=5.,nsamples=None,
                 kp_Mpc=None,drop_redshift=None,pick_redshift=None):
         """Load archive from base sim directory and (optional) label
             identifying skewer configuration (number, width).
@@ -41,7 +41,6 @@ class archiveP1D(object):
         self.drop_tau_rescalings=drop_tau_rescalings
         self.drop_temp_rescalings=drop_temp_rescalings 
         self.z_max=z_max
-        self.undersample_cube=undersample_cube
         self.drop_sim_number=drop_sim_number
         self.drop_snap_number=drop_snap_number
         # pivot point used in linP parameters
@@ -52,7 +51,7 @@ class archiveP1D(object):
         self._load_data(drop_tau_rescalings,drop_temp_rescalings,
                             no_skewers,
                             pick_sim_number,self.drop_sim_number, 
-                            z_max,undersample_cube,nsamples)
+                            z_max,nsamples)
         
       
         return
@@ -61,7 +60,7 @@ class archiveP1D(object):
     def _load_data(self,drop_tau_rescalings,drop_temp_rescalings,
                             no_skewers,
                             pick_sim_number,drop_sim_number, 
-                            z_max,undersample_cube,nsamples=None):
+                            z_max,nsamples=None):
         """Setup archive by looking at all measured power spectra in sims"""
 
         # each measured power will have a dictionary, stored here
@@ -99,7 +98,7 @@ class archiveP1D(object):
             start=0
 
         # read info from all sims, all snapshots, all rescalings
-        for sample in range(start,self.nsamples,undersample_cube):
+        for sample in range(start,self.nsamples):
             if sample is drop_sim_number:
                 continue
             # store parameters for simulation pair / model
