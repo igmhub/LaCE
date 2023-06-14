@@ -22,7 +22,7 @@ class GPEmulator:
     """
     def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
                 p1d_label=None,skewers_label=None,
-                max_archive_size=None,verbose=False,kmax_Mpc=4.0,
+                verbose=False,kmax_Mpc=4.0,
                 paramList=None,train=True,drop_tau_rescalings=True,
                 drop_temp_rescalings=True,emu_type="polyfit",z_max=4.5,z_list=None, 
                 passarchive=None,set_noise_var=1e-3,asymmetric_kernel=True,
@@ -40,8 +40,7 @@ class GPEmulator:
         self.kmax_Mpc=kmax_Mpc
         self.basedir=basedir
         self.emu_type=emu_type
-        self.emu_noise=set_noise_var
-        self.max_archive_size=max_archive_size
+        self.emu_noise=set_noise_var 
         self.drop_tau_rescalings=drop_tau_rescalings
         self.drop_temp_rescalings=drop_temp_rescalings 
         self.verbose=verbose
@@ -71,7 +70,7 @@ class GPEmulator:
 
             if self.postprocessing=='500':
                 self.archive=p1d_archive.archiveP1D(basedir,p1d_label,skewers_label,
-                        max_archive_size=self.max_archive_size,verbose=verbose,
+                        ,verbose=verbose,
                         drop_tau_rescalings=drop_tau_rescalings,
                         drop_temp_rescalings=drop_temp_rescalings,z_max=self.z_max)
 
@@ -479,7 +478,7 @@ class GPEmulator:
         saved alongside the emulator hyperparameters. '''
 
         ## Perform checks
-        if self.custom_archive or self.max_archive_size:
+        if self.custom_archive:
             print("Cannot save emulators trained on custom archives")
             return
         if not self.trained:
@@ -540,7 +539,7 @@ class GPEmulator:
         ## as save/load does not work with non-standard
         ## data archives
 
-        if self.custom_archive or self.max_archive_size:
+        if self.custom_archive:
             print("Cannot load emulators with non-standard training data")
             return
         if self.trained:
