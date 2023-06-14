@@ -22,8 +22,8 @@ from torch.optim import lr_scheduler
 
 from lace.emulator import nn_architecture
 cosmo_fid=camb_cosmo.get_cosmology()
-sys.path.append('emulator.py')
-
+#sys.path.append('emulator.py')
+import copy
 class NNEmulator:
     """A class for training an emulator.
     
@@ -97,7 +97,7 @@ class NNEmulator:
                 self.emulator.to(self.device)
                 print('Model loaded. No training needed')
                 
-                self.k_Mpc, self.Nz, self.k_bin, kMpc_train = self._obtain_sim_params()
+                kMpc_train = self._obtain_sim_params()
 
                 self.log_KMpc = torch.log10(kMpc_train).to(self.device) 
                
@@ -139,12 +139,14 @@ class NNEmulator:
             Nk (int): Number of k values.
             k_Mpc_train (tensor): k values in the k training range
         """
-        sim = pnd_archive.archivePND(z_max=self.zmax, pick_sim=0)
+        sim = pnd_archive.archivePND()
         sim.average_over_samples(flag="all")
 
-        sim_zs = [data['z'] for data in sim.data_av_all]
+        sim_0 = copy.deepcopy(sim)
+        sim_0.data_av_all =  [d for d in sim_0.data_av_all if d['ind_sim'] == 0]
+        sim_zs = [data['z'] for data in sim_0.data_av_all]
         Nz = len(sim_zs)
-        k_Mpc = sim.data[0]['k_Mpc']
+        k_Mpc = sim_0.data[0]['k_Mpc']
         self.k_Mpc = k_Mpc
 
         k_mask = (k_Mpc < self.kmax_Mpc) & (k_Mpc > 0)
@@ -153,7 +155,7 @@ class NNEmulator:
         k_Mpc_train = torch.Tensor(k_Mpc_train)
         
         self.Nz = Nz
-        #self.k_bin = Nk
+        self.k_bin = Nk
         
         data = [{key: value for key, value in sim.data_av_all[i].items() if key in self.emuparams} for i in range(len(sim.data_av_all))]
         data = self._sort_dict(data, self.emuparams)  # sort the data by emulator parameters
@@ -170,7 +172,7 @@ class NNEmulator:
         self.yscalings = np.median(training_label)
 
 
-        return k_Mpc, Nz, Nk, k_Mpc_train
+        return k_Mpc_train
 
     
     def _get_training_data(self, archive, key_av='None'):
@@ -198,13 +200,13 @@ class NNEmulator:
         training_label = [list(training_label[i].values())[0][1:(self.k_bin+1)].tolist() for i in range(len(getattr(archive, key_av)))]
 
         training_label = np.array(training_label)
-        yscalings = np.median(training_label)
-        training_label = np.log10(training_label / yscalings)
+        #yscalings = np.median(training_label)
+        training_label = np.log10(training_label / self.yscalings)
         training_label = torch.Tensor(training_label)
         
-        self.yscalings=yscalings
+        #self.yscalings=yscalings
 
-        return training_label, yscalings
+        return training_label#, yscalings
     
     def _drop_redshfit(self, archive):
         """
@@ -298,7 +300,7 @@ class NNEmulator:
         """
         
         print('start the training of the emulator')
-        self.k_Mpc, self.Nz, self.k_bin, kMpc_train = self._obtain_sim_params()
+        kMpc_train = self._obtain_sim_params()
       
 
         training = self._get_archive()
@@ -323,7 +325,7 @@ class NNEmulator:
         for key in key_list:
                 
             training_data_prime = self._get_training_data(training, key_av = key)
-            training_label_prime, yscalings = self._get_training_pd1(training, key_av = key)
+            training_label_prime = self._get_training_pd1(training, key_av = key)
                 
             training_data = torch.concat((training_data,training_data_prime),0)                   
             training_label = torch.concat((training_label,training_label_prime),0)
@@ -333,12 +335,7 @@ class NNEmulator:
               
         trainig_dataset = TensorDataset(training_data,training_label)
         loader_train = DataLoader(trainig_dataset, batch_size=100, shuffle = True)
-            
-
-        if self.model_path != None:
-            initial_weights = torch.load(self.model_path, map_location='cpu')    
-            self.emulator.load_state_dict(initial_weights)
-            
+             
         self.emulator.to(self.device)
 
         t0 = time.time()
