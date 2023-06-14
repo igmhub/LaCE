@@ -14,7 +14,7 @@ class archiveP1D(object):
     def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
                 p1d_label=None,skewers_label=None,
                 drop_tau_rescalings=False,drop_temp_rescalings=True,
-                nearest_tau=False,verbose=False,
+                verbose=False,
                 no_skewers=False,pick_sim_number=None,drop_sim_number=None,
                 drop_snap_number=None,z_max=5.,nsamples=None,undersample_cube=1,
                 kp_Mpc=None,drop_redshift=None,pick_redshift=None):
@@ -39,8 +39,7 @@ class archiveP1D(object):
             self.skewers_label='Ns500_wM0.05'
         self.verbose=verbose
         self.drop_tau_rescalings=drop_tau_rescalings
-        self.drop_temp_rescalings=drop_temp_rescalings
-        self.nearest_tau=nearest_tau
+        self.drop_temp_rescalings=drop_temp_rescalings 
         self.z_max=z_max
         self.undersample_cube=undersample_cube
         self.drop_sim_number=drop_sim_number
@@ -55,9 +54,7 @@ class archiveP1D(object):
                             pick_sim_number,self.drop_sim_number, 
                             z_max,undersample_cube,nsamples)
         
-        if nearest_tau:
-            self._keep_nearest_tau()
-
+      
         return
 
 
@@ -277,14 +274,6 @@ class archiveP1D(object):
         self.data = data
         return
 
-    def _keep_nearest_tau(self):
-        """ Keep only entries with the nearest tau scalings
-        Hardcoding this to 0.7 and 1.4 for now, which we used
-        in the 200 x 256**3 suite"""
-
-        data = [x for x in self.data if x['scale_tau']==1.0 or x['scale_tau']==0.7 or x['scale_tau']==1.4]
-        self.data = data
-        return
 
 
     def _drop_temperature_rescalings(self):
