@@ -9,6 +9,7 @@ from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
 from lace.emulator import p1d_archive
 from lace.emulator import poly_p1d
+from lace.emulator import pnd_archive
 
 class GPEmulator:
     """
@@ -19,48 +20,81 @@ class GPEmulator:
     """
     def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
                 p1d_label=None,skewers_label=None,
-                max_archive_size=None,verbose=False,kmax_Mpc=10.0,
-                paramList=None,train=True,drop_tau_rescalings=True,
-                drop_temp_rescalings=True,keep_every_other_rescaling=False,
-                undersample_z=1,emu_type="k_bin",z_max=5,z_list=None,
-                passarchive=None,set_noise_var=1e-3,asymmetric_kernel=True,
-                check_hull=False,set_hyperparams=None,
-                paramLimits=None,rbf_only=True,
+                verbose=False,kmax_Mpc=4.0,
+                paramList=None,train=True,
+		drop_tau_rescalings=True,
+                drop_temp_rescalings=True,
+                emu_type="polyfit",
+		z_max=5,
+                passarchive=None,
+		set_noise_var=1e-3,
+		asymmetric_kernel=True,
+                check_hull=False,
+		set_hyperparams=None,
+                paramLimits=None,
+		rbf_only=True,
                 emu_per_k=False,
-                reduce_var_k=False,
-                reduce_var_z=False,
-                reduce_var_mf=False):
+		ndeg=5,
+		key_data='data_av_all', 
+		postprocessing='768',
+		drop_sim=None
+                ):   
+              
+             
 
         self.kmax_Mpc=kmax_Mpc
         self.basedir=basedir
         self.emu_type=emu_type
-        self.emu_noise=set_noise_var
-        self.max_archive_size=max_archive_size
+        self.emu_noise=set_noise_var 
         self.drop_tau_rescalings=drop_tau_rescalings
-        self.drop_temp_rescalings=drop_temp_rescalings
-        self.keep_every_other_rescaling=keep_every_other_rescaling
-        self.undersample_z=undersample_z
+        self.drop_temp_rescalings=drop_temp_rescalings 
         self.verbose=verbose
         self.asymmetric_kernel=asymmetric_kernel
         self.z_max=z_max
         self.paramLimits=paramLimits
+        self.postprocessing=postprocessing
         self.crossval=False ## Flag to check whether or not a prediction is
                             ## inside the training set
         self.rbf_only=rbf_only
         self.emu_per_k=emu_per_k
-        self.reduce_var_k=reduce_var_k ## Emulate (1+k)P1D(k)
-        self.reduce_var_z=reduce_var_z ## Emulate P1D(k)/(1+z)^3.8
-        self.reduce_var_mf=reduce_var_mf ## Emulate P1D(k)*<F>^2.5
+     
+        if self.postprocessing=='768':
+            self.key_data='data_av_all'#Selects average of the three axes and two phases in the new postprocessing
+
+         elif self.postprocessing=='500':
+             self.key_data='data' ##Select data of the old postprocessing
+         self.ndeg=ndeg
+
 
         # read all files with P1D measured in simulation suite
         if passarchive==None:
             self.custom_archive=False
-            self.archive=p1d_archive.archiveP1D(basedir,p1d_label,skewers_label,
-                        max_archive_size=self.max_archive_size,verbose=verbose,
+            if self.postprocessing=='500':
+            	self.archive=p1d_archive.archiveP1D(
+			basedir,
+			p1d_label,
+			skewers_label,
+                        verbose=verbose,
                         drop_tau_rescalings=drop_tau_rescalings,
-                        drop_temp_rescalings=drop_temp_rescalings,z_max=self.z_max,
-                        keep_every_other_rescaling=keep_every_other_rescaling,
-                        undersample_z=undersample_z)
+                        drop_temp_rescalings=drop_temp_rescalings,
+			z_max=self.z_max
+			)
+            elif self.postprocessing=='768':
+                 archive=pnd_archive.archivePND(z_max=4.5,nsamples=30, drop_sim=drop_sim)
+
+                 archive.average_over_samples(flag="all")
+                 archive.average_over_samples(flag="phases")
+                 archive.average_over_samples(flag="axes")
+                 archive.input_emulator(flag="all")
+                 archive.input_emulator(flag="phases")
+                 archive.input_emulator(flag="axes")
+                 if drop_tau_rescalings==True:
+                     archive.data_av_all = [d for d in archive.data_av_all if d['scale_tau'] == 1] 
+                 self.archive=archive
+
+             else:
+                 raise('Available archives are "500" and "768"')
+                      
         else:
             self.custom_archive=True
             if self.verbose:
@@ -68,8 +102,9 @@ class GPEmulator:
             self.archive=passarchive
 
         ## Find max k bin
-        self.k_bin=np.max(np.where(self.archive.data[0]["k_Mpc"]<self.kmax_Mpc))+1
-        self.training_k_bins=self.archive.data[0]["k_Mpc"][1:self.k_bin]
+         self.k_bin=np.max(np.where(getattr(self.archive, self.key_data)[0]["k_Mpc"]<self.kmax_Mpc))+1
+         self.training_k_bins=getattr(self.archive, self.key_data)[0]["k_Mpc"][1:self.k_bin]    
+   
         ## If none, take all parameters
         if paramList==None:
         	self.paramList=['mF', 'sigT_Mpc', 'gamma', 'kF_Mpc', 'Delta2_p', 'n_p']
@@ -95,15 +130,10 @@ class GPEmulator:
         ''' Method to get the Y training points in the form of the P1D
         at different k values '''
 
-        P1D_k=np.empty([len(self.archive.data),self.k_bin-1])
-        for aa in range(len(self.archive.data)):
-            P1D_k[aa]=self.archive.data[aa]['p1d_Mpc'][1:self.k_bin]
-            if self.reduce_var_k:
-                P1D_k[aa]*=(1+self.training_k_bins)
-            if self.reduce_var_z:
-                P1D_k[aa]*=1./((1+self.archive.data[aa]["z"])**3.8)
-            if self.reduce_var_mf:
-                P1D_k[aa]*=((self.archive.data[aa]["mF"])**2)
+        P1D_k=np.empty([len(getattr(self.archive, self.key_data)),self.k_bin-1])
+         for aa in range(len(getattr(self.archive, self.key_data))):
+             P1D_k[aa]=getattr(self.archive, self.key_data)[aa]['p1d_Mpc'][1:self.k_bin]
+
 
         return P1D_k
 
@@ -112,10 +142,10 @@ class GPEmulator:
         ''' Method to get the Y training points in the form of polyfit 
         coefficients '''
 
-        self._fit_p1d_in_archive(4,self.kmax_Mpc)
-        coeffs=np.empty([len(self.archive.data),5]) ## Hardcoded to use 4th degree polynomial
-        for aa in range(len(self.archive.data)):
-            coeffs[aa]=self.archive.data[aa]['fit_p1d'] ## Collect P1D data for all k bins
+        self._fit_p1d_in_archive(self.ndeg,self.kmax_Mpc) 
+        coeffs=np.empty([len(getattr(self.archive, self.key_data)),self.ndeg+1]) 
+        for aa in range(len(getattr(self.archive, self.key_data))): 
+            coeffs[aa]=getattr(self.archive, self.key_data)[aa]['fit_p1d'] ## Collect P1D data for all k bins   
 
         return coeffs
 
@@ -137,7 +167,7 @@ class GPEmulator:
         coefficients for the polyfit emulator '''
 
         ## Grid that will contain all training params
-        params=np.empty([len(self.archive.data),len(paramList)])
+        params=np.empty([len(getattr(self.archive, self.key_data)),len(paramList)]) 
 
         if self.emu_type=="k_bin":
             trainingPoints=self._training_points_k_bin(archive)
@@ -147,9 +177,9 @@ class GPEmulator:
             print("Unknown emulator type, terminating")
             quit()
 
-        for aa in range(len(self.archive.data)):
+        for aa in range(len(getattr(self.archive, self.key_data))): 
             for bb in range(len(paramList)):
-                params[aa][bb]=archive.data[aa][paramList[bb]] ## Populate parameter grid
+                params[aa][bb]=getattr(self.archive, self.key_data)[aa][paramList[bb]] ## Populate parameter grid   
 
         return params,trainingPoints
 
@@ -157,7 +187,7 @@ class GPEmulator:
     def _fit_p1d_in_archive(self,deg,kmax_Mpc):
         """For each entry in archive, fit polynomial to log(p1d)"""
         
-        for entry in self.archive.data:
+        for entry in getattr(self.archive, self.key_data):
             k_Mpc = entry['k_Mpc']
             p1d_Mpc = entry['p1d_Mpc']
             fit_p1d = poly_p1d.PolyP1D(k_Mpc,p1d_Mpc,kmin_Mpc=1.e-3,
@@ -178,7 +208,7 @@ class GPEmulator:
             self.paramLimits=self._get_param_limits(self.X_param_grid)
 
         ## Rescaling to unit volume
-        for cc in range(len(self.archive.data)):
+        for cc in range(len(getattr(self.archive, self.key_data))):
             self.X_param_grid[cc]=self._rescale_params(self.X_param_grid[cc],self.paramLimits)
         if self.verbose:
             print("Rescaled params to unity volume")
@@ -232,7 +262,7 @@ class GPEmulator:
             start = time.time()
             for gp in self.gp:
                 gp.initialize_parameter()
-                print("Training GP on %d points" % len(self.archive.data))
+                print("Training GP on %d points" % len(getattr(self.archive, self.key_data))) 
                 status = gp.optimize(messages=False)
                 print("Optimised")
             end = time.time()
@@ -240,7 +270,7 @@ class GPEmulator:
         else:
             start = time.time()
             self.gp.initialize_parameter()
-            print("Training GP on %d points" % len(self.archive.data))
+            print("Training GP on %d points" % len(getattr(self.archive, self.key_data))) 
             status = self.gp.optimize(messages=False)
             end = time.time()
             print("GPs optimised in {0:.2f} seconds".format(end-start))
@@ -309,16 +339,7 @@ class GPEmulator:
         out_pred=np.ndarray.flatten((pred+1)*self.scalefactors)
         out_err=np.ndarray.flatten(np.sqrt(var)*self.scalefactors)
 
-        if self.reduce_var_k:
-            out_pred*=1./(1+self.training_k_bins)
-            out_err*=1./(1+self.training_k_bins)
-        if self.reduce_var_z:
-            out_pred*=((1+z)**3.8)
-            out_err*=((1+z)**3.8)
-        if self.reduce_var_mf:
-            out_pred*=1./(model["mF"]**2)
-            out_err*=1./(model["mF"]**2)
-       
+             
         return out_pred,out_err
 
 
