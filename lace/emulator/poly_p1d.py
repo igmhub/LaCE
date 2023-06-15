@@ -5,7 +5,7 @@ class PolyP1D(object):
     """Polynomial describing P1D measured in a simulation."""
 
     def __init__(self,k_Mpc=None,P_Mpc=None,lnP_fit=None,
-            kmin_Mpc=1.e-3,kmax_Mpc=10.0,deg=5):
+            kmin_Mpc=1.e-3,kmax_Mpc=10.0,deg=4):
         """Setup object either by passing measured power, or coefficients"""
 
         if k_Mpc is None:
