@@ -23,7 +23,7 @@ class archiveP1D(object):
 		pick_sim_number=None,
 		drop_sim_number=None,
                 drop_snap_number=None,
-		z_max=4.5,
+		z_max=5,
 		nsamples=None,
                 kp_Mpc=None,
 		drop_redshift=None,
