@@ -20,7 +20,7 @@ class GPEmulator:
     """
     def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
                 p1d_label=None,skewers_label=None,
-                verbose=False,kmax_Mpc=4.0,
+                verbose=False,kmax_Mpc=10.0,
                 paramList=None,train=True,
 		drop_tau_rescalings=True,
                 drop_temp_rescalings=True,
@@ -34,7 +34,7 @@ class GPEmulator:
                 paramLimits=None,
 		rbf_only=True,
                 emu_per_k=False,
-		ndeg=5,
+		ndeg=4,
 		key_data='data_av_all', 
 		postprocessing='768',
 		drop_sim=None
