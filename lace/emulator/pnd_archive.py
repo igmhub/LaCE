@@ -5,8 +5,7 @@ import os
 import json
 from itertools import product
 import matplotlib.pyplot as plt
-from lace_manager.setup_simulations import read_gadget
-from lace.setup_simulations import read_genic
+from lace.setup_simulations import read_genic, read_gadget
 from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 
