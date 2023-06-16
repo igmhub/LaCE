@@ -4,7 +4,10 @@ import sys
 import os
 
 from lace.archive.pnd_archive import archivePND
+from lace.archive.pnd_archive import get_sim_option_list as lace_get_sim_option_list
 from lace.archive.p1d_archive_Nyx import archiveP1D_Nyx
+
+# from lace.archive.p1d_archive_Nyx import get_sim_option_list as nyx_get_sim_option_list
 
 
 class Archive(archivePND, archiveP1D_Nyx):
@@ -23,9 +26,30 @@ class Archive(archivePND, archiveP1D_Nyx):
 
     """
 
-    def __init__(self, sim_suite="Cabayol23"):
+    def __init__(self, verbose=True):
+        self.sim_suite_all = ["Pedersen21", "Cabayol23", "768_768", "Nyx"]
+        if verbose:
+            print(
+                "The list of simulation suites available is:",
+                self.sim_suite_all,
+            )
+
+    def get_sims_available(self, sim_suite="Cabayol23"):
+        if (
+            (sim_suite == "Pedersen21")
+            | (sim_suite == "Cabayol23")
+            | (sim_suite == "768_768")
+        ):
+            sim_option_list, _, _ = lace_get_sim_option_list(sim_suite)
+            print(sim_option_list)
+
+        elif sim_suite == "Nyx":
+            print("Not implemented yet")
+            # nyx_get_sim_option_list()
+
+    def get_training_data(self, sim_suite="Cabayol23"):
         """
-        Initialize an instance of the Archive class.
+        Get training data for emulator
 
         Parameters:
             sim_suite (str, optional): The simulation suite. Defaults to "Cabayol23".
@@ -35,14 +59,13 @@ class Archive(archivePND, archiveP1D_Nyx):
 
         """
 
-        sim_suite_all = ["Pedersen21", "Cabayol23", "768_768", "Nyx"]
         try:
-            if sim_suite in sim_suite_all:
+            if sim_suite in self.sim_suite_all:
                 pass
             else:
                 print(
                     "Invalid sim_suite value. Available options: ",
-                    sim_suite_all,
+                    self.sim_suite_all,
                 )
                 raise
         except:
@@ -55,10 +78,57 @@ class Archive(archivePND, archiveP1D_Nyx):
             | (sim_suite == "768_768")
         ):
             archivePND.__init__(self, sim_suite=sim_suite)
+            archivePND.get_training_data(self)
 
         elif sim_suite == "Nyx":
-            # to be updated
-            archiveP1D_Nyx.__init__(self)
+            print("Not implemented yet")
+            # # to be updated
+            # archiveP1D_Nyx.__init__(self)
+            # archiveP1D_Nyx.get_training_data(self)
+
+    def get_testing_data(
+        self,
+        sim_suite="Cabayol23",
+        pick_sim="central",
+        tau_scaling=1,
+    ):
+        """
+        Get testing data for emulator
+
+        Parameters:
+            sim_suite (str, optional): The simulation suite. Defaults to "Cabayol23".
+
+        Raises:
+            ValueError: If the provided sim_suite value is not valid.
+
+        """
+
+        try:
+            if sim_suite in self.sim_suite_all:
+                pass
+            else:
+                print(
+                    "Invalid sim_suite value. Available options: ",
+                    self.sim_suite_all,
+                )
+                raise
+        except:
+            print("An error occurred while checking the sim_suite value.")
+            raise
+
+        if (
+            (sim_suite == "Pedersen21")
+            | (sim_suite == "Cabayol23")
+            | (sim_suite == "768_768")
+        ):
+            archivePND.__init__(self, sim_suite=sim_suite, pick_sim=pick_sim)
+            archivePND.get_testing_data(self, tau_scaling=tau_scaling)
+
+        elif sim_suite == "Nyx":
+            print("Not implemented yet")
+            # # to be updated
+            # archiveP1D_Nyx.__init__(self)
+            # archiveP1D_Nyx.get_testing_data(self)
 
     def print_entry(self, entry, fiducial_keys=True):
         """
