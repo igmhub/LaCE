@@ -17,13 +17,11 @@ class GPEmulator:
     a given P_1D(k) for the same k-bins used in training.
     GPEmulator.predict takes models in a dictionary format currently.
     """
-    def __init__(self,basedir="/lace/emulator/sim_suites/Australia20/",
-                p1d_label=None,skewers_label=None,
-                max_archive_size=None,verbose=False,kmax_Mpc=10.0,
-                paramList=None,train=True,drop_tau_rescalings=True,
-                drop_temp_rescalings=True,keep_every_other_rescaling=False,
-                undersample_z=1,emu_type="k_bin",z_max=5,z_list=None,
-                passarchive=None,set_noise_var=1e-3,asymmetric_kernel=True,
+    def __init__(self,archive,
+                verbose=False,kmax_Mpc=10.0,
+                paramList=None,train=True,
+                emu_type="k_bin",
+                set_noise_var=1e-3,asymmetric_kernel=True,
                 check_hull=False,set_hyperparams=None,
                 paramLimits=None,rbf_only=True,
                 emu_per_k=False,
@@ -31,41 +29,18 @@ class GPEmulator:
                 reduce_var_z=False,
                 reduce_var_mf=False):
 
+        self.archive=archive
         self.kmax_Mpc=kmax_Mpc
-        self.basedir=basedir
         self.emu_type=emu_type
         self.emu_noise=set_noise_var
-        self.max_archive_size=max_archive_size
-        self.drop_tau_rescalings=drop_tau_rescalings
-        self.drop_temp_rescalings=drop_temp_rescalings
-        self.keep_every_other_rescaling=keep_every_other_rescaling
-        self.undersample_z=undersample_z
         self.verbose=verbose
         self.asymmetric_kernel=asymmetric_kernel
-        self.z_max=z_max
         self.paramLimits=paramLimits
-        self.crossval=False ## Flag to check whether or not a prediction is
-                            ## inside the training set
         self.rbf_only=rbf_only
         self.emu_per_k=emu_per_k
         self.reduce_var_k=reduce_var_k ## Emulate (1+k)P1D(k)
         self.reduce_var_z=reduce_var_z ## Emulate P1D(k)/(1+z)^3.8
         self.reduce_var_mf=reduce_var_mf ## Emulate P1D(k)*<F>^2.5
-
-        # read all files with P1D measured in simulation suite
-        if passarchive==None:
-            self.custom_archive=False
-            self.archive=p1d_archive.archiveP1D(basedir,p1d_label,skewers_label,
-                        max_archive_size=self.max_archive_size,verbose=verbose,
-                        drop_tau_rescalings=drop_tau_rescalings,
-                        drop_temp_rescalings=drop_temp_rescalings,z_max=self.z_max,
-                        keep_every_other_rescaling=keep_every_other_rescaling,
-                        undersample_z=undersample_z)
-        else:
-            self.custom_archive=True
-            if self.verbose:
-                print("Loading emulator using a specific archive, not the one set in basedir")
-            self.archive=passarchive
 
         ## Find max k bin
         self.k_bin=np.max(np.where(self.archive.data[0]["k_Mpc"]<self.kmax_Mpc))+1
@@ -76,7 +51,7 @@ class GPEmulator:
         else:
         	self.paramList=paramList
 
-        self._build_interp(self.archive,self.paramList)
+        self._build_interp(self.paramList)
         self.trained=False
 
         if train==True:
@@ -91,7 +66,7 @@ class GPEmulator:
         self.emulators=None ## Flag that this is an individual emulator object
 
 
-    def _training_points_k_bin(self,archive):
+    def _training_points_k_bin(self):
         ''' Method to get the Y training points in the form of the P1D
         at different k values '''
 
@@ -108,7 +83,7 @@ class GPEmulator:
         return P1D_k
 
 
-    def _training_points_polyfit(self,archive):
+    def _training_points_polyfit(self):
         ''' Method to get the Y training points in the form of polyfit 
         coefficients '''
 
@@ -129,7 +104,7 @@ class GPEmulator:
         return params
 
 
-    def _buildTrainingSets(self,archive,paramList):
+    def _buildTrainingSets(self,paramList):
         ''' Build the grids that contain the training parameters
         This is a nxm grid of X data (n for number of training points, m
         for number of parameters), and a length nxk set of Y  data, k being
@@ -140,16 +115,16 @@ class GPEmulator:
         params=np.empty([len(self.archive.data),len(paramList)])
 
         if self.emu_type=="k_bin":
-            trainingPoints=self._training_points_k_bin(archive)
+            trainingPoints=self._training_points_k_bin()
         elif self.emu_type=="polyfit":
-            trainingPoints=self._training_points_polyfit(archive)
+            trainingPoints=self._training_points_polyfit()
         else:
             print("Unknown emulator type, terminating")
             quit()
 
         for aa in range(len(self.archive.data)):
             for bb in range(len(paramList)):
-                params[aa][bb]=archive.data[aa][paramList[bb]] ## Populate parameter grid
+                params[aa][bb]=self.archive.data[aa][paramList[bb]] ## Populate parameter grid
 
         return params,trainingPoints
 
@@ -165,13 +140,13 @@ class GPEmulator:
             entry['fit_p1d'] = fit_p1d.lnP_fit ## Add coeffs for each model to archive
 
 
-    def _build_interp(self,archive,paramList):
+    def _build_interp(self,paramList):
         ''' Method to build an GP object from a spectra archive and list of parameters
         Currently the parameter rescaling is done by taking the min and max
         of the provided params, not by defining our own prior volume. Need to decide
         whether or not this is what we want. '''
 
-        self.X_param_grid,self.Ypoints=self._buildTrainingSets(archive,paramList)
+        self.X_param_grid,self.Ypoints=self._buildTrainingSets(paramList)
 
         ## Get parameter limits for rescaling
         if self.paramLimits is None:
@@ -289,11 +264,6 @@ class GPEmulator:
             ## Rescale input parameters
             param.append(model[par])
             param[aa]=(param[aa]-self.paramLimits[aa,0])/(self.paramLimits[aa,1]-self.paramLimits[aa,0])
-        ## Check if model is inside training set
-        if self.crossval==True:
-            isin=np.isin(param,self.X_param_grid)
-            if np.sum(isin)==len(param): ## Check all parameters
-                print("Emulator call is inside training set!!!")
 
         # emu_per_k and reduce_var_* options only valid for k_bin emulator
         if self.emu_per_k:
@@ -426,157 +396,6 @@ class GPEmulator:
             model_dict[param]=self.archive.data[point_number][param]
         
         return model_dict
-
-
-    def saveEmulator(self):
-        ''' Method to save a trained emulator. The emulator
-        hyperparameters are saved alongside a .json dictionary
-        detailing the initial configuration of the emulator.
-        When an emulator is saved it will check the basedir
-        for existing emulator saves.
-        
-        We currently do not save emulators on custom archives
-        as it is impossible to know if the training points
-        are all the same. Training points are currently
-        reassembled using the snapshot archive, and not
-        saved alongside the emulator hyperparameters. '''
-
-        ## Perform checks
-        if self.custom_archive or self.max_archive_size:
-            print("Cannot save emulators trained on custom archives")
-            return
-        if not self.trained:
-            print("Cannot save an emulator that is not trained")
-            return
-
-        ## Create and save dictionary of emulator parameters
-        ## Can't think of a way to do this iteratively so we write it out
-        initParams={}
-        initParams["k_bin"]=self.k_bin
-        initParams["emu_type"]=self.emu_type
-        initParams["emu_noise"]=self.emu_noise
-        initParams["drop_tau_rescalings"]=self.drop_tau_rescalings
-        initParams["drop_temp_rescalings"]=self.drop_temp_rescalings
-        initParams["keep_every_other_rescaling"]=self.keep_every_other_rescaling
-        initParams["undersample_z"]=self.undersample_z
-        initParams["paramList"]=self.paramList
-        initParams["asymmetric_kernel"]=self.asymmetric_kernel
-        initParams["z_max"]=self.z_max
-
-        saveString=self.basedir+"/saved_emulator_"
-
-        ## Here we check to see if an emulator matching
-        ## our initial parameters is already saved
-        aa=1
-        while os.path.isfile(saveString+str(aa)+".json"):
-            ## Load dictionary and check if the values are different
-            ## to the emulator we want to save
-            with open(saveString+str(aa)+".json") as json_file:  
-                fileInitDict=json.load(json_file)
-            if fileInitDict==initParams: ## If so we can break the loop
-                if self.verbose:
-                    print("This emulator is already saved.")
-                return
-            else: ## If not keep looking through saved emulators
-                aa+=1
-
-        saveString=saveString+str(aa)
-        with open("%s.json" % saveString, 'w') as fp:
-            json.dump(initParams, fp)
-
-        ## Create and save dictionary of hyperparameters
-        saveDict={}
-        saveDict["paramList"]=self.paramList
-        saveDict["kmax_Mpc"]=self.kmax_Mpc
-        np.save('%s.npy' % saveString, self.gp.param_array)
-        if self.verbose:
-            print("Model saved as %s.npy" % saveString)
-
-
-    def loadEmulator(self):
-        ''' Method to load a saved set of emulator
-        hyperparameters. We need to make sure the
-        dataset and emulator configurations that the
-        hyperparameters were optimised on is the same
-        as the dataset we will use as training data.
-        So we will check the .json files for a perfect match '''
-
-        ## Perform same checks as when saving an emulator
-        ## as save/load does not work with non-standard
-        ## data archives
-
-        if self.custom_archive or self.max_archive_size:
-            print("Cannot load emulators with non-standard training data")
-            return
-        if self.trained:
-            print("Cannot load an emulator after training")
-            return
-
-        initParams={}
-        initParams["k_bin"]=self.k_bin
-        initParams["emu_type"]=self.emu_type
-        initParams["emu_noise"]=self.emu_noise
-        initParams["drop_tau_rescalings"]=self.drop_tau_rescalings
-        initParams["drop_temp_rescalings"]=self.drop_temp_rescalings
-        initParams["keep_every_other_rescaling"]=self.keep_every_other_rescaling
-        initParams["undersample_z"]=self.undersample_z
-        initParams["paramList"]=self.paramList
-        initParams["asymmetric_kernel"]=self.asymmetric_kernel
-        initParams["z_max"]=self.z_max
-
-        saveString=self.basedir+"/saved_emulator_"
-
-        ## Here we check to see if an emulator matching
-        ## our initial parameters is already saved
-        aa=1
-        while os.path.isfile(saveString+str(aa)+".json"):
-            ## Load dictionary and check if the values are different
-            ## to the emulator we want to load
-            with open(saveString+str(aa)+".json") as json_file:  
-                fileInitDict=json.load(json_file)
-            if fileInitDict==initParams: ## If so, load it
-                saveString=saveString+str(aa)
-                self.gp.update_model(False)
-                self.gp.initialize_parameter()
-                self.gp[:]=np.load(saveString+".npy")
-                self.gp.update_model(True)
-                self.trained=True
-                if self.verbose:
-                    print("Loading emulator from %s.npy" % saveString)
-                return
-                
-            else: ## If not keep looking through saved emulators
-                aa+=1
-        if self.verbose:
-            print("Could not find a matching emulator to load")
-
-
-    def load_default(self):
-        """ Load the default set of hyperparams and parameter limits
-        for the given sim suite. This is the set of hyperparams trained
-        on the full suite of sims, and allows us to standardise our emulator
-        when testing on different sims and with different training sets """
-
-        # the only stored emulator is for old settings (obsolete)
-        if (self.asymmetric_kernel or self.rbf_only):
-            raise ValueError('can not load emulator')
-
-        ## Load saved emulator dictionary
-        repo=os.environ['LACE_REPO']+'/'
-        emulator_path=repo+self.archive.basedir+"/emulator.json"
-
-        with open(emulator_path,"r") as fp:
-            emu_load=json.load(fp)
-
-        ## Have to use asarray as json won't save numpy arrays
-        ## but gp uses numpy arrays
-        ## Make sure paramList is the same as the one the hyperparameters
-        ## were optimised on
-        assert self.paramList==['mF', 'sigT_Mpc', 'gamma', 'kF_Mpc', 'Delta2_p', 'n_p']
-        self.load_hyperparams(np.asarray(emu_load["hyperparams"]),
-                        np.asarray(emu_load["paramLimits"]))
-
-        return
 
 
     def load_hyperparams(self,hyperparams,paramLimits=None):
