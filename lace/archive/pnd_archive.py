@@ -946,7 +946,7 @@ class archivePND(object):
         """
         Generate an input emulator based on the specified flag.
 
-        Old function, it is superseed by get_training_data
+        Old function, it is superseeded by get_training_data
 
         Args:
             flag (str): Flag indicating the type of input emulator to generate. Valid options are:
@@ -982,9 +982,135 @@ class archivePND(object):
 
         setattr(self, "data_input_" + flag, archive_both)
 
-    def get_training_data(self, flag="axes_phases_all"):
-         """
+    def get_training_data(self, average=None, tau_scaling=None):
+        """
         Retrieves the training data based on the provided flag.
+
+        Parameters:
+            self (object): The object instance.
+            average (str, optional): The flag indicating the desired training data. Defaults to "axes_phases_all".
+
+        Returns:
+            None.
+
+        Raises:
+            AssertionError: If the flag is not a string or if it contains an invalid operation.
+
+        Notes:
+            The retrieved training data is stored in the 'training_data' attribute of the parent class.
+
+        """
+
+        if average is None:
+            try:
+                if self.sim_suite == "Cabayol23":
+                    average = "axes_phases_all"
+                elif self.sim_suite == "768_768":
+                    average = "axes_phases_all"
+                elif self.sim_suite == "Pedersen21":
+                    average = "all"
+                else:
+                    print(self.sim_suite + " not implemented")
+                    raise
+            except:
+                print("An error occurred when checking the value of flag")
+                raise
+        else:
+            # ensures flag is string
+            assert isinstance(average, str), "Variable is not a string."
+
+        if tau_scaling is None:
+            try:
+                if self.sim_suite == "Cabayol23":
+                    tau_scaling = None
+                elif self.sim_suite == "768_768":
+                    tau_scaling = None
+                elif self.sim_suite == "Pedersen21":
+                    tau_scaling = 1
+                else:
+                    print(self.sim_suite + " not implemented")
+                    raise
+            except:
+                print("An error occurred when checking the value of flag")
+                raise
+        else:
+            assert isinstance(tau_scaling, (int, float)), "Variable is not a number."
+            try:
+                if self.sim_suite == "Cabayol23":
+                    possible_scalings = [0.9, 0.95, 1, 1.05, 1.1]
+                elif self.sim_suite == "768_768":
+                    possible_scalings = [0.9, 0.95, 1, 1.05, 1.1]
+                elif self.sim_suite == "Pedersen21":
+                    possible_scalings = [0.9, 1, 1.1]
+                else:
+                    print(self.sim_suite + " not implemented")
+                    raise
+            except:
+                print("An error occurred when checking the value of sim_suite")
+                raise
+
+            # check that the selecting scaling is available
+            err = (
+                "tau_scaling: "
+                + str(tau_scaling)
+                + " not implemented for "
+                + self.sim_suite
+                + "\n the list of possible tau_scalings is: "
+            )
+            for sc in possible_scalings:
+                err += str(sc) + " "
+            assert tau_scaling in possible_scalings, err
+
+        # to contain all points used in training
+        training_data = []
+
+        possible_operations = ["axes", "phases", "all", "individual"]
+        operations = split_string(average)
+
+        for operation in operations:
+            err = operation + " is not within allowed flags: "
+            for op in possible_operations:
+                err += op + " "
+            assert operation in possible_operations, err
+
+        if "axes" in operations:
+            # include average over axes
+            self.average_over_samples(flag="axes")
+            for ii in range(len(self.data_av_axes)):
+                if (tau_scaling is None) | (
+                    self.data_av_axes[ii]["scale_tau"] == tau_scaling
+                ):
+                    training_data.append(self.data_av_axes[ii])
+
+        if "phases" in operations:
+            # include average over phases
+            self.average_over_samples(flag="phases")
+            for ii in range(len(self.data_av_phases)):
+                if (tau_scaling is None) | (
+                    self.data_av_phases[ii]["scale_tau"] == tau_scaling
+                ):
+                    training_data.append(self.data_av_phases[ii])
+
+        if "all" in operations:
+            # include average over axes and phases
+            self.average_over_samples(flag="all")
+            for ii in range(len(self.data_av_all)):
+                if (tau_scaling is None) | (
+                    self.data_av_all[ii]["scale_tau"] == tau_scaling
+                ):
+                    training_data.append(self.data_av_all[ii])
+
+        if "individual" in operations:
+            # include individual measurements
+            for ii in range(len(self.data)):
+                if (tau_scaling is None) | (self.data[ii]["scale_tau"] == tau_scaling):
+                    training_data.append(self.data[ii])
+
+        setattr(self, "training_data", training_data)
+
+    def get_testing_data(self, tau_scaling=1):
+        """
+        Retrieves the testing data based on the provided flag.
 
         Parameters:
             self (object): The object instance.
@@ -1001,40 +1127,43 @@ class archivePND(object):
 
         """
 
-        # ensures flag is string
-        assert isinstance(flag, str), "Variable is not a string."
+        # ensures tau_scaling is a number
+        assert isinstance(tau_scaling, (int, float)), "Variable is not a number."
+
+        # get list of available scalings for each sim_suite
+        try:
+            if self.sim_suite == "Cabayol23":
+                possible_scalings = [0.9, 0.95, 1, 1.05, 1.1]
+            elif self.sim_suite == "768_768":
+                possible_scalings = [0.9, 0.95, 1, 1.05, 1.1]
+            elif self.sim_suite == "Pedersen21":
+                possible_scalings = [0.9, 1, 1.1]
+            else:
+                print(self.sim_suite + " not implemented")
+                raise
+        except:
+            print("An error occurred when checking the value of sim_suite")
+            raise
+
+        # check that the selecting scaling is available
+        err = (
+            "tau_scaling: "
+            + str(tau_scaling)
+            + " not implemented for "
+            + self.sim_suite
+            + "\n the list of possible tau_scalings is: "
+        )
+        for sc in possible_scalings:
+            err += str(sc) + " "
+        assert tau_scaling in possible_scalings, err
 
         # to contain all points used in training
-        training_data = []
+        testing_data = []
 
-        possible_operations = ["axes", "phases", "all", "individual"]
-        operations = split_string(flag)
+        # compute average over axes and phases
+        self.average_over_samples(flag="all")
+        for ii in range(len(self.data_av_all)):
+            if self.data_av_all[ii]["scale_tau"] == tau_scaling:
+                testing_data.append(self.data_av_all[ii])
 
-        for operation in operations:
-            err = operation + " is not within allowed flags: " + possible_operations
-            assert operation in possible_operations, err
-
-        if "axes" in operations:
-            # include average over axes
-            self.average_over_samples(flag="axes")
-            for ii in range(len(self.data_av_axes)):
-                training_data.append(self.data_av_axes[ii])
-
-        if "phases" in operations:
-            # include average over phases
-            self.average_over_samples(flag="phases")
-            for ii in range(len(self.data_av_phases)):
-                training_data.append(self.data_av_phases[ii])
-
-        if "all" in operations:
-            # include average over axes and phases
-            self.average_over_samples(flag="all")
-            for ii in range(len(self.data_av_all)):
-                training_data.append(self.data_av_all[ii])
-
-        if "individual" in operations:
-            # include individual measurements
-            for ii in range(len(self.data)):
-                training_data.append(self.data[ii])
-
-        setattr(self, "training_data", training_data)
+        setattr(self, "testing_data", testing_data)
