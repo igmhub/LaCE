@@ -307,3 +307,54 @@ class NNEmulator:
             torch.save(self.emulator.state_dict(), self.save_path)
 
 
+    def emulate_p1d_Mpc(self,model):
+    
+    
+        with torch.no_grad():
+        # for each entry (z) in truth/test simulation, compute residuals
+            z=model["z"]
+            
+            true_k=model["k_Mpc"]
+            k_mask=(true_k<self.kmax_Mpc) & (true_k>0)
+            true_p1d=model["p1d_Mpc"][k_mask]#[:self.Nk_test]
+            #assert len(true_p1d)==self.Nk_test
+            true_k = true_k[k_mask]
+
+            fit_p1d = poly_p1d.PolyP1D(true_k,true_p1d, kmin_Mpc=1.e-3,kmax_Mpc=self.kmax_Mpc,deg=self.ndeg)
+            true_p1d = fit_p1d.P_Mpc(true_k)
+
+
+            # for each entry, figure emulator parameter describing it (labels)
+
+            emu_call={}
+            for param in self.emuparams:
+                emu_call[param]=model[param]
+
+            emu_call = {k: emu_call[k] for k in self.emuparams}
+            emu_call = list(emu_call.values())
+            emu_call = np.array(emu_call)
+
+            emu_call = (emu_call - self.paramLims[:,0]) / (self.paramLims[:,1] - self.paramLims[:,0]) - 0.5
+            emu_call = torch.Tensor(emu_call).unsqueeze(0)
+
+
+            # ask emulator to emulate P1D (and its uncertainty)
+            coeffsPred,coeffs_logerr = self.emulator(emu_call.to(self.device))
+            coeffs_logerr = torch.clamp(coeffs_logerr,-10,5)
+            coeffserr = torch.exp(coeffs_logerr)**2
+                
+            powers = torch.arange(0,self.ndeg+1,1).cuda()
+            emu_p1d = torch.sum(coeffsPred[:,powers,None] * (self.log_KMpc[None,:] ** powers[None,:,None]), axis=1)
+
+
+            powers_err = torch.arange(0, self.ndeg*2+1, 2).cuda()
+            emu_p1derr = torch.sqrt(torch.sum(coeffserr[:,powers,None] * (self.log_KMpc[None,:] ** powers_err[None,:,None]), axis=1))
+
+
+            emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
+            emu_p1derr = emu_p1derr.detach().cpu().numpy().flatten()
+
+            emu_p1derr = 10**(emu_p1d)*np.log(10)*emu_p1derr*self.yscalings
+            emu_p1d = 10**(emu_p1d) * self.yscalings
+
+        return emu_p1d, emu_p1derr
