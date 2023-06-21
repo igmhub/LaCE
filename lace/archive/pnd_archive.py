@@ -1000,6 +1000,7 @@ class archivePND(object):
 
         """
 
+        ## check average keyword makes sense
         if average is None:
             try:
                 if self.sim_suite == "Cabayol23":
@@ -1014,10 +1015,20 @@ class archivePND(object):
             except:
                 print("An error occurred when checking the value of flag")
                 raise
-        else:
-            # ensures flag is string
-            assert isinstance(average, str), "Variable is not a string."
 
+        # ensures try is a string
+        assert isinstance(average, str), "Variable is not a string."
+
+        possible_operations = ["axes", "phases", "all", "individual"]
+        operations = split_string(average)
+
+        for operation in operations:
+            err = operation + " is not within allowed flags: "
+            for op in possible_operations:
+                err += op + " "
+            assert operation in possible_operations, err
+
+        ## check tau_scaling keyword makes sense
         if tau_scaling is None:
             try:
                 if self.sim_suite == "Cabayol23":
@@ -1060,17 +1071,8 @@ class archivePND(object):
                 err += str(sc) + " "
             assert tau_scaling in possible_scalings, err
 
-        # to contain all points used in training
+        ## put training points here
         training_data = []
-
-        possible_operations = ["axes", "phases", "all", "individual"]
-        operations = split_string(average)
-
-        for operation in operations:
-            err = operation + " is not within allowed flags: "
-            for op in possible_operations:
-                err += op + " "
-            assert operation in possible_operations, err
 
         if "axes" in operations:
             # include average over axes
@@ -1079,7 +1081,9 @@ class archivePND(object):
                 if (tau_scaling is None) | (
                     self.data_av_axes[ii]["scale_tau"] == tau_scaling
                 ):
-                    training_data.append(self.data_av_axes[ii])
+                    _ = self.data_av_axes[ii]
+                    _["ind_axis"] = 999
+                    training_data.append(_)
 
         if "phases" in operations:
             # include average over phases
@@ -1088,7 +1092,9 @@ class archivePND(object):
                 if (tau_scaling is None) | (
                     self.data_av_phases[ii]["scale_tau"] == tau_scaling
                 ):
-                    training_data.append(self.data_av_phases[ii])
+                    _ = self.data_av_phases[ii]
+                    _["ind_phase"] = 999
+                    training_data.append(_)
 
         if "all" in operations:
             # include average over axes and phases
@@ -1097,7 +1103,10 @@ class archivePND(object):
                 if (tau_scaling is None) | (
                     self.data_av_all[ii]["scale_tau"] == tau_scaling
                 ):
-                    training_data.append(self.data_av_all[ii])
+                    _ = self.data_av_all[ii]
+                    _["ind_axis"] = 999
+                    _["ind_phase"] = 999
+                    training_data.append(_)
 
         if "individual" in operations:
             # include individual measurements
@@ -1163,6 +1172,9 @@ class archivePND(object):
         self.average_over_samples(flag="all")
         for ii in range(len(self.data_av_all)):
             if self.data_av_all[ii]["scale_tau"] == tau_scaling:
-                testing_data.append(self.data_av_all[ii])
+                _ = self.data_av_all[ii]
+                _["ind_axis"] = 999
+                _["ind_phase"] = 999
+                training_data.append(_)
 
         setattr(self, "testing_data", testing_data)
