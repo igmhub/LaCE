@@ -35,7 +35,6 @@ class NNEmulator:
         nepochs (int): The number of epochs to train for. Default is 200.
         postprocessing (str): The post-processing method to use. Default is '3A'.
         model_path (str): The path to a pretrained model. Default is None.
-        list_archives (list): A list of archive names to use for training. Default is ['data'].
         drop_sim (float): The simulation to drop during training. Default is None.
         drop_z (float): Drop all snapshpts at redshift z from the training. Default is None.
         pick_z (float): Pick only snapshpts at redshift z. Default is None.
@@ -44,8 +43,9 @@ class NNEmulator:
         initial_weights (bool): Wheather to initialize the network always with a set of pre-defined random weights
     """
     
-    def __init__(self, paramList, kmax_Mpc=4, zmax=4.5, ndeg=5, nepochs=100,step_size=75, postprocessing='768', Nsim=30, train=True, list_archives=['data'], initial_weights=True,drop_sim=None, drop_z=None, pick_z=None, save_path=None, drop_rescalings=False, model_path=None):
+    def __init__(self, archive, paramList, kmax_Mpc=4, zmax=4.5, ndeg=5, nepochs=100,step_size=75, postprocessing='768', Nsim=30, train=True, initial_weights=True,drop_sim=None, drop_z=None, pick_z=None, save_path=None, drop_rescalings=False, model_path=None):
         
+        self.archive=archive
         self.emuparams = paramList
         self.zmax = zmax
         self.kmax_Mpc = kmax_Mpc
@@ -78,11 +78,9 @@ class NNEmulator:
         
        
 
-        
-        self.key_list=list_archives
-        
+            
         if train==True:
-            self._train(list_archives)
+            self.train()
             
         if train==False:
             
@@ -97,7 +95,7 @@ class NNEmulator:
                 self.emulator.to(self.device)
                 print('Model loaded. No training needed')
                 
-                kMpc_train = self._obtain_sim_params()
+                kMpc_train = self.obtain_sim_params()
 
                 self.log_KMpc = torch.log10(kMpc_train).to(self.device) 
                
@@ -107,11 +105,11 @@ class NNEmulator:
 
         if self.save_path != None:
             #saves the model in the predefined path after training
-            self._save_emulator()
+            self.save_emulator()
         
 
                 
-    def _sort_dict(self, dct, keys):
+    def sort_dict(self, dct, keys):
         """
         Sort a list of dictionaries based on specified keys.
 
@@ -129,7 +127,7 @@ class NNEmulator:
         return dct
 
  
-    def _obtain_sim_params(self):
+    def obtain_sim_params(self):
         """
         Obtain simulation parameters.
 
@@ -139,12 +137,10 @@ class NNEmulator:
             Nk (int): Number of k values.
             k_Mpc_train (tensor): k values in the k training range
         """
-        sim = pnd_archive.archivePND()
-        sim.average_over_samples(flag="all")
 
-        sim_0 = copy.deepcopy(sim)
-        sim_0.data_av_all =  [d for d in sim_0.data_av_all if d['ind_sim'] == 0]
-        sim_zs = [data['z'] for data in sim_0.data_av_all]
+        sim_0 = copy.deepcopy(self.archive)
+        sim_0.data_av_all =  [d for d in sim_0.training_data if d['ind_sim'] == 0]
+        sim_zs = [data['z'] for data in sim_0.training_data]
         Nz = len(sim_zs)
         k_Mpc = sim_0.data[0]['k_Mpc']
         self.k_Mpc = k_Mpc
@@ -155,19 +151,19 @@ class NNEmulator:
         k_Mpc_train = torch.Tensor(k_Mpc_train)
         
         self.Nz = Nz
-        self.k_bin = Nk
+        self.Nk = Nk
         
-        data = [{key: value for key, value in sim.data_av_all[i].items() if key in self.emuparams} for i in range(len(sim.data_av_all))]
-        data = self._sort_dict(data, self.emuparams)  # sort the data by emulator parameters
-        data = [list(data[i].values()) for i in range(len(sim.data_av_all))]
+        data = [{key: value for key, value in self.archive.training_data[i].items() if key in self.emuparams} for i in range(len(self.archive.training_data))]
+        data = self.sort_dict(data, self.emuparams)  # sort the data by emulator parameters
+        data = [list(data[i].values()) for i in range(len(self.archive.training_data))]
         data = np.array(data)
 
         paramlims = np.concatenate((data.min(0).reshape(len(data.min(0)), 1), data.max(0).reshape(len(data.max(0)), 1)), 1)
         self.paramLims = paramlims
 
 
-        training_label = [{key: value for key, value in getattr(sim, 'data')[i].items() if key in ['p1d_Mpc']} for i in range(len(getattr(sim, 'data')))]
-        training_label = [list(training_label[i].values())[0][1:(self.k_bin+1)].tolist() for i in range(len(getattr(sim, 'data')))]
+        training_label = [{key: value for key, value in self.archive.training_data[i].items() if key in ['p1d_Mpc']} for i in range(len(self.archive.training_data))]
+        training_label = [list(training_label[i].values())[0][1:(self.Nk+1)].tolist() for i in range(len(self.archive.training_data))]
         training_label = np.array(training_label)
         self.yscalings = np.median(training_label)
 
@@ -175,15 +171,15 @@ class NNEmulator:
         return k_Mpc_train
 
     
-    def _get_training_data(self, archive, key_av='None'):
+    def get_training_data(self):
         """
         Given an archive and key_av, it obtains the training data based on self.emuparams
         Sorts the training data according to self.emuparams and scales the data based on self.paramLims
         Finally, it returns the training data as a torch.Tensor object.
         """
-        training_data = [{key: value for key, value in getattr(archive, key_av)[i].items() if key in self.emuparams} for i in range(len(getattr(archive, key_av)))]
-        training_data = self._sort_dict(training_data, self.emuparams)
-        training_data = [list(training_data[i].values()) for i in range(len(getattr(archive, key_av)))]
+        training_data = [{key: value for key, value in self.archive.training_data[i].items() if key in self.emuparams} for i in range(len(self.archive.training_data))]
+        training_data = self.sort_dict(training_data, self.emuparams)
+        training_data = [list(training_data[i].values()) for i in range(len(self.archive.training_data))]
 
         training_data = np.array(training_data)
         training_data = (training_data - self.paramLims[:, 0]) / (self.paramLims[:, 1] - self.paramLims[:, 0]) - 0.5
@@ -191,13 +187,13 @@ class NNEmulator:
 
         return training_data
 
-    def _get_training_pd1(self, archive, key_av='None'):
+    def get_training_pd1(self):
         """
         Given an archive and key_av, it obtains the p1d_Mpc values from the training data and scales it.
         Finally, it returns the scaled values as a torch.Tensor object along with the scaling factor.
         """
-        training_label = [{key: value for key, value in getattr(archive, key_av)[i].items() if key in ['p1d_Mpc']} for i in range(len(getattr(archive, key_av)))]
-        training_label = [list(training_label[i].values())[0][1:(self.k_bin+1)].tolist() for i in range(len(getattr(archive, key_av)))]
+        training_label = [{key: value for key, value in self.archive.training_data[i].items() if key in ['p1d_Mpc']} for i in range(len(self.archive.training_data))]
+        training_label = [list(training_label[i].values())[0][1:(self.Nk+1)].tolist() for i in range(len(self.archive.training_data))]
 
         training_label = np.array(training_label)
         #yscalings = np.median(training_label)
@@ -208,88 +204,32 @@ class NNEmulator:
 
         return training_label#, yscalings
     
-    def _drop_redshfit(self, archive):
+    def _drop_redshfit(self):
         """
         Drops all snapshots at redshift z from the sample
         """
+        instance_data = self.archive.training_data
+        setattr(self.archive, training_data, filtered_instance_data)
 
-        for ii in self.key_list:
-            instance_data = getattr(archive, ii)
-
-            # Filter the data based on the redshift
-            filtered_instance_data = [d for d in instance_data if d['z'] != self.drop_z]
-
-            # Store the filtered data in a dictionary with the instance name as the key
-            setattr(archive, ii, filtered_instance_data)
-
-        return archive
+        return 
     
-    def _pick_redshfit(self, archive):
+    def pick_redshfit(self):
         """
         Picks only snapshots at redshift z from the sample
         """
-        for ii in self.key_list:
-            instance_data = getattr(archive, ii)
+        instance_data = self.archive.training_data
 
-            # Filter the data based on the 'ind_tau' key
-            filtered_instance_data = [d for d in instance_data if d['z'] == self.pick_z]
+            
+        filtered_instance_data = [d for d in instance_data if d['z'] == self.pick_z]
 
-            # Store the filtered data in a dictionary with the instance name as the key
-            setattr(archive, ii, filtered_instance_data)
+        # Store the filtered data in a dictionary with the instance name as the key
+        setattr(self.archive, training_data, filtered_instance_data)
 
-        return archive
+        return 
         
-
-    def _get_archive(self):
-        """
-        Returns an archive object that contains the P1D data and associated parameters
-        based on the postprocessing method and the number of simulations to drop.
-
-        Returns:
-        archive (pd_archive object): Archive object containing P1D data and parameters
-        """
-        if self.postprocessing == '768':
-            if self.drop_sim == None:
-                archive = pnd_archive.archivePND(z_max=self.zmax, nsamples=30)
-            else: 
-                archive = pnd_archive.archivePND(z_max=self.zmax, drop_sim=self.drop_sim, nsamples=30)
-                
-            
-            # Average over samples
-            archive.average_over_samples(flag="all")
-            archive.average_over_samples(flag="phases")
-            archive.average_over_samples(flag="axes")
-
-            # Input emulator
-            archive.input_emulator(flag="all")
-            archive.input_emulator(flag="phases")
-            archive.input_emulator(flag="axes")
-
-        if self.postprocessing == '500':
-            if self.drop_sim == None:
-                archive = pnd_archive.archivePND(post_processing="500")
-            else: 
-                archive = pnd_archive.archivePND(post_processing="500", drop_sim=self.drop_sim)
-                
-        if self.drop_z!=None:
-            archive= self._drop_redshfit(archive)   
-            
-        if self.pick_z!=None:
-            archive= self._pick_redshfit(archive)  
-            
-        if self.drop_rescalings==True:
-            archive.data = [d for d in archive.data if d['scale_tau'] == 1] 
-            archive.data_av_all = [d for d in archive.data_av_all if d['scale_tau'] == 1] 
-            archive.data_av_phases = [d for d in archive.data_av_phases if d['scale_tau'] == 1] 
-            archive.data_av_axes = [d for d in archive.data_av_axes if d['scale_tau'] == 1] 
-            archive.data_input_axes = [d for d in archive.data_input_axes if d['scale_tau'] == 1] 
-            archive.data_input_phases = [d for d in archive.data_input_phases if d['scale_tau'] == 1] 
-        
-            
-        return archive
  
 
-    def _train(self, key_list):
+    def train(self):
 
         """
         Trains the emulator with given key_list using the archive data.
@@ -300,11 +240,8 @@ class NNEmulator:
         """
         
         print('start the training of the emulator')
-        kMpc_train = self._obtain_sim_params()
-      
-
-        training = self._get_archive()
-    
+        kMpc_train = self.obtain_sim_params()
+          
         log_KMpc_train = torch.log10(kMpc_train).to(self.device)  
         
         self.log_KMpc=log_KMpc_train
@@ -318,18 +255,11 @@ class NNEmulator:
         optimizer = optim.Adam(self.emulator.parameters(), lr=1e-3, weight_decay=1e-4)#
         scheduler = lr_scheduler.StepLR(optimizer, self.step_size, gamma=0.1)      
 
-        
-        training_data = torch.Tensor()
-        training_label = torch.Tensor()
-        
-        for key in key_list:
                 
-            training_data_prime = self._get_training_data(training, key_av = key)
-            training_label_prime = self._get_training_pd1(training, key_av = key)
-                
-            training_data = torch.concat((training_data,training_data_prime),0)                   
-            training_label = torch.concat((training_label,training_label_prime),0)
-                
+        training_data = self.get_training_data()
+        training_label = self.get_training_pd1()
+   
+             
         print('Training network on %s'%len(training_data))
             
               
@@ -350,11 +280,11 @@ class NNEmulator:
                 
                 
                 powers = torch.arange(0,self.ndeg+1,1).cuda()
-                P1Dpred = torch.sum(coeffsPred[:,powers,None] * (log_KMpc_train[None,:] ** powers[None,:,None]), axis=1)
+                P1Dpred = torch.sum(coeffsPred[:,powers,None] * (self.log_KMpc[None,:] ** powers[None,:,None]), axis=1)
                 
                 
                 powers_err = torch.arange(0, self.ndeg*2+1, 2).cuda()
-                P1Derr = torch.sqrt(torch.sum(coeffserr[:,powers,None] * (log_KMpc_train[None,:] ** powers_err[None,:,None]), axis=1))
+                P1Derr = torch.sqrt(torch.sum(coeffserr[:,powers,None] * (self.log_KMpc[None,:] ** powers_err[None,:,None]), axis=1))
 
                 P1Dlogerr = torch.log(P1Derr)
             
@@ -370,8 +300,10 @@ class NNEmulator:
             scheduler.step()
         print(f'Emualtor trained in {time.time() - t0} seconds')
             
-    def _save_emulator(self):
+    def save_emulator(self):
         if self.drop_sim!=None:
             torch.save(self.emulator.state_dict(), os.path.join(self.save_path,f'emulator_{self.drop_sim}.pt'))
         else:
             torch.save(self.emulator.state_dict(), self.save_path)
+
+
