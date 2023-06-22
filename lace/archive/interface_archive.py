@@ -77,7 +77,7 @@ class Archive(archivePND, archiveP1D_Nyx):
             | (training_set == "Cabayol23")
             | (training_set == "768_768")
         ):
-            archivePND.__init__(self, sim_suite=sim_suite)
+            archivePND.__init__(self, sim_suite=training_set)
             archivePND.get_training_data(self)
 
         elif training_set == "Nyx":
@@ -121,7 +121,7 @@ class Archive(archivePND, archiveP1D_Nyx):
             | (testing_set == "Cabayol23")
             | (testing_set == "768_768")
         ):
-            archivePND.__init__(self, sim_suite=sim_suite, pick_sim=pick_sim)
+            archivePND.__init__(self, sim_suite=testing_set, pick_sim=pick_sim)
             archivePND.get_testing_data(self, tau_scaling=tau_scaling)
 
         elif testing_set == "Nyx":
