@@ -1175,6 +1175,6 @@ class archivePND(object):
                 _ = self.data_av_all[ii]
                 _["ind_axis"] = 999
                 _["ind_phase"] = 999
-                training_data.append(_)
+                testing_data.append(_)
 
         setattr(self, "testing_data", testing_data)
