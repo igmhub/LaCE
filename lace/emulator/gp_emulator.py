@@ -34,8 +34,7 @@ class GPEmulator:
                 paramLimits=None,
 		rbf_only=True,
                 emu_per_k=False,
-		ndeg=4,
-		key_data='data_av_all', 
+		ndeg=4, 
 		postprocessing='768',
 		drop_sim=None
                 ):   
