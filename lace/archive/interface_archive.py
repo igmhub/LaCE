@@ -26,8 +26,8 @@ class Archive(archivePND, archiveP1D_Nyx):
 
     """
 
-    def __init__(self, verbose=True):
-        self.sim_suite_all = ["Pedersen21", "Cabayol23", "768_768", "Nyx"]
+    def __init__(self, verbose=False):
+        self.sim_suite_all = ["Pedersen21", "Cabayol23", "768_768"]
         if verbose:
             print(
                 "The list of simulation suites available is:",
@@ -47,40 +47,40 @@ class Archive(archivePND, archiveP1D_Nyx):
             print("Not implemented yet")
             # nyx_get_sim_option_list()
 
-    def get_training_data(self, sim_suite="Cabayol23"):
+    def get_training_data(self, training_set="Cabayol23"):
         """
         Get training data for emulator
 
         Parameters:
-            sim_suite (str, optional): The simulation suite. Defaults to "Cabayol23".
+            training_set (str, optional): The simulation suite. Defaults to "Cabayol23".
 
         Raises:
-            ValueError: If the provided sim_suite value is not valid.
+            ValueError: If the provided training_set value is not valid.
 
         """
 
         try:
-            if sim_suite in self.sim_suite_all:
+            if training_set in self.sim_suite_all:
                 pass
             else:
                 print(
-                    "Invalid sim_suite value. Available options: ",
+                    "Invalid training_set value. Available options: ",
                     self.sim_suite_all,
                 )
                 raise
         except:
-            print("An error occurred while checking the sim_suite value.")
+            print("An error occurred while checking the training_set value.")
             raise
 
         if (
-            (sim_suite == "Pedersen21")
-            | (sim_suite == "Cabayol23")
-            | (sim_suite == "768_768")
+            (training_set == "Pedersen21")
+            | (training_set == "Cabayol23")
+            | (training_set == "768_768")
         ):
             archivePND.__init__(self, sim_suite=sim_suite)
             archivePND.get_training_data(self)
 
-        elif sim_suite == "Nyx":
+        elif training_set == "Nyx":
             print("Not implemented yet")
             # # to be updated
             # archiveP1D_Nyx.__init__(self)
@@ -88,7 +88,7 @@ class Archive(archivePND, archiveP1D_Nyx):
 
     def get_testing_data(
         self,
-        sim_suite="Cabayol23",
+        testing_set="Cabayol23",
         pick_sim="central",
         tau_scaling=1,
     ):
@@ -96,35 +96,35 @@ class Archive(archivePND, archiveP1D_Nyx):
         Get testing data for emulator
 
         Parameters:
-            sim_suite (str, optional): The simulation suite. Defaults to "Cabayol23".
+            testing_set (str, optional): The simulation suite. Defaults to "Cabayol23".
 
         Raises:
-            ValueError: If the provided sim_suite value is not valid.
+            ValueError: If the provided testing_set value is not valid.
 
         """
 
         try:
-            if sim_suite in self.sim_suite_all:
+            if testing_set in self.sim_suite_all:
                 pass
             else:
                 print(
-                    "Invalid sim_suite value. Available options: ",
+                    "Invalid testing_set value. Available options: ",
                     self.sim_suite_all,
                 )
                 raise
         except:
-            print("An error occurred while checking the sim_suite value.")
+            print("An error occurred while checking the testing_set value.")
             raise
 
         if (
-            (sim_suite == "Pedersen21")
-            | (sim_suite == "Cabayol23")
-            | (sim_suite == "768_768")
+            (testing_set == "Pedersen21")
+            | (testing_set == "Cabayol23")
+            | (testing_set == "768_768")
         ):
             archivePND.__init__(self, sim_suite=sim_suite, pick_sim=pick_sim)
             archivePND.get_testing_data(self, tau_scaling=tau_scaling)
 
-        elif sim_suite == "Nyx":
+        elif testing_set == "Nyx":
             print("Not implemented yet")
             # # to be updated
             # archiveP1D_Nyx.__init__(self)
