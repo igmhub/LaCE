@@ -25,7 +25,7 @@ def _check_gadget_config(config):
     vtor = validate.Validator()
     config.validate(vtor)
     # Check unsupported configurations
-    # if config['MNue']+config['MNum']+config['MNut'] > 0.:
+    # if config["MNue"] + config["MNum"] + config["MNut"] > 0.0:
     # print("Sim has neutrinos")
 
 
