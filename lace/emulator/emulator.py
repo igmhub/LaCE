@@ -5,6 +5,10 @@ from lace.emulator import pnd_archive
 from lace.archive import pnd_archive
 from lace.archive import interface_archive
 
+from lace.emulator.nn_architecture import MDNemulator_polyfit
+from lace.emulator.nn_emulator import NNEmulator
+from lace.emulator.gp_emulator import GPEmulator
+
 def P1D_emulator(archive=None, emu_algorithm=None, archive_label = 'Gadget', emulator_label=None, zmax=4.5, kmax_Mpc=4, ndeg=5, train=True, emu_type='polyfit', model_path=None, save_path=None, nepochs_nn=1):
     
     
