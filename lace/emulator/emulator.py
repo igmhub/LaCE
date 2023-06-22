@@ -43,7 +43,7 @@ def P1D_emulator(archive=None, emu_algorithm=None, archive_label = 'Gadget', emu
             archive = pnd_archive.archivePND(sim_suite="Cabayol23")
             archive.get_training_data()
 
-            emulator = NNEmulator(archive,emuparams, nepochs=nepochs_nn, step_size=75, kmax_Mpc=4, ndeg=5, Nsim=30, train=True, emu_type='polyfit')
+            emulator = NNEmulator(archive,emuparams, nepochs=nepochs_nn, step_size=75, kmax_Mpc=4, ndeg=5, Nsim=30, train=True)
         if train==False:
             if model_path==None:
                 raise ValueError('if train==False, a model path must be provided')
