@@ -70,15 +70,7 @@ class GPEmulator:
         if passarchive==None:
             self.custom_archive=False
             if self.postprocessing=='500':
-            	self.archive=p1d_archive.archiveP1D(
-			basedir,
-			p1d_label,
-			skewers_label,
-                        verbose=verbose,
-                        drop_tau_rescalings=drop_tau_rescalings,
-                        drop_temp_rescalings=drop_temp_rescalings,
-			z_max=self.z_max
-			)
+            	self.archive = pnd_archive.archivePND(sim_suite="Pedersen21")
             elif self.postprocessing=='768':
                  archive=pnd_archive.archivePND(z_max=4.5,nsamples=30, drop_sim=drop_sim)
 
@@ -88,8 +80,10 @@ class GPEmulator:
                  archive.input_emulator(flag="all")
                  archive.input_emulator(flag="phases")
                  archive.input_emulator(flag="axes")
+                    
+                 archive.training_data = [d for d in archive.data_av_all]
                  if drop_tau_rescalings==True:
-                     archive.data_av_all = [d for d in archive.data_av_all if d['scale_tau'] == 1] 
+                     archive.training_data = [d for d in archive.training_data if d['scale_tau'] == 1] 
                  self.archive=archive
 
             else:
@@ -102,8 +96,8 @@ class GPEmulator:
             self.archive=passarchive
 
         ## Find max k bin
-        self.k_bin=np.max(np.where(getattr(self.archive, self.key_data)[0]["k_Mpc"]<self.kmax_Mpc))+1
-        self.training_k_bins=getattr(self.archive, self.key_data)[0]["k_Mpc"][1:self.k_bin]    
+        self.k_bin=np.max(np.where(self.archive.training_data[0]["k_Mpc"]<self.kmax_Mpc))+1
+        self.training_k_bins=self.archive.training_data[0]["k_Mpc"][1:self.k_bin]    
    
         ## If none, take all parameters
         if paramList==None:
@@ -130,9 +124,9 @@ class GPEmulator:
         ''' Method to get the Y training points in the form of the P1D
         at different k values '''
 
-        P1D_k=np.empty([len(getattr(self.archive, self.key_data)),self.k_bin-1])
-        for aa in range(len(getattr(self.archive, self.key_data))):
-            P1D_k[aa]=getattr(self.archive, self.key_data)[aa]['p1d_Mpc'][1:self.k_bin]
+        P1D_k=np.empty([len(self.archive.training_data),self.k_bin-1])
+        for aa in range(len(self.archive.training_data)):
+            P1D_k[aa]=self.archive.training_data[aa]['p1d_Mpc'][1:self.k_bin]
 
 
         return P1D_k
@@ -143,9 +137,9 @@ class GPEmulator:
         coefficients '''
 
         self._fit_p1d_in_archive(self.ndeg,self.kmax_Mpc) 
-        coeffs=np.empty([len(getattr(self.archive, self.key_data)),self.ndeg+1]) 
-        for aa in range(len(getattr(self.archive, self.key_data))): 
-            coeffs[aa]=getattr(self.archive, self.key_data)[aa]['fit_p1d'] ## Collect P1D data for all k bins   
+        coeffs=np.empty([len(self.archive.training_data),self.ndeg+1]) 
+        for aa in range(len(self.archive.training_data)): 
+            coeffs[aa]=self.archive.training_data[aa]['fit_p1d'] ## Collect P1D data for all k bins   
 
         return coeffs
 
@@ -167,7 +161,7 @@ class GPEmulator:
         coefficients for the polyfit emulator '''
 
         ## Grid that will contain all training params
-        params=np.empty([len(getattr(self.archive, self.key_data)),len(paramList)]) 
+        params=np.empty([len(self.archive.training_data),len(paramList)]) 
 
         if self.emu_type=="k_bin":
             trainingPoints=self._training_points_k_bin(archive)
@@ -177,9 +171,9 @@ class GPEmulator:
             print("Unknown emulator type, terminating")
             quit()
 
-        for aa in range(len(getattr(self.archive, self.key_data))): 
+        for aa in range(len(self.archive.training_data)): 
             for bb in range(len(paramList)):
-                params[aa][bb]=getattr(self.archive, self.key_data)[aa][paramList[bb]] ## Populate parameter grid   
+                params[aa][bb]=self.archive.training_data[aa][paramList[bb]] ## Populate parameter grid   
 
         return params,trainingPoints
 
@@ -187,7 +181,7 @@ class GPEmulator:
     def _fit_p1d_in_archive(self,deg,kmax_Mpc):
         """For each entry in archive, fit polynomial to log(p1d)"""
         
-        for entry in getattr(self.archive, self.key_data):
+        for entry in self.archive.training_data:
             k_Mpc = entry['k_Mpc']
             p1d_Mpc = entry['p1d_Mpc']
             fit_p1d = poly_p1d.PolyP1D(k_Mpc,p1d_Mpc,kmin_Mpc=1.e-3,
@@ -208,7 +202,7 @@ class GPEmulator:
             self.paramLimits=self._get_param_limits(self.X_param_grid)
 
         ## Rescaling to unit volume
-        for cc in range(len(getattr(self.archive, self.key_data))):
+        for cc in range(len(self.archive.training_data)):
             self.X_param_grid[cc]=self._rescale_params(self.X_param_grid[cc],self.paramLimits)
         if self.verbose:
             print("Rescaled params to unity volume")
@@ -262,7 +256,7 @@ class GPEmulator:
             start = time.time()
             for gp in self.gp:
                 gp.initialize_parameter()
-                print("Training GP on %d points" % len(getattr(self.archive, self.key_data))) 
+                print("Training GP on %d points" % len(self.archive.training_data)) 
                 status = gp.optimize(messages=False)
                 print("Optimised")
             end = time.time()
@@ -270,7 +264,7 @@ class GPEmulator:
         else:
             start = time.time()
             self.gp.initialize_parameter()
-            print("Training GP on %d points" % len(getattr(self.archive, self.key_data))) 
+            print("Training GP on %d points" % len(self.archive.training_data)) 
             status = self.gp.optimize(messages=False)
             end = time.time()
             print("GPs optimised in {0:.2f} seconds".format(end-start))
@@ -444,7 +438,7 @@ class GPEmulator:
         
         model_dict={}
         for param in self.paramList:
-            model_dict[param]=self.archive.data[point_number][param]
+            model_dict[param]=self.archive.training_data[point_number][param]
         
         return model_dict
 
