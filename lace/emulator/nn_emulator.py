@@ -279,11 +279,11 @@ class NNEmulator:
                 coeffserr = torch.exp(coeffs_logerr)**2
                 
                 
-                powers = torch.arange(0,self.ndeg+1,1).cuda()
+                powers = torch.arange(0,self.ndeg+1,1).to(self.device)
                 P1Dpred = torch.sum(coeffsPred[:,powers,None] * (self.log_KMpc[None,:] ** powers[None,:,None]), axis=1)
                 
                 
-                powers_err = torch.arange(0, self.ndeg*2+1, 2).cuda()
+                powers_err = torch.arange(0, self.ndeg*2+1, 2).to(self.device)
                 P1Derr = torch.sqrt(torch.sum(coeffserr[:,powers,None] * (self.log_KMpc[None,:] ** powers_err[None,:,None]), axis=1))
 
                 P1Dlogerr = torch.log(P1Derr)
@@ -343,11 +343,11 @@ class NNEmulator:
             coeffs_logerr = torch.clamp(coeffs_logerr,-10,5)
             coeffserr = torch.exp(coeffs_logerr)**2
                 
-            powers = torch.arange(0,self.ndeg+1,1).cuda()
+            powers = torch.arange(0,self.ndeg+1,1).to(self.device)
             emu_p1d = torch.sum(coeffsPred[:,powers,None] * (self.log_KMpc[None,:] ** powers[None,:,None]), axis=1)
 
 
-            powers_err = torch.arange(0, self.ndeg*2+1, 2).cuda()
+            powers_err = torch.arange(0, self.ndeg*2+1, 2).to(self.device)
             emu_p1derr = torch.sqrt(torch.sum(coeffserr[:,powers,None] * (self.log_KMpc[None,:] ** powers_err[None,:,None]), axis=1))
 
 
