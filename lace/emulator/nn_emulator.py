@@ -8,7 +8,7 @@ import sklearn
 
 # LaCE modules
 from lace.emulator import gp_emulator
-from lace.emulator import pnd_archive
+from lace.archive import pnd_archive
 from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 from lace.emulator import poly_p1d
