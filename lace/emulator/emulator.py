@@ -29,29 +29,27 @@ def P1D_emulator(
 
     Args:
         archive (class): Data archive used for training the emulator.
-                            Required when using a custom emulator.
+            Required when using a custom emulator.
         emu_algorithm (str): Type of emulator algorithm to be used.
-                                  Required when using a custom emulator.
-                                  Options are 'GP' for Gaussian Process and
-                                  'NN' for Neural Network.
+            Required when using a custom emulator.
+            Options are 'GP' for Gaussian Process and 'NN' for Neural Network.
         archive_label (str): Type of archive being used. Default is 'Gadget'.
-                             Adding Nyx is work in progress.
+            Adding Nyx is work in progress.
         emulator_label (str): Specific emulator label. Options are
-                                   'Pedersen21', 'Pedersen23', and 'Cabayol23'.
+            'Pedersen21', 'Pedersen23', and 'Cabayol23'.
         zmax (float): Maximum redshift value. Used when training a custom
-                      emulator. Default is 4.5.
+            emulator. Default is 4.5.
         kmax_Mpc (int): Maximum wavenumber in units of Mpc^(-1). Used when
-                        training a custom emulator. Default is 4.
+            training a custom emulator. Default is 4.
         ndeg (int): Degree of the polynomial fit. Used when training a custom
-                    emulator. Default is 5.
+            emulator. Default is 5.
         train (bool): Flag that determines whether to train the emulator or
-                      load a pre-trained one. Default is True. Only valid for
-                      the NN emulator.
+            load a pre-trained one. Default is True. Only valid for the NN emulator.
         emu_type (str): Type of emulator to be used. Used when training a
-                        custom emulator. Default is 'polyfit'.
+            custom emulator. Default is 'polyfit'.
         model_path (str): Path to a pre-trained emulator model.
-        save_path (str): Path to save the emulator model once
-                                   trained. Only valid for the NN emulator.
+        save_path (str): Path to save the emulator model once trained.
+            Only valid for the NN emulator.
         nepochs_nn (int): Number of epochs the NN is trained. Default is 1.
 
     Returns:
@@ -59,16 +57,14 @@ def P1D_emulator(
 
     Raises:
         ValueError: If train is False but no model_path is provided.
-        ValueError: If emulator_label is None and archive or emu_algorithm is
-                    not provided.
-        Exception: If emu_algorithm is 'NN' and archive_label is 'Nyx'. Work
-                   in progress.
+        ValueError: If emulator_label is None and archive or emu_algorithm is not provided.
+        Exception: If emu_algorithm is 'NN' and archive_label is 'Nyx'. Work in progress.
 
     Notes:
-        - When emulator_label is 'Pedersen21' or 'Pedersen23', the function
-          prints additional information about the selected emulator.
-        - When emulator_label is 'Cabayol23' and train is True, the function
-          also prints information about training the emulator.
+        - When emulator_label is 'Pedersen21' or 'Pedersen23', the function prints
+          additional information about the selected emulator.
+        - When emulator_label is 'Cabayol23' and train is True, the function also prints
+          information about training the emulator.
     """
 
     emulator_label_all = ["Pedersen21", "Pedersen23", "Cabayol23"]
