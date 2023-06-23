@@ -309,7 +309,7 @@ class NNEmulator:
 
     def emulate_p1d_Mpc(self,model,k_Mpc):
         
-        
+        k_Mpc = torch.Tensor(k_Mpc)
         log_KMpc = torch.log10(k_Mpc).to(self.device)
     
     
