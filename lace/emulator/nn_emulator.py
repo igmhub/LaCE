@@ -22,8 +22,8 @@ from torch.optim import lr_scheduler
 
 from lace.emulator import nn_architecture
 cosmo_fid=camb_cosmo.get_cosmology()
-#sys.path.append('emulator.py')
 import copy
+
 class NNEmulator:
     """A class for training an emulator.
     
@@ -63,8 +63,8 @@ class NNEmulator:
         self.Nsim = Nsim
         self.device= torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.save_path=save_path
-        self.lace_path = utils.ls_level(os.getcwd(), 1)
-        self.models_dir = os.path.join(self.lace_path,'lace/emulator') 
+        self.lace_path = os.environ['LACE_REPO']+'/'
+        self.models_dir = os.path.join(self.lace_path,'lace/emulator/') 
         
          
         self.initial_weights=initial_weights
@@ -72,9 +72,9 @@ class NNEmulator:
         if initial_weights==True:
             # loads set of pre-defined random weights 
             if self.kmax_Mpc == 4:
-                self.initial_weights_path=os.path.join(self.lace_path,'lace/emulator/initial_params/initial_weights.pt')
+                self.initial_weights_path=os.path.join(self.models_dir,'initial_params/initial_weights.pt')
             if self.kmax_Mpc == 8:
-                self.initial_weights_path=os.path.join(self.lace_path,'lace/emulator/initial_params/initial_weights_extended.pt')
+                self.initial_weights_path=os.path.join(self.models_dir,'initial_params/initial_weights_extended.pt')
         
        
 
