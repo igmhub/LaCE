@@ -9,7 +9,7 @@ from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
 from lace.emulator import p1d_archive
 from lace.emulator import poly_p1d
-from lace.emulator import pnd_archive
+from lace.archive import pnd_archive
 
 class GPEmulator:
     """
