@@ -307,7 +307,10 @@ class NNEmulator:
             torch.save(self.emulator.state_dict(), self.save_path)
 
 
-    def emulate_p1d_Mpc(self,model):
+    def emulate_p1d_Mpc(self,model,k_Mpc):
+        
+        
+        log_KMpc = torch.log10(k_Mpc).to(self.device)
     
     
         with torch.no_grad():
@@ -344,11 +347,11 @@ class NNEmulator:
             coeffserr = torch.exp(coeffs_logerr)**2
                 
             powers = torch.arange(0,self.ndeg+1,1).to(self.device)
-            emu_p1d = torch.sum(coeffsPred[:,powers,None] * (self.log_KMpc[None,:] ** powers[None,:,None]), axis=1)
+            emu_p1d = torch.sum(coeffsPred[:,powers,None] * (log_KMpc[None,:] ** powers[None,:,None]), axis=1)
 
 
             powers_err = torch.arange(0, self.ndeg*2+1, 2).to(self.device)
-            emu_p1derr = torch.sqrt(torch.sum(coeffserr[:,powers,None] * (self.log_KMpc[None,:] ** powers_err[None,:,None]), axis=1))
+            emu_p1derr = torch.sqrt(torch.sum(coeffserr[:,powers,None] * (log_KMpc[None,:] ** powers_err[None,:,None]), axis=1))
 
 
             emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
