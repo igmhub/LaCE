@@ -26,7 +26,7 @@ class GPEmulator:
                 drop_temp_rescalings=True,
                 emu_type="polyfit",
 		z_max=5,
-                passarchive=None,
+                archive=None,
 		set_noise_var=1e-3,
 		asymmetric_kernel=True,
                 check_hull=False,
@@ -66,7 +66,7 @@ class GPEmulator:
 
 
         # read all files with P1D measured in simulation suite
-        if passarchive==None:
+        if archive==None:
             self.custom_archive=False
             if self.postprocessing=='500':
             	self.archive = pnd_archive.archivePND(sim_suite="Pedersen21")
@@ -92,7 +92,7 @@ class GPEmulator:
             self.custom_archive=True
             if self.verbose:
                 print("Loading emulator using a specific archive, not the one set in basedir")
-            self.archive=passarchive
+            self.archive=archive
 
         ## Find max k bin
         self.k_bin=np.max(np.where(self.archive.training_data[0]["k_Mpc"]<self.kmax_Mpc))+1
