@@ -52,7 +52,7 @@ def get_sim_option_list(sim_suite):
             "running": 105,
         }
 
-        for ii in range(31):
+        for ii in range(30):
             sim_option_list.append(ii)
             sim_option_dict[ii] = ii
 
