@@ -188,8 +188,7 @@ class GPEmulator:
         of the provided params, not by defining our own prior volume. Need to decide
         whether or not this is what we want."""
 
-        _ = self._buildTrainingSets()
-        self.X_param_grid, self.Ypoints = _
+        self.X_param_grid, self.Ypoints = self._buildTrainingSets()
 
         ## Get parameter limits for rescaling
         if self.paramLimits is None:
