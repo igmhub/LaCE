@@ -28,27 +28,19 @@ class GPEmulator:
         verbose=False,
         kmax_Mpc=10.0,
         paramList=None,
-        drop_tau_rescalings=True,
-        drop_temp_rescalings=True,
-        z_max=5,
         set_noise_var=1e-3,
         asymmetric_kernel=True,
         check_hull=False,
-        set_hyperparams=None,
         paramLimits=None,
         rbf_only=True,
         emu_per_k=False,
         ndeg=4,
-        drop_sim=None,
     ):
         self.kmax_Mpc = kmax_Mpc
         self.emu_type = emu_type
         self.emu_noise = set_noise_var
-        self.drop_tau_rescalings = drop_tau_rescalings
-        self.drop_temp_rescalings = drop_temp_rescalings
         self.verbose = verbose
         self.asymmetric_kernel = asymmetric_kernel
-        self.z_max = z_max
         self.paramLimits = paramLimits
         self.rbf_only = rbf_only
         self.emu_per_k = emu_per_k
