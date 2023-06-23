@@ -29,15 +29,39 @@ def P1D_emulator(archive=None, emu_algorithm=None, archive_label = 'Gadget', emu
     if emulator_label=='Pedersen21':
         print('Select emulator used in Pedersen et al. 2021')
         emuparams = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
+        zmax, kmax_Mpc, emu_type = 4.5, 3, 'k_bin'
+        
+        print(r'Gaussian Process emulator predicting the P1D at each k-bin. It goes to scales of 3Mpc^{-1} and z<4.5. The parameters passed to the emulator will be overwritten to match these ones.')
+        
         archive = pnd_archive.archivePND(sim_suite="Pedersen21")
         archive.get_training_data()
         
-        emulator = GPEmulator(passarchive=archive)
+        emulator = GPEmulator(archive=archive,emu_type=emu_type)
+        return emulator
+              
+              
+    if emulator_label=='Pedersen23':
+        print('Select emulator used in Pedersen et al. 2023')
+        emuparams = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
+        zmax, kmax_Mpc, ndeg, emu_type = 4.5, 3, 4, 'polyfit'
+        
+        print(r'Gaussian Process emulator predicting the optimal P1D fitting coefficients to a 5th degree polynomial. It goes to scales of 4Mpc^{-1} and z<4.5. The parameters passed to the emulator will be overwritten to match these ones')
+        
+        archive = pnd_archive.archivePND(sim_suite="Pedersen21")
+        archive.get_training_data()
+        
+        emulator = GPEmulator(archive=archive,emu_type=emu_type)
         return emulator
 
     elif emulator_label=='Cabayol23':
         print('Select emulator used in Cabayol-Garcia et al. 2023')
         emuparams = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
+        zmax, kmax_Mpc, ndeg = 4.5, 4, 5
+        
+        print(r'Neural network emulator predicting the optimal P1D fitting coefficients to a 5th degree polynomial. It goes to scales of 4Mpc^{-1} and z<4.5. The parameters passed to the emulator will be overwritten to match these ones')
+        
+        
+        
         if train==True:
             print('Train emulator')
             archive = pnd_archive.archivePND(sim_suite="Cabayol23")
@@ -68,7 +92,7 @@ def P1D_emulator(archive=None, emu_algorithm=None, archive_label = 'Gadget', emu
 
         if (emu_algorithm=='GP')&(archive_label=='Gadget'):
             emuparams = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
-            emulator = GPEmulator(passarchive=archive)
+            emulator = GPEmulator(archive=archive)
 
 
     return emulator
