@@ -25,18 +25,74 @@ def P1D_emulator(
     save_path=None,
     nepochs_nn=1,
 ):
-    """archive: Data archive used for training the emulator. It is an optional argument that must be provided when using a custom emulator.
-    emu_algorithm: This argument specifies the type of emulator algorithm to be used. It is an optional argument that must be provided when using a custom emulator. Options are 'GP' for Gaussian Process and 'NN' for Neural Network.
-    archive_label: Type of archive being used. The default value is set to 'Gadget'. Adding Nyx is work in progress
-    emulator_label: Specific emulator label calling the emulators in Pdersetn et al. 2021: 'Pedersen21', and Cabayol-Garcia et al. 2023:'Cabayol23'.
-    zmax: This argument specifies the maximum redshift value. It is used when training a custom emulator. The default value is 4.5.
-    kmax_Mpc: This argument represents the maximum wavenumber in units of Mpc^(-1). It is used when training a custom emulator. The default value is 4.
-    ndeg: Degree of the polynomial fit. It is used when training a custom emulator. The default value is 5.
-    train: Boolean flag that determines whether to train the emulator or load a pre-trained one. When set to True, the emulator is trained. When set to False, a pre-trained emulator is loaded. The default value is True. Only valid for the NN emulator.
-    emu_type: Type of emulator to be used. It is used when training a custom emulator. The default value is 'polyfit'.
-    model_path: String that specifies the path to a pre-trained emulator model.
-    save_path: String that indicates the path to save the emulator model once trained. Only valid for the NN emulator.
-    nepochs_nn: Integer fixing the number of epochs the NN is trained."""
+    """Emulates the P1D power spectrum.
+
+    Args:
+        archive (class): Data archive used for training the emulator.
+                            Required when using a custom emulator.
+        emu_algorithm (str): Type of emulator algorithm to be used.
+                                  Required when using a custom emulator.
+                                  Options are 'GP' for Gaussian Process and
+                                  'NN' for Neural Network.
+        archive_label (str): Type of archive being used. Default is 'Gadget'.
+                             Adding Nyx is work in progress.
+        emulator_label (str): Specific emulator label. Options are
+                                   'Pedersen21', 'Pedersen23', and 'Cabayol23'.
+        zmax (float): Maximum redshift value. Used when training a custom
+                      emulator. Default is 4.5.
+        kmax_Mpc (int): Maximum wavenumber in units of Mpc^(-1). Used when
+                        training a custom emulator. Default is 4.
+        ndeg (int): Degree of the polynomial fit. Used when training a custom
+                    emulator. Default is 5.
+        train (bool): Flag that determines whether to train the emulator or
+                      load a pre-trained one. Default is True. Only valid for
+                      the NN emulator.
+        emu_type (str): Type of emulator to be used. Used when training a
+                        custom emulator. Default is 'polyfit'.
+        model_path (str): Path to a pre-trained emulator model.
+        save_path (str): Path to save the emulator model once
+                                   trained. Only valid for the NN emulator.
+        nepochs_nn (int): Number of epochs the NN is trained. Default is 1.
+
+    Returns:
+        Emulator: The trained or loaded emulator object.
+
+    Raises:
+        ValueError: If train is False but no model_path is provided.
+        ValueError: If emulator_label is None and archive or emu_algorithm is
+                    not provided.
+        Exception: If emu_algorithm is 'NN' and archive_label is 'Nyx'. Work
+                   in progress.
+
+    Notes:
+        - When emulator_label is 'Pedersen21' or 'Pedersen23', the function
+          prints additional information about the selected emulator.
+        - When emulator_label is 'Cabayol23' and train is True, the function
+          also prints information about training the emulator.
+    """
+
+    emulator_label_all = ["Pedersen21", "Pedersen23", "Cabayol23"]
+    if emulator_label is not None:
+        print("Selected pre-tuned emulator")
+        try:
+            if emulator_label in emulator_label_all:
+                pass
+            else:
+                print(
+                    "Invalid emulator_label value. Available options: ",
+                    emulator_label_all,
+                )
+                raise
+        except:
+            print("An error occurred while checking the emulator_label value.")
+            raise
+    else:
+        print("Selected custome emulator")
+        if (archive == None) | (emu_algorithm == None) | (archive_label == None):
+            raise ValueError(
+                "archive, emu_algorithm, archive_label must be provided"
+                + "if an emulator label is not"
+            )
 
     if emulator_label == "Pedersen21":
         print("Select emulator used in Pedersen et al. 2021")
@@ -44,7 +100,9 @@ def P1D_emulator(
         zmax, kmax_Mpc, emu_type = 4.5, 3, "k_bin"
 
         print(
-            r"Gaussian Process emulator predicting the P1D at each k-bin. It goes to scales of 3Mpc^{-1} and z<4.5. The parameters passed to the emulator will be overwritten to match these ones."
+            r"Gaussian Process emulator predicting the P1D at each k-bin."
+            + " It goes to scales of 3Mpc^{-1} and z<4.5. The parameters "
+            + "passed to the emulator will be overwritten to match these ones."
         )
 
         archive = pnd_archive.archivePND(sim_suite="Pedersen21")
@@ -52,14 +110,17 @@ def P1D_emulator(
 
         emulator = GPEmulator(archive=archive, emu_type=emu_type)
         return emulator
-
-    if emulator_label == "Pedersen23":
+    elif emulator_label == "Pedersen23":
         print("Select emulator used in Pedersen et al. 2023")
         emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
         zmax, kmax_Mpc, ndeg, emu_type = 4.5, 3, 4, "polyfit"
 
         print(
-            r"Gaussian Process emulator predicting the optimal P1D fitting coefficients to a 5th degree polynomial. It goes to scales of 4Mpc^{-1} and z<4.5. The parameters passed to the emulator will be overwritten to match these ones"
+            r"Gaussian Process emulator predicting the optimal P1D"
+            + "fitting coefficients to a 5th degree polynomial. It "
+            + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters"
+            + " passed to the emulator will be overwritten to match "
+            + "these ones"
         )
 
         archive = pnd_archive.archivePND(sim_suite="Pedersen21")
@@ -67,14 +128,17 @@ def P1D_emulator(
 
         emulator = GPEmulator(archive=archive, emu_type=emu_type)
         return emulator
-
     elif emulator_label == "Cabayol23":
         print("Select emulator used in Cabayol-Garcia et al. 2023")
         emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
         zmax, kmax_Mpc, ndeg = 4.5, 4, 5
 
         print(
-            r"Neural network emulator predicting the optimal P1D fitting coefficients to a 5th degree polynomial. It goes to scales of 4Mpc^{-1} and z<4.5. The parameters passed to the emulator will be overwritten to match these ones"
+            r"Neural network emulator predicting the optimal P1D "
+            + "fitting coefficients to a 5th degree polynomial. It "
+            + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters "
+            + "passed to the emulator will be overwritten to match "
+            + "these ones"
         )
 
         if train == True:
@@ -102,14 +166,7 @@ def P1D_emulator(
                 emulator = NNEmulator(
                     archive, emuparams, train=False, model_path=model_path
                 )
-
-    if emulator_label == None:
-        print("Select custom emulator")
-        if (archive == None) | (emu_algorithm == None):
-            raise ValueError(
-                "If an emulator label is not provided, the archive and emulator type are required"
-            )
-
+    elif emulator_label is None:
         if (emu_algorithm == "NN") & (archive_label == "Gadget"):
             emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
             emulator = NNEmulator(
@@ -120,13 +177,16 @@ def P1D_emulator(
                 ndeg=ndeg,
                 save_path=save_path,
             )
-
-        if (emu_algorithm == "NN") & (archive_label == "Nyx"):
+        elif (emu_algorithm == "NN") & (archive_label == "Nyx"):
             emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "lambda_P"]
             raise Exception("Work in progress")
 
-        if (emu_algorithm == "GP") & (archive_label == "Gadget"):
+        elif (emu_algorithm == "GP") & (archive_label == "Gadget"):
             emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
             emulator = GPEmulator(archive=archive)
+        else:
+            raise ValueError(
+                "Combination of emu_algorithm and archive_label not supported"
+            )
 
     return emulator
