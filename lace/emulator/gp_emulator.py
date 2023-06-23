@@ -112,8 +112,6 @@ class GPEmulator:
         else:
             self.hull = None
 
-        self.emulators = None  ## Flag that this is an individual emulator object
-
     def _training_points_k_bin(self):
         """Method to get the Y training points in the form of the P1D
         at different k values"""
