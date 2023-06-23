@@ -376,7 +376,7 @@ class NNEmulator:
         else:
             torch.save(self.emulator.state_dict(), self.save_path)
 
-    def emulate_p1d_Mpc(self, model, k_Mpc):
+    def emulate_p1d_Mpc(self, model, k_Mpc,return_covar=False, z=None):
         k_Mpc = torch.Tensor(k_Mpc)
         log_KMpc = torch.log10(k_Mpc).to(self.device)
 
@@ -437,4 +437,8 @@ class NNEmulator:
             emu_p1derr = 10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
             emu_p1d = 10 ** (emu_p1d) * self.yscalings
 
-        return emu_p1d, emu_p1derr
+        if return_covar==True:
+            return emu_p1d, emu_p1derr
+        
+        else:
+            return emu_p1d
