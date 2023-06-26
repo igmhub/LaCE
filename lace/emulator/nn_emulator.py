@@ -376,26 +376,11 @@ class NNEmulator:
         else:
             torch.save(self.emulator.state_dict(), self.save_path)
 
-    def emulate_p1d_Mpc(self, model, k_Mpc,return_covar=False, z=None):
+    def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
         k_Mpc = torch.Tensor(k_Mpc)
         log_KMpc = torch.log10(k_Mpc).to(self.device)
 
         with torch.no_grad():
-            # for each entry (z) in truth/test simulation, compute residuals
-            z = model["z"]
-
-            true_k = model["k_Mpc"]
-            k_mask = (true_k < self.kmax_Mpc) & (true_k > 0)
-            true_p1d = model["p1d_Mpc"][k_mask]  # [:self.Nk_test]
-            # assert len(true_p1d)==self.Nk_test
-            true_k = true_k[k_mask]
-
-            fit_p1d = poly_p1d.PolyP1D(
-                true_k, true_p1d, kmin_Mpc=1.0e-3, kmax_Mpc=self.kmax_Mpc, deg=self.ndeg
-            )
-            true_p1d = fit_p1d.P_Mpc(true_k)
-
-            # for each entry, figure emulator parameter describing it (labels)
 
             emu_call = {}
             for param in self.emuparams:
@@ -438,6 +423,7 @@ class NNEmulator:
             emu_p1d = 10 ** (emu_p1d) * self.yscalings
 
         if return_covar==True:
+            covar = np.outer(emu_p1derr, emu_p1derr)
             return emu_p1d, emu_p1derr
         
         else:
