@@ -7,8 +7,8 @@ import sys
 import sklearn
 
 # LaCE modules
-from lace.emulator import gp_emulator
 from lace.archive import pnd_archive
+from lace.archive import interface_archive
 from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 from lace.emulator import poly_p1d
@@ -30,55 +30,71 @@ class NNEmulator:
     """A class for training an emulator.
 
     Args:
-        emuparams (dict): A dictionary of emulator parameters.
+        paramList (lsit): A list of emulator parameters.
         kmax_Mpc (float): The maximum k in Mpc^-1 to use for training. Default is 3.5.
-        zmax (float): The maximum redshift to use for training. Default is 4.5.
-        Nsim (int): The number of simulations to use for training. Default is 30.
         nepochs (int): The number of epochs to train for. Default is 200.
-        postprocessing (str): The post-processing method to use. Default is '3A'.
         model_path (str): The path to a pretrained model. Default is None.
-        drop_rescalings (bool): Wheather to drop the optical-depth rescalings or not. Default False.
         train (bool): Wheather to train the emulator or not. Default True. If False, a model path must is required.
         initial_weights (bool): Wheather to initialize the network always with a set of pre-defined random weights
     """
 
     def __init__(
         self,
-        archive,
-        paramList,
+        archive=None,
+        training_set=None,
+        paramList=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc'], 
         kmax_Mpc=4,
-        zmax=4.5,
         ndeg=5,
         nepochs=100,
         step_size=75,
-        postprocessing="768",
-        Nsim=30,
         train=True,
         initial_weights=True,
         save_path=None,
-        drop_rescalings=False,
         model_path=None,
     ):
-        self.archive = archive
         self.emuparams = paramList
-        self.zmax = zmax
         self.kmax_Mpc = kmax_Mpc
         self.nepochs = nepochs
         self.step_size = step_size
-        self.postprocessing = postprocessing
         self.model_path = model_path
-        self.drop_rescalings = drop_rescalings
+        
+        # check input #
+        training_set_all = ["Pedersen21", "Cabayol23"]
+        if training_set is not None:
+            print("Selected pre-tuned training set")
+            try:
+                if training_set in training_set_all:
+                    pass
+                else:
+                    print(
+                        "Invalid training_set value. Available options: ",
+                        training_set_all,
+                    )
+                    raise
+            except:
+                print("An error occurred while checking the training_set value.")
+                raise
+        else:
+            print("Selected custome training set")
+            if archive == None:
+                raise ValueError("archive must be provided if training_set is not")
+
+        # read all files with P1D measured in simulation suite
+        if archive == None:
+            self.archive = interface_archive.Archive(verbose=False)
+            self.archive.get_training_data(training_set=training_set)
+        else:
+            print("Loading emulator using a specific archive")
+            self.archive = archive
+            
 
         self.ndeg = ndeg
-
-        self.Nsim = Nsim
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.save_path = save_path
         self.lace_path = os.environ["LACE_REPO"] + "/"
         self.models_dir = os.path.join(self.lace_path, "lace/emulator/")
 
         self.initial_weights = initial_weights
-
         if self.initial_weights == True:
             # loads set of pre-defined random weights
             if self.kmax_Mpc == 4:
@@ -91,7 +107,7 @@ class NNEmulator:
                 )
 
         if train == True:
-            self.train()
+            self.train_nn()
 
         if train == False:
             if self.model_path == None:
@@ -261,7 +277,7 @@ class NNEmulator:
         return training_label  # , yscalings
 
 
-    def train(self):
+    def train_nn(self):
         """
         Trains the emulator with given key_list using the archive data.
         Args:
@@ -388,7 +404,7 @@ class NNEmulator:
 
         if return_covar==True:
             covar = np.outer(emu_p1derr, emu_p1derr)
-            return emu_p1d, emu_p1derr
+            return emu_p1d, covar
         
         else:
             return emu_p1d
