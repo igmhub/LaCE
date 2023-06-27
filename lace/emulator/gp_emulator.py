@@ -55,11 +55,8 @@ class GPEmulator:
                 if training_set in training_set_all:
                     pass
                 else:
-                    print(
-                        "Invalid training_set value. Available options: ",
-                        training_set_all,
-                    )
-                    raise
+                    raise ValueError("Invalid training_set value. Available options: ",
+                        training_set_all,)
             except:
                 print("An error occurred while checking the training_set value.")
                 raise
@@ -317,12 +314,11 @@ class GPEmulator:
 
         return out_pred, out_err
 
-    def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None, old_cov=False):
+    def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
         """
         Method to return the trained P(k) for an arbitrary set of k bins
         by interpolating the trained data.
         Option for reducing variance with z rescaling is not fully tested.
-        Kept option old_cov=True only to reproduce old (bad) results.
         """
         try:
             if max(k_Mpc) > max(self.training_k_bins):
@@ -373,29 +369,18 @@ class GPEmulator:
             p1d = np.exp(poly(np.log(k_Mpc)))
             if not return_covar:
                 return p1d
-            if old_cov:
-                # old covariance (should not be used)
-                err = np.abs(gp_err)
-                err = (
-                    err[0] * p1d**4
-                    + err[1] * p1d**3
-                    + err[2] * p1d**2
-                    + err[3] * p1d
-                )
-                covar = np.outer(err, err)
-            else:
-                # first estimate error on y=log P
-                lk = np.log(k_Mpc)
-                erry2 = (
-                    (gp_err[0] * lk**4) ** 2
-                    + (gp_err[1] * lk**3) ** 2
-                    + (gp_err[2] * lk**2) ** 2
-                    + (gp_err[3] * lk) ** 2
-                    + gp_err[4] ** 2
-                )
-                # compute error on P
-                err = p1d * np.sqrt(erry2)
-                covar = np.outer(err, err)
+            
+            lk = np.log(k_Mpc)
+            erry2 = (
+                (gp_err[0] * lk**4) ** 2
+                + (gp_err[1] * lk**3) ** 2
+                + (gp_err[2] * lk**2) ** 2
+                + (gp_err[3] * lk) ** 2
+                + gp_err[4] ** 2
+            )
+            # compute error on P
+            err = p1d * np.sqrt(erry2)
+            covar = np.outer(err, err)
             return p1d, covar
 
         else:
