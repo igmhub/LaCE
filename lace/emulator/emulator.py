@@ -64,8 +64,6 @@ class P1D_emulator(GPEmulator, NNEmulator):
                  save_path=None, 
                  nepochs_nn=1
                 ):
-        #super(P1D_emulator, self).__init__()
-
 
     
         emulator_label_all = ["Pedersen21", "Pedersen23", "Cabayol23"]
@@ -190,6 +188,8 @@ class P1D_emulator(GPEmulator, NNEmulator):
                     kmax_Mpc=kmax_Mpc,
                     ndeg=ndeg,
                     save_path=save_path,
+                    train=train,
+                    model_path=model_path  
                 )
             elif (emu_algorithm == "NN") & (sims_label == "Nyx"):
                 emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "lambda_P"]
