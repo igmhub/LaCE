@@ -37,9 +37,6 @@ class NNEmulator:
         nepochs (int): The number of epochs to train for. Default is 200.
         postprocessing (str): The post-processing method to use. Default is '3A'.
         model_path (str): The path to a pretrained model. Default is None.
-        drop_sim (float): The simulation to drop during training. Default is None.
-        drop_z (float): Drop all snapshpts at redshift z from the training. Default is None.
-        pick_z (float): Pick only snapshpts at redshift z. Default is None.
         drop_rescalings (bool): Wheather to drop the optical-depth rescalings or not. Default False.
         train (bool): Wheather to train the emulator or not. Default True. If False, a model path must is required.
         initial_weights (bool): Wheather to initialize the network always with a set of pre-defined random weights
@@ -58,9 +55,6 @@ class NNEmulator:
         Nsim=30,
         train=True,
         initial_weights=True,
-        drop_sim=None,
-        drop_z=None,
-        pick_z=None,
         save_path=None,
         drop_rescalings=False,
         model_path=None,
@@ -73,9 +67,6 @@ class NNEmulator:
         self.step_size = step_size
         self.postprocessing = postprocessing
         self.model_path = model_path
-        self.drop_sim = drop_sim
-        self.drop_z = drop_z
-        self.pick_z = pick_z
         self.drop_rescalings = drop_rescalings
 
         self.ndeg = ndeg
@@ -88,7 +79,7 @@ class NNEmulator:
 
         self.initial_weights = initial_weights
 
-        if initial_weights == True:
+        if self.initial_weights == True:
             # loads set of pre-defined random weights
             if self.kmax_Mpc == 4:
                 self.initial_weights_path = os.path.join(
@@ -269,27 +260,6 @@ class NNEmulator:
 
         return training_label  # , yscalings
 
-    def _drop_redshfit(self):
-        """
-        Drops all snapshots at redshift z from the sample
-        """
-        instance_data = self.archive.training_data
-        setattr(self.archive, training_data, filtered_instance_data)
-
-        return
-
-    def pick_redshfit(self):
-        """
-        Picks only snapshots at redshift z from the sample
-        """
-        instance_data = self.archive.training_data
-
-        filtered_instance_data = [d for d in instance_data if d["z"] == self.pick_z]
-
-        # Store the filtered data in a dictionary with the instance name as the key
-        setattr(self.archive, training_data, filtered_instance_data)
-
-        return
 
     def train(self):
         """
@@ -309,8 +279,8 @@ class NNEmulator:
 
         self.emulator = nn_architecture.MDNemulator_polyfit(nhidden=5, ndeg=self.ndeg)
         if self.initial_weights == True:
-            initial_weights = torch.load(self.initial_weights_path, map_location="cpu")
-            self.emulator.load_state_dict(initial_weights)
+            initial_weights_params = torch.load(self.initial_weights_path, map_location="cpu")
+            self.emulator.load_state_dict(initial_weights_params)
 
         optimizer = optim.Adam(
             self.emulator.parameters(), lr=1e-3, weight_decay=1e-4
@@ -368,13 +338,7 @@ class NNEmulator:
         print(f"Emualtor trained in {time.time() - t0} seconds")
 
     def save_emulator(self):
-        if self.drop_sim != None:
-            torch.save(
-                self.emulator.state_dict(),
-                os.path.join(self.save_path, f"emulator_{self.drop_sim}.pt"),
-            )
-        else:
-            torch.save(self.emulator.state_dict(), self.save_path)
+        torch.save(self.emulator.state_dict(), self.save_path)
 
     def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
         k_Mpc = torch.Tensor(k_Mpc)
