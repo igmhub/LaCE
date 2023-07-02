@@ -27,7 +27,7 @@ class GPEmulator:
         emu_type="polyfit",
         verbose=False,
         kmax_Mpc=10.0,
-        paramList=None,
+        emu_params=None,
         set_noise_var=1e-3,
         asymmetric_kernel=True,
         check_hull=False,
@@ -85,10 +85,10 @@ class GPEmulator:
         self.training_k_bins = self.archive.training_data[0]["k_Mpc"][1 : self.k_bin]
 
         ## If none, take all parameters
-        if paramList == None:
-            self.paramList = ["mF", "sigT_Mpc", "gamma", "kF_Mpc", "Delta2_p", "n_p"]
+        if emu_params == None:
+            self.emu_params = ["mF", "sigT_Mpc", "gamma", "kF_Mpc", "Delta2_p", "n_p"]
         else:
-            self.paramList = paramList
+            self.emu_params = emu_params
 
         self._build_interp()
 
@@ -142,7 +142,7 @@ class GPEmulator:
         coefficients for the polyfit emulator"""
 
         ## Grid that will contain all training params
-        params = np.empty([len(self.archive.training_data), len(self.paramList)])
+        params = np.empty([len(self.archive.training_data), len(self.emu_params)])
 
         if self.emu_type == "k_bin":
             trainingPoints = self._training_points_k_bin()
@@ -153,9 +153,9 @@ class GPEmulator:
             quit()
 
         for aa in range(len(self.archive.training_data)):
-            for bb in range(len(self.paramList)):
+            for bb in range(len(self.emu_params)):
                 params[aa][bb] = self.archive.training_data[aa][
-                    self.paramList[bb]
+                    self.emu_params[bb]
                 ]  ## Populate parameter grid
 
         return params, trainingPoints
@@ -198,10 +198,10 @@ class GPEmulator:
         self.normspectra = (self.Ypoints / self.scalefactors) - 1.0
 
         if self.rbf_only == False:
-            kernel = GPy.kern.Linear(len(self.paramList), ARD=self.asymmetric_kernel)
-            kernel += GPy.kern.RBF(len(self.paramList), ARD=self.asymmetric_kernel)
+            kernel = GPy.kern.Linear(len(self.emu_params), ARD=self.asymmetric_kernel)
+            kernel += GPy.kern.RBF(len(self.emu_params), ARD=self.asymmetric_kernel)
         else:
-            kernel = GPy.kern.RBF(len(self.paramList), ARD=self.asymmetric_kernel)
+            kernel = GPy.kern.RBF(len(self.emu_params), ARD=self.asymmetric_kernel)
 
         if self.emu_per_k:
             ## Build a GP for each k bin
@@ -263,8 +263,8 @@ class GPEmulator:
     def printPriorVolume(self):
         """Print the limits for each parameter"""
 
-        for aa in range(len(self.paramList)):
-            print(self.paramList[aa], self.paramLimits[aa])
+        for aa in range(len(self.emu_params)):
+            print(self.emu_params[aa], self.paramLimits[aa])
 
     def return_unit_call(self, model):
         """For a given model in dictionary format, return an
@@ -272,7 +272,7 @@ class GPEmulator:
         """
 
         param = []
-        for aa, par in enumerate(self.paramList):
+        for aa, par in enumerate(self.emu_params):
             ## Rescale input parameters
             param.append(model[par])
             param[aa] = (param[aa] - self.paramLimits[aa, 0]) / (
@@ -291,7 +291,7 @@ class GPEmulator:
         Option to pass 'z' for rescaling is not fully tested."""
 
         param = []
-        for aa, par in enumerate(self.paramList):
+        for aa, par in enumerate(self.emu_params):
             ## Rescale input parameters
             param.append(model[par])
             param[aa] = (param[aa] - self.paramLimits[aa, 0]) / (
@@ -392,7 +392,7 @@ class GPEmulator:
 
         param = []  ## List of input emulator parameter values
         ## First rescale the input model to unit volume
-        for aa, par in enumerate(self.paramList):
+        for aa, par in enumerate(self.emu_params):
             ## Rescale input parameters
             param.append(model[par])
             param[aa] = (param[aa] - self.paramLimits[aa, 0]) / (
@@ -416,7 +416,7 @@ class GPEmulator:
         for a given training point"""
 
         model_dict = {}
-        for param in self.paramList:
+        for param in self.emu_params:
             model_dict[param] = self.archive.training_data[point_number][param]
 
         return model_dict

@@ -42,7 +42,7 @@ class NNEmulator:
         self,
         archive=None,
         training_set=None,
-        paramList=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc'], 
+        emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc'], 
         kmax_Mpc=4,
         ndeg=5,
         nepochs=100,
@@ -52,18 +52,76 @@ class NNEmulator:
         save_path=None,
         model_path=None,
     ):
-        self.emuparams = paramList
+        self.emu_params = emu_params
         self.kmax_Mpc = kmax_Mpc
         self.nepochs = nepochs
         self.step_size = step_size
         self.model_path = model_path
         
+        self.ndeg = ndeg
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.save_path = save_path
+        self.lace_path = os.environ["LACE_REPO"] + "/"
+        self.models_dir = os.path.join(self.lace_path, "lace/emulator/")
+        
+        
+        if train == False:
+            self.archive=interface_archive.Archive(verbose=False)
+            self.archive.get_training_data(training_set='Cabayol23')
+            
+            kMpc_train = self._obtain_sim_params()
+            log_KMpc_train = torch.log10(kMpc_train).to(self.device)
+            self.log_KMpc = log_KMpc_train
+
+            
+            if self.model_path == None:
+                raise Exception("If train==False, model path is required.")
+
+            else:
+                pretrained_weights = torch.load(
+                    os.path.join(self.models_dir, self.model_path), map_location="cpu"
+                )
+                self.emulator = nn_architecture.MDNemulator_polyfit(
+                    nhidden=5, ndeg=self.ndeg
+                )
+                self.emulator.load_state_dict(pretrained_weights['model'])
+                self.emulator.to(self.device)
+                print("Model loaded. No training needed")
+                
+                emulator_params = pretrained_weights['emulator_params']
+                
+                print("The loaded model corresponds to the following emulation configuration:\n:"
+                    f"zmax: {emulator_params['zmax']}, "
+                    f"kmax_Mpc: {emulator_params['kmax_Mpc']}, "
+                    f"ndeg: {emulator_params['ndeg']}, "
+                    f"emu_params: {emulator_params['emu_params']}, "
+                    f"drop_sim': {emulator_params['drop_sim']}")
+                if emulator_params['drop_sim'] != None:
+                    dropsim=emulator_params['drop_sim']
+                    print(f'WARNING: Model trained without simulation set {dropsim}') 
+                
+                
+            if [self.archive.z_max,
+                self.kmax_Mpc,
+                self.ndeg,
+                self.emu_params,
+                
+            ] != [float(emulator_params['zmax']),
+                float(emulator_params['kmax_Mpc']),
+                float(emulator_params['ndeg']),
+                emulator_params['emu_params'],
+            ]:
+                
+                raise ValueError("The arguments passed to the emulator do not match the loaded emulator configuration")    
+                    
+            return
+        
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23"]
         if training_set is not None:
-            print("Selected pre-tuned training set")
             try:
                 if training_set in training_set_all:
+                    print(f"Selected training set from {training_set}")
                     pass
                 else:
                     print(
@@ -75,7 +133,6 @@ class NNEmulator:
                 print("An error occurred while checking the training_set value.")
                 raise
         else:
-            print("Selected custome training set")
             if archive == None:
                 raise ValueError("archive must be provided if training_set is not")
 
@@ -84,15 +141,8 @@ class NNEmulator:
             self.archive = interface_archive.Archive(verbose=False)
             self.archive.get_training_data(training_set=training_set)
         else:
-            print("Loading emulator using a specific archive")
             self.archive = archive
-            
-
-        self.ndeg = ndeg
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.save_path = save_path
-        self.lace_path = os.environ["LACE_REPO"] + "/"
-        self.models_dir = os.path.join(self.lace_path, "lace/emulator/")
+        
 
         self.initial_weights = initial_weights
         if self.initial_weights == True:
@@ -105,36 +155,14 @@ class NNEmulator:
                 self.initial_weights_path = os.path.join(
                     self.models_dir, "initial_params/initial_weights_extended.pt"
                 )
-
-        if train == True:
-            self.train_nn()
-
-        if train == False:
-            if self.model_path == None:
-                raise Exception("If train==False, model path is required.")
-
-            else:
-                pretrained_weights = torch.load(
-                    os.path.join(self.models_dir, self.model_path), map_location="cpu"
-                )
-                self.emulator = nn_architecture.MDNemulator_polyfit(
-                    nhidden=5, ndeg=self.ndeg
-                )
-                self.emulator.load_state_dict(pretrained_weights)
-                self.emulator.to(self.device)
-                print("Model loaded. No training needed")
-
-                kMpc_train = self.obtain_sim_params()
-
-                self.log_KMpc = torch.log10(kMpc_train).to(self.device)
-
-                return
-
+        
+        self.train()
+                    
         if self.save_path != None:
             # saves the model in the predefined path after training
             self.save_emulator()
 
-    def sort_dict(self, dct, keys):
+    def _sort_dict(self, dct, keys):
         """
         Sort a list of dictionaries based on specified keys.
 
@@ -155,7 +183,7 @@ class NNEmulator:
             )  # update the original dictionary with the sorted dictionary
         return dct
 
-    def obtain_sim_params(self):
+    def _obtain_sim_params(self):
         """
         Obtain simulation parameters.
 
@@ -165,9 +193,8 @@ class NNEmulator:
             Nk (int): Number of k values.
             k_Mpc_train (tensor): k values in the k training range
         """
-
         sim_0 = copy.deepcopy(self.archive)
-        sim_0.data_av_all = [d for d in sim_0.training_data if d["ind_sim"] == 0]
+        sim_0.training_data = [d for d in sim_0.training_data if d["ind_sim"] == 0]
         sim_zs = [data["z"] for data in sim_0.training_data]
         Nz = len(sim_zs)
         k_Mpc = sim_0.data[0]["k_Mpc"]
@@ -185,12 +212,12 @@ class NNEmulator:
             {
                 key: value
                 for key, value in self.archive.training_data[i].items()
-                if key in self.emuparams
+                if key in self.emu_params
             }
             for i in range(len(self.archive.training_data))
         ]
-        data = self.sort_dict(
-            data, self.emuparams
+        data = self._sort_dict(
+            data, self.emu_params
         )  # sort the data by emulator parameters
         data = [list(data[i].values()) for i in range(len(self.archive.training_data))]
         data = np.array(data)
@@ -221,21 +248,21 @@ class NNEmulator:
 
         return k_Mpc_train
 
-    def get_training_data(self):
+    def _get_training_data_nn(self):
         """
-        Given an archive and key_av, it obtains the training data based on self.emuparams
-        Sorts the training data according to self.emuparams and scales the data based on self.paramLims
+        Given an archive and key_av, it obtains the training data based on self.emu_params
+        Sorts the training data according to self.emu_params and scales the data based on self.paramLims
         Finally, it returns the training data as a torch.Tensor object.
         """
         training_data = [
             {
                 key: value
                 for key, value in self.archive.training_data[i].items()
-                if key in self.emuparams
+                if key in self.emu_params
             }
             for i in range(len(self.archive.training_data))
         ]
-        training_data = self.sort_dict(training_data, self.emuparams)
+        training_data = self._sort_dict(training_data, self.emu_params)
         training_data = [
             list(training_data[i].values())
             for i in range(len(self.archive.training_data))
@@ -249,9 +276,10 @@ class NNEmulator:
 
         return training_data
 
-    def get_training_pd1(self):
+    def _get_training_pd1_nn(self):
         """
-        Given an archive and key_av, it obtains the p1d_Mpc values from the training data and scales it.
+        Method to get the p1d_Mpc values from the training data in a format that the NN emulator can ingest
+        It gets the P!D from the archive and scales it.
         Finally, it returns the scaled values as a torch.Tensor object along with the scaling factor.
         """
         training_label = [
@@ -277,7 +305,7 @@ class NNEmulator:
         return training_label  # , yscalings
 
 
-    def train_nn(self):
+    def train(self):
         """
         Trains the emulator with given key_list using the archive data.
         Args:
@@ -286,8 +314,7 @@ class NNEmulator:
         Returns:None
         """
 
-        print("start the training of the emulator")
-        kMpc_train = self.obtain_sim_params()
+        kMpc_train = self._obtain_sim_params()
 
         log_KMpc_train = torch.log10(kMpc_train).to(self.device)
 
@@ -303,10 +330,9 @@ class NNEmulator:
         )  #
         scheduler = lr_scheduler.StepLR(optimizer, self.step_size, gamma=0.1)
 
-        training_data = self.get_training_data()
-        training_label = self.get_training_pd1()
+        training_data = self._get_training_data_nn()
+        training_label = self._get_training_pd1_nn()
 
-        print("Training network on %s" % len(training_data))
 
         trainig_dataset = TensorDataset(training_data, training_label)
         loader_train = DataLoader(trainig_dataset, batch_size=100, shuffle=True)
@@ -351,11 +377,11 @@ class NNEmulator:
                 optimizer.step()
 
             scheduler.step()
-        print(f"Emualtor trained in {time.time() - t0} seconds")
 
     def save_emulator(self):
         torch.save(self.emulator.state_dict(), self.save_path)
 
+        
     def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
         k_Mpc = torch.Tensor(k_Mpc)
         log_KMpc = torch.log10(k_Mpc).to(self.device)
@@ -363,10 +389,10 @@ class NNEmulator:
         with torch.no_grad():
 
             emu_call = {}
-            for param in self.emuparams:
+            for param in self.emu_params:
                 emu_call[param] = model[param]
 
-            emu_call = {k: emu_call[k] for k in self.emuparams}
+            emu_call = {k: emu_call[k] for k in self.emu_params}
             emu_call = list(emu_call.values())
             emu_call = np.array(emu_call)
 
