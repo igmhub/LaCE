@@ -85,7 +85,7 @@ class archivePND(object):
         pick_sim=None,
         drop_sim=None,
         nsamples=None,
-        z_max=5.0,
+        z_max=4.5,
         kp_Mpc=None,
         verbose=False,
     ):
@@ -172,6 +172,8 @@ class archivePND(object):
 
         ## load power spectrum measurements from suite
         self._load_data(pick_sim, drop_sim, z_max, nsamples)
+        self.drop_sim=drop_sim
+        self.z_max=z_max
 
         return
 
