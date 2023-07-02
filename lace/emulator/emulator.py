@@ -1,5 +1,6 @@
 from lace.emulator.nn_emulator import NNEmulator
 from lace.emulator.gp_emulator import GPEmulator
+from lace.archive import interface_archive
 import os, sys
 import numpy as np
 
@@ -40,18 +41,21 @@ class P1D_emulator(GPEmulator, NNEmulator):
     Raises:
         ValueError: If train is False but no model_path is provided.
         ValueError: If emulator_label is None and archive or emu_algorithm is not provided.
-        Exception: If emu_algorithm is 'NN' and archive_label is 'Nyx'. Work in progress.
-
+        ValueError: If both an archive and a training_set are provided
+        ValueError: If the combination of emu_algorithm and training_set is not available, e.g. Gaussian process with the Nyx archive
+        ValueError: If the emulator_label is not provided, then archive, emu_algorithm, sims_label must be provided
+        ValueError: When the loaded pre-trained algorithm parameters do not coincide with the arguments provided.
     Notes:
         - When emulator_label is 'Pedersen21' or 'Pedersen23', the function prints
           additional information about the selected emulator.
-        - When emulator_label is 'Cabayol23' and train is True, the function also prints
-          information about training the emulator.
+
 
     """
     
+    
     def __init__(self,
                  archive=None,
+                 training_set=None,
                  emulator_label=None,
                  emu_algorithm=None,
                  sims_label=None, 
@@ -62,15 +66,46 @@ class P1D_emulator(GPEmulator, NNEmulator):
                  emu_type="polyfit",
                  model_path=None,
                  save_path=None, 
-                 nepochs_nn=1
+                 nepochs_nn=100
                 ):
+    
+        
+        training_set_all = ["Pedersen21", "Cabayol23"]
+        
+        if (archive!=None)&(training_set!=None):
+            raise ValueError("Conflict! Both custom archive and training_set provided")
+            
+        if training_set is not None:
+            try:
+                if training_set in training_set_all:
+                    print(f"Select archive in {training_set}")
+                    self.archive = interface_archive.Archive(verbose=False)
+                    self.archive.get_training_data(training_set=training_set)
+                    pass
+                else:
+                    print(
+                        "Invalid training_set value. Available options: ",
+                        training_set_all,
+                    )
+                    raise
+            except:
+                raise("An error occurred while checking the training_set value.")
+                
+        
+        elif archive!=None and training_set==None:
+            print("Use custom archive provided by the user")
+            self.archive = archive
+             
+        elif (archive==None)&(training_set==None)&(emulator_label==None):
+            raise(Exception('Archive, training_set or emulator_label must be provided'))
+
 
     
         emulator_label_all = ["Pedersen21", "Pedersen23", "Cabayol23"]
-        if emulator_label is not None:
-            print("Selected pre-tuned emulator")
+        if emulator_label is not None:  
             try:
                 if emulator_label in emulator_label_all:
+                    print(f"Select emulator in {emulator_label}")
                     pass
                 else:
                     print(
@@ -78,21 +113,21 @@ class P1D_emulator(GPEmulator, NNEmulator):
                         emulator_label_all,
                     )
                     raise
+
             except:
                 print("An error occurred while checking the emulator_label value.")
                 raise
         else:
-            print("Selected custome emulator")
+            print("Selected custom emulator")
             if (archive == None) | (emu_algorithm == None) | (sims_label == None):
                 raise ValueError(
-                    "archive, emu_algorithm, archive_label must be provided"
+                    "archive, emu_algorithm, sims_label must be provided "
                     + "if an emulator label is not"
                 )
                 
         
 
         if emulator_label == "Pedersen21":
-            print("Select emulator used in Pedersen et al. 2021")
             emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
             self.emu_algorithm ='GP'
             zmax, kmax_Mpc, emu_type = 4.5, 3, "k_bin"
@@ -103,18 +138,21 @@ class P1D_emulator(GPEmulator, NNEmulator):
                 + "passed to the emulator will be overwritten to match these ones."
             )
 
-            #archive = pnd_archive.archivePND(sim_suite="Pedersen21")
-            #archive.get_training_data()
-
-            GPEmulator.__init__(self,
-                                training_set='Pedersen21',
-                                paramList=emuparams, 
+            if archive==None and training_set==None:
+                print(f'Setting the archive to that used in {emulator_label}')
+                self.archive=interface_archive.Archive(verbose=False)
+                self.archive.get_training_data(training_set='Pedersen21')
+                
+            
+            emulator = GPEmulator(archive=self.archive,
+                                emu_params=emuparams, 
                                 kmax_Mpc=kmax_Mpc, 
                                 emu_type=emu_type
                                )
+                                
+
         
         elif emulator_label == "Pedersen23":
-            print("Select emulator used in Pedersen et al. 2023")
             emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
             self.emu_algorithm ='GP'
             zmax, kmax_Mpc, ndeg, emu_type = 4.5, 4, 4, "polyfit"
@@ -127,17 +165,21 @@ class P1D_emulator(GPEmulator, NNEmulator):
                 + " passed to the emulator will be overwritten to match "
                 + "these ones"
             )
-
-
-            GPEmulator.__init__(self,
-                                training_set='Pedersen21', 
-                                paramList=emuparams, 
+            
+            
+            if archive==None and training_set==None:
+                print(f'Setting the archive to that used in {training_set}')
+                self.archive=interface_archive.Archive(verbose=False)
+                self.archive.get_training_data(training_set='Pedersen21')
+                            
+            emulator = GPEmulator(archive=self.archive,
+                                emu_params=emuparams, 
                                 kmax_Mpc=kmax_Mpc, 
                                 emu_type=emu_type
                                )
+                                
 
         elif emulator_label == "Cabayol23":
-            print("Select emulator used in Cabayol-Garcia et al. 2023")
             emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
             self.emu_algorithm ='NN'
             zmax, kmax_Mpc, ndeg = 4.5, 4, 5
@@ -152,64 +194,55 @@ class P1D_emulator(GPEmulator, NNEmulator):
             )
 
             if train == True:
-                print("Train emulator")
+                            
+                if archive==None and training_set==None:
+                    print(f'Setting the archive to that used in {training_set}')
+                    self.archive=interface_archive.Archive(verbose=False)
+                    self.archive.get_training_data(training_set='Cabayol23')
+                
+                emulator = NNEmulator(archive=self.archive,
+                                    emu_params=emuparams,
+                                    nepochs=nepochs_nn,
+                                    step_size=75,
+                                    kmax_Mpc=4,
+                                    ndeg=5,
+                                    train=True,
+                                )
 
-
-                NNEmulator.__init__(self,
-                    training_set='Cabayol23',
-                    paramList=emuparams,
-                    nepochs=nepochs_nn,
-                    step_size=75,
-                    kmax_Mpc=4,
-                    ndeg=5,
-                    train=True,
-                )
                 
             elif train == False:
                 if model_path == None:
                     raise ValueError("if train==False, a model path must be provided")
                 else:
                     print("Load pre-trained emulator")
-                    NNEmulator.__init__(self,
-                        archive, 
-                        emuparams, 
-                        train=False, 
-                        model_path=model_path
-                    )
+
+                    emulator = NNEmulator(train=False, 
+                                        model_path=model_path
+                                         )
                     
                     
         elif emulator_label is None:
             self.emu_algorithm=emu_algorithm
             if (emu_algorithm == "NN") & (sims_label == "Gadget"):
                 emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
-                NNEmulator.__init__(self,
-                    archive,
-                    paramList=emuparams,
-                    kmax_Mpc=kmax_Mpc,
-                    ndeg=ndeg,
-                    save_path=save_path,
-                    train=train,
-                    model_path=model_path  
-                )
+                emulator = NNEmulator(archive,
+                            emu_params=emuparams,
+                            kmax_Mpc=kmax_Mpc,
+                            ndeg=ndeg,
+                            save_path=save_path,
+                            train=train,
+                            model_path=model_path  
+                        )
             elif (emu_algorithm == "NN") & (sims_label == "Nyx"):
                 emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "lambda_P"]
                 raise Exception("Work in progress")
 
             elif (emu_algorithm == "GP") & (sims_label == "Gadget"):
                 emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
-                GPEmulator.__init__(self,
-                                    archive=archive
-                                   )
+                emulator = GPEmulator(archive=archive)
                 
             else:
                 raise ValueError(
-                    "Combination of emu_algorithm and archive_label not supported"
+                    "Combination of emu_algorithm and sims_label not supported"
                 )
 
-    def emulate_p1d_Mpc(self,model, k_Mpc, return_covar=False, z=None):
-        if self.emu_algorithm=='NN':
-            p1d=NNEmulator.emulate_p1d_Mpc(self,model, k_Mpc, return_covar=return_covar, z=None)  
-        elif self.emu_algorithm=='GP':
-            p1d=GPEmulator.emulate_p1d_Mpc(self,model, k_Mpc, return_covar=return_covar, z=None)
-        return p1d
-        
