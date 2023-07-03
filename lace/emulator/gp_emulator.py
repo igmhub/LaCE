@@ -10,9 +10,10 @@ from scipy.interpolate import interp1d
 from lace.emulator import p1d_archive
 from lace.emulator import poly_p1d
 from lace.archive import interface_archive
+from lace.emulator import base_emulator
 
 
-class GPEmulator:
+class GPEmulator(base_emulator.BaseEmulator):
     """
     Gaussian process emulator to emulate P1D from a simulation suite.
     This will train on the data in an 'archive' object, and will return
