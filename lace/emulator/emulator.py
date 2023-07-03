@@ -4,7 +4,7 @@ from lace.archive import interface_archive
 import os, sys
 import numpy as np
 
-class P1D_emulator(GPEmulator, NNEmulator):
+class P1D_emulator(object):
     """
     Emulates the P1D power spectrum.
     Interface class for the neural network and the Gaussian process emulator.
