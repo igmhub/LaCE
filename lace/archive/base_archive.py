@@ -19,17 +19,13 @@ class BaseArchive(object):
             "ind_snap",
             "ind_phase",
             "ind_axis",
-            "ind_tau",
+            "ind_rescaling",
         ]
 
         # put measurements in arrays
         N = len(self.data)
         for label in list_labels:
-            if label not in self.data[0]:
-                continue
-            else:
-                prop = []
-
+            prop = []
             for ii in range(N):
                 prop.append(self.data[ii][label])
 
@@ -61,7 +57,7 @@ class BaseArchive(object):
             "ind_snap",
             "ind_phase",
             "ind_axis",
-            "ind_tau",
+            "ind_rescaling",
         ]
 
         keys_spe = ["p1d_Mpc"]
@@ -80,7 +76,7 @@ class BaseArchive(object):
             loop = list(
                 product(
                     np.unique(self.sim_label),
-                    np.unique(self.ind_tau),
+                    np.unique(self.ind_rescaling),
                     np.unique(self.ind_snap),
                 )
             )
@@ -89,9 +85,9 @@ class BaseArchive(object):
             loop = list(
                 product(
                     np.unique(self.sim_label),
-                    np.unique(self.ind_tau),
+                    np.unique(self.ind_rescaling),
                     np.unique(self.ind_snap),
-                    np.arange(self.n_axes),
+                    np.arange(n_axes),
                 )
             )
         elif average == "axes":
@@ -99,9 +95,9 @@ class BaseArchive(object):
             loop = list(
                 product(
                     np.unique(self.sim_label),
-                    np.unique(self.ind_tau),
+                    np.unique(self.ind_rescaling),
                     np.unique(self.ind_snap),
-                    np.arange(self.n_phases),
+                    np.arange(n_phases),
                 )
             )
         nloop = len(loop)
@@ -111,20 +107,20 @@ class BaseArchive(object):
         for ind_loop in range(nloop):
             dict_av = {}
             if average == "all":
-                sim_label, ind_tau, ind_snap = loop[ind_loop]
+                sim_label, ind_rescaling, ind_snap = loop[ind_loop]
                 ind_merge = np.argwhere(
                     (self.sim_label == sim_label)
-                    & (self.ind_tau == ind_tau)
+                    & (self.ind_rescaling == ind_rescaling)
                     & (self.ind_snap == ind_snap)
                 )[:, 0]
 
                 dict_av["ind_axis"] = "average"
                 dict_av["ind_phase"] = "average"
             elif average == "phases":
-                sim_label, ind_tau, ind_snap, ind_axis = loop[ind_loop]
+                sim_label, ind_rescaling, ind_snap, ind_axis = loop[ind_loop]
                 ind_merge = np.argwhere(
                     (self.sim_label == sim_label)
-                    & (self.ind_tau == ind_tau)
+                    & (self.ind_rescaling == ind_rescaling)
                     & (self.ind_snap == ind_snap)
                     & (self.ind_axis == ind_axis)
                 )[:, 0]
@@ -132,10 +128,10 @@ class BaseArchive(object):
                 dict_av["ind_axis"] = ind_axis
                 dict_av["ind_phase"] = "average"
             elif average == "axes":
-                sim_label, ind_tau, ind_snap, ind_phase = loop[ind_loop]
+                sim_label, ind_rescaling, ind_snap, ind_phase = loop[ind_loop]
                 ind_merge = np.argwhere(
                     (self.sim_label == sim_label)
-                    & (self.ind_tau == ind_tau)
+                    & (self.ind_rescaling == ind_rescaling)
                     & (self.ind_snap == ind_snap)
                     & (self.ind_phase == ind_phase)
                 )[:, 0]
@@ -143,14 +139,17 @@ class BaseArchive(object):
                 dict_av["ind_axis"] = "average"
                 dict_av["ind_phase"] = ind_phase
 
+            # if no simulations fulfilling this criteria
             if ind_merge.shape[0] == 0:
                 continue
 
             dict_av["sim_label"] = sim_label
-            dict_av["ind_tau"] = ind_tau
+            dict_av["ind_rescaling"] = ind_rescaling
             dict_av["ind_snap"] = ind_snap
 
+            # list of available keys to merger
             key_list = self.data[ind_merge[0]].keys()
+            # iterate over keys
             for key in key_list:
                 if key in keys_avoid:
                     continue
@@ -178,7 +177,7 @@ class BaseArchive(object):
         return arch_av
 
     def get_training_data(
-        self, average=None, tau_scaling=None, drop_sim=None, z_max=None
+        self, average=None, val_scaling=None, drop_sim=None, z_max=None
     ):
         """
         Retrieves the training data based on the provided flag.
@@ -211,13 +210,13 @@ class BaseArchive(object):
                 msg = "Invalid average value. Available options:"
                 raise ExceptionList(msg, operations_avail)
 
-        if isinstance(tau_scaling, (int, float, type(None))) == False:
-            raise TypeError("tau_scaling must be an int or None")
-        if tau_scaling is None:
-            tau_scaling = self.training_tau_scaling
+        if isinstance(val_scaling, (int, float, type(None))) == False:
+            raise TypeError("val_scaling must be an int or None")
+        if val_scaling is None:
+            val_scaling = self.training_val_scaling
         else:
-            if tau_scaling not in self.scalings_avail:
-                msg = "Invalid tau_scaling value. Available options:"
+            if val_scaling not in self.scalings_avail:
+                msg = "Invalid val_scaling value. Available options:"
                 raise ExceptionList(msg, self.scalings_avail)
 
         if isinstance(drop_sim, (str, type(None))) == False:
@@ -247,8 +246,8 @@ class BaseArchive(object):
                     (arch_av[ii]["sim_label"] in self.list_sim_cube)
                     & (arch_av[ii]["sim_label"] != drop_sim)
                     & (
-                        (tau_scaling == "all")
-                        | (arch_av[ii]["scale_tau"] == tau_scaling)
+                        (val_scaling == "all")
+                        | (arch_av[ii]["val_scaling"] == val_scaling)
                     )
                     & (arch_av[ii]["z"] <= z_max)
                 )
@@ -258,7 +257,7 @@ class BaseArchive(object):
         return training_data
 
     def get_testing_data(
-        self, sim_label, tau_scaling=None, average=None, z_max=None
+        self, sim_label, val_scaling=None, average=None, z_max=None
     ):
         """
         Retrieves the testing data based on the provided flag.
@@ -290,13 +289,13 @@ class BaseArchive(object):
                 msg = "Invalid average value. Available options:"
                 raise ExceptionList(msg, operations_avail)
 
-        if isinstance(tau_scaling, (int, float, type(None))) == False:
-            raise TypeError("tau_scaling must be an int or None")
-        if tau_scaling is None:
-            tau_scaling = self.testing_tau_scaling
+        if isinstance(val_scaling, (int, float, type(None))) == False:
+            raise TypeError("val_scaling must be an int or None")
+        if val_scaling is None:
+            val_scaling = self.testing_val_scaling
         else:
-            if tau_scaling not in self.scalings_avail:
-                msg = "Invalid tau_scaling value. Available options:"
+            if val_scaling not in self.scalings_avail:
+                msg = "Invalid val_scaling value. Available options:"
                 raise ExceptionList(msg, self.scalings_avail)
 
         if isinstance(z_max, (int, float, type(None))) == False:
@@ -317,7 +316,7 @@ class BaseArchive(object):
             for ii in range(len(arch_av)):
                 mask = (
                     (arch_av[ii]["sim_label"] == sim_label)
-                    & (arch_av[ii]["scale_tau"] == tau_scaling)
+                    & (arch_av[ii]["val_scaling"] == val_scaling)
                     & (arch_av[ii]["z"] <= z_max)
                 )
                 if mask:
