@@ -9,7 +9,6 @@ class P1D_emulator(GPEmulator, NNEmulator):
     Emulates the P1D power spectrum.
     Interface class for the neural network and the Gaussian process emulator.
 
-    The class inherits from GPEmulator and NNEmulator classes.
         Args:
         archive (class): Data archive used for training the emulator.
             Required when using a custom emulator.
@@ -33,7 +32,7 @@ class P1D_emulator(GPEmulator, NNEmulator):
         model_path (str): Path to a pre-trained emulator model.
         save_path (str): Path to save the emulator model once trained.
             Only valid for the NN emulator.
-        nepochs_nn (int): Number of epochs the NN is trained. Default is 1.
+        nepochs_nn (int): Number of epochs the NN is trained. Default is 100.
 
     Returns:
         Emulator: The trained or loaded emulator object.
