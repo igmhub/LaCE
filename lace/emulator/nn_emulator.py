@@ -6,6 +6,11 @@ import time
 import sys
 import sklearn
 
+import torch
+from torch.utils.data import DataLoader, dataset, TensorDataset
+from torch import nn, optim
+from torch.optim import lr_scheduler
+
 # LaCE modules
 from lace.archive import pnd_archive
 from lace.archive import interface_archive
@@ -13,20 +18,14 @@ from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 from lace.emulator import poly_p1d
 from lace.emulator import utils
-
-
-import torch
-from torch.utils.data import DataLoader, dataset, TensorDataset
-from torch import nn, optim
-from torch.optim import lr_scheduler
-
 from lace.emulator import nn_architecture
+from lace.emulator import base_emulator
 
 cosmo_fid = camb_cosmo.get_cosmology()
 import copy
 
 
-class NNEmulator:
+class NNEmulator(base_emulator.BaseEmulator):
     """A class for training an emulator.
 
     Args:
