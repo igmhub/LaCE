@@ -24,8 +24,8 @@ class archivePND(BaseArchive):
         _get_sim(self, ind_axis, snap, tag_sample, tag_sample_params)
         _load_data(self, pick_sim, drop_sim, z_max, nsamples=None)
         print_entry(self, entry, fiducial_keys=True)
-        plot_samples(self, param_1, param_2, tau_scalings=True, temp_scalings=True)
-        plot_3D_samples(self, param_1, param_2, param_3, tau_scalings=True, temp_scalings=True)
+        plot_samples(self, param_1, param_2, val_scalings=True, temp_scalings=True)
+        plot_3D_samples(self, param_1, param_2, param_3, val_scalings=True, temp_scalings=True)
     """
 
     def __init__(self, postproc="Cabayol23", kp_Mpc=None):
@@ -126,10 +126,10 @@ class archivePND(BaseArchive):
             self.also_P3D = False
             self.tag_param = "parameter_redundant.json"
             self.scalings_avail = [0.9, 1, 1.1]
-            self.training_tau_scaling = 1
+            self.training_val_scaling = 1
             self.training_average = "all"
             self.testing_average = "all"
-            self.testing_tau_scaling = 1
+            self.testing_val_scaling = 1
             self.training_z_max = 10
             self.testing_z_max = 10
         elif postproc == "Cabayol23":
@@ -144,10 +144,10 @@ class archivePND(BaseArchive):
             self.also_P3D = True
             self.tag_param = "parameter_redundant.json"
             self.scalings_avail = [0.9, 0.95, 1, 1.05, 1.1]
-            self.training_tau_scaling = "all"
+            self.training_val_scaling = "all"
             self.training_average = "axes_phases_all"
             self.testing_average = "all"
-            self.testing_tau_scaling = 1
+            self.testing_val_scaling = 1
             self.training_z_max = 10
             self.testing_z_max = 10
         elif postproc == "768_768":
@@ -162,10 +162,10 @@ class archivePND(BaseArchive):
             self.also_P3D = True
             self.tag_param = "parameter.json"
             self.scalings_avail = [0.9, 0.95, 1, 1.05, 1.1]
-            self.training_tau_scaling = "all"
+            self.training_val_scaling = "all"
             self.training_average = "axes_phases_all"
             self.testing_average = "all"
-            self.testing_tau_scaling = 1
+            self.testing_val_scaling = 1
             self.training_z_max = 10
             self.testing_z_max = 10
 
@@ -185,7 +185,7 @@ class archivePND(BaseArchive):
             "kF_Mpc": "kF_Mpc",
             "k_Mpc": "k_Mpc",
             "p1d_Mpc": "p1d_Mpc",
-            "scale_tau": "scale_tau",
+            "scale_tau": "val_scaling",
         }
 
     def _sim2file_name(self, sim_label):
@@ -507,7 +507,7 @@ class archivePND(BaseArchive):
                             sim_data["ind_snap"] = ind_z
                             sim_data["ind_phase"] = _ind_phase
                             sim_data["ind_axis"] = ind_axis
-                            sim_data["ind_tau"] = floor_scaling + pp
+                            sim_data["ind_rescaling"] = floor_scaling + pp
 
                             # iterate over properties
                             all_keys = list(self.key_conv.keys())
