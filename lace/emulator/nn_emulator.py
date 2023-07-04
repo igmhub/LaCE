@@ -42,6 +42,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         archive=None,
         training_set=None,
         emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc'], 
+        emulator_label=None,
+        sims_label=None,
         kmax_Mpc=4,
         ndeg=5,
         nepochs=100,
@@ -63,14 +65,100 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.lace_path = os.environ["LACE_REPO"] + "/"
         self.models_dir = os.path.join(self.lace_path, "lace/emulator/")
         
-        
-        if train == False:
-            self.archive=interface_archive.Archive(verbose=False)
-            self.archive.get_training_data(training_set='Cabayol23')
+        if sims_label==None:
+            raise ValueError("The simulation label (sims_label) must be provided.")
             
-            kMpc_train = self._obtain_sim_params()
-            log_KMpc_train = torch.log10(kMpc_train).to(self.device)
-            self.log_KMpc = log_KMpc_train
+        # check input #
+        training_set_all = ["Pedersen21", "Cabayol23"]
+        if (archive!=None)&(training_set!=None):
+            raise ValueError("Conflict! Both custom archive and training_set provided")
+        
+        if training_set is not None:
+            try:
+                if training_set in training_set_all:
+                    print(f"Selected training set from {training_set}")
+                    pass
+                else:
+                    print(
+                        "Invalid training_set value. Available options: ",
+                        training_set_all,
+                    )
+                    raise
+            except:
+                print("An error occurred while checking the training_set value.")
+                raise
+                
+            self.archive=interface_archive.Archive(verbose=False)
+            self.archive.get_training_data(training_set=training_set)
+                
+                    
+        elif archive!=None and training_set==None:
+            print("Use custom archive provided by the user")
+            self.archive = archive
+
+        elif (archive==None)&(training_set==None):
+            raise(ValueError('Archive or training_set must be provided'))
+            
+            
+        emulator_label_all = ["Cabayol23", "Cabayol23_Nyx"]
+        if emulator_label is not None:  
+            try:
+                if emulator_label in emulator_label_all:
+                    print(f"Select emulator in {emulator_label}")
+                    pass
+                else:
+                    print(
+                        "Invalid emulator_label value. Available options: ",
+                        emulator_label_all,
+                    )
+                    raise
+
+            except:
+                print("An error occurred while checking the emulator_label value.")
+                raise
+
+            if emulator_label == "Cabayol23":
+                
+                print(
+                    r"Neural network emulating the optimal P1D of Gadget simulations "
+                    + "fitting coefficients to a 5th degree polynomial. It "
+                    + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters "
+                    + "passed to the emulator will be overwritten to match "
+                    + "these ones"
+                )
+                self.emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
+                self.zmax, self.kmax_Mpc, self.ndeg = 4.5, 4, 5
+                
+            if emulator_label == "Cabayol23_Nyx":
+                
+                raise Excpetion("Work in Progress")
+                
+                print(
+                    r"Neural network emulator predicting the optimal P1D "
+                    + "fitting coefficients to a 5th degree polynomial. It "
+                    + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters "
+                    + "passed to the emulator will be overwritten to match "
+                    + "these ones"
+                )
+                self.emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
+                self.zmax, self.kmax_Mpc, self.ndeg, self.nepochs = 4.5, 4, 5, 1000
+                                
+                
+                
+        else:
+            print("Selected custom emulator")            
+            
+            
+        if train == False:
+            if sims_label=='Gadget':
+                self.archive=interface_archive.Archive(verbose=False)
+                self.archive.get_training_data(training_set='Cabayol23')
+
+                kMpc_train = self._obtain_sim_params()
+                log_KMpc_train = torch.log10(kMpc_train).to(self.device)
+                self.log_KMpc = log_KMpc_train
+            elif sims_label=='Nyx':
+                raise Exception("Work in progress")
 
             
             if self.model_path == None:
@@ -114,35 +202,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                 raise ValueError("The arguments passed to the emulator do not match the loaded emulator configuration")    
                     
             return
+                                        
         
-        # check input #
-        training_set_all = ["Pedersen21", "Cabayol23"]
-        if training_set is not None:
-            try:
-                if training_set in training_set_all:
-                    print(f"Selected training set from {training_set}")
-                    pass
-                else:
-                    print(
-                        "Invalid training_set value. Available options: ",
-                        training_set_all,
-                    )
-                    raise
-            except:
-                print("An error occurred while checking the training_set value.")
-                raise
-        else:
-            if archive == None:
-                raise ValueError("archive must be provided if training_set is not")
-
-        # read all files with P1D measured in simulation suite
-        if archive == None:
-            self.archive = interface_archive.Archive(verbose=False)
-            self.archive.get_training_data(training_set=training_set)
-        else:
-            self.archive = archive
-        
-
         self.initial_weights = initial_weights
         if self.initial_weights == True:
             # loads set of pre-defined random weights

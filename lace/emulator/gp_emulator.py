@@ -25,6 +25,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         self,
         archive=None,
         training_set=None,
+        emulator_label=None,
         emu_type="polyfit",
         verbose=False,
         kmax_Mpc=10.0,
@@ -49,35 +50,80 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23"]
+        if (archive!=None)&(training_set!=None):
+            raise ValueError("Conflict! Both custom archive and training_set provided")
+        
         if training_set is not None:
-            if self.verbose:
-                print("Selected pre-tuned training set")
             try:
                 if training_set in training_set_all:
+                    print(f"Selected training set from {training_set}")
                     pass
                 else:
-                    raise ValueError("Invalid training_set value. Available options: ",
-                        training_set_all,)
+                    print(
+                        "Invalid training_set value. Available options: ",
+                        training_set_all,
+                    )
+                    raise
             except:
                 print("An error occurred while checking the training_set value.")
                 raise
-        else:
-            if self.verbose:
-                print("Selected custome training set")
-            if archive == None:
-                raise ValueError("archive must be provided if training_set is not")
-        # done check input #
-
-        # read all files with P1D measured in simulation suite
-        if archive == None:
-            self.custom_archive = False
-            self.archive = interface_archive.Archive(verbose=False)
+                
+            self.archive=interface_archive.Archive(verbose=False)
             self.archive.get_training_data(training_set=training_set)
-        else:
-            self.custom_archive = True
-            if self.verbose:
-                print("Loading emulator using a specific archive")
+                
+                    
+        elif archive!=None and training_set==None:
+            print("Use custom archive provided by the user")
             self.archive = archive
+
+        elif (archive==None)&(training_set==None):
+            raise(ValueError('Archive or training_set must be provided'))
+            
+            
+        emulator_label_all = ["Pedersen21", "Pedersen23"]
+        if emulator_label is not None:  
+            try:
+                if emulator_label in emulator_label_all:
+                    print(f"Select emulator in {emulator_label}")
+                    pass
+                else:
+                    print(
+                        "Invalid emulator_label value. Available options: ",
+                        emulator_label_all,
+                    )
+                    raise
+
+            except:
+                print("An error occurred while checking the emulator_label value.")
+                raise
+
+            if emulator_label == "Pedersen21":
+                
+                print(
+                    r"Gaussian Process emulator predicting the P1D at each k-bin."
+                    + " It goes to scales of 3Mpc^{-1} and z<4.5. The parameters "
+                    + "passed to the emulator will be overwritten to match these ones."
+                )
+                self.emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
+                self.zmax, self.kmax_Mpc, self.emu_type =  4.5, 3, "k_bin"
+                
+            if emulator_label == "Pedersen23":
+                
+                print(
+                    r"Gaussian Process emulator predicting the optimal P1D"
+                    + "fitting coefficients to a 5th degree polynomial. It "
+                    + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters"
+                    + " passed to the emulator will be overwritten to match "
+                    + "these ones"
+                )
+            
+                self.emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
+                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = 4.5, 4, 4, "polyfit"
+                                
+                
+        else:
+            print("Selected custom emulator")      
+            
 
         ## Find max k bin
         self.k_bin = (

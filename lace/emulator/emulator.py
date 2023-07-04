@@ -4,10 +4,9 @@ from lace.archive import interface_archive
 import os, sys
 import numpy as np
 
-class P1D_emulator(object):
+def get_emulator(archive=None,emu_algorithm='NN', sims_label='None', emulator_label=None, zmax=4.5, kmax_Mpc=4, ndeg=5, train=True, emu_type='polyfit', model_path=None, save_path=None, nepochs_nn=100):
     """
-    Emulates the P1D power spectrum.
-    Interface class for the neural network and the Gaussian process emulator.
+    Emulator handler. Defines an emulator for the the P1D power spectrum
 
         Args:
         archive (class): Data archive used for training the emulator.
@@ -51,52 +50,35 @@ class P1D_emulator(object):
 
     """
     
-    
-    def __init__(self,
-                 archive=None,
-                 training_set=None,
-                 emulator_label=None,
-                 emu_algorithm=None,
-                 sims_label=None, 
-                 zmax=4.5, 
-                 kmax_Mpc=4, 
-                 ndeg=5, 
-                 train=True,
-                 emu_type="polyfit",
-                 model_path=None,
-                 save_path=None, 
-                 nepochs_nn=100
-                ):
-    
         
-        training_set_all = ["Pedersen21", "Cabayol23"]
-        
-        if (archive!=None)&(training_set!=None):
-            raise ValueError("Conflict! Both custom archive and training_set provided")
-            
-        if training_set is not None:
-            try:
-                if training_set in training_set_all:
-                    print(f"Select archive in {training_set}")
-                    self.archive = interface_archive.Archive(verbose=False)
-                    self.archive.get_training_data(training_set=training_set)
-                    pass
-                else:
-                    print(
-                        "Invalid training_set value. Available options: ",
-                        training_set_all,
-                    )
-                    raise
-            except:
-                raise("An error occurred while checking the training_set value.")
-                
-        
-        elif archive!=None and training_set==None:
-            print("Use custom archive provided by the user")
-            self.archive = archive
-             
-        elif (archive==None)&(training_set==None)&(emulator_label==None):
-            raise(Exception('Archive, training_set or emulator_label must be provided'))
+    training_set_all = ["Pedersen21", "Cabayol23"]
+
+    if (archive!=None)&(training_set!=None):
+        raise ValueError("Conflict! Both custom archive and training_set provided")
+
+    if training_set is not None:
+        try:
+            if training_set in training_set_all:
+                print(f"Select archive in {training_set}")
+                self.archive = interface_archive.Archive(verbose=False)
+                self.archive.get_training_data(training_set=training_set)
+                pass
+            else:
+                print(
+                    "Invalid training_set value. Available options: ",
+                    training_set_all,
+                )
+                raise
+        except:
+            raise("An error occurred while checking the training_set value.")
+
+
+    elif archive!=None and training_set==None:
+        print("Use custom archive provided by the user")
+        self.archive = archive
+
+    elif (archive==None)&(training_set==None)&(emulator_label==None):
+        raise(Exception('Archive, training_set or emulator_label must be provided'))
 
 
     
