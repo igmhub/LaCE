@@ -4,3 +4,4 @@ notebooks/.ipynb_checkpoints/
 lace.egg-info/
 __pycache__/
 lace/emulator/.ipynb_checkpoints/
+lace/archive/.ipynb_checkpoints/

@@ -29,7 +29,13 @@ class NNEmulator(base_emulator.BaseEmulator):
     """A class for training an emulator.
 
     Args:
-        paramList (lsit): A list of emulator parameters.
+        archive (class): Data archive used for training the emulator.
+            Required when using a custom emulator.
+        training_set: Specific training set.  Options are
+            'Cabayol23'.
+        emu_params (lsit): A list of emulator parameters.
+        emulator_label (str): Specific emulator label. Options are
+            'Cabayol23' and 'Cabayol23_Nyx'.
         kmax_Mpc (float): The maximum k in Mpc^-1 to use for training. Default is 3.5.
         nepochs (int): The number of epochs to train for. Default is 200.
         model_path (str): The path to a pretrained model. Default is None.
@@ -43,7 +49,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_set=None,
         emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc'], 
         emulator_label=None,
-        sims_label=None,
         kmax_Mpc=4,
         ndeg=5,
         nepochs=100,
@@ -64,10 +69,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.save_path = save_path
         self.lace_path = os.environ["LACE_REPO"] + "/"
         self.models_dir = os.path.join(self.lace_path, "lace/emulator/")
-        
-        if sims_label==None:
-            raise ValueError("The simulation label (sims_label) must be provided.")
-            
+
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23"]
         if (archive!=None)&(training_set!=None):
@@ -144,23 +146,11 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.zmax, self.kmax_Mpc, self.ndeg, self.nepochs = 4.5, 4, 5, 1000
                                 
                 
-                
         else:
             print("Selected custom emulator")            
             
-            
-        if train == False:
-            if sims_label=='Gadget':
-                self.archive=interface_archive.Archive(verbose=False)
-                self.archive.get_training_data(training_set='Cabayol23')
+        if train == False: 
 
-                kMpc_train = self._obtain_sim_params()
-                log_KMpc_train = torch.log10(kMpc_train).to(self.device)
-                self.log_KMpc = log_KMpc_train
-            elif sims_label=='Nyx':
-                raise Exception("Work in progress")
-
-            
             if self.model_path == None:
                 raise Exception("If train==False, model path is required.")
 
@@ -182,11 +172,27 @@ class NNEmulator(base_emulator.BaseEmulator):
                     f"kmax_Mpc: {emulator_params['kmax_Mpc']}, "
                     f"ndeg: {emulator_params['ndeg']}, "
                     f"emu_params: {emulator_params['emu_params']}, "
-                    f"drop_sim': {emulator_params['drop_sim']}")
+                    f"drop_sim: {emulator_params['drop_sim']}), "
+                    f"sims_training: {emulator_params['sims_training']}"
+                     )
+                
                 if emulator_params['drop_sim'] != None:
                     dropsim=emulator_params['drop_sim']
                     print(f'WARNING: Model trained without simulation set {dropsim}') 
+                    
+                sims_training = emulator_params['sims_training']
                 
+            if sims_training=='Gadget':
+
+                self.archive=interface_archive.Archive(verbose=False)
+                self.archive.get_training_data(training_set='Cabayol23')
+
+                kMpc_train = self._obtain_sim_params()
+                log_KMpc_train = torch.log10(kMpc_train).to(self.device)
+                self.log_KMpc = log_KMpc_train
+            elif sims_training=='Nyx':
+                raise ValueError("Work in progress")
+                    
                 
             if [self.archive.z_max,
                 self.kmax_Mpc,

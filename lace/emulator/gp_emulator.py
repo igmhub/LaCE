@@ -19,6 +19,19 @@ class GPEmulator(base_emulator.BaseEmulator):
     This will train on the data in an 'archive' object, and will return
     a given P_1D(k) for the same k-bins used in training.
     GPEmulator.predict takes models in a dictionary format currently.
+    
+    
+
+    Args:
+        archive (class): Data archive used for training the emulator.
+            Required when using a custom emulator.
+        training_set: Specific training set.  Options are
+            'Perdersen21', 'Cabayol23.
+        emu_params (lsit): A list of emulator parameters.
+        emulator_label (str): Specific emulator label. Options are
+            'Pedersen21' and 'Pedersen23'.
+        kmax_Mpc (float): The maximum k in Mpc^-1 to use for training. Default is 3.5.
+
     """
 
     def __init__(
