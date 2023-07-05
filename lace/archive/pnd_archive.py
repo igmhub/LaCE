@@ -18,14 +18,11 @@ class archivePND(BaseArchive):
     Methods:
         __init__(self, postproc, linP_dir)
         _set_info_postproc(self, postproc)
-        _get_sim_info(self, target_sim)
-        _get_nz_linP(self, target_sim, pair_dir, tag_param, update_kp)
-        _get_file_names(self, ind_axis, tag_phase, snap, tag_sample, tag_sample_params)
-        _get_sim(self, ind_axis, snap, tag_sample, tag_sample_params)
+        _sim2file_name(self, sim_label)
+        _get_nz_linP(self, sim_label)
+        _get_file_names(self, sim_label, ind_phase, ind_z, ind_axis)
+        _get_sim(self, sim_label, ind_z, ind_axis)
         _load_data(self, pick_sim, drop_sim, z_max, nsamples=None)
-        print_entry(self, entry, fiducial_keys=True)
-        plot_samples(self, param_1, param_2, val_scalings=True, temp_scalings=True)
-        plot_3D_samples(self, param_1, param_2, param_3, val_scalings=True, temp_scalings=True)
     """
 
     def __init__(self, postproc="Cabayol23", kp_Mpc=None):
@@ -87,7 +84,7 @@ class archivePND(BaseArchive):
 
     def _set_info_postproc(self, postproc):
         """
-        Get information about the post-processing suite and set corresponding attributes.
+        Set information about the post-processing suite and set corresponding attributes.
 
         Args:
             postproc (str): Name of the simulation suite.
@@ -97,10 +94,6 @@ class archivePND(BaseArchive):
 
         Raises:
             AssertionError: If the environment variable "LACE_REPO" is not set.
-
-        Note:
-            To be modified for new suite.
-
         """
 
         self.postproc = postproc
@@ -126,11 +119,13 @@ class archivePND(BaseArchive):
             self.also_P3D = False
             self.tag_param = "parameter_redundant.json"
             self.scalings_avail = [0.9, 1, 1.1]
+            # training options
+            self.training_average = "both"
             self.training_val_scaling = 1
-            self.training_average = "all"
-            self.testing_average = "all"
-            self.testing_val_scaling = 1
             self.training_z_max = 10
+            # testing options
+            self.testing_average = "both"
+            self.testing_val_scaling = 1
             self.testing_z_max = 10
         elif postproc == "Cabayol23":
             self.basedir = "/lace/emulator/sim_suites/post_768/"
@@ -144,11 +139,13 @@ class archivePND(BaseArchive):
             self.also_P3D = True
             self.tag_param = "parameter_redundant.json"
             self.scalings_avail = [0.9, 0.95, 1, 1.05, 1.1]
+            # training options
+            self.training_average = "axes_phases_both"
             self.training_val_scaling = "all"
-            self.training_average = "axes_phases_all"
-            self.testing_average = "all"
-            self.testing_val_scaling = 1
             self.training_z_max = 10
+            # testing options
+            self.testing_average = "both"
+            self.testing_val_scaling = 1
             self.testing_z_max = 10
         elif postproc == "768_768":
             self.basedir = "/lace/emulator/sim_suites/post_768/"
@@ -162,11 +159,13 @@ class archivePND(BaseArchive):
             self.also_P3D = True
             self.tag_param = "parameter.json"
             self.scalings_avail = [0.9, 0.95, 1, 1.05, 1.1]
+            # training options
+            self.training_average = "axes_phases_both"
             self.training_val_scaling = "all"
-            self.training_average = "axes_phases_all"
-            self.testing_average = "all"
-            self.testing_val_scaling = 1
             self.training_z_max = 10
+            # testing options
+            self.testing_average = "both"
+            self.testing_val_scaling = 1
             self.testing_z_max = 10
 
         ## get path of the repo
@@ -189,6 +188,16 @@ class archivePND(BaseArchive):
         }
 
     def _sim2file_name(self, sim_label):
+        """
+        Convert simulation labels to file names.
+
+        Args:
+            sim_label (int or str): Selected simulation.
+
+        Returns:
+            tuple: A tuple containing the simulation file names and parameter file tag.
+
+        """
         if self.postproc == "Pedersen21":
             dict_conv = {
                 "mpg_central": "central",
@@ -248,9 +257,6 @@ class archivePND(BaseArchive):
 
         Args:
             sim_label (int or str): Selected simulation.
-            pair_dir (str): Directory path of the simulation pair.
-            tag_param (str): Tag for the parameter file.
-            update_kp (bool): Flag indicating whether to update the linear power parameters.
 
         Returns:
             tuple: A tuple containing the redshifts and linear power parameters.
@@ -295,21 +301,21 @@ class archivePND(BaseArchive):
         Get the file names for the specified simulation parameters and snapshot.
 
         Args:
+            sim_label (int or str): Selected simulation.
+            ind_phase (int): Index of the simulation phase.
+            ind_z (int): Index of the redshift.
             ind_axis (int): Index of the simulation axis.
-            tag_phase (str): Tag for the simulation phase.
-            snap (int): Snapshot number.
-            tag_sample (str): Simulation tag for the selected simulation option.
-            tag_sample_params (str): Simulation tag for the selected simulation option in parameter files.
 
         Returns:
             tuple: A tuple containing the file names for data and parameter JSON files.
-                - data_json (list): List of file names for data JSON files.
-                - param_json (str): File name for parameter JSON file.
+                - data_json (str): File name for the data JSON file.
+                - param_json (str): File name for the parameter JSON file.
 
         Notes:
-            This is a nightmare due to different simulations presenting a different number of
-            files for tau scalings, even within the same suite
-
+            - The `sim_label` argument refers to the selected simulation.
+            - The `ind_phase` argument refers to the index of the simulation phase.
+            - The `ind_z` argument refers to the index of the redshift.
+            - The `ind_axis` argument refers to the index of the simulation axis.
         """
 
         sim_name, sim_name_param, tag_param = self._sim2file_name(sim_label)
@@ -385,10 +391,10 @@ class archivePND(BaseArchive):
         Get the data and parameter information for the specified simulation parameters and snapshot.
 
         Args:
+            self (object): The instance of the class containing this method.
+            sim_label (str): Label of the simulation to retrieve.
+            ind_z (int): Index of the redshift.
             ind_axis (int): Index of the simulation axis.
-            snap (int): Snapshot number.
-            tag_sample (str): Simulation tag for the selected simulation option.
-            tag_sample_params (str): Simulation tag for the selected simulation option in parameter files.
 
         Returns:
             tuple: A tuple containing the data and parameter information.
@@ -396,9 +402,9 @@ class archivePND(BaseArchive):
                 - phase_params (list): List of dictionaries containing the parameter information for each phase.
                 - arr_phase (list): List of phase indices corresponding to each data entry.
 
-
         Note:
-            To be modified for new suite.
+            This function retrieves the data and parameter information for the specified simulation parameters and snapshot.
+            The data is obtained by reading JSON files stored at specific paths.
 
         """
         phase_data = []
@@ -429,6 +435,12 @@ class archivePND(BaseArchive):
 
         Returns:
             None
+
+        Notes:
+        - This function reads and processes data from all measured power spectra in the simulations.
+        - The function iterates over simulations, snapshots, and axes to retrieve the required data.
+        - The retrieved data is stored in the `self.data` attribute as a list of dictionaries,
+            with each dictionary representing a specific measurement and simulation configuration.
 
         """
 

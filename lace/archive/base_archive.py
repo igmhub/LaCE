@@ -5,9 +5,22 @@ from lace.emulator.utils import split_string
 
 
 class BaseArchive(object):
+    """
+    A base class for archiving and processing data.
+
+    Methods:
+        _set_labels(): Extract labels from self.data and set them as attributes.
+        _average_over_samples(average="both"): Compute averages over phases, axes, or both.
+        get_training_data(average=None, val_scaling=None, drop_sim=None, z_max=None):
+            Retrieves training data based on provided flags.
+        get_testing_data(sim_label, val_scaling=None, average=None, z_max=None):
+            Retrieves testing data based on provided flags.
+
+    """
+
     def _set_labels(self):
         """
-        Extract labels from self.data and set these as attribute
+        Extract labels from self.data and set them as attributes.
 
         Returns:
             None
@@ -31,23 +44,23 @@ class BaseArchive(object):
 
             setattr(self, label, np.array(prop))
 
-    def _average_over_samples(self, average="all"):
+    def _average_over_samples(self, average="both"):
         """
-        Compute averages over either phases, axes, or all.
+        Compute averages over either phases, axes, or both.
 
         Args:
             average (str): Flag indicating the type of averaging. Valid options are:
-                - "all": Compute averages over all phases, axes, and simulations.
-                - "phases": Compute averages over phases and simulations, keeping axes fixed.
-                - "axes": Compute averages over axes and simulations, keeping phases fixed.
-                (default: "all")
+                - "both": Compute averages over phases and axes.
+                - "phases": Compute averages over phases while holding axes fixed.
+                - "axes": Compute averages over axes while holding phases fixed.
+                (default: "both")
 
         Returns:
             Averages
 
         """
 
-        average_avail = ["all", "axes", "phases"]
+        average_avail = ["both", "axes", "phases"]
         if average not in average_avail:
             msg = "Invalid average value. Available options:"
             raise ExceptionList(msg, average_avail)
@@ -71,7 +84,7 @@ class BaseArchive(object):
         n_axes = np.unique(self.ind_axis).shape[0]
 
         # set loop over simulations
-        if average == "all":
+        if average == "both":
             tot_nsam = n_phases * n_axes
             loop = list(
                 product(
@@ -106,7 +119,7 @@ class BaseArchive(object):
         # iterate over loop
         for ind_loop in range(nloop):
             dict_av = {}
-            if average == "all":
+            if average == "both":
                 sim_label, ind_rescaling, ind_snap = loop[ind_loop]
                 ind_merge = np.argwhere(
                     (self.sim_label == sim_label)
@@ -180,17 +193,20 @@ class BaseArchive(object):
         self, average=None, val_scaling=None, drop_sim=None, z_max=None
     ):
         """
-        Retrieves the training data based on the provided flag.
+        Retrieves the training data based on the provided flags.
 
         Parameters:
-            self (object): The object instance.
-            average (str, optional): The flag indicating the desired training data. Defaults to "axes_phases_all".
+            average (str, optional): The flag indicating the type of average computed.
+            val_scaling (int or None, optional): The scaling value. Defaults to None.
+            drop_sim (str or None, optional): The simulation to drop. Defaults to None.
+            z_max (int, float or None, optional): The maximum redshift. Defaults to None.
 
         Returns:
-            None.
+            List: The retrieved training data.
 
         Raises:
-            AssertionError: If the flag is not a string or if it contains an invalid operation.
+            TypeError: If the input arguments have invalid types.
+            ExceptionList: If the input arguments contain invalid values.
 
         Notes:
             The retrieved training data is stored in the 'training_data' attribute of the parent class.
@@ -204,7 +220,7 @@ class BaseArchive(object):
             average = self.training_average
 
         operations = split_string(average)
-        operations_avail = ["axes", "phases", "all", "individual"]
+        operations_avail = ["axes", "phases", "both", "individual"]
         for operation in operations:
             if operation not in operations_avail:
                 msg = "Invalid average value. Available options:"
@@ -260,20 +276,23 @@ class BaseArchive(object):
         self, sim_label, val_scaling=None, average=None, z_max=None
     ):
         """
-        Retrieves the testing data based on the provided flag.
+        Retrieves the testing data based on the provided flags.
 
         Parameters:
-            self (object): The object instance.
-            average (str, optional): The flag indicating the desired training data. Defaults to "axes_phases_all".
+            sim_label (str): The simulation label.
+            val_scaling (int or None, optional): The scaling value. Defaults to None.
+            average (str or None, optional): The flag indicating the desired training data. Defaults to None.
+            z_max (int, float or None, optional): The maximum redshift. Defaults to None.
 
         Returns:
-            None.
+            List: The retrieved testing data.
 
         Raises:
-            AssertionError: If the flag is not a string or if it contains an invalid operation.
+            TypeError: If the input arguments have invalid types.
+            ExceptionList: If the input arguments contain invalid values.
 
         Notes:
-            The retrieved training data is stored in the 'training_data' attribute of the parent class.
+            The retrieved testing data is stored in the 'testing_data' attribute of the parent class.
 
         """
 
@@ -283,7 +302,7 @@ class BaseArchive(object):
         if average is None:
             average = self.testing_average
         operations = split_string(average)
-        operations_avail = ["axes", "phases", "all", "individual"]
+        operations_avail = ["axes", "phases", "both", "individual"]
         for operation in operations:
             if operation not in operations_avail:
                 msg = "Invalid average value. Available options:"
