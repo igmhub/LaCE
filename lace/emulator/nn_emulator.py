@@ -12,8 +12,7 @@ from torch import nn, optim
 from torch.optim import lr_scheduler
 
 # LaCE modules
-from lace.archive import pnd_archive
-from lace.archive import interface_archive
+from lace.archive import gadget_archive
 from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 from lace.emulator import poly_p1d
@@ -90,9 +89,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                 print("An error occurred while checking the training_set value.")
                 raise
                 
-            self.archive=interface_archive.Archive(verbose=False)
-            self.archive.get_training_data(training_set=training_set)
-                
+            # read Gadget archive with the right postprocessing
+            self.archive=gadget_archive.GadgetArchive(postproc=training_set)
                     
         elif archive!=None and training_set==None:
             print("Use custom archive provided by the user")
@@ -184,15 +182,15 @@ class NNEmulator(base_emulator.BaseEmulator):
                 
             if sims_training=='Gadget':
 
-                self.archive=interface_archive.Archive(verbose=False)
-                self.archive.get_training_data(training_set='Cabayol23')
+                # read Gadget archive with the right postprocessing
+                raise ValueError("Broken now. Let's discuss it in person.")
+                #self.archive=gadget_archive.GadgetArchive(postproc='Cabayol23')
 
                 kMpc_train = self._obtain_sim_params()
                 log_KMpc_train = torch.log10(kMpc_train).to(self.device)
                 self.log_KMpc = log_KMpc_train
             elif sims_training=='Nyx':
                 raise ValueError("Work in progress")
-                    
                 
             if [self.archive.z_max,
                 self.kmax_Mpc,
@@ -222,8 +220,11 @@ class NNEmulator(base_emulator.BaseEmulator):
                     self.models_dir, "initial_params/initial_weights_extended.pt"
                 )
         
-        self.train()
+        # keep track of training data to be used in emulator
+        self.training_data = self.archive.get_training_data()
                     
+        self.train()
+
         if self.save_path != None:
             # saves the model in the predefined path after training
             self.save_emulator()
@@ -259,9 +260,13 @@ class NNEmulator(base_emulator.BaseEmulator):
             Nk (int): Number of k values.
             k_Mpc_train (tensor): k values in the k training range
         """
+
+        # AFR: not sure exactly what we are doing here. 
+        # It looks like some code to set self.k_Mpc and self.Nz
         sim_0 = copy.deepcopy(self.archive)
-        sim_0.training_data = [d for d in sim_0.training_data if d["ind_sim"] == 0]
-        sim_zs = [data["z"] for data in sim_0.training_data]
+        sim_0_training_data = sim_0.get_training_data()
+        sim_0_training_data = [d for d in sim_0_training_data if d["sim_label"] == "mpg_0"]
+        sim_zs = [data["z"] for data in sim_0_training_data]
         Nz = len(sim_zs)
         k_Mpc = sim_0.data[0]["k_Mpc"]
         self.k_Mpc = k_Mpc
@@ -277,15 +282,15 @@ class NNEmulator(base_emulator.BaseEmulator):
         data = [
             {
                 key: value
-                for key, value in self.archive.training_data[i].items()
+                for key, value in self.training_data[i].items()
                 if key in self.emu_params
             }
-            for i in range(len(self.archive.training_data))
+            for i in range(len(self.training_data))
         ]
         data = self._sort_dict(
             data, self.emu_params
         )  # sort the data by emulator parameters
-        data = [list(data[i].values()) for i in range(len(self.archive.training_data))]
+        data = [list(data[i].values()) for i in range(len(self.training_data))]
         data = np.array(data)
 
         paramlims = np.concatenate(
@@ -300,14 +305,14 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_label = [
             {
                 key: value
-                for key, value in self.archive.training_data[i].items()
+                for key, value in self.training_data[i].items()
                 if key in ["p1d_Mpc"]
             }
-            for i in range(len(self.archive.training_data))
+            for i in range(len(self.training_data))
         ]
         training_label = [
             list(training_label[i].values())[0][1 : (self.Nk + 1)].tolist()
-            for i in range(len(self.archive.training_data))
+            for i in range(len(self.training_data))
         ]
         training_label = np.array(training_label)
         self.yscalings = np.median(training_label)
@@ -323,15 +328,15 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_data = [
             {
                 key: value
-                for key, value in self.archive.training_data[i].items()
+                for key, value in self.training_data[i].items()
                 if key in self.emu_params
             }
-            for i in range(len(self.archive.training_data))
+            for i in range(len(self.training_data))
         ]
         training_data = self._sort_dict(training_data, self.emu_params)
         training_data = [
             list(training_data[i].values())
-            for i in range(len(self.archive.training_data))
+            for i in range(len(self.training_data))
         ]
 
         training_data = np.array(training_data)
@@ -351,14 +356,14 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_label = [
             {
                 key: value
-                for key, value in self.archive.training_data[i].items()
+                for key, value in self.training_data[i].items()
                 if key in ["p1d_Mpc"]
             }
-            for i in range(len(self.archive.training_data))
+            for i in range(len(self.training_data))
         ]
         training_label = [
             list(training_label[i].values())[0][1 : (self.Nk + 1)].tolist()
-            for i in range(len(self.archive.training_data))
+            for i in range(len(self.training_data))
         ]
 
         training_label = np.array(training_label)
