@@ -7,9 +7,8 @@ import json
 import time
 from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
-from lace.emulator import p1d_archive
+from lace.archive import gadget_archive
 from lace.emulator import poly_p1d
-from lace.archive import interface_archive
 from lace.emulator import base_emulator
 
 
@@ -81,18 +80,16 @@ class GPEmulator(base_emulator.BaseEmulator):
                 print("An error occurred while checking the training_set value.")
                 raise
                 
-            self.archive=interface_archive.Archive(verbose=False)
-            self.archive.get_training_data(training_set=training_set)
+            # read Gadget archive with the right postprocessing
+            self.archive=gadget_archive.GadgetArchive(postproc=training_set)
                 
-                    
         elif archive!=None and training_set==None:
             print("Use custom archive provided by the user")
             self.archive = archive
 
         elif (archive==None)&(training_set==None):
             raise(ValueError('Archive or training_set must be provided'))
-            
-            
+
         emulator_label_all = ["Pedersen21", "Pedersen23"]
         if emulator_label is not None:  
             try:
@@ -137,12 +134,14 @@ class GPEmulator(base_emulator.BaseEmulator):
         else:
             print("Selected custom emulator")      
             
+        # keep track of training data to be used in emulator
+        self.training_data = self.archive.get_training_data()
 
         ## Find max k bin
         self.k_bin = (
-            np.max(np.where(self.archive.training_data[0]["k_Mpc"] < self.kmax_Mpc)) + 1
+            np.max(np.where(self.training_data[0]["k_Mpc"] < self.kmax_Mpc)) + 1
         )
-        self.training_k_bins = self.archive.training_data[0]["k_Mpc"][1 : self.k_bin]
+        self.training_k_bins = self.training_data[0]["k_Mpc"][1 : self.k_bin]
 
         ## If none, take all parameters
         if emu_params == None:
@@ -165,9 +164,9 @@ class GPEmulator(base_emulator.BaseEmulator):
         """Method to get the Y training points in the form of the P1D
         at different k values"""
 
-        P1D_k = np.empty([len(self.archive.training_data), self.k_bin - 1])
-        for aa in range(len(self.archive.training_data)):
-            P1D_k[aa] = self.archive.training_data[aa]["p1d_Mpc"][1 : self.k_bin]
+        P1D_k = np.empty([len(self.training_data), self.k_bin - 1])
+        for aa in range(len(self.training_data)):
+            P1D_k[aa] = self.training_data[aa]["p1d_Mpc"][1 : self.k_bin]
 
         return P1D_k
 
@@ -176,9 +175,9 @@ class GPEmulator(base_emulator.BaseEmulator):
         coefficients"""
 
         self._fit_p1d_in_archive(self.ndeg, self.kmax_Mpc)
-        coeffs = np.empty([len(self.archive.training_data), self.ndeg + 1])
-        for aa in range(len(self.archive.training_data)):
-            coeffs[aa] = self.archive.training_data[aa][
+        coeffs = np.empty([len(self.training_data), self.ndeg + 1])
+        for aa in range(len(self.training_data)):
+            coeffs[aa] = self.training_data[aa][
                 "fit_p1d"
             ]  ## Collect P1D data for all k bins
 
@@ -202,7 +201,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         coefficients for the polyfit emulator"""
 
         ## Grid that will contain all training params
-        params = np.empty([len(self.archive.training_data), len(self.emu_params)])
+        params = np.empty([len(self.training_data), len(self.emu_params)])
 
         if self.emu_type == "k_bin":
             trainingPoints = self._training_points_k_bin()
@@ -212,9 +211,9 @@ class GPEmulator(base_emulator.BaseEmulator):
             print("Unknown emulator type, terminating")
             quit()
 
-        for aa in range(len(self.archive.training_data)):
+        for aa in range(len(self.training_data)):
             for bb in range(len(self.emu_params)):
-                params[aa][bb] = self.archive.training_data[aa][
+                params[aa][bb] = self.training_data[aa][
                     self.emu_params[bb]
                 ]  ## Populate parameter grid
 
@@ -223,7 +222,7 @@ class GPEmulator(base_emulator.BaseEmulator):
     def _fit_p1d_in_archive(self, deg, kmax_Mpc):
         """For each entry in archive, fit polynomial to log(p1d)"""
 
-        for entry in self.archive.training_data:
+        for entry in self.training_data:
             k_Mpc = entry["k_Mpc"]
             p1d_Mpc = entry["p1d_Mpc"]
             fit_p1d = poly_p1d.PolyP1D(
@@ -244,7 +243,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.paramLimits = self._get_param_limits(self.X_param_grid)
 
         ## Rescaling to unit volume
-        for cc in range(len(self.archive.training_data)):
+        for cc in range(len(self.training_data)):
             self.X_param_grid[cc] = self._rescale_params(
                 self.X_param_grid[cc], self.paramLimits
             )
@@ -305,7 +304,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             start = time.time()
             for gp in self.gp:
                 gp.initialize_parameter()
-                print("Training GP on %d points" % len(self.archive.training_data))
+                print("Training GP on %d points" % len(self.training_data))
                 status = gp.optimize(messages=False)
                 print("Optimised")
             end = time.time()
@@ -313,7 +312,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         else:
             start = time.time()
             self.gp.initialize_parameter()
-            print("Training GP on %d points" % len(self.archive.training_data))
+            print("Training GP on %d points" % len(self.training_data))
             status = self.gp.optimize(messages=False)
             end = time.time()
             print("GPs optimised in {0:.2f} seconds".format(end - start))
@@ -477,6 +476,6 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         model_dict = {}
         for param in self.emu_params:
-            model_dict[param] = self.archive.training_data[point_number][param]
+            model_dict[param] = self.training_data[point_number][param]
 
         return model_dict
