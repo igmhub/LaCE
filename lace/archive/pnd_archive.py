@@ -124,7 +124,6 @@ class archivePND(BaseArchive):
             self.training_val_scaling = 1
             self.training_z_max = 10
             # testing options
-            self.testing_average = "both"
             self.testing_val_scaling = 1
             self.testing_z_max = 10
         elif postproc == "Cabayol23":
@@ -144,7 +143,6 @@ class archivePND(BaseArchive):
             self.training_val_scaling = "all"
             self.training_z_max = 10
             # testing options
-            self.testing_average = "both"
             self.testing_val_scaling = 1
             self.testing_z_max = 10
         elif postproc == "768_768":
@@ -164,7 +162,6 @@ class archivePND(BaseArchive):
             self.training_val_scaling = "all"
             self.training_z_max = 10
             # testing options
-            self.testing_average = "both"
             self.testing_val_scaling = 1
             self.testing_z_max = 10
 

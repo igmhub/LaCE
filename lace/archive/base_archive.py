@@ -243,7 +243,7 @@ class BaseArchive(object):
                 raise ExceptionList(msg, self.list_sim_cube)
 
         if isinstance(z_max, (int, float, type(None))) == False:
-            raise TypeError("drop_sim must be a number or None")
+            raise TypeError("z_max must be a number or None")
         if z_max is None:
             z_max = self.training_z_max
         ## done
@@ -272,16 +272,13 @@ class BaseArchive(object):
 
         return training_data
 
-    def get_testing_data(
-        self, sim_label, val_scaling=None, average=None, z_max=None
-    ):
+    def get_testing_data(self, sim_label, val_scaling=None, z_max=None):
         """
         Retrieves the testing data based on the provided flags.
 
         Parameters:
             sim_label (str): The simulation label.
             val_scaling (int or None, optional): The scaling value. Defaults to None.
-            average (str or None, optional): The flag indicating the desired training data. Defaults to None.
             z_max (int, float or None, optional): The maximum redshift. Defaults to None.
 
         Returns:
@@ -291,23 +288,9 @@ class BaseArchive(object):
             TypeError: If the input arguments have invalid types.
             ExceptionList: If the input arguments contain invalid values.
 
-        Notes:
-            The retrieved testing data is stored in the 'testing_data' attribute of the parent class.
-
         """
 
         ## check input
-        if isinstance(average, (str, type(None))) == False:
-            raise TypeError("average must be a string or None")
-        if average is None:
-            average = self.testing_average
-        operations = split_string(average)
-        operations_avail = ["axes", "phases", "both", "individual"]
-        for operation in operations:
-            if operation not in operations_avail:
-                msg = "Invalid average value. Available options:"
-                raise ExceptionList(msg, operations_avail)
-
         if isinstance(val_scaling, (int, float, type(None))) == False:
             raise TypeError("val_scaling must be an int or None")
         if val_scaling is None:
@@ -318,27 +301,24 @@ class BaseArchive(object):
                 raise ExceptionList(msg, self.scalings_avail)
 
         if isinstance(z_max, (int, float, type(None))) == False:
-            raise TypeError("drop_sim must be a number or None")
+            raise TypeError("z_max must be a number or None")
         if z_max is None:
             z_max = self.testing_z_max
         ## done
 
-        ## put training points here
+        ## put testing points here
         testing_data = []
+        # we use the average of axes (and phases is available), but
+        # could implement other options in the future
+        arch_av = self._average_over_samples(average="both")
 
-        for operation in operations:
-            if operation == "individual":
-                arch_av = self.data
-            else:
-                arch_av = self._average_over_samples(average=operation)
-
-            for ii in range(len(arch_av)):
-                mask = (
-                    (arch_av[ii]["sim_label"] == sim_label)
-                    & (arch_av[ii]["val_scaling"] == val_scaling)
-                    & (arch_av[ii]["z"] <= z_max)
-                )
-                if mask:
-                    testing_data.append(arch_av[ii])
+        for ii in range(len(arch_av)):
+            mask = (
+                (arch_av[ii]["sim_label"] == sim_label)
+                & (arch_av[ii]["val_scaling"] == val_scaling)
+                & (arch_av[ii]["z"] <= z_max)
+            )
+            if mask:
+                testing_data.append(arch_av[ii])
 
         return testing_data
