@@ -13,7 +13,7 @@ from lace.archive.exceptions import ExceptionList
 
 class GadgetArchive(BaseArchive):
     """
-    Book-keeping of flux P1D & P3D measurements from a suite of simulations.
+    Bookkeeping of Lya flux P1D & P3D measurements from a suite of Gadget simulations.
 
     Methods:
         __init__(self, postproc, linP_dir)
@@ -72,6 +72,7 @@ class GadgetArchive(BaseArchive):
             self.list_sim_cube.append("mpg_" + str(ii))
         # list all simulations
         self.list_sim = self.list_sim_cube + self.list_sim_test
+        ## done set simulation list
 
         # get relevant flags for post-processing
         self._set_info_postproc(postproc)
@@ -118,6 +119,7 @@ class GadgetArchive(BaseArchive):
             # if files include P3D measurements
             self.also_P3D = False
             self.tag_param = "parameter_redundant.json"
+            # available scalings for each simulation
             self.scalings_avail = [0.9, 1, 1.1]
             # training options
             self.training_average = "both"
@@ -138,11 +140,9 @@ class GadgetArchive(BaseArchive):
             self.also_P3D = True
             self.tag_param = "parameter_redundant.json"
             self.scalings_avail = [0.9, 0.95, 1, 1.05, 1.1]
-            # training options
             self.training_average = "axes_phases_both"
             self.training_val_scaling = "all"
             self.training_z_max = 10
-            # testing options
             self.testing_val_scaling = 1
             self.testing_z_max = 10
         elif postproc == "768_768":
@@ -157,11 +157,9 @@ class GadgetArchive(BaseArchive):
             self.also_P3D = True
             self.tag_param = "parameter.json"
             self.scalings_avail = [0.9, 0.95, 1, 1.05, 1.1]
-            # training options
             self.training_average = "axes_phases_both"
             self.training_val_scaling = "all"
             self.training_z_max = 10
-            # testing options
             self.testing_val_scaling = 1
             self.testing_z_max = 10
 

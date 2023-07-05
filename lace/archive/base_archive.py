@@ -71,6 +71,7 @@ class BaseArchive(object):
             "ind_phase",
             "ind_axis",
             "ind_rescaling",
+            "cosmo_pars",
         ]
 
         keys_spe = ["p1d_Mpc"]
