@@ -11,7 +11,7 @@ from lace.archive.base_archive import BaseArchive
 from lace.archive.exceptions import ExceptionList
 
 
-class archivePND(BaseArchive):
+class GadgetArchive(BaseArchive):
     """
     Book-keeping of flux P1D & P3D measurements from a suite of simulations.
 
