@@ -71,11 +71,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.lace_path = os.environ["LACE_REPO"] + "/"
         self.models_dir = os.path.join(self.lace_path, "lace/emulator/")
         
-        ## temporary hack
-        nyx_fname = '/data/desi/scratch/HydroData/Emulator/nyx_files/models.hdf5'
+        nyx_fname = os.environ["Nyx_PATH"]
         
-        #temporary hack:
-
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23","Nyx23"]
         if (archive!=None)&(training_set!=None):
@@ -96,16 +93,12 @@ class NNEmulator(base_emulator.BaseEmulator):
                 print("An error occurred while checking the training_set value.")
                 raise
                 
-            # read Gadget archive with the right postprocessing
-            
-            #self.archive=gadget_archive.GadgetArchive(postproc=training_set)
-            #self.training_data = self.archive.get_training_data()
-            
+          
                     
         elif archive!=None and training_set==None:
             print("Use custom archive provided by the user")
             self.archive = archive
-            self.training_data = archive.get_training_data()
+            self.training_data = self.archive.get_training_data()
 
         elif (archive==None)&(training_set==None):
             raise(ValueError('Archive or training_set must be provided'))
@@ -116,7 +109,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             
         elif training_set in ['Nyx23']:
             self.archive = nyx_archive.NyxArchive(file_name=nyx_fname)
-            self.training_data = archive.get_training_data()
+            self.training_data = self.archive.get_training_data()
             
             
         emulator_label_all = ["Cabayol23", "Cabayol23_Nyx"]
@@ -148,6 +141,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
                 self.kmax_Mpc, self.ndeg, self.step_size = 4, 5, 75
                 
+                if (archive!=None)&(self.training_data[0]['sim_label']!='mpg_0'):
+                    raise ValueError("The provided archive is not an MPGadget archive")
+                
             if emulator_label == "Cabayol23_Nyx":
                 
                 print(
@@ -162,7 +158,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "lambda_P"]
                 self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size = 4, 5, 1000, 750
                                 
-                
+                if (archive!=None)&(self.training_data[0]['sim_label']!='nyx_0'):
+                    raise ValueError("The provided archive is not a Nyx archive")                
         else:
             print("Selected custom emulator")            
             
@@ -211,7 +208,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 
         else:           
                                         
-<<<<<<< HEAD
+
             self.initial_weights = initial_weights
             if self.initial_weights == True:
                 # loads set of pre-defined random weights
@@ -226,25 +223,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
 
             self.train()
-=======
-        
-        self.initial_weights = initial_weights
-        if self.initial_weights == True:
-            # loads set of pre-defined random weights
-            if self.kmax_Mpc == 4:
-                self.initial_weights_path = os.path.join(
-                    self.models_dir, "initial_params/initial_weights.pt"
-                )
-            if self.kmax_Mpc == 8:
-                self.initial_weights_path = os.path.join(
-                    self.models_dir, "initial_params/initial_weights_extended.pt"
-                )
-        
-        # keep track of training data to be used in emulator
-        self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
-                    
-        self.train()
->>>>>>> 55c4e656a488262c882a53935adce84717487663
+
 
             if self.save_path != None:
                 # saves the model in the predefined path after training
