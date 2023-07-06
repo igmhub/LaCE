@@ -191,7 +191,13 @@ class BaseArchive(object):
         return arch_av
 
     def get_training_data(
-        self, average=None, val_scaling=None, drop_sim=None, z_max=None
+        self,
+        average=None,
+        val_scaling=None,
+        drop_sim=None,
+        z_max=None,
+        emu_params=None,
+        verbose=False,
     ):
         """
         Retrieves the training data based on the provided flags.
@@ -201,6 +207,8 @@ class BaseArchive(object):
             val_scaling (int or None, optional): The scaling value. Defaults to None.
             drop_sim (str or None, optional): The simulation to drop. Defaults to None.
             z_max (int, float or None, optional): The maximum redshift. Defaults to None.
+            emu_params (list, optional): The parameters that must be defined for each
+                element of the training data. There are intended to be emulator parameters.
 
         Returns:
             List: The retrieved training data.
@@ -247,6 +255,9 @@ class BaseArchive(object):
             raise TypeError("z_max must be a number or None")
         if z_max is None:
             z_max = self.training_z_max
+
+        if isinstance(emu_params, (list, type(None))) == False:
+            raise TypeError("emu_params must be a list or None")
         ## done
 
         ## put training points here
@@ -268,14 +279,34 @@ class BaseArchive(object):
                         | (arch_av[ii]["val_scaling"] == val_scaling)
                     )
                     & (arch_av[ii]["z"] <= z_max)
+<<<<<<< HEAD
                     & all(x in list_keys for x in self.emu_params)
+=======
+>>>>>>> 55c4e656a488262c882a53935adce84717487663
                 )
                 if mask:
-                    training_data.append(arch_av[ii])
+                    if emu_params is None:
+                        training_data.append(arch_av[ii])
+                    elif all(x in list_keys for x in emu_params):
+                        training_data.append(arch_av[ii])
+                    else:
+                        if verbose:
+                            print(
+                                "Archive element "
+                                + str(ii)
+                                + " does not contain all emulator parameters"
+                            )
 
         return training_data
 
-    def get_testing_data(self, sim_label, val_scaling=None, z_max=None):
+    def get_testing_data(
+        self,
+        sim_label,
+        val_scaling=None,
+        z_max=None,
+        emu_params=None,
+        verbose=False,
+    ):
         """
         Retrieves the testing data based on the provided flags.
 
@@ -283,6 +314,9 @@ class BaseArchive(object):
             sim_label (str): The simulation label.
             val_scaling (int or None, optional): The scaling value. Defaults to None.
             z_max (int, float or None, optional): The maximum redshift. Defaults to None.
+            emu_params (list, optional): The parameters that must be defined for each
+                element of the training data. There are intended to be emulator parameters.
+                Only relevant if evaluating the emulator for the testing data.
 
         Returns:
             List: The retrieved testing data.
@@ -307,6 +341,9 @@ class BaseArchive(object):
             raise TypeError("z_max must be a number or None")
         if z_max is None:
             z_max = self.testing_z_max
+
+        if isinstance(emu_params, (list, type(None))) == False:
+            raise TypeError("emu_params must be a list or None")
         ## done
 
         ## put testing points here
@@ -321,9 +358,22 @@ class BaseArchive(object):
                 (arch_av[ii]["sim_label"] == sim_label)
                 & (arch_av[ii]["val_scaling"] == val_scaling)
                 & (arch_av[ii]["z"] <= z_max)
+<<<<<<< HEAD
                 & all(x in list_keys for x in self.emu_params)
+=======
+>>>>>>> 55c4e656a488262c882a53935adce84717487663
             )
             if mask:
-                testing_data.append(arch_av[ii])
+                if emu_params is None:
+                    testing_data.append(arch_av[ii])
+                elif all(x in list_keys for x in emu_params):
+                    testing_data.append(arch_av[ii])
+                else:
+                    if verbose:
+                        print(
+                            "Archive element "
+                            + str(ii)
+                            + " does not contain all emulator parameters"
+                        )
 
         return testing_data

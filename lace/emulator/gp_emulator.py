@@ -135,7 +135,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             print("Selected custom emulator")      
             
         # keep track of training data to be used in emulator
-        self.training_data = self.archive.get_training_data()
+        self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
 
         ## Find max k bin
         self.k_bin = (

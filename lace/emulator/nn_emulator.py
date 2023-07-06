@@ -211,6 +211,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 
         else:           
                                         
+<<<<<<< HEAD
             self.initial_weights = initial_weights
             if self.initial_weights == True:
                 # loads set of pre-defined random weights
@@ -225,6 +226,25 @@ class NNEmulator(base_emulator.BaseEmulator):
 
 
             self.train()
+=======
+        
+        self.initial_weights = initial_weights
+        if self.initial_weights == True:
+            # loads set of pre-defined random weights
+            if self.kmax_Mpc == 4:
+                self.initial_weights_path = os.path.join(
+                    self.models_dir, "initial_params/initial_weights.pt"
+                )
+            if self.kmax_Mpc == 8:
+                self.initial_weights_path = os.path.join(
+                    self.models_dir, "initial_params/initial_weights_extended.pt"
+                )
+        
+        # keep track of training data to be used in emulator
+        self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+                    
+        self.train()
+>>>>>>> 55c4e656a488262c882a53935adce84717487663
 
             if self.save_path != None:
                 # saves the model in the predefined path after training
