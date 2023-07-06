@@ -271,6 +271,7 @@ class BaseArchive(object):
 
             for ii in range(len(arch_av)):
                 list_keys = list(arch_av[ii].keys())
+
                 mask = (
                     (arch_av[ii]["sim_label"] in self.list_sim_cube)
                     & (arch_av[ii]["sim_label"] != drop_sim)
@@ -279,10 +280,7 @@ class BaseArchive(object):
                         | (arch_av[ii]["val_scaling"] == val_scaling)
                     )
                     & (arch_av[ii]["z"] <= z_max)
-<<<<<<< HEAD
                     & all(x in list_keys for x in self.emu_params)
-=======
->>>>>>> 55c4e656a488262c882a53935adce84717487663
                 )
                 if mask:
                     if emu_params is None:
@@ -358,10 +356,7 @@ class BaseArchive(object):
                 (arch_av[ii]["sim_label"] == sim_label)
                 & (arch_av[ii]["val_scaling"] == val_scaling)
                 & (arch_av[ii]["z"] <= z_max)
-<<<<<<< HEAD
                 & all(x in list_keys for x in self.emu_params)
-=======
->>>>>>> 55c4e656a488262c882a53935adce84717487663
             )
             if mask:
                 if emu_params is None:
