@@ -153,6 +153,17 @@ class NyxArchive(BaseArchive):
             "z": 2,
         }
 
+        # parameters that must be in each element of the
+        # training and testing set
+        self.emu_params = [
+            "Delta2_p",
+            "n_p",
+            "mF",
+            "sigT_Mpc",
+            "gamma",
+            "lambda_P",
+        ]
+
     def _load_data(self, file_name):
         # read data
         ff = h5py.File(file_name, "r")
