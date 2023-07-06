@@ -259,6 +259,7 @@ class BaseArchive(object):
                 arch_av = self._average_over_samples(average=operation)
 
             for ii in range(len(arch_av)):
+                list_keys = list(arch_av[ii].keys())
                 mask = (
                     (arch_av[ii]["sim_label"] in self.list_sim_cube)
                     & (arch_av[ii]["sim_label"] != drop_sim)
@@ -267,6 +268,7 @@ class BaseArchive(object):
                         | (arch_av[ii]["val_scaling"] == val_scaling)
                     )
                     & (arch_av[ii]["z"] <= z_max)
+                    & (x in list_keys for x in self.emu_params)
                 )
                 if mask:
                     training_data.append(arch_av[ii])
@@ -314,10 +316,12 @@ class BaseArchive(object):
         arch_av = self._average_over_samples(average="both")
 
         for ii in range(len(arch_av)):
+            list_keys = list(arch_av[ii].keys())
             mask = (
                 (arch_av[ii]["sim_label"] == sim_label)
                 & (arch_av[ii]["val_scaling"] == val_scaling)
                 & (arch_av[ii]["z"] <= z_max)
+                & (x in list_keys for x in self.emu_params)
             )
             if mask:
                 testing_data.append(arch_av[ii])

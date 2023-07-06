@@ -182,6 +182,17 @@ class GadgetArchive(BaseArchive):
             "scale_tau": "val_scaling",
         }
 
+        # parameters that must be in each element of the
+        # training and testing set
+        self.emu_params = [
+            "Delta2_p",
+            "n_p",
+            "mF",
+            "sigT_Mpc",
+            "gamma",
+            "kF_Mpc",
+        ]
+
     def _sim2file_name(self, sim_label):
         """
         Convert simulation labels to file names.
