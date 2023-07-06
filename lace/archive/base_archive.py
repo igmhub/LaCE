@@ -301,6 +301,7 @@ class BaseArchive(object):
         val_scaling=None,
         z_max=None,
         emu_params=None,
+        verbose=False,
     ):
         """
         Retrieves the testing data based on the provided flags.
