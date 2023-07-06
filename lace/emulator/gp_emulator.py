@@ -26,7 +26,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             Required when using a custom emulator.
         training_set: Specific training set.  Options are
             'Perdersen21', 'Cabayol23.
-        emu_params (lsit): A list of emulator parameters.
+        emu_params (list): A list of emulator parameters.
         emulator_label (str): Specific emulator label. Options are
             'Pedersen21' and 'Pedersen23'.
         kmax_Mpc (float): The maximum k in Mpc^-1 to use for training. Default is 3.5.
@@ -135,7 +135,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             print("Selected custom emulator")      
             
         # keep track of training data to be used in emulator
-        self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+        self.training_data = self.archive.get_training_data(emu_params=emu_params)
 
         ## Find max k bin
         self.k_bin = (
