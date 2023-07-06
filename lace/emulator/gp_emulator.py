@@ -43,10 +43,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         kmax_Mpc=10.0,
         emu_params=None,
         set_noise_var=1e-3,
-        asymmetric_kernel=True,
         check_hull=False,
-        paramLimits=None,
-        rbf_only=True,
         emu_per_k=False,
         ndeg=4,
     ):
@@ -54,9 +51,6 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.emu_type = emu_type
         self.emu_noise = set_noise_var
         self.verbose = verbose
-        self.asymmetric_kernel = asymmetric_kernel
-        self.paramLimits = paramLimits
-        self.rbf_only = rbf_only
         self.emu_per_k = emu_per_k
         self.ndeg = ndeg
 
@@ -239,8 +233,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.X_param_grid, self.Ypoints = self._buildTrainingSets()
 
         ## Get parameter limits for rescaling
-        if self.paramLimits is None:
-            self.paramLimits = self._get_param_limits(self.X_param_grid)
+        self.paramLimits = self._get_param_limits(self.X_param_grid)
 
         ## Rescaling to unit volume
         for cc in range(len(self.training_data)):
@@ -256,11 +249,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         # Normalise by the median value
         self.normspectra = (self.Ypoints / self.scalefactors) - 1.0
 
-        if self.rbf_only == False:
-            kernel = GPy.kern.Linear(len(self.emu_params), ARD=self.asymmetric_kernel)
-            kernel += GPy.kern.RBF(len(self.emu_params), ARD=self.asymmetric_kernel)
-        else:
-            kernel = GPy.kern.RBF(len(self.emu_params), ARD=self.asymmetric_kernel)
+        kernel = GPy.kern.RBF(len(self.emu_params), ARD=True)
 
         if self.emu_per_k:
             ## Build a GP for each k bin
