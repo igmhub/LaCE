@@ -132,7 +132,13 @@ class GPEmulator(base_emulator.BaseEmulator):
                                 
                 
         else:
-            print("Selected custom emulator")      
+            print("Selected custom emulator")     
+
+        ## If none, take all parameters
+        if emu_params == None:
+            self.emu_params = ["mF", "sigT_Mpc", "gamma", "kF_Mpc", "Delta2_p", "n_p"]
+        else:
+            self.emu_params = emu_params 
             
         # keep track of training data to be used in emulator
         self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
@@ -141,13 +147,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.k_bin = (
             np.max(np.where(self.training_data[0]["k_Mpc"] < self.kmax_Mpc)) + 1
         )
-        self.training_k_bins = self.training_data[0]["k_Mpc"][1 : self.k_bin]
-
-        ## If none, take all parameters
-        if emu_params == None:
-            self.emu_params = ["mF", "sigT_Mpc", "gamma", "kF_Mpc", "Delta2_p", "n_p"]
-        else:
-            self.emu_params = emu_params
+        self.training_k_bins = self.training_data[0]["k_Mpc"][1 : self.k_bin] 
 
         self._build_interp()
 
