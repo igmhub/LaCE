@@ -268,7 +268,7 @@ class BaseArchive(object):
                         | (arch_av[ii]["val_scaling"] == val_scaling)
                     )
                     & (arch_av[ii]["z"] <= z_max)
-                    & (x in list_keys for x in self.emu_params)
+                    & all(x in list_keys for x in self.emu_params)
                 )
                 if mask:
                     training_data.append(arch_av[ii])
