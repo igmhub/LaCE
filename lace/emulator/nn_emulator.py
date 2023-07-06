@@ -221,7 +221,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
         
         # keep track of training data to be used in emulator
-        self.training_data = self.archive.get_training_data()
+        self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
                     
         self.train()
 
