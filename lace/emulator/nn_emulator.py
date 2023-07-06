@@ -461,6 +461,8 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             emu_call = {}
             for param in self.emu_params:
+                if param not in model:
+                    raise(ValueError(param+' not in input model'))
                 emu_call[param] = model[param]
 
             emu_call = {k: emu_call[k] for k in self.emu_params}
