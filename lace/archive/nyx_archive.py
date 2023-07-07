@@ -23,7 +23,7 @@ class NyxArchive(BaseArchive):
 
     def __init__(self, file_name=None, kp_Mpc=0.7):
         ## check input
-        if isinstance(file_name, (str,type(None))) == False:
+        if isinstance(file_name, (str, type(None))) == False:
             raise TypeError("file_name must be a string or None")
 
         if isinstance(kp_Mpc, (int, float, type(None))) == False:
@@ -71,7 +71,7 @@ class NyxArchive(BaseArchive):
         self.training_val_scaling = "all"
         self.training_z_max = 10
         # testing options
-        self.testing_val_scaling = 1
+        self.testing_ind_rescaling = 0
         self.testing_z_max = 10
 
         self.key_conv = {
@@ -166,12 +166,11 @@ class NyxArchive(BaseArchive):
         ]
 
     def _load_data(self, file_name):
-
         # if file_name was not provided, search for default one
         if file_name is None:
             if "NYX_PATH" not in os.environ:
                 raise ValueError("Define NYX_PATH variable or pass file_name")
-            file_name = os.environ["NYX_PATH"]+"/models.hdf5"
+            file_name = os.environ["NYX_PATH"] + "/models.hdf5"
 
         # read data
         ff = h5py.File(file_name, "r")

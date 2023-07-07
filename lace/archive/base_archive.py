@@ -310,7 +310,7 @@ class BaseArchive(object):
     def get_testing_data(
         self,
         sim_label,
-        val_scaling=None,
+        ind_rescaling=None,
         z_max=None,
         emu_params=None,
         verbose=False,
@@ -336,13 +336,13 @@ class BaseArchive(object):
         """
 
         ## check input
-        if isinstance(val_scaling, (int, float, type(None))) == False:
+        if isinstance(ind_rescaling, (int, type(None))) == False:
             raise TypeError("val_scaling must be an int or None")
-        if val_scaling is None:
-            val_scaling = self.testing_val_scaling
+        if ind_rescaling is None:
+            ind_rescaling = self.testing_ind_rescaling
         else:
-            if val_scaling not in self.scalings_avail:
-                msg = "Invalid val_scaling value. Available options:"
+            if ind_rescaling not in self.scalings_avail:
+                msg = "Invalid ind_rescaling value. Available options:"
                 raise ExceptionList(msg, self.scalings_avail)
 
         if isinstance(z_max, (int, float, type(None))) == False:
@@ -365,7 +365,7 @@ class BaseArchive(object):
             list_keys = list(arch_av[ii].keys())
             mask = (
                 (arch_av[ii]["sim_label"] == sim_label)
-                & (arch_av[ii]["val_scaling"] == val_scaling)
+                & (arch_av[ii]["ind_rescaling"] == ind_rescaling)
                 & (arch_av[ii]["z"] <= z_max)
             )
             if mask:
