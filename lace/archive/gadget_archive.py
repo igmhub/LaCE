@@ -120,7 +120,7 @@ class GadgetArchive(BaseArchive):
             self.also_P3D = False
             self.tag_param = "parameter_redundant.json"
             # available scalings for each simulation
-            self.scalings_avail = [0.9, 1, 1.1]
+            self.scalings_avail = [0, 1, 4]
             # training options
             self.training_average = "both"
             self.training_val_scaling = 1
@@ -139,7 +139,7 @@ class GadgetArchive(BaseArchive):
             self.sk_label_params = "Ns500_wM0.05"
             self.also_P3D = True
             self.tag_param = "parameter_redundant.json"
-            self.scalings_avail = [0.9, 0.95, 1, 1.05, 1.1]
+            self.scalings_avail = np.arange(5, dtype=int)
             self.training_average = "axes_phases_both"
             self.training_val_scaling = "all"
             self.training_z_max = 10
@@ -156,7 +156,7 @@ class GadgetArchive(BaseArchive):
             self.sk_label_params = "Ns768_wM0.05"
             self.also_P3D = True
             self.tag_param = "parameter.json"
-            self.scalings_avail = [0.9, 0.95, 1, 1.05, 1.1]
+            self.scalings_avail = np.arange(5, dtype=int)
             self.training_average = "axes_phases_both"
             self.training_val_scaling = "all"
             self.training_z_max = 10
