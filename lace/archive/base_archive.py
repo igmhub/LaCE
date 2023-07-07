@@ -393,10 +393,10 @@ class BaseArchive(object):
 
         return testing_data
 
-    def plot_samples(self, emu_params, param_1, param_2):
+    def plot_samples(self, param_1, param_2):
         """For parameter pair (param1,param2), plot each point in the archive"""
 
-        emu_data = self.get_training_data(emu_params)
+        emu_data = self.get_training_data(emu_params=[param_1,param_2])
         Nemu = len(emu_data)
 
         # figure out values of param_1,param_2 in archive
@@ -415,11 +415,11 @@ class BaseArchive(object):
 
         return
 
-    def plot_3D_samples(self, emu_params, param_1, param_2, param_3):
+    def plot_3D_samples(self, param_1, param_2, param_3):
         """For parameter trio (param1,param2,param3), plot each point in the archive"""
         from mpl_toolkits import mplot3d
 
-        emu_data = self.get_training_data(emu_params)
+        emu_data = self.get_training_data(emu_params=[param_1,param_2,param_3])
         Nemu = len(emu_data)
 
         # figure out values of param_1,param_2 in archive
