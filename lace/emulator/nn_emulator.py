@@ -71,12 +71,11 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.models_dir = os.path.join(lace_path, "lace/emulator/")
         # CPU vs GPU
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
+ 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23","Nyx23"]
         if (archive!=None)&(training_set!=None):
             raise ValueError("Conflict! Both custom archive and training_set provided")
-        
         if training_set is not None:
             try:
                 if training_set in training_set_all:
@@ -91,24 +90,6 @@ class NNEmulator(base_emulator.BaseEmulator):
             except:
                 print("An error occurred while checking the training_set value.")
                 raise
-                    
-        elif archive!=None and training_set==None:
-            print("Use custom archive provided by the user")
-            self.archive = archive
-            self.training_data = self.archive.get_training_data()
-
-        elif (archive==None)&(training_set==None):
-            raise(ValueError('Archive or training_set must be provided'))
-            
-        if training_set in ['Pedersen21','Cabayol23']:
-            self.archive=gadget_archive.GadgetArchive(postproc=training_set)
-            self.training_data = self.archive.get_training_data()
-            
-        elif training_set in ['Nyx23']:
-            self.archive = nyx_archive.NyxArchive()
-            self.training_data = self.archive.get_training_data()
-            
-        # define emulator settings     
         emulator_label_all = ["Cabayol23", "Cabayol23_Nyx"]
         if emulator_label is not None:  
             try:
@@ -125,41 +106,62 @@ class NNEmulator(base_emulator.BaseEmulator):
             except:
                 print("An error occurred while checking the emulator_label value.")
                 raise
-
-            if emulator_label == "Cabayol23":
-                
-                print(
-                    r"Neural network emulating the optimal P1D of Gadget simulations "
-                    + "fitting coefficients to a 5th degree polynomial. It "
-                    + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters "
-                    + "passed to the emulator will be overwritten to match "
-                    + "these ones"
-                )
-                self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
-                self.kmax_Mpc, self.ndeg, self.step_size = 4, 5, 75
-                
-                # make sure that input archive / training data are Gadget sims
-                if 'mpg_' not in self.training_data[0]['sim_label']:
-                    raise ValueError("Training data are not Gadget sims")
-                
-            if emulator_label == "Cabayol23_Nyx":
-                
-                print(
-                    r"Neural network emulating the optimal P1D of Nyx simulations "
-                    + "fitting coefficients to a 5th degree polynomial. It "
-                    + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters "
-                    + "passed to the emulator will be overwritten to match "
-                    + "these ones"
-                )
-                self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "lambda_P"]
-                self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size = 4, 5, 1000, 750
-                                
-                # make sure that input archive / training data are Nyx sims
-                if 'nyx_' not in self.training_data[0]['sim_label']:
-                    raise ValueError("Training data are not Nyx sims")
         else:
             print("Selected custom emulator")            
+        # end check input #
+
+        # define emulator settings
+        if emulator_label == "Cabayol23":
+            print(
+                r"Neural network emulating the optimal P1D of Gadget simulations "
+                + "fitting coefficients to a 5th degree polynomial. It "
+                + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters "
+                + "passed to the emulator will be overwritten to match "
+                + "these ones"
+            )
+            self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
+            self.kmax_Mpc, self.ndeg, self.step_size = 4, 5, 75
             
+        if emulator_label == "Cabayol23_Nyx":
+            print(
+                r"Neural network emulating the optimal P1D of Nyx simulations "
+                + "fitting coefficients to a 5th degree polynomial. It "
+                + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters "
+                + "passed to the emulator will be overwritten to match "
+                + "these ones"
+            )
+            self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "lambda_P"]
+            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size = 4, 5, 1000, 750
+
+        # set archive and training set
+        if archive!=None and training_set==None:
+            print("Use custom archive provided by the user")
+            self.archive = archive
+            self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+
+        elif (archive==None)&(training_set==None):
+            raise(ValueError('Archive or training_set must be provided'))
+
+        if training_set in ['Pedersen21','Cabayol23']:
+            self.archive=gadget_archive.GadgetArchive(postproc=training_set)
+            self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+
+        elif training_set in ['Nyx23']:
+            self.archive = nyx_archive.NyxArchive()
+            self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+
+        # check consistency
+        if emulator_label == "Cabayol23":
+            # make sure that input archive / training data are Gadget sims
+            if 'mpg_' not in self.training_data[0]['sim_label']:
+                raise ValueError("Training data are not Gadget sims")
+
+        if emulator_label == "Cabayol23_Nyx":
+            # make sure that input archive / training data are Nyx sims
+            if 'nyx_' not in self.training_data[0]['sim_label']:
+                raise ValueError("Training data are not Nyx sims")
+
+        # decide whether to train emulator or read from file
         if train == False: 
             if (emulator_label==None)|(training_set==None):
                 raise ValueError("Pre-trained models can only be loaded passing an emulator_label and a training_set")
