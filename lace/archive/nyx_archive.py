@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import h5py
 
 from lace.cosmo import camb_cosmo
@@ -20,10 +21,10 @@ class NyxArchive(BaseArchive):
     Bookkeeping of Lya flux P1D & P3D measurements from a suite of Nyx simulations.
     """
 
-    def __init__(self, file_name, kp_Mpc=0.7):
+    def __init__(self, file_name=None, kp_Mpc=0.7):
         ## check input
-        if isinstance(file_name, str) == False:
-            raise TypeError("postproc must be a string")
+        if isinstance(file_name, (str,type(None))) == False:
+            raise TypeError("file_name must be a string or None")
 
         if isinstance(kp_Mpc, (int, float, type(None))) == False:
             raise TypeError("kp_Mpc must be a number or None")
@@ -165,6 +166,13 @@ class NyxArchive(BaseArchive):
         ]
 
     def _load_data(self, file_name):
+
+        # if file_name was not provided, search for default one
+        if file_name is None:
+            if "NYX_PATH" not in os.environ:
+                raise ValueError("Define NYX_PATH variable or pass file_name")
+            file_name = os.environ["NYX_PATH"]+"/models.hdf5"
+
         # read data
         ff = h5py.File(file_name, "r")
 
