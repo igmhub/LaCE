@@ -5,25 +5,24 @@ import os
 import time
 import sys
 import sklearn
+import copy
 
+# Torch related modules
 import torch
 from torch.utils.data import DataLoader, dataset, TensorDataset
 from torch import nn, optim
 from torch.optim import lr_scheduler
 
 # LaCE modules
-from lace.archive import gadget_archive
-from lace.archive import nyx_archive
-
 from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
+from lace.archive import gadget_archive
+from lace.archive import nyx_archive
 from lace.emulator import poly_p1d
 from lace.emulator import utils
 from lace.emulator import nn_architecture
 from lace.emulator import base_emulator
 
-cosmo_fid = camb_cosmo.get_cosmology()
-import copy
 
 
 class NNEmulator(base_emulator.BaseEmulator):
@@ -59,19 +58,19 @@ class NNEmulator(base_emulator.BaseEmulator):
         save_path=None,
         model_path=None,
     ):
+        # store emulator settings
         self.emu_params = emu_params
         self.kmax_Mpc = kmax_Mpc
+        self.ndeg = ndeg
         self.nepochs = nepochs
         self.step_size = step_size
-        self.model_path = model_path
-        
-        self.ndeg = ndeg
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # paths to save/load models
         self.save_path = save_path
-        self.lace_path = os.environ["LACE_REPO"] + "/"
+        self.model_path = model_path
+        lace_path = os.environ["LACE_REPO"] + "/"
         self.models_dir = os.path.join(self.lace_path, "lace/emulator/")
-        
-        nyx_fname = os.environ["Nyx_PATH"]
+        # CPU vs GPU
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23","Nyx23"]
@@ -92,8 +91,6 @@ class NNEmulator(base_emulator.BaseEmulator):
             except:
                 print("An error occurred while checking the training_set value.")
                 raise
-                
-          
                     
         elif archive!=None and training_set==None:
             print("Use custom archive provided by the user")
@@ -108,10 +105,10 @@ class NNEmulator(base_emulator.BaseEmulator):
             self.training_data = self.archive.get_training_data()
             
         elif training_set in ['Nyx23']:
-            self.archive = nyx_archive.NyxArchive(file_name=nyx_fname)
+            self.archive = nyx_archive.NyxArchive()
             self.training_data = self.archive.get_training_data()
             
-            
+        # define emulator settings     
         emulator_label_all = ["Cabayol23", "Cabayol23_Nyx"]
         if emulator_label is not None:  
             try:
@@ -141,8 +138,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
                 self.kmax_Mpc, self.ndeg, self.step_size = 4, 5, 75
                 
-                if (archive!=None)&(self.training_data[0]['sim_label']!='mpg_0'):
-                    raise ValueError("The provided archive is not an MPGadget archive")
+                # make sure that input archive / training data are Gadget sims
+                if 'mpg_' not in self.training_data[0]['sim_label']):
+                    raise ValueError("Training data are not Gadget sims")
                 
             if emulator_label == "Cabayol23_Nyx":
                 
@@ -153,13 +151,12 @@ class NNEmulator(base_emulator.BaseEmulator):
                     + "passed to the emulator will be overwritten to match "
                     + "these ones"
                 )
-                
-
                 self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "lambda_P"]
                 self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size = 4, 5, 1000, 750
                                 
-                if (archive!=None)&(self.training_data[0]['sim_label']!='nyx_0'):
-                    raise ValueError("The provided archive is not a Nyx archive")                
+                # make sure that input archive / training data are Nyx sims
+                if 'nyx_' not in self.training_data[0]['sim_label']):
+                    raise ValueError("Training data are not Nyx sims")
         else:
             print("Selected custom emulator")            
             
@@ -170,33 +167,33 @@ class NNEmulator(base_emulator.BaseEmulator):
             if self.model_path == None:
                 raise ValueError("If train==False, model path is required.")
 
-            else:
-                pretrained_weights = torch.load(
-                    os.path.join(self.models_dir, self.model_path), map_location="cpu"
-                )
-                self.nn = nn_architecture.MDNemulator_polyfit(
-                    nhidden=5, ndeg=self.ndeg
-                )
-                self.nn.load_state_dict(pretrained_weights['model'])
-                self.nn.to(self.device)
-                print("Model loaded. No training needed")
-                
-                emulator_settings = pretrained_weights['emulator_params']
-                
-                training_set_loaded = emulator_settings['training_set']
-                emulator_label_loaded = emulator_settings['emulator_label']        
-                drop_sim_loaded = emulator_settings['drop_sim']   
-                
-                if (emulator_label_loaded!=emulator_label)|(training_set_loaded!=training_set):
-                    raise ValueError(f"This model correspond to an emulator_label {emulator_label} and "+
-                                     f"a training set {training_set_loaded} and does not match the passed arguments"
-                                    )
-                    
-                if emulator_settings['drop_sim'] != None:
-                    dropsim=emulator_params['drop_sim']
-                    print(f'WARNING: Model trained without simulation set {dropsim}') 
-                    
-                
+            pretrained_weights = torch.load(
+                os.path.join(self.models_dir, self.model_path), map_location="cpu"
+            )
+            self.nn = nn_architecture.MDNemulator_polyfit(
+                nhidden=5, ndeg=self.ndeg
+            )
+            self.nn.load_state_dict(pretrained_weights['model'])
+            self.nn.to(self.device)
+            print("Model loaded. No training needed")
+
+            # check consistency between required settings and read ones
+            emulator_settings = pretrained_weights['emulator_params']
+            training_set_loaded = emulator_settings['training_set']
+            emulator_label_loaded = emulator_settings['emulator_label']
+            drop_sim_loaded = emulator_settings['drop_sim']
+
+            if emulator_label_loaded!=emulator_label):
+                raise ValueError(f"Asked for emulator_label {emulator_label} but loaded file with {emulator_label_loaded}")
+            if training_set_loaded!=training_set):
+                raise ValueError(f"Asked for training_set {training_set} but loaded file with {training_set_loaded}")
+            if drop_sim_loaded!=drop_sim):
+                raise ValueError(f"Asked for drop_sim {drop_sim} but loaded file with drop_sim {drop_sim_loaded}")
+
+            if emulator_settings['drop_sim'] != None:
+                dropsim=emulator_params['drop_sim']
+                print(f'WARNING: Model trained without simulation set {dropsim}') 
+
             if training_set=='Cabayol23':
                 
                 kMpc_train = self._obtain_sim_params()
@@ -207,7 +204,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                 raise ValueError("Work in progress")
                 
         else:           
-                                        
+
+            # AFR: it looks like this block could be moved to self.train()
+            # and that it could be self._train(initial_weights) instead
 
             self.initial_weights = initial_weights
             if self.initial_weights == True:
@@ -221,9 +220,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                         self.models_dir, "initial_params/initial_weights_extended.pt"
                     )
 
-
             self.train()
-
 
             if self.save_path != None:
                 # saves the model in the predefined path after training
@@ -263,6 +260,8 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         # AFR: not sure exactly what we are doing here. 
         # It looks like some code to set self.k_Mpc and self.Nz
+
+        # AFR: this could be dangerous if not all sims have the same Nz (Nyx)
         sim_0 = copy.deepcopy(self.archive)
         sim_0_training_data = sim_0.get_training_data()
         sim_0_training_data = [d for d in sim_0_training_data if d["sim_label"] == "mpg_0"]
