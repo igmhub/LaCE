@@ -268,7 +268,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         # AFR: this could be dangerous if not all sims have the same Nz (Nyx)
         sim_0 = copy.deepcopy(self.archive)
-        sim_0_training_data = sim_0.get_training_data()
+        sim_0_training_data = sim_0.get_training_data(emu_params=self.emu_params)
         sim_0_training_data = [d for d in sim_0_training_data if d["sim_label"] == "mpg_0"]
         sim_zs = [data["z"] for data in sim_0_training_data]
         Nz = len(sim_zs)
