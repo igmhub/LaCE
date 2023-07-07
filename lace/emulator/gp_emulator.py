@@ -108,7 +108,7 @@ class GPEmulator(base_emulator.BaseEmulator):
                     + " It goes to scales of 3Mpc^{-1} and z<4.5. The parameters "
                     + "passed to the emulator will be overwritten to match these ones."
                 )
-                self.emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
+                self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
                 self.zmax, self.kmax_Mpc, self.emu_type =  4.5, 3, "k_bin"
                 
             if emulator_label == "Pedersen23":
@@ -121,7 +121,7 @@ class GPEmulator(base_emulator.BaseEmulator):
                     + "these ones"
                 )
             
-                self.emuparams = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
+                self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
                 self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = 4.5, 4, 4, "polyfit"
                                 
                 
@@ -135,7 +135,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.emu_params = emu_params 
             
         # keep track of training data to be used in emulator
-        self.training_data = self.archive.get_training_data(emu_params=emu_params)
+        self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
 
         ## Find max k bin
         self.k_bin = (
