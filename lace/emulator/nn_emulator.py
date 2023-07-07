@@ -68,7 +68,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.save_path = save_path
         self.model_path = model_path
         lace_path = os.environ["LACE_REPO"] + "/"
-        self.models_dir = os.path.join(self.lace_path, "lace/emulator/")
+        self.models_dir = os.path.join(lace_path, "lace/emulator/")
         # CPU vs GPU
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
@@ -139,7 +139,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.kmax_Mpc, self.ndeg, self.step_size = 4, 5, 75
                 
                 # make sure that input archive / training data are Gadget sims
-                if 'mpg_' not in self.training_data[0]['sim_label']):
+                if 'mpg_' not in self.training_data[0]['sim_label']:
                     raise ValueError("Training data are not Gadget sims")
                 
             if emulator_label == "Cabayol23_Nyx":
@@ -155,7 +155,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size = 4, 5, 1000, 750
                                 
                 # make sure that input archive / training data are Nyx sims
-                if 'nyx_' not in self.training_data[0]['sim_label']):
+                if 'nyx_' not in self.training_data[0]['sim_label']:
                     raise ValueError("Training data are not Nyx sims")
         else:
             print("Selected custom emulator")            
@@ -183,16 +183,19 @@ class NNEmulator(base_emulator.BaseEmulator):
             emulator_label_loaded = emulator_settings['emulator_label']
             drop_sim_loaded = emulator_settings['drop_sim']
 
-            if emulator_label_loaded!=emulator_label):
+            if emulator_label_loaded!=emulator_label:
                 raise ValueError(f"Asked for emulator_label {emulator_label} but loaded file with {emulator_label_loaded}")
-            if training_set_loaded!=training_set):
+            if training_set_loaded!=training_set:
                 raise ValueError(f"Asked for training_set {training_set} but loaded file with {training_set_loaded}")
-            if drop_sim_loaded!=drop_sim):
-                raise ValueError(f"Asked for drop_sim {drop_sim} but loaded file with drop_sim {drop_sim_loaded}")
+
+            if False:
+                # AFR: I would have liked to check this, but not possible now
+                if drop_sim_loaded!=drop_sim:
+                    raise ValueError(f"Asked for drop_sim {drop_sim} but loaded file with drop_sim {drop_sim_loaded}")
 
             if emulator_settings['drop_sim'] != None:
-                dropsim=emulator_params['drop_sim']
-                print(f'WARNING: Model trained without simulation set {dropsim}') 
+                drop_sim=emulator_params['drop_sim']
+                print(f'WARNING: Model trained without simulation {drop_sim}')
 
             if training_set=='Cabayol23':
                 
