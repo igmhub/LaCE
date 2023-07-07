@@ -192,23 +192,23 @@ class BaseArchive(object):
 
     def get_training_data(
         self,
+        emu_params,
         average=None,
         val_scaling=None,
         drop_sim=None,
         z_max=None,
-        emu_params=None,
         verbose=False,
     ):
         """
         Retrieves the training data based on the provided flags.
 
         Parameters:
+            emu_params (list): The parameters that must be defined for each
+                element of the training data. There are intended to be emulator parameters.
             average (str, optional): The flag indicating the type of average computed.
             val_scaling (int or None, optional): The scaling value. Defaults to None.
             drop_sim (str or None, optional): The simulation to drop. Defaults to None.
             z_max (int, float or None, optional): The maximum redshift. Defaults to None.
-            emu_params (list, optional): The parameters that must be defined for each
-                element of the training data. There are intended to be emulator parameters.
 
         Returns:
             List: The retrieved training data.
@@ -223,6 +223,9 @@ class BaseArchive(object):
         """
 
         ## check input
+        if isinstance(emu_params, list) == False:
+            raise TypeError("emu_params must be a list")
+
         if isinstance(average, (str, type(None))) == False:
             raise TypeError("average must be a string or None")
         if average is None:
@@ -255,14 +258,12 @@ class BaseArchive(object):
             raise TypeError("z_max must be a number or None")
         if z_max is None:
             z_max = self.training_z_max
-
-        if isinstance(emu_params, (list, type(None))) == False:
-            raise TypeError("emu_params must be a list or None")
         ## done
 
         ## put training points here
         training_data = []
 
+        key_power = ["k_Mpc", "p1d_Mpc"]
         for operation in operations:
             if operation == "individual":
                 arch_av = self.data
@@ -282,10 +283,20 @@ class BaseArchive(object):
                     & (arch_av[ii]["z"] <= z_max)
                 )
                 if mask:
-                    if emu_params is None:
-                        training_data.append(arch_av[ii])
-                    elif all(x in list_keys for x in emu_params):
-                        training_data.append(arch_av[ii])
+                    if all(x in list_keys for x in emu_params):
+                        if any(
+                            np.isnan(arch_av[ii][x]) for x in emu_params
+                        ) | any(
+                            np.any(np.isnan(arch_av[ii][x])) for x in key_power
+                        ):
+                            if verbose:
+                                print(
+                                    "Archive element "
+                                    + str(ii)
+                                    + " contains nans"
+                                )
+                        else:
+                            training_data.append(arch_av[ii])
                     else:
                         if verbose:
                             print(
@@ -349,6 +360,7 @@ class BaseArchive(object):
         # could implement other options in the future
         arch_av = self._average_over_samples(average="both")
 
+        key_power = ["k_Mpc", "p1d_Mpc"]
         for ii in range(len(arch_av)):
             list_keys = list(arch_av[ii].keys())
             mask = (
@@ -361,6 +373,15 @@ class BaseArchive(object):
                     testing_data.append(arch_av[ii])
                 elif all(x in list_keys for x in emu_params):
                     testing_data.append(arch_av[ii])
+                    if any(np.isnan(arch_av[ii][x]) for x in emu_params) | any(
+                        np.any(np.isnan(arch_av[ii][x])) for x in key_power
+                    ):
+                        if verbose:
+                            print(
+                                "Archive element " + str(ii) + " contains nans"
+                            )
+                    else:
+                        testing_data.append(arch_av[ii])
                 else:
                     if verbose:
                         print(
