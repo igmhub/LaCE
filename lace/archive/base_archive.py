@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from itertools import product
 from lace.archive.exceptions import ExceptionList
 from lace.emulator.utils import split_string
@@ -391,3 +392,51 @@ class BaseArchive(object):
                         )
 
         return testing_data
+
+    def plot_samples(self, param_1, param_2):
+        """For parameter pair (param1,param2), plot each point in the archive"""
+
+        emu_data = self.data
+        Nemu = len(emu_data)
+
+        # figure out values of param_1,param_2 in archive
+        emu_1 = np.array([emu_data[i][param_1] for i in range(Nemu)])
+        emu_2 = np.array([emu_data[i][param_2] for i in range(Nemu)])
+
+        emu_z = np.array([emu_data[i]["z"] for i in range(Nemu)])
+        zmin = min(emu_z)
+        zmax = max(emu_z)
+        plt.scatter(emu_1, emu_2, c=emu_z, s=1, vmin=zmin, vmax=zmax)
+        cbar = plt.colorbar()
+        cbar.set_label("Redshift", labelpad=+1)
+        plt.xlabel(param_1)
+        plt.ylabel(param_2)
+        plt.show()
+
+        return
+
+    def plot_3D_samples(self, param_1, param_2, param_3):
+        """For parameter trio (param1,param2,param3), plot each point in the archive"""
+        from mpl_toolkits import mplot3d
+
+        emu_data = self.data
+        Nemu = len(emu_data)
+
+        # figure out values of param_1,param_2 in archive
+        emu_1 = np.array([emu_data[i][param_1] for i in range(Nemu)])
+        emu_2 = np.array([emu_data[i][param_2] for i in range(Nemu)])
+        emu_3 = np.array([emu_data[i][param_3] for i in range(Nemu)])
+
+        emu_z = np.array([emu_data[i]["z"] for i in range(Nemu)])
+        zmin = min(emu_z)
+        zmax = max(emu_z)
+
+        fig = plt.figure()
+        ax = plt.axes(projection="3d")
+        ax.scatter3D(emu_1, emu_2, emu_3, c=emu_z, cmap="brg", s=8)
+        ax.set_xlabel(param_1)
+        ax.set_ylabel(param_2)
+        ax.set_zlabel(param_3)
+        plt.show()
+
+        return
