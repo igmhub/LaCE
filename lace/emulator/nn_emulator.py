@@ -115,7 +115,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             print(
                 r"Neural network emulating the optimal P1D of Gadget simulations "
                 + "fitting coefficients to a 5th degree polynomial. It "
-                + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters "
+                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
                 + "passed to the emulator will be overwritten to match "
                 + "these ones"
             )
@@ -126,7 +126,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
                 + "fitting coefficients to a 5th degree polynomial. It "
-                + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters "
+                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
                 + "passed to the emulator will be overwritten to match "
                 + "these ones"
             )
