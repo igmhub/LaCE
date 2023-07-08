@@ -18,8 +18,6 @@ class GPEmulator(base_emulator.BaseEmulator):
     This will train on the data in an 'archive' object, and will return
     a given P_1D(k) for the same k-bins used in training.
     GPEmulator.predict takes models in a dictionary format currently.
-    
-    
 
     Args:
         archive (class): Data archive used for training the emulator.
@@ -105,7 +103,7 @@ class GPEmulator(base_emulator.BaseEmulator):
                 
                 print(
                     r"Gaussian Process emulator predicting the P1D at each k-bin."
-                    + " It goes to scales of 3Mpc^{-1} and z<4.5. The parameters "
+                    + " It goes to scales of 3Mpc^{-1} and z<=4.5. The parameters "
                     + "passed to the emulator will be overwritten to match these ones."
                 )
                 self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
@@ -116,7 +114,7 @@ class GPEmulator(base_emulator.BaseEmulator):
                 print(
                     r"Gaussian Process emulator predicting the optimal P1D"
                     + "fitting coefficients to a 5th degree polynomial. It "
-                    + "goes to scales of 4Mpc^{-1} and z<4.5. The parameters"
+                    + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters"
                     + " passed to the emulator will be overwritten to match "
                     + "these ones"
                 )
