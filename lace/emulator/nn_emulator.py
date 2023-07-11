@@ -53,6 +53,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         ndeg=5,
         nepochs=100,
         step_size=75,
+        drop_sim=None,
         train=True,
         initial_weights=True,
         save_path=None,
@@ -71,6 +72,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.models_dir = os.path.join(lace_path, "lace/emulator/")
         # CPU vs GPU
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # training data settings
+        self.drop_sim=drop_sim
  
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23","Nyx23"]
@@ -137,18 +140,18 @@ class NNEmulator(base_emulator.BaseEmulator):
         if archive!=None and training_set==None:
             print("Use custom archive provided by the user")
             self.archive = archive
-            self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+            self.training_data = self.archive.get_training_data(emu_params=self.emu_params, drop_sim=self.drop_sim)
 
         elif (archive==None)&(training_set==None):
             raise(ValueError('Archive or training_set must be provided'))
 
         if training_set in ['Pedersen21','Cabayol23']:
             self.archive=gadget_archive.GadgetArchive(postproc=training_set)
-            self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+            self.training_data = self.archive.get_training_data(emu_params=self.emu_params, drop_sim=drop_sim)
 
         elif training_set in ['Nyx23']:
             self.archive = nyx_archive.NyxArchive()
-            self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+            self.training_data = self.archive.get_training_data(emu_params=self.emu_params, drop_sim=self.drop_sim)
 
         # check consistency
         if emulator_label == "Cabayol23":
