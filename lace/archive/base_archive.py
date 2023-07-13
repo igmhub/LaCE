@@ -196,6 +196,7 @@ class BaseArchive(object):
         average=None,
         val_scaling=None,
         drop_sim=None,
+        drop_z=None,
         z_max=None,
         verbose=False,
     ):
@@ -208,6 +209,7 @@ class BaseArchive(object):
             average (str, optional): The flag indicating the type of average computed.
             val_scaling (int or None, optional): The scaling value. Defaults to None.
             drop_sim (str or None, optional): The simulation to drop. Defaults to None.
+            drop_z (str or None, optional): The red to drop. Defaults to None.
             z_max (int, float or None, optional): The maximum redshift. Defaults to None.
 
         Returns:
@@ -253,6 +255,11 @@ class BaseArchive(object):
             if drop_sim not in self.list_sim_cube:
                 msg = "Invalid drop_sim value. Available options:"
                 raise ExceptionList(msg, self.list_sim_cube)
+            
+        #if drop_z is not None:
+        #    if str(drop_z) not in self.list_sim_redshifts:
+        #        msg = "Invalid drop_z value. Available options:"
+        #        raise ExceptionList(msg, self.list_sim_redshifts)
 
         if isinstance(z_max, (int, float, type(None))) == False:
             raise TypeError("z_max must be a number or None")
@@ -273,15 +280,33 @@ class BaseArchive(object):
             for ii in range(len(arch_av)):
                 list_keys = list(arch_av[ii].keys())
 
-                mask = (
-                    (arch_av[ii]["sim_label"] in self.list_sim_cube)
-                    & (arch_av[ii]["sim_label"] != drop_sim)
-                    & (
-                        (val_scaling == "all")
-                        | (arch_av[ii]["val_scaling"] == val_scaling)
+                if drop_sim is None or drop_z is None:
+                
+                    mask = (
+                        (arch_av[ii]["sim_label"] in self.list_sim_cube)
+                        & (arch_av[ii]["sim_label"] != drop_sim)
+                        & (arch_av[ii]["z"] != drop_z)
+                        & (
+                            (val_scaling == "all")
+                            | (arch_av[ii]["val_scaling"] == val_scaling)
+                        )
+                        & (arch_av[ii]["z"] <= z_max)
                     )
-                    & (arch_av[ii]["z"] <= z_max)
-                )
+                elif drop_sim is not None and drop_z is not None:
+                    mask = (
+                        (arch_av[ii]["sim_label"] in self.list_sim_cube)
+                        & (
+                            (arch_av[ii]["sim_label"] != drop_sim)
+                            | (arch_av[ii]["z"] != drop_z)
+                        )
+                        & (
+                            (val_scaling == "all")
+                            | (arch_av[ii]["val_scaling"] == val_scaling)
+                        )
+                        & (arch_av[ii]["z"] <= z_max)
+                    )
+                
+                
                 if mask:
                     if all(x in list_keys for x in emu_params):
                         if any(
