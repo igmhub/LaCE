@@ -4,7 +4,7 @@ import h5py
 
 from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
-from lace.cosmo.thermal_model import thermal_broadening_kms
+from lace.cosmo.thermal_broadening import thermal_broadening_kms
 from lace.emulator.utils import split_string
 from lace.archive.base_archive import BaseArchive
 
