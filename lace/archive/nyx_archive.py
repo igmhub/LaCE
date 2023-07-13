@@ -44,7 +44,7 @@ class NyxArchive(BaseArchive):
         ## done set simulation list
         
         # list of available redshifts, temporary hack, chech higher redshfits
-        self.list_sim_redshifts = [str(d) for d in np.round(np.arange(2.2,4.7,0.2),2) ]
+        self.list_sim_redshifts=[2, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 4.2, 4.4, 4.6, 5.0, 5.4]
         # get relevant flags for post-processing
         self._set_info_sim()
 
