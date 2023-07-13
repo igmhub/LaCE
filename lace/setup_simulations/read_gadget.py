@@ -60,13 +60,20 @@ def _build_cosmology_params_class(config):
     # Class takes omega_m h^2 as parameters
     h0 = config["HubbleParam"]
     # Compute sum of neutrino masses
-    omeganu = (config["MNue"] + config["MNum"] + config["MNut"]) / 93.14 / h0**2
+    omeganu = (
+        (config["MNue"] + config["MNum"] + config["MNut"]) / 93.14 / h0**2
+    )
     omega0 = config["Omega0"]
     omegaL = config["OmegaLambda"]
     omegab = config["OmegaBaryon"]
     omegacdm = omega0 - omegab - omeganu
     omegak = 1 - omegaL - omega0
-    params = {"h": h0, "Omega_cdm": omegacdm, "Omega_b": omegab, "Omega_k": omegak}
+    params = {
+        "h": h0,
+        "Omega_cdm": omegacdm,
+        "Omega_b": omegab,
+        "Omega_k": omegak,
+    }
     # these are not present in Gadget file
     # params['A_s'] = config["PrimordialAmp"]
     # params['n_s'] = config['PrimordialIndex']

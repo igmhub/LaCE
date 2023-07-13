@@ -123,13 +123,13 @@ class GadgetArchive(BaseArchive):
             self.also_P3D = False
             self.tag_param = "parameter_redundant.json"
             # available scalings for each simulation
-            self.scalings_avail = [0.9, 1, 1.1]
+            self.scalings_avail = [0, 1, 4]
             # training options
             self.training_average = "both"
             self.training_val_scaling = 1
             self.training_z_max = 10
             # testing options
-            self.testing_val_scaling = 1
+            self.testing_ind_rescaling = 0
             self.testing_z_max = 10
         elif postproc == "Cabayol23":
             self.basedir = "/lace/emulator/sim_suites/post_768/"
@@ -142,11 +142,11 @@ class GadgetArchive(BaseArchive):
             self.sk_label_params = "Ns500_wM0.05"
             self.also_P3D = True
             self.tag_param = "parameter_redundant.json"
-            self.scalings_avail = [0.9, 0.95, 1, 1.05, 1.1]
+            self.scalings_avail = np.arange(5, dtype=int)
             self.training_average = "axes_phases_both"
             self.training_val_scaling = "all"
             self.training_z_max = 10
-            self.testing_val_scaling = 1
+            self.testing_ind_rescaling = 0
             self.testing_z_max = 10
         elif postproc == "768_768":
             self.basedir = "/lace/emulator/sim_suites/post_768/"
@@ -159,11 +159,11 @@ class GadgetArchive(BaseArchive):
             self.sk_label_params = "Ns768_wM0.05"
             self.also_P3D = True
             self.tag_param = "parameter.json"
-            self.scalings_avail = [0.9, 0.95, 1, 1.05, 1.1]
+            self.scalings_avail = np.arange(5, dtype=int)
             self.training_average = "axes_phases_both"
             self.training_val_scaling = "all"
             self.training_z_max = 10
-            self.testing_val_scaling = 1
+            self.testing_ind_rescaling = 0
             self.testing_z_max = 10
 
         ## get path of the repo
@@ -185,16 +185,13 @@ class GadgetArchive(BaseArchive):
             "scale_tau": "val_scaling",
         }
 
-        # parameters that must be in each element of the
-        # training and testing set
-        self.emu_params = [
-            "Delta2_p",
-            "n_p",
-            "mF",
-            "sigT_Mpc",
-            "gamma",
-            "kF_Mpc",
-        ]
+        self.scaling_cov = {
+            1: 0,
+            0.90: 1,
+            0.95: 2,
+            1.05: 3,
+            1.1: 4,
+        }
 
     def _sim2file_name(self, sim_label):
         """
@@ -528,13 +525,15 @@ class GadgetArchive(BaseArchive):
                             sim_data["ind_snap"] = ind_z
                             sim_data["ind_phase"] = _ind_phase
                             sim_data["ind_axis"] = ind_axis
-                            sim_data["ind_rescaling"] = floor_scaling + pp
+                            sim_data["ind_rescaling"] = self.scaling_cov[
+                                temp_data["scale_tau"]
+                            ]
 
                             # iterate over properties
                             all_keys = list(self.key_conv.keys())
                             for key_in in all_keys:
                                 key_out = self.key_conv[key_in]
-                                if (key_in == "scale_tau") | (key_in == "mF"):
+                                if (key_in == "mF") | (key_in == "scale_tau"):
                                     sim_data[key_out] = temp_data[key_in]
                                 elif (key_in == "p1d_Mpc") | (
                                     key_in == "k_Mpc"

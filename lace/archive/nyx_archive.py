@@ -4,7 +4,7 @@ import h5py
 
 from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
-from lace.cosmo.thermal_model import thermal_broadening_kms
+from lace.cosmo.thermal_broadening import thermal_broadening_kms
 from lace.emulator.utils import split_string
 from lace.archive.base_archive import BaseArchive
 
@@ -21,14 +21,15 @@ class NyxArchive(BaseArchive):
     Bookkeeping of Lya flux P1D & P3D measurements from a suite of Nyx simulations.
     """
 
-    def __init__(self, file_name=None, kp_Mpc=0.7):
+    def __init__(self, file_name=None, kp_Mpc=0.7, verbose=False, zmax=None):
         ## check input
-        if isinstance(file_name, (str,type(None))) == False:
+        if isinstance(file_name, (str, type(None))) == False:
             raise TypeError("file_name must be a string or None")
 
         if isinstance(kp_Mpc, (int, float, type(None))) == False:
             raise TypeError("kp_Mpc must be a number or None")
         self.kp_Mpc = kp_Mpc
+        self.verbose = verbose
         ## done check input
 
         ## sets list simulations available for this suite
@@ -48,10 +49,11 @@ class NyxArchive(BaseArchive):
         self._set_info_sim()
 
         # load power spectrum measurements
-        self._load_data(file_name)
+        self._load_data(file_name, zmax)
 
         # extract indexes from data
         self._set_labels()
+
 
     def _set_info_sim(self):
         # number of simulation phases (IC)
@@ -69,7 +71,7 @@ class NyxArchive(BaseArchive):
         self.training_val_scaling = "all"
         self.training_z_max = 10
         # testing options
-        self.testing_val_scaling = 1
+        self.testing_ind_rescaling = 0
         self.testing_z_max = 10
 
         self.key_conv = {
@@ -163,13 +165,12 @@ class NyxArchive(BaseArchive):
             "lambda_P",
         ]
 
-    def _load_data(self, file_name):
-
+    def _load_data(self, file_name, zmax):
         # if file_name was not provided, search for default one
         if file_name is None:
             if "NYX_PATH" not in os.environ:
                 raise ValueError("Define NYX_PATH variable or pass file_name")
-            file_name = os.environ["NYX_PATH"]+"/models.hdf5"
+            file_name = os.environ["NYX_PATH"] + "/models.hdf5"
 
         # read data
         ff = h5py.File(file_name, "r")
@@ -184,6 +185,10 @@ class NyxArchive(BaseArchive):
             # this simulation seems to have issues
             if isim == "cosmo_grid_14":
                 continue
+
+            if self.verbose:
+                print('read Nyx sim',isim)
+
             sim_params = get_attrs(ff[isim])
             if isim == "fiducial":
                 sim_params["A_s"] = 2.10e-9
@@ -192,10 +197,16 @@ class NyxArchive(BaseArchive):
             # setup CAMB object from sim_params
             sim_cosmo = camb_cosmo.get_Nyx_cosmology(sim_params)
 
-            z_avail = list(ff[isim].keys())
             # loop over redshifts
+            z_avail = list(ff[isim].keys())
             for iz in z_avail:
                 zval = np.float(split_string(iz)[1])
+
+                if zmax:
+                    if zval > zmax:
+                        if self.verbose:
+                            print('do not read snapshot at',zval)
+                        continue
 
                 # compute linear power parameters at each z (in Mpc units)
                 linP_zs = fit_linP.get_linP_Mpc_zs(
