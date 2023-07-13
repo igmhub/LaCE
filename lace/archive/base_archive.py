@@ -257,10 +257,10 @@ class BaseArchive(object):
                 msg = "Invalid drop_sim value. Available options:"
                 raise ExceptionList(msg, self.list_sim_cube)
             
-        #if drop_z is not None:
-        #    if str(drop_z) not in self.list_sim_redshifts:
-        #        msg = "Invalid drop_z value. Available options:"
-        #        raise ExceptionList(msg, self.list_sim_redshifts)
+        if drop_z is not None:
+            if drop_z not in self.list_sim_redshifts:
+                msg = "Invalid drop_z value. Available options:"
+                raise ExceptionList(msg, np.array(self.list_sim_redshifts).astype('str'))
 
         if isinstance(z_max, (int, float, type(None))) == False:
             raise TypeError("z_max must be a number or None")
