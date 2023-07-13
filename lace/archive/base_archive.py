@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from itertools import product
 from lace.archive.exceptions import ExceptionList
 from lace.emulator.utils import split_string
@@ -335,7 +336,7 @@ class BaseArchive(object):
     def get_testing_data(
         self,
         sim_label,
-        val_scaling=None,
+        ind_rescaling=None,
         z_max=None,
         emu_params=None,
         verbose=False,
@@ -361,13 +362,13 @@ class BaseArchive(object):
         """
 
         ## check input
-        if isinstance(val_scaling, (int, float, type(None))) == False:
+        if isinstance(ind_rescaling, (int, type(None))) == False:
             raise TypeError("val_scaling must be an int or None")
-        if val_scaling is None:
-            val_scaling = self.testing_val_scaling
+        if ind_rescaling is None:
+            ind_rescaling = self.testing_ind_rescaling
         else:
-            if val_scaling not in self.scalings_avail:
-                msg = "Invalid val_scaling value. Available options:"
+            if ind_rescaling not in self.scalings_avail:
+                msg = "Invalid ind_rescaling value. Available options:"
                 raise ExceptionList(msg, self.scalings_avail)
 
         if isinstance(z_max, (int, float, type(None))) == False:
@@ -390,7 +391,7 @@ class BaseArchive(object):
             list_keys = list(arch_av[ii].keys())
             mask = (
                 (arch_av[ii]["sim_label"] == sim_label)
-                & (arch_av[ii]["val_scaling"] == val_scaling)
+                & (arch_av[ii]["ind_rescaling"] == ind_rescaling)
                 & (arch_av[ii]["z"] <= z_max)
             )
             if mask:
@@ -416,3 +417,51 @@ class BaseArchive(object):
                         )
 
         return testing_data
+
+    def plot_samples(self, param_1, param_2):
+        """For parameter pair (param1,param2), plot each point in the archive"""
+
+        emu_data = self.get_training_data(emu_params=[param_1,param_2])
+        Nemu = len(emu_data)
+
+        # figure out values of param_1,param_2 in archive
+        emu_1 = np.array([emu_data[i][param_1] for i in range(Nemu)])
+        emu_2 = np.array([emu_data[i][param_2] for i in range(Nemu)])
+
+        emu_z = np.array([emu_data[i]["z"] for i in range(Nemu)])
+        zmin = min(emu_z)
+        zmax = max(emu_z)
+        plt.scatter(emu_1, emu_2, c=emu_z, s=1, vmin=zmin, vmax=zmax)
+        cbar = plt.colorbar()
+        cbar.set_label("Redshift", labelpad=+1)
+        plt.xlabel(param_1)
+        plt.ylabel(param_2)
+        plt.show()
+
+        return
+
+    def plot_3D_samples(self, param_1, param_2, param_3):
+        """For parameter trio (param1,param2,param3), plot each point in the archive"""
+        from mpl_toolkits import mplot3d
+
+        emu_data = self.get_training_data(emu_params=[param_1,param_2,param_3])
+        Nemu = len(emu_data)
+
+        # figure out values of param_1,param_2 in archive
+        emu_1 = np.array([emu_data[i][param_1] for i in range(Nemu)])
+        emu_2 = np.array([emu_data[i][param_2] for i in range(Nemu)])
+        emu_3 = np.array([emu_data[i][param_3] for i in range(Nemu)])
+
+        emu_z = np.array([emu_data[i]["z"] for i in range(Nemu)])
+        zmin = min(emu_z)
+        zmax = max(emu_z)
+
+        fig = plt.figure()
+        ax = plt.axes(projection="3d")
+        ax.scatter3D(emu_1, emu_2, emu_3, c=emu_z, cmap="brg", s=8)
+        ax.set_xlabel(param_1)
+        ax.set_ylabel(param_2)
+        ax.set_zlabel(param_3)
+        plt.show()
+
+        return
