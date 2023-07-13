@@ -41,7 +41,9 @@ class NyxArchive(BaseArchive):
         # list all simulations
         self.list_sim = self.list_sim_cube + self.list_sim_test
         ## done set simulation list
-
+        
+        # list of available redshifts, temporary hack, chech higher redshfits
+        self.list_sim_redshifts = [str(d) for d in np.round(np.arange(2.2,4.7,0.2),2) ]
         # get relevant flags for post-processing
         self._set_info_sim()
 
@@ -50,10 +52,6 @@ class NyxArchive(BaseArchive):
 
         # extract indexes from data
         self._set_labels()
-
-        #
-        #
-        #
 
     def _set_info_sim(self):
         # number of simulation phases (IC)
