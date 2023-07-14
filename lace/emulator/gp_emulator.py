@@ -40,6 +40,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         verbose=False,
         kmax_Mpc=10.0,
         emu_params=None,
+        drop_sim=None,
         set_noise_var=1e-3,
         check_hull=False,
         emu_per_k=False,
@@ -51,6 +52,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.verbose = verbose
         self.emu_per_k = emu_per_k
         self.ndeg = ndeg
+        self.drop_sim=drop_sim
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23"]
@@ -133,7 +135,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.emu_params = emu_params 
             
         # keep track of training data to be used in emulator
-        self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+        self.training_data = self.archive.get_training_data(emu_params=self.emu_params, drop_sim = self.drop_sim)
 
         ## Find max k bin
         self.k_bin = (

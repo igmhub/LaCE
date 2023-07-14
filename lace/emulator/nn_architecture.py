@@ -7,9 +7,9 @@ from torch.optim import lr_scheduler
 
 
 class MDNemulator_polyfit(torch.nn.Module):
-    def __init__(self, nhidden, ndeg):
+    def __init__(self, nhidden, ndeg, ninput=6):
         super().__init__()
-        self.inputlay = torch.nn.Sequential(nn.Linear(6, 10), nn.LeakyReLU(0.5))
+        self.inputlay = torch.nn.Sequential(nn.Linear(ninput, 10), nn.LeakyReLU(0.5))
 
         params = np.linspace(10, 100, nhidden)
         modules = []
