@@ -5,7 +5,7 @@ import h5py
 from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 from lace.cosmo.thermal_broadening import thermal_broadening_kms
-from lace.emulator.utils import split_string
+from lace.utils.useful import split_string
 from lace.archive.base_archive import BaseArchive
 
 
@@ -43,10 +43,11 @@ class NyxArchive(BaseArchive):
         # list all simulations
         self.list_sim = self.list_sim_cube + self.list_sim_test
         ## done set simulation list
-        
+
         # list of available redshifts at Nyx (not all sims have them)
-        self.list_sim_redshifts=np.append(np.arange(2.0,4.5,0.2),
-                np.arange(4.6,5.5,0.4))
+        self.list_sim_redshifts = np.append(
+            np.arange(2.0, 4.5, 0.2), np.arange(4.6, 5.5, 0.4)
+        )
 
         # get relevant flags for post-processing
         self._set_info_sim()
@@ -56,7 +57,6 @@ class NyxArchive(BaseArchive):
 
         # extract indexes from data
         self._set_labels()
-
 
     def _set_info_sim(self):
         # number of simulation phases (IC)
@@ -190,7 +190,7 @@ class NyxArchive(BaseArchive):
                 continue
 
             if self.verbose:
-                print('read Nyx sim',isim)
+                print("read Nyx sim", isim)
 
             # setup CAMB object from sim_params
             sim_params = get_attrs(ff[isim])
@@ -201,8 +201,9 @@ class NyxArchive(BaseArchive):
             sim_cosmo = camb_cosmo.get_Nyx_cosmology(sim_params)
 
             # compute linear power parameters at each z (will call CAMB)
-            linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo,
-                    self.list_sim_redshifts,self.kp_Mpc)
+            linP_zs = fit_linP.get_linP_Mpc_zs(
+                sim_cosmo, self.list_sim_redshifts, self.kp_Mpc
+            )
 
             # loop over redshifts
             z_avail = list(ff[isim].keys())
@@ -212,11 +213,13 @@ class NyxArchive(BaseArchive):
                 if zmax:
                     if zval > zmax:
                         if self.verbose:
-                            print('do not read snapshot at',zval)
+                            print("do not read snapshot at", zval)
                         continue
 
                 # find redshift index to read linear power parameters
-                iz_linP = np.where(np.isclose(self.list_sim_redshifts, zval, 1e-10))[0][0]
+                iz_linP = np.where(
+                    np.isclose(self.list_sim_redshifts, zval, 1e-10)
+                )[0][0]
                 linP_iz = linP_zs[iz_linP]
                 # compute conversion from Mpc to km/s using cosmology
                 dkms_dMpc = camb_cosmo.dkms_dMpc(sim_cosmo, z=zval)
