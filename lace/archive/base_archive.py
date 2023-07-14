@@ -256,11 +256,13 @@ class BaseArchive(object):
             if drop_sim not in self.list_sim_cube:
                 msg = "Invalid drop_sim value. Available options:"
                 raise ExceptionList(msg, self.list_sim_cube)
-            
+
         if drop_z is not None:
             if drop_z not in self.list_sim_redshifts:
                 msg = "Invalid drop_z value. Available options:"
-                raise ExceptionList(msg, np.array(self.list_sim_redshifts).astype('str'))
+                raise ExceptionList(
+                    msg, np.array(self.list_sim_redshifts).astype("str")
+                )
 
         if isinstance(z_max, (int, float, type(None))) == False:
             raise TypeError("z_max must be a number or None")
@@ -282,7 +284,6 @@ class BaseArchive(object):
                 list_keys = list(arch_av[ii].keys())
 
                 if drop_sim is None or drop_z is None:
-                
                     mask = (
                         (arch_av[ii]["sim_label"] in self.list_sim_cube)
                         & (arch_av[ii]["sim_label"] != drop_sim)
@@ -306,8 +307,7 @@ class BaseArchive(object):
                         )
                         & (arch_av[ii]["z"] <= z_max)
                     )
-                
-                
+
                 if mask:
                     if all(x in list_keys for x in emu_params):
                         if any(
@@ -421,7 +421,7 @@ class BaseArchive(object):
     def plot_samples(self, param_1, param_2):
         """For parameter pair (param1,param2), plot each point in the archive"""
 
-        emu_data = self.get_training_data(emu_params=[param_1,param_2])
+        emu_data = self.get_training_data(emu_params=[param_1, param_2])
         Nemu = len(emu_data)
 
         # figure out values of param_1,param_2 in archive
@@ -444,7 +444,9 @@ class BaseArchive(object):
         """For parameter trio (param1,param2,param3), plot each point in the archive"""
         from mpl_toolkits import mplot3d
 
-        emu_data = self.get_training_data(emu_params=[param_1,param_2,param_3])
+        emu_data = self.get_training_data(
+            emu_params=[param_1, param_2, param_3]
+        )
         Nemu = len(emu_data)
 
         # figure out values of param_1,param_2 in archive
@@ -465,3 +467,45 @@ class BaseArchive(object):
         plt.show()
 
         return
+
+    def print_entry(self, entry, fiducial_keys=True):
+        """
+        Print basic information about a particular entry in the archive.
+
+        Parameters:
+            self (object): The object instance.
+            entry (int): The index of the entry to print.
+            fiducial_keys (bool or list, optional): If True, the default fiducial keys will be used.
+                If a list is provided, it will be used as the keys. Defaults to True.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the provided entry index is out of range.
+
+        """
+
+        if fiducial_keys is True:
+            keys = [
+                "z",
+                "Delta2_p",
+                "n_p",
+                "alpha_p",
+                "f_p",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "kF_Mpc",
+            ]
+        else:
+            keys = fiducial_keys
+
+        if entry >= len(self.data):
+            raise ValueError("{} entry does not exist in archive".format(entry))
+
+        data = self.data[entry]
+        info = "entry = {}".format(entry)
+        for key in keys:
+            info += ", {} = {:.4f}".format(key, data[key])
+        print(info)
