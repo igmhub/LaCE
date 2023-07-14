@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import product
-from lace.archive.exceptions import ExceptionList
-from lace.emulator.utils import split_string
+
+from lace.utils.exceptions import ExceptionList
+from lace.utils.utils import split_string
 
 
 class BaseArchive(object):
