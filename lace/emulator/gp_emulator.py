@@ -177,12 +177,12 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         return coeffs
 
-    def _rescale_params(self, params, paramLimits):
+    def _rescale_params(self, params):
         """Rescale a set of parameters to have a unit volume"""
 
         for aa in range(len(params)):
-            params[aa] = (params[aa] - paramLimits[aa, 0]) / (
-                paramLimits[aa, 1] - paramLimits[aa, 0]
+            params[aa] = (params[aa] - self.param_limits[aa, 0]) / (
+                self.param_limits[aa, 1] - self.param_limits[aa, 0]
             )
 
         return params
@@ -233,13 +233,11 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.X_param_grid, self.Ypoints = self._buildTrainingSets()
 
         ## Get parameter limits for rescaling
-        self.paramLimits = self._get_param_limits(self.X_param_grid)
+        self.param_limits = self._get_param_limits(self.X_param_grid)
 
         ## Rescaling to unit volume
         for cc in range(len(self.training_data)):
-            self.X_param_grid[cc] = self._rescale_params(
-                self.X_param_grid[cc], self.paramLimits
-            )
+            self.X_param_grid[cc] = self._rescale_params(self.X_param_grid[cc])
         if self.verbose:
             print("Rescaled params to unity volume")
 
@@ -279,12 +277,12 @@ class GPEmulator(base_emulator.BaseEmulator):
     def _get_param_limits(self, paramGrid):
         """Get the min and max values for each parameter"""
 
-        paramLimits = np.empty((np.shape(paramGrid)[1], 2))
-        for aa in range(len(paramLimits)):
-            paramLimits[aa, 0] = min(paramGrid[:, aa])
-            paramLimits[aa, 1] = max(paramGrid[:, aa])
+        param_limits = np.empty((np.shape(paramGrid)[1], 2))
+        for aa in range(len(param_limits)):
+            param_limits[aa, 0] = min(paramGrid[:, aa])
+            param_limits[aa, 1] = max(paramGrid[:, aa])
 
-        return paramLimits
+        return param_limits
 
     def train(self):
         """Train the GP emulator"""
@@ -312,7 +310,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """Print the limits for each parameter"""
 
         for aa in range(len(self.emu_params)):
-            print(self.emu_params[aa], self.paramLimits[aa])
+            print(self.emu_params[aa], self.param_limits[aa])
 
     def return_unit_call(self, model):
         """For a given model in dictionary format, return an
@@ -323,8 +321,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         for aa, par in enumerate(self.emu_params):
             ## Rescale input parameters
             param.append(model[par])
-            param[aa] = (param[aa] - self.paramLimits[aa, 0]) / (
-                self.paramLimits[aa, 1] - self.paramLimits[aa, 0]
+            param[aa] = (param[aa] - self.param_limits[aa, 0]) / (
+                self.param_limits[aa, 1] - self.param_limits[aa, 0]
             )
         return param
 
@@ -342,8 +340,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         for aa, par in enumerate(self.emu_params):
             ## Rescale input parameters
             param.append(model[par])
-            param[aa] = (param[aa] - self.paramLimits[aa, 0]) / (
-                self.paramLimits[aa, 1] - self.paramLimits[aa, 0]
+            param[aa] = (param[aa] - self.param_limits[aa, 0]) / (
+                self.param_limits[aa, 1] - self.param_limits[aa, 0]
             )
 
         # emu_per_k and reduce_var_* options only valid for k_bin emulator
@@ -443,8 +441,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         for aa, par in enumerate(self.emu_params):
             ## Rescale input parameters
             param.append(model[par])
-            param[aa] = (param[aa] - self.paramLimits[aa, 0]) / (
-                self.paramLimits[aa, 1] - self.paramLimits[aa, 0]
+            param[aa] = (param[aa] - self.param_limits[aa, 0]) / (
+                self.param_limits[aa, 1] - self.param_limits[aa, 0]
             )
 
         ## Find the closest training point, and find the Euclidean
