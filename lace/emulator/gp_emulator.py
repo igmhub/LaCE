@@ -147,7 +147,6 @@ class GPEmulator(base_emulator.BaseEmulator):
                     4,
                     "polyfit",
                 )
-
         else:
             print("Selected custom emulator")
 
