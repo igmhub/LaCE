@@ -203,6 +203,10 @@ class NyxArchive(BaseArchive):
             linP_zs = fit_linP.get_linP_Mpc_zs(
                 sim_cosmo, self.list_sim_redshifts, self.kp_Mpc
             )
+            # compute conversion from Mpc to km/s using cosmology
+            dkms_dMpc_zs = camb_cosmo.dkms_dMpc(
+                sim_cosmo, z=self.list_sim_redshifts
+            )
 
             # loop over redshifts
             z_avail = list(ff[isim].keys())
@@ -216,12 +220,11 @@ class NyxArchive(BaseArchive):
                         continue
 
                 # find redshift index to read linear power parameters
-                iz_linP = np.where(
+                ind_z = np.where(
                     np.isclose(self.list_sim_redshifts, zval, 1e-10)
                 )[0][0]
-                linP_iz = linP_zs[iz_linP]
-                # compute conversion from Mpc to km/s using cosmology
-                dkms_dMpc = camb_cosmo.dkms_dMpc(sim_cosmo, z=zval)
+                linP_iz = linP_zs[ind_z]
+                dkms_dMpc_iz = dkms_dMpc_zs[ind_z]
 
                 scalings_avail = list(ff[isim][iz].keys())
                 # loop over scalings
@@ -258,8 +261,7 @@ class NyxArchive(BaseArchive):
 
                         # compute thermal broadening in Mpc
                         sigma_T_kms = thermal_broadening_kms(_arch["T0"])
-                        sigma_T_Mpc = sigma_T_kms / dkms_dMpc
-                        _arch["sigT_Mpc"] = sigma_T_Mpc
+                        _arch["sigT_Mpc"] = sigma_T_kms / dkms_dMpc_iz
 
                         # store pressure parameters
                         # not available in bar_ic_grid_3 and wdm_3.5kev_grid_1
