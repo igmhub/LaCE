@@ -73,6 +73,9 @@ class GadgetArchive(BaseArchive):
         # list all simulations
         self.list_sim = self.list_sim_cube + self.list_sim_test
         ## done set simulation list
+        
+        #list all redshifts
+        self.list_sim_redshifts = np.arange(2,4.6,0.25)
 
         # get relevant flags for post-processing
         self._set_info_postproc(postproc)
