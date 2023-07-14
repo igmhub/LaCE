@@ -2,11 +2,10 @@ import numpy as np
 import os
 import h5py
 
-from lace.cosmo import camb_cosmo
-from lace.cosmo import fit_linP
+from lace.cosmo import camb_cosmo, fit_linP
 from lace.cosmo.thermal_broadening import thermal_broadening_kms
-from lace.utils.useful import split_string
 from lace.archive.base_archive import BaseArchive
+from lace.utils.misc import split_string
 
 
 def get_attrs(h5py_data):
