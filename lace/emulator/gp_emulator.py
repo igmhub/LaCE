@@ -126,7 +126,7 @@ class GPEmulator(base_emulator.BaseEmulator):
 
             if emulator_label == "Pedersen23":
                 print(
-                    r"Gaussian Process emulator predicting the P1D,"
+                    r"Gaussian Process emulator predicting the P1D, "
                     + "fitting coefficients to a 4th degree polynomial. It "
                     + "goes to scales of 3Mpc^{-1} and z<=4.5. The parameters"
                     + " passed to the emulator will be overwritten to match "
