@@ -468,7 +468,7 @@ class BaseArchive(object):
 
         return
 
-    def print_entry(self, entry, fiducial_keys=True):
+    def print_entry(self, entry):
         """
         Print basic information about a particular entry in the archive.
 
@@ -486,26 +486,12 @@ class BaseArchive(object):
 
         """
 
-        if fiducial_keys is True:
-            keys = [
-                "z",
-                "Delta2_p",
-                "n_p",
-                "alpha_p",
-                "f_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-            ]
-        else:
-            keys = fiducial_keys
-
         if entry >= len(self.data):
             raise ValueError("{} entry does not exist in archive".format(entry))
 
-        data = self.data[entry]
+        list_print = ["z"] + self.emu_params
+
         info = "entry = {}".format(entry)
-        for key in keys:
-            info += ", {} = {:.4f}".format(key, data[key])
+        for key in self.emu_params:
+            info += ", {} = {:.4f}".format(key, self.data[entry][key])
         print(info)
