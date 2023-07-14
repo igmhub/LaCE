@@ -126,9 +126,9 @@ class GPEmulator(base_emulator.BaseEmulator):
 
             if emulator_label == "Pedersen23":
                 print(
-                    r"Gaussian Process emulator predicting the optimal P1D"
-                    + "fitting coefficients to a 5th degree polynomial. It "
-                    + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters"
+                    r"Gaussian Process emulator predicting the P1D,"
+                    + "fitting coefficients to a 4th degree polynomial. It "
+                    + "goes to scales of 3Mpc^{-1} and z<=4.5. The parameters"
                     + " passed to the emulator will be overwritten to match "
                     + "these ones"
                 )
@@ -143,7 +143,7 @@ class GPEmulator(base_emulator.BaseEmulator):
                 ]
                 self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = (
                     4.5,
-                    4,
+                    3,
                     4,
                     "polyfit",
                 )
