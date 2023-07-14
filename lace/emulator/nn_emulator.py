@@ -18,7 +18,6 @@ from lace.cosmo import camb_cosmo
 from lace.cosmo import fit_linP
 from lace.archive import gadget_archive
 from lace.archive import nyx_archive
-from lace.emulator import poly_p1d
 from lace.emulator import utils
 from lace.emulator import nn_architecture
 from lace.emulator import base_emulator
