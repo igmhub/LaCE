@@ -37,7 +37,8 @@ class NyxArchive(BaseArchive):
         self.list_sim_test = ["nyx_central", "nyx_seed", "nyx_wdm"]
         # list of hypercube simulations
         self.list_sim_cube = []
-        for ii in range(15):
+        # simulation 14 was identified as problematic by the Nyx team
+        for ii in range(14):
             self.list_sim_cube.append("nyx_" + str(ii))
         # list all simulations
         self.list_sim = self.list_sim_cube + self.list_sim_test
@@ -191,13 +192,17 @@ class NyxArchive(BaseArchive):
             if self.verbose:
                 print('read Nyx sim',isim)
 
+            # setup CAMB object from sim_params
             sim_params = get_attrs(ff[isim])
             if isim == "fiducial":
                 sim_params["A_s"] = 2.10e-9
                 sim_params["n_s"] = 0.966
                 sim_params["h"] = sim_params["H_0"] / 100
-            # setup CAMB object from sim_params
             sim_cosmo = camb_cosmo.get_Nyx_cosmology(sim_params)
+
+            # compute linear power parameters at each z (will call CAMB)
+            linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo,
+                    self.list_sim_redshifts,self.kp_Mpc)
 
             # loop over redshifts
             z_avail = list(ff[isim].keys())
@@ -210,13 +215,11 @@ class NyxArchive(BaseArchive):
                             print('do not read snapshot at',zval)
                         continue
 
-                # compute linear power parameters at each z (in Mpc units)
-                linP_zs = fit_linP.get_linP_Mpc_zs(
-                    sim_cosmo, np.atleast_1d(zval), self.kp_Mpc
-                )[0]
-                dkms_dMpc = camb_cosmo.dkms_dMpc(
-                    sim_cosmo, z=np.atleast_1d(zval)
-                )[0]
+                # find redshift index to read linear power parameters
+                iz_linP = np.where(np.isclose(self.list_sim_redshifts, zval, 1e-10))[0][0]
+                linP_iz = linP_zs[iz_linP]
+                # compute conversion from Mpc to km/s using cosmology
+                dkms_dMpc = camb_cosmo.dkms_dMpc(sim_cosmo, z=zval)
 
                 scalings_avail = list(ff[isim][iz].keys())
                 # loop over scalings
@@ -234,8 +237,8 @@ class NyxArchive(BaseArchive):
                         _arch["cosmo_pars"] = sim_params
 
                         # set linp params
-                        for key in linP_zs.keys():
-                            _arch[key] = linP_zs[key]
+                        for key in linP_iz.keys():
+                            _arch[key] = linP_iz[key]
                         _arch["z"] = zval
 
                         _arch["sim_label"] = self.sim_conv[isim]
