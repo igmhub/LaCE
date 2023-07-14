@@ -53,6 +53,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         ndeg=5,
         nepochs=100,
         step_size=75,
+        drop_sim=None,
+        drop_z=None,
         train=True,
         initial_weights=True,
         save_path=None,
@@ -71,6 +73,9 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.models_dir = os.path.join(lace_path, "lace/emulator/")
         # CPU vs GPU
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # training data settings
+        self.drop_sim=drop_sim
+        self.drop_z=drop_z
  
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23","Nyx23"]
@@ -137,7 +142,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         if archive!=None and training_set==None:
             print("Use custom archive provided by the user")
             self.archive = archive
-            self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+            self.training_data = self.archive.get_training_data(emu_params=self.emu_params, drop_sim=self.drop_sim, drop_z=self.drop_z)
+            print(f'Training samples in archive : {len(self.training_data)}')
 
         elif (archive==None)&(training_set==None):
             raise(ValueError('Archive or training_set must be provided'))
@@ -173,7 +179,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 os.path.join(self.models_dir, self.model_path), map_location="cpu"
             )
             self.nn = nn_architecture.MDNemulator_polyfit(
-                nhidden=5, ndeg=self.ndeg
+                nhidden=5, ndeg=self.ndeg, ninput=len(self.emu_params)
             )
             self.nn.load_state_dict(pretrained_weights['model'])
             self.nn.to(self.device)
@@ -262,26 +268,20 @@ class NNEmulator(base_emulator.BaseEmulator):
             Nk (int): Number of k values.
             k_Mpc_train (tensor): k values in the k training range
         """
-
-        # AFR: not sure exactly what we are doing here. 
-        # It looks like some code to set self.k_Mpc and self.Nz
-
-        # AFR: this could be dangerous if not all sims have the same Nz (Nyx)
-        sim_0 = copy.deepcopy(self.archive)
-        sim_0_training_data = sim_0.get_training_data(emu_params=self.emu_params)
-        sim_0_training_data = [d for d in sim_0_training_data if d["sim_label"] == "mpg_0"]
-        sim_zs = [data["z"] for data in sim_0_training_data]
-        Nz = len(sim_zs)
-        k_Mpc = sim_0.data[0]["k_Mpc"]
-        self.k_Mpc = k_Mpc
-
-        k_mask = (k_Mpc < self.kmax_Mpc) & (k_Mpc > 0)
-        k_Mpc_train = k_Mpc[k_mask]
+        
+        k_mask = [
+            (self.training_data[i]["k_Mpc"] < self.kmax_Mpc) & (self.training_data[i]["k_Mpc"] > 0)
+            for i in range(len(self.training_data))
+        ]
+        
+        self.k_mask= k_mask
+        
+        k_Mpc_train = self.training_data[0]["k_Mpc"][k_mask[0]]
+        k_Mpc_train=torch.Tensor(k_Mpc_train)
         Nk = len(k_Mpc_train)
-        k_Mpc_train = torch.Tensor(k_Mpc_train)
-
-        self.Nz = Nz
         self.Nk = Nk
+        
+        
 
         data = [
             {
@@ -291,6 +291,8 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(self.training_data))
         ]
+        
+        
         data = self._sort_dict(
             data, self.emu_params
         )  # sort the data by emulator parameters
@@ -304,6 +306,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             ),
             1,
         )
+        
         self.paramLims = paramlims
 
         training_label = [
@@ -314,8 +317,9 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(self.training_data))
         ]
+                        
         training_label = [
-            list(training_label[i].values())[0][1 : (self.Nk + 1)].tolist()
+            training_label[i]['p1d_Mpc'][k_mask[i]].tolist()
             for i in range(len(self.training_data))
         ]
         training_label = np.array(training_label)
@@ -366,7 +370,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             for i in range(len(self.training_data))
         ]
         training_label = [
-            list(training_label[i].values())[0][1 : (self.Nk + 1)].tolist()
+            list(training_label[i].values())[0][self.k_mask[i]].tolist()
             for i in range(len(self.training_data))
         ]
 
@@ -395,7 +399,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         self.log_kMpc = log_kMpc_train
 
-        self.nn = nn_architecture.MDNemulator_polyfit(nhidden=5, ndeg=self.ndeg)
+        self.nn = nn_architecture.MDNemulator_polyfit(nhidden=5, ndeg=self.ndeg, ninput=len(self.emu_params))
         if self.initial_weights == True:
             initial_weights_params = torch.load(self.initial_weights_path, map_location="cpu")
             self.nn.load_state_dict(initial_weights_params)
