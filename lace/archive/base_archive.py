@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from itertools import product
 
 from lace.utils.exceptions import ExceptionList
-from lace.utils.utils import split_string
+from lace.utils.misc import split_string
 
 
 class BaseArchive(object):

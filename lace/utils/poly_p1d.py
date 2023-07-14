@@ -47,3 +47,11 @@ class PolyP1D(object):
         k = copy.copy(k_Mpc)
         k[k_Mpc < self.kmin_Mpc] = self.kmin_Mpc
         return np.exp(self.lnP(np.log(k)))
+
+
+def fit_polynomial(xmin, xmax, x, y, deg=2):
+    """Fit a polynomial on the log of the function, within range"""
+    x_fit = (x > xmin) & (x < xmax)
+    # We could make these less correlated by better choice of parameters
+    poly = np.polyfit(np.log(x[x_fit]), np.log(y[x_fit]), deg=deg)
+    return np.poly1d(poly)

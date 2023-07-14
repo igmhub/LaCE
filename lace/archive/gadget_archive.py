@@ -5,8 +5,7 @@ import os
 import json
 
 from lace.setup_simulations import read_genic, read_gadget
-from lace.cosmo import camb_cosmo
-from lace.cosmo import fit_linP
+from lace.cosmo import camb_cosmo, fit_linP
 from lace.archive.base_archive import BaseArchive
 from lace.utils.exceptions import ExceptionList
 
@@ -104,7 +103,7 @@ class GadgetArchive(BaseArchive):
 
         if postproc == "Pedersen21":
             # directory of the post-processing within LaCE
-            self.basedir = "/lace/emulator/sim_suites/Australia20/"
+            self.basedir = "/data/sim_suites/Australia20/"
             # number of simulation phases (fix-and-paired IC)
             self.n_phases = 2
             # number of simulation axes in the post-processing
@@ -116,7 +115,7 @@ class GadgetArchive(BaseArchive):
             # Cabayol23, as it reads these parameters from the Pedersen21 post-processing.
             # It was implemented this way because the code used to compute these values,
             # fake_spectra, changed between Pedersen21 and Cabayol23
-            self.basedir_params = "/lace/emulator/sim_suites/Australia20/"
+            self.basedir_params = "/data/sim_suites/Australia20/"
             self.p1d_label_params = self.p1d_label
             self.sk_label_params = "Ns500_wM0.05"
             # if files include P3D measurements
@@ -132,12 +131,12 @@ class GadgetArchive(BaseArchive):
             self.testing_ind_rescaling = 0
             self.testing_z_max = 10
         elif postproc == "Cabayol23":
-            self.basedir = "/lace/emulator/sim_suites/post_768/"
+            self.basedir = "/data/sim_suites/post_768/"
             self.n_phases = 2
             self.n_axes = 3
             self.p1d_label = "p1d_stau"
             self.sk_label = "Ns768_wM0.05"
-            self.basedir_params = "/lace/emulator/sim_suites/Australia20/"
+            self.basedir_params = "/data/sim_suites/Australia20/"
             self.p1d_label_params = "p1d"
             self.sk_label_params = "Ns500_wM0.05"
             self.also_P3D = True
@@ -149,12 +148,12 @@ class GadgetArchive(BaseArchive):
             self.testing_ind_rescaling = 0
             self.testing_z_max = 10
         elif postproc == "768_768":
-            self.basedir = "/lace/emulator/sim_suites/post_768/"
+            self.basedir = "/data/sim_suites/post_768/"
             self.n_phases = 2
             self.n_axes = 3
             self.p1d_label = "p1d_stau"
             self.sk_label = "Ns768_wM0.05"
-            self.basedir_params = "/lace/emulator/sim_suites/post_768/"
+            self.basedir_params = "/data/sim_suites/post_768/"
             self.p1d_label_params = self.p1d_label
             self.sk_label_params = "Ns768_wM0.05"
             self.also_P3D = True
