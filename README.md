@@ -126,7 +126,10 @@ The current version of the emulator, relased in this repo, does not emulate `alp
 `kF_Mpc` is the filtering length (or pressure smoothing scale) in inverse comoving units
 
 
-## Saving and loading emulator hyperparameters
+#### Tutorials:
 
-The default operation of the emulator is currently to optimise a new set of hyperparameters on whichever training set it is initialised with. However, one can also run with the `train=False` flag, and use GPEmulator.load_default(). This will load a standardised set of hyperparameters (along with the appropriate parameter rescalings for the X training data) that are optimised on the entire suite.
+In the `Notebooks` folder, there are several tutorials one can run to learn how to use
+the emulators and archives. The `Durham2023_LaCETutorial` is the more complete one that
+shows how to get the different archives and run them with the available emulator options.
+
 
