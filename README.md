@@ -16,15 +16,35 @@ The following modules are required:
 
 `numpy`
 
+`pandas`
+
 `scipy`
+
+`scikit_learn`
+
+`copy`
 
 `matplotlib`
 
+`os`
+
+`sys`
+
+`time`
+
+`json`
+
+`pickle`
+
 `configobj`
+
+`itertools`
 
 `CAMB` version 1.1.3 or later https://github.com/cmbant/CAMB (only works with Python 3.6 or later as of 14/01/2021)
 
-`GPy` (only works with Python 3.8 or lower, not compatible with 3.9 as of 14/01/2021)
+`GPy`
+
+`pytorch`
 
 `classylss` (not at this point, I think)
 
@@ -36,11 +56,15 @@ On a fresh terminal:
 
 `module load python`
 
-`conda create -n lace_env python=3.8 pip`
+`conda create -n lace_env pip`
 
-`source activate lace_env`
+`conda activate lace_env`
 
-`pip install gpy configobj matplotlib`
+`pip install numpy==1.24.4`
+
+`pip install gpy pandas configobj matplotlib hdf5 scikit_learn`
+
+`pip install torch`
 
 `pip install camb`
 
@@ -64,6 +88,16 @@ If you want to use notebooks via JupyterHub, you'll also need:
 
 `python -m ipykernel install --user --name lace_env --display-name lace_env`
 
+You need to add the Nyx path as an enviroment variable. Also, if you
+want to use the Nyx archive, the path also needs to be added as an environment variable.
+This is done writting in the kernel.json file:
+
+ "env": {
+  "LACE_REPO":"/path_to_lave",
+  "NYX_PATH":"path_to_Nyx"
+ }
+ 
+ 
 
 ## Emulator parameters:
 
