@@ -10,7 +10,6 @@ Set an environment variable `export LACE_REPO=/path/to/repo/LaCE`. This will be 
 in something like a `.bashrc` so it is always defined.
 
 ### Dependencies:
-Python version 3.6 or later is necessary due to `CAMB` version dependencies.
 
 The following modules are required:
 
@@ -93,7 +92,7 @@ want to use the Nyx archive, the path also needs to be added as an environment v
 This is done writting in the kernel.json file:
 
  "env": {
-  "LACE_REPO":"/path_to_lave",
+  "LACE_REPO":"/path_to_lace",
   "NYX_PATH":"path_to_Nyx"
  }
  
