@@ -256,11 +256,13 @@ class BaseArchive(object):
             if drop_sim not in self.list_sim_cube:
                 msg = "Invalid drop_sim value. Available options:"
                 raise ExceptionList(msg, self.list_sim_cube)
-            
+
         if drop_z is not None:
             if drop_z not in self.list_sim_redshifts:
                 msg = "Invalid drop_z value. Available options:"
-                raise ExceptionList(msg, np.array(self.list_sim_redshifts).astype('str'))
+                raise ExceptionList(
+                    msg, np.array(self.list_sim_redshifts).astype("str")
+                )
 
         if isinstance(z_max, (int, float, type(None))) == False:
             raise TypeError("z_max must be a number or None")
@@ -282,7 +284,6 @@ class BaseArchive(object):
                 list_keys = list(arch_av[ii].keys())
 
                 if drop_sim is None or drop_z is None:
-                
                     mask = (
                         (arch_av[ii]["sim_label"] in self.list_sim_cube)
                         & (arch_av[ii]["sim_label"] != drop_sim)
@@ -306,8 +307,7 @@ class BaseArchive(object):
                         )
                         & (arch_av[ii]["z"] <= z_max)
                     )
-                
-                
+
                 if mask:
                     if all(x in list_keys for x in emu_params):
                         if any(
@@ -398,7 +398,6 @@ class BaseArchive(object):
                 if emu_params is None:
                     testing_data.append(arch_av[ii])
                 elif all(x in list_keys for x in emu_params):
-                    testing_data.append(arch_av[ii])
                     if any(np.isnan(arch_av[ii][x]) for x in emu_params) | any(
                         np.any(np.isnan(arch_av[ii][x])) for x in key_power
                     ):
@@ -421,7 +420,7 @@ class BaseArchive(object):
     def plot_samples(self, param_1, param_2):
         """For parameter pair (param1,param2), plot each point in the archive"""
 
-        emu_data = self.get_training_data(emu_params=[param_1,param_2])
+        emu_data = self.get_training_data(emu_params=[param_1, param_2])
         Nemu = len(emu_data)
 
         # figure out values of param_1,param_2 in archive
@@ -444,7 +443,9 @@ class BaseArchive(object):
         """For parameter trio (param1,param2,param3), plot each point in the archive"""
         from mpl_toolkits import mplot3d
 
-        emu_data = self.get_training_data(emu_params=[param_1,param_2,param_3])
+        emu_data = self.get_training_data(
+            emu_params=[param_1, param_2, param_3]
+        )
         Nemu = len(emu_data)
 
         # figure out values of param_1,param_2 in archive
