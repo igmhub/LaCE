@@ -23,10 +23,10 @@ class GPEmulator(base_emulator.BaseEmulator):
         archive (class): Data archive used for training the emulator.
             Required when using a custom emulator.
         training_set: Specific training set.  Options are
-            'Perdersen21', 'Cabayol23.
+            'Perdersen21' and 'Cabayol23'.
         emu_params (list): A list of emulator parameters.
         emulator_label (str): Specific emulator label. Options are
-            'Pedersen21' and 'Pedersen23'.
+            'Pedersen21', 'Pedersen23' and 'Cabayol23'.
         kmax_Mpc (float): The maximum k in Mpc^-1 to use for training. Default is 3.5.
 
     """
@@ -84,7 +84,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         elif (archive==None)&(training_set==None):
             raise(ValueError('Archive or training_set must be provided'))
 
-        emulator_label_all = ["Pedersen21", "Pedersen23"]
+        emulator_label_all = ["Pedersen21", "Pedersen23", "Cabayol23"]
         if emulator_label is not None:  
             try:
                 if emulator_label in emulator_label_all:
@@ -123,19 +123,44 @@ class GPEmulator(base_emulator.BaseEmulator):
             
                 self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
                 self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = 4.5, 3, 4, "polyfit"
-                                
-                
+
+            if emulator_label == "Cabayol23":
+
+                print(
+                    r"Gaussian Process emulator predicting the P1D, "
+                    + "fitting coefficients to a 5th degree polynomial. It "
+                    + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters"
+                    + " passed to the emulator will be overwritten to match "
+                    + "these ones"
+                )
+
+                self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
+                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = 4.5, 4, 5, "polyfit"
+
         else:
             print("Selected custom emulator")     
 
-        ## If none, take all parameters
+        # If none, take all parameters
         if emu_params == None:
             self.emu_params = ["mF", "sigT_Mpc", "gamma", "kF_Mpc", "Delta2_p", "n_p"]
         else:
             self.emu_params = emu_params 
+
+        # GPs should probably avoid rescalings (low performance with large N)
+        average = "both"
+        val_scaling = 1
+        if self.archive.training_average != "both":
+            print('WARNING: Enforce average=both in training of GP emulator')
+        if self.archive.training_val_scaling != 1:
+            print('WARNING: Enforce val_scalinge=1 in training of GP emulator')
             
         # keep track of training data to be used in emulator
-        self.training_data = self.archive.get_training_data(emu_params=self.emu_params, drop_sim = self.drop_sim)
+        self.training_data = self.archive.get_training_data(
+                emu_params = self.emu_params,
+                drop_sim = self.drop_sim,
+                average = average,
+                val_scaling = val_scaling
+        )
 
         ## Find max k bin
         self.k_bin = (

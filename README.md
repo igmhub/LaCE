@@ -10,21 +10,40 @@ Set an environment variable `export LACE_REPO=/path/to/repo/LaCE`. This will be 
 in something like a `.bashrc` so it is always defined.
 
 ### Dependencies:
-Python version 3.6 or later is necessary due to `CAMB` version dependencies.
 
 The following modules are required:
 
 `numpy`
 
+`pandas`
+
 `scipy`
+
+`scikit_learn`
+
+`copy`
 
 `matplotlib`
 
+`os`
+
+`sys`
+
+`time`
+
+`json`
+
+`pickle`
+
 `configobj`
+
+`itertools`
 
 `CAMB` version 1.1.3 or later https://github.com/cmbant/CAMB (only works with Python 3.6 or later as of 14/01/2021)
 
-`GPy` (only works with Python 3.8 or lower, not compatible with 3.9 as of 14/01/2021)
+`GPy`
+
+`pytorch`
 
 `classylss` (not at this point, I think)
 
@@ -36,11 +55,15 @@ On a fresh terminal:
 
 `module load python`
 
-`conda create -n lace_env python=3.8 pip`
+`conda create -n lace_env pip`
 
-`source activate lace_env`
+`conda activate lace_env`
 
-`pip install gpy configobj matplotlib`
+`pip install numpy==1.24.4`
+
+`pip install gpy pandas configobj matplotlib hdf5 scikit_learn`
+
+`pip install torch`
 
 `pip install camb`
 
@@ -64,6 +87,16 @@ If you want to use notebooks via JupyterHub, you'll also need:
 
 `python -m ipykernel install --user --name lace_env --display-name lace_env`
 
+You need to add the Nyx path as an enviroment variable. Also, if you
+want to use the Nyx archive, the path also needs to be added as an environment variable.
+This is done writting in the kernel.json file:
+
+ "env": {
+  "LACE_REPO":"/path_to_lace",
+  "NYX_PATH":"path_to_Nyx"
+ }
+ 
+ 
 
 ## Emulator parameters:
 
@@ -92,7 +125,10 @@ The current version of the emulator, relased in this repo, does not emulate `alp
 `kF_Mpc` is the filtering length (or pressure smoothing scale) in inverse comoving units
 
 
-## Saving and loading emulator hyperparameters
+#### Tutorials:
 
-The default operation of the emulator is currently to optimise a new set of hyperparameters on whichever training set it is initialised with. However, one can also run with the `train=False` flag, and use GPEmulator.load_default(). This will load a standardised set of hyperparameters (along with the appropriate parameter rescalings for the X training data) that are optimised on the entire suite.
+In the `Notebooks` folder, there are several tutorials one can run to learn how to use
+the emulators and archives. The `Durham2023_LaCETutorial` is the more complete one that
+shows how to get the different archives and run them with the available emulator options.
+
 
