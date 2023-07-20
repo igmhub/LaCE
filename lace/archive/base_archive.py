@@ -475,8 +475,6 @@ class BaseArchive(object):
         Parameters:
             self (object): The object instance.
             entry (int): The index of the entry to print.
-            fiducial_keys (bool or list, optional): If True, the default fiducial keys will be used.
-                If a list is provided, it will be used as the keys. Defaults to True.
 
         Returns:
             None
