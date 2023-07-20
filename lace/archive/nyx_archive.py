@@ -222,7 +222,7 @@ class NyxArchive(BaseArchive):
             )
             # compute conversion from Mpc to km/s using cosmology
             dkms_dMpc_zs = camb_cosmo.dkms_dMpc(
-                sim_cosmo, z=self.list_sim_redshifts
+                sim_cosmo, z=np.array(self.list_sim_redshifts)
             )
 
             # loop over redshifts
