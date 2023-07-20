@@ -44,6 +44,7 @@ class NyxArchive(BaseArchive):
         ## done set simulation list
 
         # list of available redshifts at Nyx (not all sims have them)
+<<<<<<< HEAD
         # self.list_sim_redshifts=np.append(np.arange(2.0,4.5,0.2),
         #        np.arange(4.6,5.5,0.4))
         self.list_sim_redshifts = [
@@ -64,6 +65,11 @@ class NyxArchive(BaseArchive):
             5,
             5.4,
         ]
+=======
+        #self.list_sim_redshifts=np.append(np.arange(2.0,4.5,0.2),
+        #        np.arange(4.6,5.5,0.4))
+        self.list_sim_redshifts=[2,2.2,2.4,2.6,2.8,3,3.2,3.4,3.6,3.8,4,4.2,4.4,4.6,5,5.4]
+>>>>>>> main
 
         # get relevant flags for post-processing
         self._set_info_sim()
