@@ -148,7 +148,6 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "polyfit",
                 )
             if emulator_label == "Cabayol23":
-
                 print(
                     r"Gaussian Process emulator predicting the P1D, "
                     + "fitting coefficients to a 5th degree polynomial. It "
@@ -157,8 +156,20 @@ class GPEmulator(base_emulator.BaseEmulator):
                     + "these ones"
                 )
 
-                self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
-                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = 4.5, 4, 5, "polyfit"
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = (
+                    4.5,
+                    4,
+                    5,
+                    "polyfit",
+                )
 
         else:
             print("Selected custom emulator")
@@ -175,21 +186,21 @@ class GPEmulator(base_emulator.BaseEmulator):
             ]
         else:
             self.emu_params = emu_params
-            
-         # GPs should probably avoid rescalings (low performance with large N)
+
+        # GPs should probably avoid rescalings (low performance with large N)
         average = "both"
         val_scaling = 1
         if self.archive.training_average != "both":
-            print('WARNING: Enforce average=both in training of GP emulator')
+            print("WARNING: Enforce average=both in training of GP emulator")
         if self.archive.training_val_scaling != 1:
-            print('WARNING: Enforce val_scalinge=1 in training of GP emulator')       
+            print("WARNING: Enforce val_scalinge=1 in training of GP emulator")
 
         # keep track of training data to be used in emulator
         self.training_data = self.archive.get_training_data(
-                emu_params = self.emu_params,
-                drop_sim = self.drop_sim,
-                average = average,
-                val_scaling = val_scaling
+            emu_params=self.emu_params,
+            drop_sim=self.drop_sim,
+            average=average,
+            val_scaling=val_scaling,
         )
 
         ## Find max k bin
