@@ -1,9 +1,7 @@
 import numpy as np
-import pandas as pd
 
 import torch
-from torch import nn, optim
-from torch.optim import lr_scheduler
+from torch import nn
 
 
 class MDNemulator_polyfit(torch.nn.Module):

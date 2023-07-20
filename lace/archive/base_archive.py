@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import product
-
-from lace.utils.exceptions import ExceptionList
-from lace.utils.misc import split_string
+from lace.archive.exceptions import ExceptionList
+from lace.emulator.utils import split_string
 
 
 class BaseArchive(object):
@@ -399,7 +398,6 @@ class BaseArchive(object):
                 if emu_params is None:
                     testing_data.append(arch_av[ii])
                 elif all(x in list_keys for x in emu_params):
-                    testing_data.append(arch_av[ii])
                     if any(np.isnan(arch_av[ii][x]) for x in emu_params) | any(
                         np.any(np.isnan(arch_av[ii][x])) for x in key_power
                     ):
@@ -468,31 +466,3 @@ class BaseArchive(object):
         plt.show()
 
         return
-
-    def print_entry(self, entry):
-        """
-        Print basic information about a particular entry in the archive.
-
-        Parameters:
-            self (object): The object instance.
-            entry (int): The index of the entry to print.
-            fiducial_keys (bool or list, optional): If True, the default fiducial keys will be used.
-                If a list is provided, it will be used as the keys. Defaults to True.
-
-        Returns:
-            None
-
-        Raises:
-            ValueError: If the provided entry index is out of range.
-
-        """
-
-        if entry >= len(self.data):
-            raise ValueError("{} entry does not exist in archive".format(entry))
-
-        list_print = ["z"] + self.emu_params
-
-        info = "entry = {}".format(entry)
-        for key in self.emu_params:
-            info += ", {} = {:.4f}".format(key, self.data[entry][key])
-        print(info)
