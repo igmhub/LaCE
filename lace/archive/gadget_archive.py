@@ -282,7 +282,7 @@ class GadgetArchive(BaseArchive):
                     else:
                         cosmo = emu_cosmo_all[ii]["cosmo"]
                         emu_cosmo = emu_cosmo_all[ii]["emu_cosmo"]
-                        break
+                    break
 
         if self.update_kp == True:
             _, sim_name_param, tag_param = self._sim2file_name(sim_label)
@@ -502,7 +502,7 @@ class GadgetArchive(BaseArchive):
             for ind_z in range(emu_cosmo["z"].shape[0]):
                 # set linear power parameters describing snapshot
                 snap_data = {}
-                snap_data["cosmo"] = cosmo
+                snap_data["cosmo_pars"] = cosmo
                 labels = ["z", "Delta2_p", "n_p", "alpha_p", "f_p"]
                 for lab in labels:
                     snap_data[lab] = emu_cosmo[lab][ind_z]

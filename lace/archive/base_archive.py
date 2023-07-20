@@ -162,6 +162,7 @@ class BaseArchive(object):
             dict_av["sim_label"] = sim_label
             dict_av["ind_rescaling"] = ind_rescaling
             dict_av["ind_snap"] = ind_snap
+            dict_av["cosmo_pars"] = self.data[ind_merge[0]]["cosmo_pars"]
 
             # list of available keys to merger
             key_list = self.data[ind_merge[0]].keys()
