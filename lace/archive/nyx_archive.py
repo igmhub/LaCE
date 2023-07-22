@@ -269,7 +269,8 @@ class NyxArchive(BaseArchive):
             if self.verbose:
                 print("read Nyx sim", isim)
 
-            # setup CAMB object from sim_params
+            # read cosmo information and linear power parameters
+            # (will only need CAMB if pivot point kp_Mpc is changed)
             cosmo, emu_cosmo = self._get_emu_cosmo(ff, self.sim_conv[isim])
 
             # loop over redshifts

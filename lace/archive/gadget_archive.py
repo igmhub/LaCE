@@ -293,7 +293,6 @@ class GadgetArchive(BaseArchive):
             cosmo = read_gadget.read_gadget_paramfile(gadget_fname)
             zs = read_gadget.snapshot_redshifts(cosmo)
 
-            # compute linP_zs parameters
             # setup cosmology from GenIC file
             genic_fname = pair_dir + "/sim_plus/paramfile.genic"
             sim_cosmo_dict = read_genic.camb_from_genic(genic_fname)
@@ -462,7 +461,7 @@ class GadgetArchive(BaseArchive):
 
         """
 
-        # All samples have an entry in this list. This entry is dictionary includes
+        # All samples have an entry in this list, a dictionary that includes
         # P1D and P3D measurements and info about simulations
         self.data = []
 
@@ -489,6 +488,7 @@ class GadgetArchive(BaseArchive):
                 ## If selected k_p is same as in the archive, do not recompute
                 self.update_kp = False
             else:
+                raise ValueError("are you sure, Andreu?")
                 # will trigger slow code, could check that kp has indeed changed
                 self.update_kp = True
         ## done
