@@ -488,7 +488,6 @@ class GadgetArchive(BaseArchive):
                 ## If selected k_p is same as in the archive, do not recompute
                 self.update_kp = False
             else:
-                raise ValueError("are you sure, Andreu?")
                 # will trigger slow code, could check that kp has indeed changed
                 self.update_kp = True
         ## done
