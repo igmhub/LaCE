@@ -23,7 +23,9 @@ class GadgetArchive(BaseArchive):
         _load_data(self, pick_sim, drop_sim, z_max, nsamples=None)
     """
 
-    def __init__(self, postproc="Cabayol23", kp_Mpc=None):
+    def __init__(
+        self, postproc="Cabayol23", kp_Mpc=None, update_kp=False, verbose=False
+    ):
         """
         Initialize the archivePND object.
 
@@ -47,10 +49,21 @@ class GadgetArchive(BaseArchive):
             msg = "Invalid postproc value. Available options:"
             raise ExceptionList(msg, postproc_all)
 
-        if isinstance(kp_Mpc, (int, float, type(None))) == False:
-            raise TypeError("kp_Mpc must be a number or None")
+        if isinstance(update_kp, bool) == False:
+            raise TypeError("update_kp must be boolean")
+        self.update_kp = update_kp
+
+        if self.update_kp:
+            if isinstance(kp_Mpc, (int, float)) == False:
+                raise TypeError("kp_Mpc must be a number if update_kp == True")
+        else:
+            if isinstance(kp_Mpc, (int, float, type(None))) == False:
+                raise TypeError("kp_Mpc must be a number or None")
         self.kp_Mpc = kp_Mpc
 
+        if isinstance(verbose, bool) == False:
+            raise TypeError("verbose must be boolean")
+        self.verbose = verbose
         ## done check input
 
         ## sets list simulations available for this suite
@@ -271,16 +284,28 @@ class GadgetArchive(BaseArchive):
 
         # read zs values and compute/read linP_zs
         if self.update_kp == False:
-            emu_cosmo_all = np.load(
-                self.fulldir + "mpg_emu_cosmo.npy", allow_pickle=True
-            )
-            for ii in range(len(emu_cosmo_all)):
-                if emu_cosmo_all[ii]["sim"] == sim_label:
-                    if emu_cosmo_all[ii]["emu_cosmo"]["kp_Mpc"] != self.kp_Mpc:
+            # open file with precomputed values
+            try:
+                file_cosmo = np.load(
+                    self.fulldir + "mpg_emu_cosmo.npy", allow_pickle=True
+                )
+            except:
+                raise IOError("The file " + file_cosmo + " does not exist")
+
+            for ii in range(len(file_cosmo)):
+                if file_cosmo[ii]["sim_label"] == sim_label:
+                    # if kp_Mpc not defined, use precomputed value
+                    if self.kp_Mpc is None:
+                        self.kp_Mpc = file_cosmo[ii]["linP_params"]["kp_Mpc"]
+
+                    # if kp_Mpc different from precomputed value, compute
+                    if self.kp_Mpc != file_cosmo[ii]["linP_params"]["kp_Mpc"]:
+                        if self.verbose:
+                            print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
                         self.update_kp = True
                     else:
-                        cosmo = emu_cosmo_all[ii]["cosmo"]
-                        emu_cosmo = emu_cosmo_all[ii]["emu_cosmo"]
+                        cosmo_params = file_cosmo[ii]["cosmo_params"]
+                        linP_params = file_cosmo[ii]["linP_params"]
                     break
 
         if self.update_kp == True:
@@ -292,28 +317,35 @@ class GadgetArchive(BaseArchive):
 
             # read gadget file
             gadget_fname = pair_dir + "/sim_plus/paramfile.gadget"
-            cosmo = read_gadget.read_gadget_paramfile(gadget_fname)
-            zs = read_gadget.snapshot_redshifts(cosmo)
+            gadget_cosmo = read_gadget.read_gadget_paramfile(gadget_fname)
+            zs = read_gadget.snapshot_redshifts(gadget_cosmo)
 
             # setup cosmology from GenIC file
             genic_fname = pair_dir + "/sim_plus/paramfile.genic"
-            sim_cosmo_dict = read_genic.camb_from_genic(genic_fname)
+            cosmo_params = read_genic.camb_from_genic(genic_fname)
 
             # setup CAMB object
-            sim_cosmo = camb_cosmo.get_cosmology_from_dictionary(sim_cosmo_dict)
+            sim_cosmo = camb_cosmo.get_cosmology_from_dictionary(cosmo_params)
 
             # compute linear power parameters at each z (in Mpc units)
             linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
-            linP_zs = list(linP_zs)
+            # compute conversion from Mpc to km/s using cosmology
+            dkms_dMpc_zs = camb_cosmo.dkms_dMpc(sim_cosmo, z=np.array(zs))
 
-            labels = ["z", "Delta2_p", "n_p", "alpha_p", "f_p"]
-            emu_cosmo = {}
+            linP_params = {}
+            linP_params["kp_Mpc"] = self.kp_Mpc
+            labels = ["z", "dkms_dMpc", "Delta2_p", "n_p", "alpha_p", "f_p"]
             for lab in labels:
-                emu_cosmo[lab] = np.zeros(zs.shape[0])
+                linP_params[lab] = np.zeros(zs.shape[0])
                 for ii in range(zs.shape[0]):
-                    emu_cosmo[lab][ii] = linP_zs[ii][lab]
+                    if lab == "z":
+                        linP_params[lab][ii] = zs[ii]
+                    elif lab == "dkms_dMpc":
+                        linP_params[lab][ii] = dkms_dMpc_zs[ii]
+                    else:
+                        linP_params[lab][ii] = linP_zs[ii][lab]
 
-        return cosmo, emu_cosmo
+        return cosmo_params, linP_params
 
     def _get_file_names(self, sim_label, ind_phase, ind_z, ind_axis):
         """
@@ -478,35 +510,23 @@ class GadgetArchive(BaseArchive):
             print(f"Error: Cube JSON file '{cube_json}' not found.")
         else:
             self.nsamples = self.cube_data["nsamples"]
-
-            # read pivot point from simulation suite if not specified
-            if self.kp_Mpc is None:
-                n_star = self.cube_data["param_space"]["n_star"]
-                self.kp_Mpc = n_star["kp_Mpc"]
-                self.update_kp = False
-            elif (
-                self.kp_Mpc == self.cube_data["param_space"]["n_star"]["kp_Mpc"]
-            ):
-                ## If selected k_p is same as in the archive, do not recompute
-                self.update_kp = False
-            else:
-                # will trigger slow code, could check that kp has indeed changed
-                self.update_kp = True
         ## done
 
         ## read info from all sims, all snapshots, all rescalings
         # iterate over simulations
         for sim_label in self.list_sim:
-            cosmo, emu_cosmo = self._get_emu_cosmo(sim_label)
+            cosmo_params, linP_params = self._get_emu_cosmo(sim_label)
 
             # iterate over snapshots
-            for ind_z in range(emu_cosmo["z"].shape[0]):
+            for ind_z in range(linP_params["z"].shape[0]):
                 # set linear power parameters describing snapshot
                 snap_data = {}
-                snap_data["cosmo_pars"] = cosmo
-                labels = ["z", "Delta2_p", "n_p", "alpha_p", "f_p"]
-                for lab in labels:
-                    snap_data[lab] = emu_cosmo[lab][ind_z]
+                snap_data["cosmo_params"] = cosmo_params
+                for lab in linP_params.keys():
+                    if lab == "kp_Mpc":
+                        snap_data[lab] = linP_params[lab]
+                    else:
+                        snap_data[lab] = linP_params[lab][ind_z]
 
                 # iterate over axes
                 for ind_axis in range(self.n_axes):

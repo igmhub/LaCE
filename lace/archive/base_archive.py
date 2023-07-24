@@ -73,7 +73,7 @@ class BaseArchive(object):
             "ind_phase",
             "ind_axis",
             "ind_rescaling",
-            "cosmo_pars",
+            "cosmo_params",
         ]
 
         keys_spe = ["p1d_Mpc"]
@@ -162,7 +162,7 @@ class BaseArchive(object):
             dict_av["sim_label"] = sim_label
             dict_av["ind_rescaling"] = ind_rescaling
             dict_av["ind_snap"] = ind_snap
-            dict_av["cosmo_pars"] = self.data[ind_merge[0]]["cosmo_pars"]
+            dict_av["cosmo_params"] = self.data[ind_merge[0]]["cosmo_params"]
 
             # list of available keys to merger
             key_list = self.data[ind_merge[0]].keys()
