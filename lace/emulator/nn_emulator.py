@@ -12,7 +12,6 @@ from torch import nn, optim
 from torch.optim import lr_scheduler
 
 # LaCE modules
-from lace.cosmo import camb_cosmo, fit_linP
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator import nn_architecture, base_emulator
 from lace.utils import poly_p1d

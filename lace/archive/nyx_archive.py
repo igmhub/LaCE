@@ -2,7 +2,6 @@ import numpy as np
 import os
 import h5py
 
-from lace.cosmo import camb_cosmo, fit_linP
 from lace.cosmo.thermal_broadening import thermal_broadening_kms
 from lace.archive.base_archive import BaseArchive
 from lace.utils.misc import split_string
@@ -210,6 +209,9 @@ class NyxArchive(BaseArchive):
                     break
 
         if self.update_kp == True:
+            # this is the only place where you need CAMB
+            from lace.cosmo import camb_cosmo, fit_linP
+
             sim_params = get_attrs(nyx_data[sim_label])
             if isim == "fiducial":
                 sim_params["A_s"] = 2.10e-9
