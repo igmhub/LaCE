@@ -49,19 +49,19 @@ The following modules are required:
 
 ### Installation at NERSC
 
-(Instructions by Andreu Font-Ribera on March 21st 2022)
+(Instructions by Laura Cabayol on July 21st 2023)
 
 On a fresh terminal:
 
 `module load python`
 
-`conda create -n lace_env pip`
+`conda create -n lace pip`
 
-`conda activate lace_env`
+`conda activate lace`
 
 `pip install numpy==1.24.4`
 
-`pip install gpy pandas configobj matplotlib hdf5 scikit_learn`
+`pip install gpy pandas configobj matplotlib h5py scikit_learn`
 
 `pip install torch`
 
