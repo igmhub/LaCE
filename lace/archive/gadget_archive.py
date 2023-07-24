@@ -5,7 +5,6 @@ import os
 import json
 
 from lace.setup_simulations import read_genic, read_gadget
-from lace.cosmo import camb_cosmo, fit_linP
 from lace.archive.base_archive import BaseArchive
 from lace.utils.exceptions import ExceptionList
 
@@ -285,6 +284,9 @@ class GadgetArchive(BaseArchive):
                     break
 
         if self.update_kp == True:
+            # this is the only place you actually need CAMB
+            from lace.cosmo import camb_cosmo, fit_linP
+
             _, sim_name_param, tag_param = self._sim2file_name(sim_label)
             pair_dir = self.fulldir_param + "/" + sim_name_param
 
