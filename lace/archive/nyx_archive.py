@@ -206,7 +206,20 @@ class NyxArchive(BaseArchive):
         ]
 
     def _get_emu_cosmo(self, nyx_data, sim_label):
-        # read zs values and compute/read linP_zs
+        """
+        Get the cosmology and parameters describing linear power spectrum from simulation.
+
+        Args:
+            nyx_data: file containing nyx data
+            sim_label: selected simulation
+
+        Returns:
+            tuple: A tuple containing the following info:
+                - cosmo_params (dict): contains cosmlogical parameters
+                - linP_params (dict): contains parameters describing linear power spectrum
+
+        """
+
         isim = self.sim_conv[sim_label]
 
         if self.update_kp == False:

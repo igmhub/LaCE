@@ -270,15 +270,15 @@ class GadgetArchive(BaseArchive):
 
     def _get_emu_cosmo(self, sim_label):
         """
-        Get the redshifts and linear power spectrum for the specified simulation.
+        Get the cosmology and parameters describing linear power spectrum from simulation.
 
         Args:
-            sim_label (int or str): Selected simulation.
+            sim_label: Selected simulation.
 
         Returns:
-            tuple: A tuple containing the redshifts and linear power parameters.
-                - zs (list): List of redshift values.
-                - linP_zs (list): List of linear power spectrum at each redshift.
+            tuple: A tuple containing the following info:
+                - cosmo_params (dict): contains cosmlogical parameters
+                - linP_params (dict): contains parameters describing linear power spectrum
 
         """
 
