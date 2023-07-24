@@ -18,7 +18,7 @@ class GadgetArchive(BaseArchive):
         __init__(self, postproc, linP_dir)
         _set_info_postproc(self, postproc)
         _sim2file_name(self, sim_label)
-        _get_nz_linP(self, sim_label)
+        _get_emu_cosmo(self, sim_label)
         _get_file_names(self, sim_label, ind_phase, ind_z, ind_axis)
         _get_sim(self, sim_label, ind_z, ind_axis)
         _load_data(self, pick_sim, drop_sim, z_max, nsamples=None)
@@ -256,7 +256,7 @@ class GadgetArchive(BaseArchive):
 
         return dict_conv[sim_label], dict_conv_params[sim_label], tag_param
 
-    def _get_nz_linP(self, sim_label):
+    def _get_emu_cosmo(self, sim_label):
         """
         Get the redshifts and linear power spectrum for the specified simulation.
 
@@ -270,24 +270,29 @@ class GadgetArchive(BaseArchive):
 
         """
 
-        _, sim_name_param, tag_param = self._sim2file_name(sim_label)
-        pair_dir = self.fulldir_param + "/" + sim_name_param
-
         # read zs values and compute/read linP_zs
-        if (self.update_kp == False) & (sim_label in self.list_sim_cube):
-            pair_json = pair_dir + "/" + tag_param
+        if self.update_kp == False:
+            emu_cosmo_all = np.load(
+                self.fulldir + "mpg_emu_cosmo.npy", allow_pickle=True
+            )
+            for ii in range(len(emu_cosmo_all)):
+                if emu_cosmo_all[ii]["sim"] == sim_label:
+                    if emu_cosmo_all[ii]["emu_cosmo"]["kp_Mpc"] != self.kp_Mpc:
+                        self.update_kp = True
+                    else:
+                        cosmo = emu_cosmo_all[ii]["cosmo"]
+                        emu_cosmo = emu_cosmo_all[ii]["emu_cosmo"]
+                    break
 
-            with open(pair_json) as json_file:
-                pair_data = json.load(json_file)
-            zs = pair_data["zs"]
-            linP_zs = pair_data["linP_zs"]
-        else:
+        if self.update_kp == True:
+            _, sim_name_param, tag_param = self._sim2file_name(sim_label)
+            pair_dir = self.fulldir_param + "/" + sim_name_param
+
             # read gadget file
             gadget_fname = pair_dir + "/sim_plus/paramfile.gadget"
-            sim_config = read_gadget.read_gadget_paramfile(gadget_fname)
-            zs = read_gadget.snapshot_redshifts(sim_config)
+            cosmo = read_gadget.read_gadget_paramfile(gadget_fname)
+            zs = read_gadget.snapshot_redshifts(cosmo)
 
-            # compute linP_zs parameters
             # setup cosmology from GenIC file
             genic_fname = pair_dir + "/sim_plus/paramfile.genic"
             sim_cosmo_dict = read_genic.camb_from_genic(genic_fname)
@@ -299,7 +304,14 @@ class GadgetArchive(BaseArchive):
             linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
             linP_zs = list(linP_zs)
 
-        return zs, linP_zs
+            labels = ["z", "Delta2_p", "n_p", "alpha_p", "f_p"]
+            emu_cosmo = {}
+            for lab in labels:
+                emu_cosmo[lab] = np.zeros(zs.shape[0])
+                for ii in range(zs.shape[0]):
+                    emu_cosmo[lab][ii] = linP_zs[ii][lab]
+
+        return cosmo, emu_cosmo
 
     def _get_file_names(self, sim_label, ind_phase, ind_z, ind_axis):
         """
@@ -449,7 +461,7 @@ class GadgetArchive(BaseArchive):
 
         """
 
-        # All samples have an entry in this list. This entry is dictionary includes
+        # All samples have an entry in this list, a dictionary that includes
         # P1D and P3D measurements and info about simulations
         self.data = []
 
@@ -483,19 +495,16 @@ class GadgetArchive(BaseArchive):
         ## read info from all sims, all snapshots, all rescalings
         # iterate over simulations
         for sim_label in self.list_sim:
-            zs, linP_zs = self._get_nz_linP(sim_label)
-            ### should we also save cosmology here?
+            cosmo, emu_cosmo = self._get_emu_cosmo(sim_label)
 
             # iterate over snapshots
-            for ind_z in range(len(zs)):
+            for ind_z in range(emu_cosmo["z"].shape[0]):
                 # set linear power parameters describing snapshot
-                linP_params = linP_zs[ind_z]
                 snap_data = {}
-                snap_data["Delta2_p"] = linP_params["Delta2_p"]
-                snap_data["n_p"] = linP_params["n_p"]
-                snap_data["alpha_p"] = linP_params["alpha_p"]
-                snap_data["f_p"] = linP_params["f_p"]
-                snap_data["z"] = zs[ind_z]
+                snap_data["cosmo_pars"] = cosmo
+                labels = ["z", "Delta2_p", "n_p", "alpha_p", "f_p"]
+                for lab in labels:
+                    snap_data[lab] = emu_cosmo[lab][ind_z]
 
                 # iterate over axes
                 for ind_axis in range(self.n_axes):

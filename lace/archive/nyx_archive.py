@@ -27,9 +27,22 @@ class NyxArchive(BaseArchive):
 
         if isinstance(kp_Mpc, (int, float, type(None))) == False:
             raise TypeError("kp_Mpc must be a number or None")
-        self.kp_Mpc = kp_Mpc
-        self.verbose = verbose
+
         ## done check input
+        self.verbose = verbose
+
+        self.kp_Mpc = kp_Mpc
+        self.update_kp = False
+        if self.kp_Mpc is None:
+            self.kp_Mpc = 0.7
+        elif self.kp_Mpc != 0.7:
+            self.update_kp = True
+            if self.verbose:
+                print(
+                    "Recomputing emu_cosmo parameters, at kp_Mpc"
+                    + str(self.kp_Mpc)
+                    + " it takes a while"
+                )
 
         ## sets list simulations available for this suite
         # list of especial simulations
@@ -184,12 +197,60 @@ class NyxArchive(BaseArchive):
             "lambda_P",
         ]
 
+    def _get_emu_cosmo(self, nyx_data, sim_label):
+        if self.update_kp == False:
+            emu_cosmo_all = np.load(self.file_cosmo, allow_pickle=True)
+            for ii in range(len(emu_cosmo_all)):
+                if emu_cosmo_all[ii]["sim"] == sim_label:
+                    if emu_cosmo_all[ii]["emu_cosmo"]["kp_Mpc"] != self.kp_Mpc:
+                        self.update_kp = True
+                    else:
+                        cosmo = emu_cosmo_all[ii]["cosmo"]
+                        emu_cosmo = emu_cosmo_all[ii]["emu_cosmo"]
+                    break
+
+        if self.update_kp == True:
+            sim_params = get_attrs(nyx_data[sim_label])
+            if isim == "fiducial":
+                sim_params["A_s"] = 2.10e-9
+                sim_params["n_s"] = 0.966
+                sim_params["h"] = sim_params["H_0"] / 100
+            cosmo = camb_cosmo.get_Nyx_cosmology(sim_params)
+
+            # compute linear power parameters at each z (will call CAMB)
+            linP_zs = fit_linP.get_linP_Mpc_zs(
+                cosmo, self.list_sim_redshifts, self.kp_Mpc
+            )
+            # compute conversion from Mpc to km/s using cosmology
+            dkms_dMpc_zs = camb_cosmo.dkms_dMpc(
+                cosmo, z=np.array(self.list_sim_redshifts)
+            )
+
+            emu_cosmo = {}
+            emu_cosmo["kp_Mpc"] = nyx_archive.kp_Mpc
+            labels = ["Delta2_p", "n_p", "alpha_p", "f_p"]
+            for lab in labels:
+                emu_cosmo[lab] = np.zeros(nz)
+                for ii in range(nz):
+                    emu_cosmo[lab][ii] = linP_zs[ii][lab]
+
+            emu_cosmo["dkms_dMpc"] = np.zeros(nz)
+            emu_cosmo["z"] = np.zeros(nz)
+            for ii in range(nz):
+                emu_cosmo["dkms_dMpc"][ii] = dkms_dMpc_zs[ii]
+                emu_cosmo["z"][ii] = nyx_archive.list_sim_redshifts[ii]
+
+        return cosmo, emu_cosmo
+
     def _load_data(self, file_name, zmax):
         # if file_name was not provided, search for default one
         if file_name is None:
             if "NYX_PATH" not in os.environ:
                 raise ValueError("Define NYX_PATH variable or pass file_name")
             file_name = os.environ["NYX_PATH"] + "/models.hdf5"
+            self.file_cosmo = os.environ["NYX_PATH"] + "/nyx_emu_cosmo.npy"
+        else:
+            self.file_cosmo = os.path.dirname(file_name) + "/nyx_emu_cosmo.npy"
 
         # read data
         ff = h5py.File(file_name, "r")
@@ -208,22 +269,9 @@ class NyxArchive(BaseArchive):
             if self.verbose:
                 print("read Nyx sim", isim)
 
-            # setup CAMB object from sim_params
-            sim_params = get_attrs(ff[isim])
-            if isim == "fiducial":
-                sim_params["A_s"] = 2.10e-9
-                sim_params["n_s"] = 0.966
-                sim_params["h"] = sim_params["H_0"] / 100
-            sim_cosmo = camb_cosmo.get_Nyx_cosmology(sim_params)
-
-            # compute linear power parameters at each z (will call CAMB)
-            linP_zs = fit_linP.get_linP_Mpc_zs(
-                sim_cosmo, self.list_sim_redshifts, self.kp_Mpc
-            )
-            # compute conversion from Mpc to km/s using cosmology
-            dkms_dMpc_zs = camb_cosmo.dkms_dMpc(
-                sim_cosmo, z=np.array(self.list_sim_redshifts)
-            )
+            # read cosmo information and linear power parameters
+            # (will only need CAMB if pivot point kp_Mpc is changed)
+            cosmo, emu_cosmo = self._get_emu_cosmo(ff, self.sim_conv[isim])
 
             # loop over redshifts
             z_avail = list(ff[isim].keys())
@@ -240,8 +288,6 @@ class NyxArchive(BaseArchive):
                 ind_z = np.where(
                     np.isclose(self.list_sim_redshifts, zval, 1e-10)
                 )[0][0]
-                linP_iz = linP_zs[ind_z]
-                dkms_dMpc_iz = dkms_dMpc_zs[ind_z]
 
                 scalings_avail = list(ff[isim][iz].keys())
                 # loop over scalings
@@ -256,12 +302,12 @@ class NyxArchive(BaseArchive):
                         # dictionary containing measurements and relevant info
                         _arch = {}
 
-                        _arch["cosmo_pars"] = sim_params
+                        _arch["cosmo_pars"] = cosmo
 
                         # set linp params
-                        for key in linP_iz.keys():
-                            _arch[key] = linP_iz[key]
-                        _arch["z"] = zval
+                        labels = ["z", "Delta2_p", "n_p", "alpha_p", "f_p"]
+                        for lab in labels:
+                            _arch[lab] = emu_cosmo[lab][ind_z]
 
                         _arch["sim_label"] = self.sim_conv[isim]
                         _arch["ind_snap"] = self.z_conv[iz]
@@ -278,7 +324,9 @@ class NyxArchive(BaseArchive):
 
                         # compute thermal broadening in Mpc
                         sigma_T_kms = thermal_broadening_kms(_arch["T0"])
-                        _arch["sigT_Mpc"] = sigma_T_kms / dkms_dMpc_iz
+                        _arch["sigT_Mpc"] = (
+                            sigma_T_kms / emu_cosmo["dkms_dMpc"][ind_z]
+                        )
 
                         # store pressure parameters
                         # not available in bar_ic_grid_3 and wdm_3.5kev_grid_1
