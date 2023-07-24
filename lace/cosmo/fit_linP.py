@@ -6,13 +6,23 @@ from lace.utils.poly_p1d import fit_polynomial
 
 
 def get_linP_Mpc_zs(cosmo, zs, kp_Mpc):
-    """For each redshift, fit linear power parameters around kp_Mpc"""
+    """For each redshift, obtain and fit linear power parameters around kp_Mpc"""
 
     # run slowest part of CAMB computation, to avoid repetition
     camb_results = camb_cosmo.get_camb_results(cosmo, zs, fast_camb=True)
 
     # compute linear power at all zs
     k_Mpc, zs_out, P_Mpc = camb_cosmo.get_linP_Mpc(cosmo, zs, camb_results)
+
+    fp = np.empty(len(zs))
+    for iz,z in enumerate(zs):
+        # compute logarithmic growth rate at each z (f = f sigma_8 / sigma_8)
+        fp[iz]=camb_cosmo.get_f_of_z(cosmo,camb_results,z)
+
+    return fit_linP_Mpc_zs(k_Mpc, P_Mpc, fp, kp_Mpc, zs, zs_out)
+
+def fit_linP_Mpc_zs(k_Mpc, P_Mpc, fp, kp_Mpc, zs, zs_out=None):
+    """For each redshift, only fit linear power parameters around kp_Mpc"""
 
     assert kp_Mpc < max(k_Mpc), "Pivot higher than k_max"
 
@@ -22,10 +32,11 @@ def get_linP_Mpc_zs(cosmo, zs, kp_Mpc):
 
     # loop over all redshifts, and collect linP parameters
     linP_zs = []
-    for iz in range(len(zs)):
+    for iz,z in enumerate(zs):
         # check that redshifts are properly sorted
-        z = zs[iz]
-        assert z == zs_out[iz], "redshifts not sorted out correctly"
+        if zs_out is not None:
+            assert z==zs_out[iz],'redshifts not sorted out correctly'
+
         # fit polynomial of log power over wavenumber range
         linP_Mpc = fit_polynomial(
             kmin_Mpc / kp_Mpc, kmax_Mpc / kp_Mpc, k_Mpc / kp_Mpc, P_Mpc[iz]
@@ -37,13 +48,11 @@ def get_linP_Mpc_zs(cosmo, zs, kp_Mpc):
         # note that the curvature is alpha/2
         alpha_p = 2.0 * linP_Mpc[2]
 
-        # compute logarithmic growth rate at each z (f = f sigma_8 / sigma_8)
-        f_p = camb_cosmo.get_f_of_z(cosmo, camb_results, z)
         linP_z = {
             "Delta2_p": Delta2_p,
             "n_p": n_p,
             "alpha_p": alpha_p,
-            "f_p": f_p,
+            "f_p": fp[iz],
         }
 
         linP_zs.append(linP_z)
