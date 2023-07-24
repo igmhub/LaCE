@@ -85,7 +85,7 @@ If you want to use notebooks via JupyterHub, you'll also need:
 
 `pip install ipykernel`
 
-`python -m ipykernel install --user --name lace_env --display-name lace_env`
+`python -m ipykernel install --user --name lace --display-name lace`
 
 You need to add the Nyx path as an enviroment variable. Also, if you
 want to use the Nyx archive, the path also needs to be added as an environment variable.
