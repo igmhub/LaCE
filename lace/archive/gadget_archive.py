@@ -24,7 +24,11 @@ class GadgetArchive(BaseArchive):
     """
 
     def __init__(
-        self, postproc="Cabayol23", kp_Mpc=None, update_kp=False, verbose=False
+        self,
+        postproc="Cabayol23",
+        kp_Mpc=None,
+        force_recompute_linP_params=False,
+        verbose=False,
     ):
         """
         Initialize the archivePND object.
@@ -49,13 +53,15 @@ class GadgetArchive(BaseArchive):
             msg = "Invalid postproc value. Available options:"
             raise ExceptionList(msg, postproc_all)
 
-        if isinstance(update_kp, bool) == False:
-            raise TypeError("update_kp must be boolean")
-        self.update_kp = update_kp
+        if isinstance(force_recompute_linP_params, bool) == False:
+            raise TypeError("force_recompute_linP_params must be boolean")
+        self.update_kp = force_recompute_linP_params
 
         if self.update_kp:
             if isinstance(kp_Mpc, (int, float)) == False:
-                raise TypeError("kp_Mpc must be a number if update_kp == True")
+                raise TypeError(
+                    "kp_Mpc must be a number if force_recompute_linP_params == True"
+                )
         else:
             if isinstance(kp_Mpc, (int, float, type(None))) == False:
                 raise TypeError("kp_Mpc must be a number or None")

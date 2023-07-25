@@ -23,7 +23,7 @@ class NyxArchive(BaseArchive):
         self,
         file_name=None,
         kp_Mpc=None,
-        update_kp=False,
+        force_recompute_linP_params=False,
         verbose=False,
         zmax=None,
     ):
@@ -35,13 +35,15 @@ class NyxArchive(BaseArchive):
         if isinstance(file_name, (str, type(None))) == False:
             raise TypeError("file_name must be a string or None")
 
-        if isinstance(update_kp, bool) == False:
+        if isinstance(force_recompute_linP_params, bool) == False:
             raise TypeError("update_kp must be boolean")
-        self.update_kp = update_kp
+        self.update_kp = force_recompute_linP_params
 
         if self.update_kp:
             if isinstance(kp_Mpc, (int, float)) == False:
-                raise TypeError("kp_Mpc must be a number if update_kp == True")
+                raise TypeError(
+                    "kp_Mpc must be a number if force_recompute_linP_params == True"
+                )
         else:
             if isinstance(kp_Mpc, (int, float, type(None))) == False:
                 raise TypeError("kp_Mpc must be a number or None")
