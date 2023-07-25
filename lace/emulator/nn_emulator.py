@@ -202,14 +202,11 @@ class NNEmulator(base_emulator.BaseEmulator):
                 drop_sim=emulator_params['drop_sim']
                 print(f'WARNING: Model trained without simulation {drop_sim}')
 
-            if training_set=='Cabayol23':
+
+            kMpc_train = self._obtain_sim_params()
+            log_kMpc_train = torch.log10(kMpc_train).to(self.device)
+            self.log_kMpc = log_kMpc_train
                 
-                kMpc_train = self._obtain_sim_params()
-                log_kMpc_train = torch.log10(kMpc_train).to(self.device)
-                self.log_kMpc = log_kMpc_train
-                
-            elif training_set=='Nyx':
-                raise ValueError("Work in progress")
                 
         else:           
 
@@ -228,7 +225,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                         self.models_dir, "initial_params/initial_weights_extended.pt"
                     )
 
+            t0=time.time()
             self.train()
+            print(f'Emulator trained in {time.time()-t0} seconds')
 
             if self.save_path != None:
                 # saves the model in the predefined path after training
