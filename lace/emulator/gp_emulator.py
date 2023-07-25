@@ -7,9 +7,10 @@ import json
 import time
 from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
+
 from lace.archive import gadget_archive
-from lace.emulator import poly_p1d
 from lace.emulator import base_emulator
+from lace.utils import poly_p1d
 
 
 class GPEmulator(base_emulator.BaseEmulator):
@@ -52,13 +53,15 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.verbose = verbose
         self.emu_per_k = emu_per_k
         self.ndeg = ndeg
-        self.drop_sim=drop_sim
+        self.drop_sim = drop_sim
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23"]
-        if (archive!=None)&(training_set!=None):
-            raise ValueError("Conflict! Both custom archive and training_set provided")
-        
+        if (archive != None) & (training_set != None):
+            raise ValueError(
+                "Conflict! Both custom archive and training_set provided"
+            )
+
         if training_set is not None:
             try:
                 if training_set in training_set_all:
@@ -71,21 +74,23 @@ class GPEmulator(base_emulator.BaseEmulator):
                     )
                     raise
             except:
-                print("An error occurred while checking the training_set value.")
+                print(
+                    "An error occurred while checking the training_set value."
+                )
                 raise
-                
+
             # read Gadget archive with the right postprocessing
-            self.archive=gadget_archive.GadgetArchive(postproc=training_set)
-                
-        elif archive!=None and training_set==None:
+            self.archive = gadget_archive.GadgetArchive(postproc=training_set)
+
+        elif archive != None and training_set == None:
             print("Use custom archive provided by the user")
             self.archive = archive
 
-        elif (archive==None)&(training_set==None):
-            raise(ValueError('Archive or training_set must be provided'))
+        elif (archive == None) & (training_set == None):
+            raise (ValueError("Archive or training_set must be provided"))
 
         emulator_label_all = ["Pedersen21", "Pedersen23", "Cabayol23"]
-        if emulator_label is not None:  
+        if emulator_label is not None:
             try:
                 if emulator_label in emulator_label_all:
                     print(f"Select emulator in {emulator_label}")
@@ -98,21 +103,28 @@ class GPEmulator(base_emulator.BaseEmulator):
                     raise
 
             except:
-                print("An error occurred while checking the emulator_label value.")
+                print(
+                    "An error occurred while checking the emulator_label value."
+                )
                 raise
 
             if emulator_label == "Pedersen21":
-                
                 print(
                     r"Gaussian Process emulator predicting the P1D at each k-bin."
                     + " It goes to scales of 3Mpc^{-1} and z<=4.5. The parameters "
                     + "passed to the emulator will be overwritten to match these ones."
                 )
-                self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
-                self.zmax, self.kmax_Mpc, self.emu_type =  4.5, 3, "k_bin"
-                
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+                self.zmax, self.kmax_Mpc, self.emu_type = 4.5, 3, "k_bin"
+
             if emulator_label == "Pedersen23":
-                
                 print(
                     r"Gaussian Process emulator predicting the P1D, "
                     + "fitting coefficients to a 4th degree polynomial. It "
@@ -120,12 +132,22 @@ class GPEmulator(base_emulator.BaseEmulator):
                     + " passed to the emulator will be overwritten to match "
                     + "these ones"
                 )
-            
-                self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
-                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = 4.5, 3, 4, "polyfit"
 
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = (
+                    4.5,
+                    3,
+                    4,
+                    "polyfit",
+                )
             if emulator_label == "Cabayol23":
-
                 print(
                     r"Gaussian Process emulator predicting the P1D, "
                     + "fitting coefficients to a 5th degree polynomial. It "
@@ -134,39 +156,58 @@ class GPEmulator(base_emulator.BaseEmulator):
                     + "these ones"
                 )
 
-                self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
-                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = 4.5, 4, 5, "polyfit"
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = (
+                    4.5,
+                    4,
+                    5,
+                    "polyfit",
+                )
 
         else:
-            print("Selected custom emulator")     
+            print("Selected custom emulator")
 
         # If none, take all parameters
         if emu_params == None:
-            self.emu_params = ["mF", "sigT_Mpc", "gamma", "kF_Mpc", "Delta2_p", "n_p"]
+            self.emu_params = [
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "kF_Mpc",
+                "Delta2_p",
+                "n_p",
+            ]
         else:
-            self.emu_params = emu_params 
+            self.emu_params = emu_params
 
         # GPs should probably avoid rescalings (low performance with large N)
         average = "both"
         val_scaling = 1
         if self.archive.training_average != "both":
-            print('WARNING: Enforce average=both in training of GP emulator')
+            print("WARNING: Enforce average=both in training of GP emulator")
         if self.archive.training_val_scaling != 1:
-            print('WARNING: Enforce val_scalinge=1 in training of GP emulator')
-            
+            print("WARNING: Enforce val_scalinge=1 in training of GP emulator")
+
         # keep track of training data to be used in emulator
         self.training_data = self.archive.get_training_data(
-                emu_params = self.emu_params,
-                drop_sim = self.drop_sim,
-                average = average,
-                val_scaling = val_scaling
+            emu_params=self.emu_params,
+            drop_sim=self.drop_sim,
+            average=average,
+            val_scaling=val_scaling,
         )
 
         ## Find max k bin
         self.k_bin = (
             np.max(np.where(self.training_data[0]["k_Mpc"] < self.kmax_Mpc)) + 1
         )
-        self.training_k_bins = self.training_data[0]["k_Mpc"][1 : self.k_bin] 
+        self.training_k_bins = self.training_data[0]["k_Mpc"][1 : self.k_bin]
 
         self._build_interp()
 
@@ -247,7 +288,9 @@ class GPEmulator(base_emulator.BaseEmulator):
             fit_p1d = poly_p1d.PolyP1D(
                 k_Mpc, p1d_Mpc, kmin_Mpc=1.0e-3, kmax_Mpc=kmax_Mpc, deg=deg
             )
-            entry["fit_p1d"] = fit_p1d.lnP_fit  ## Add coeffs for each model to archive
+            entry[
+                "fit_p1d"
+            ] = fit_p1d.lnP_fit  ## Add coeffs for each model to archive
 
     def _build_interp(self):
         """Method to build an GP object from a spectra archive and list of parameters
@@ -353,7 +396,9 @@ class GPEmulator(base_emulator.BaseEmulator):
 
     def check_in_hull(self, model):
         param = self.return_unit_call(model)
-        outside_hull = self.hull.find_simplex(np.array(param).reshape(1, -1)) < 0
+        outside_hull = (
+            self.hull.find_simplex(np.array(param).reshape(1, -1)) < 0
+        )
         return not outside_hull
 
     def predict(self, model, z=None):
@@ -374,7 +419,9 @@ class GPEmulator(base_emulator.BaseEmulator):
             pred = np.array([])
             var = np.array([])
             for gp in self.gp:
-                pred_single, var_single = gp.predict(np.array(param).reshape(1, -1))
+                pred_single, var_single = gp.predict(
+                    np.array(param).reshape(1, -1)
+                )
                 pred = np.append(pred, pred_single)
                 var = np.append(var, var_single)
         else:
@@ -417,14 +464,20 @@ class GPEmulator(base_emulator.BaseEmulator):
         if self.emu_type == "k_bin":
             # interpolate predictions to input k values
             interpolator = interp1d(
-                self.training_k_bins, gp_pred, kind="cubic", fill_value="extrapolate"
+                self.training_k_bins,
+                gp_pred,
+                kind="cubic",
+                fill_value="extrapolate",
             )
             p1d = interpolator(k_Mpc)
             if not return_covar:
                 return p1d
             # compute emulator covariance
             err_interp = interp1d(
-                self.training_k_bins, gp_err, kind="cubic", fill_value="extrapolate"
+                self.training_k_bins,
+                gp_err,
+                kind="cubic",
+                fill_value="extrapolate",
             )
             p1d_err = err_interp(k_Mpc)
             if self.emu_per_k:
@@ -440,7 +493,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             p1d = np.exp(poly(np.log(k_Mpc)))
             if not return_covar:
                 return p1d
-            
+
             lk = np.log(k_Mpc)
             erry2 = (
                 (gp_err[0] * lk**4) ** 2
