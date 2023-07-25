@@ -17,10 +17,10 @@ class GadgetArchive(BaseArchive):
         __init__(self, postproc, linP_dir)
         _set_info_postproc(self, postproc)
         _sim2file_name(self, sim_label)
-        _get_emu_cosmo(self, sim_label)
+        _get_emu_cosmo(self, sim_label, force_recompute_linP_paramsi=False)
         _get_file_names(self, sim_label, ind_phase, ind_z, ind_axis)
         _get_sim(self, sim_label, ind_z, ind_axis)
-        _load_data(self, pick_sim, drop_sim, z_max, nsamples=None)
+        _load_data(self, force_recompute_linP_params=False)
     """
 
     def __init__(
@@ -31,13 +31,14 @@ class GadgetArchive(BaseArchive):
         verbose=False,
     ):
         """
-        Initialize the archivePND object.
+        Initialize the archive object.
 
         Args:
-            postproc (str): Name of the simulation suite. Default is "Cabayol23".
-                Raises a ValueError if the simulation suite is not available.
+            postproc (str): Specify post-processing run. Default is "Cabayol23".
+                Raises a ValueError if the postproc is not available
             kp_Mpc (None or float): Optional. Pivot point used in linear power parameters.
                 If specified, the parameters will be recomputed in the archive. Default is None.
+            fore_recompute_linP_params (boolean). If set, it will recompute linear power parameters even if kp_Mpc match. Default is False.
 
         Returns:
             None
@@ -55,9 +56,8 @@ class GadgetArchive(BaseArchive):
 
         if isinstance(force_recompute_linP_params, bool) == False:
             raise TypeError("force_recompute_linP_params must be boolean")
-        self.update_kp = force_recompute_linP_params
 
-        if self.update_kp:
+        if force_recompute_linP_params:
             if isinstance(kp_Mpc, (int, float)) == False:
                 raise TypeError(
                     "kp_Mpc must be a number if force_recompute_linP_params == True"
@@ -98,7 +98,7 @@ class GadgetArchive(BaseArchive):
         self._set_info_postproc(postproc)
 
         # load power spectrum measurements
-        self._load_data()
+        self._load_data(force_recompute_linP_params)
 
         # extract indexes from data
         self._set_labels()
@@ -274,12 +274,14 @@ class GadgetArchive(BaseArchive):
 
         return dict_conv[sim_label], dict_conv_params[sim_label], tag_param
 
-    def _get_emu_cosmo(self, sim_label):
+
+    def _get_emu_cosmo(self, sim_label, force_recompute_linP_params=False):
         """
         Get the cosmology and parameters describing linear power spectrum from simulation.
 
         Args:
             sim_label: Selected simulation.
+            force_recompute_linP_params: recompute linP even if kp_Mpc matches
 
         Returns:
             tuple: A tuple containing the following info:
@@ -288,9 +290,13 @@ class GadgetArchive(BaseArchive):
 
         """
 
-        # read zs values and compute/read linP_zs
-        if self.update_kp == False:
-            # open file with precomputed values
+        # figure out whether we need to compute linP params
+        compute_linP_params=False
+
+        if force_recompute_linP_params:
+            compute_linP_params=True
+        else:
+            # open file with precomputed values to check kp_Mpc
             try:
                 file_cosmo = np.load(
                     self.fulldir + "mpg_emu_cosmo.npy", allow_pickle=True
@@ -308,13 +314,13 @@ class GadgetArchive(BaseArchive):
                     if self.kp_Mpc != file_cosmo[ii]["linP_params"]["kp_Mpc"]:
                         if self.verbose:
                             print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
-                        self.update_kp = True
+                        compute_linP_params=True
                     else:
                         cosmo_params = file_cosmo[ii]["cosmo_params"]
                         linP_params = file_cosmo[ii]["linP_params"]
                     break
 
-        if self.update_kp == True:
+        if compute_linP_params == True:
             # this is the only place you actually need CAMB
             from lace.cosmo import camb_cosmo, fit_linP
 
@@ -486,9 +492,12 @@ class GadgetArchive(BaseArchive):
 
         return phase_data, phase_params, arr_phase
 
-    def _load_data(self):
+    def _load_data(self, force_recompute_linP_params):
         """
         Setup the archive by gathering information from all measured power spectra in the simulations.
+
+        Args:
+            force_recompute_linP_params: recompute linP even if kp_Mpc matches
 
         Returns:
             None
@@ -521,7 +530,8 @@ class GadgetArchive(BaseArchive):
         ## read info from all sims, all snapshots, all rescalings
         # iterate over simulations
         for sim_label in self.list_sim:
-            cosmo_params, linP_params = self._get_emu_cosmo(sim_label)
+            cosmo_params, linP_params = self._get_emu_cosmo(
+                    sim_label, force_recompute_linP_params)
 
             # iterate over snapshots
             for ind_z in range(linP_params["z"].shape[0]):
