@@ -24,12 +24,8 @@ class NyxArchive(BaseArchive):
         file_name=None,
         kp_Mpc=None,
         force_recompute_linP_params=False,
-        verbose=False,
-        zmax=None,
+        verbose=False
     ):
-        # zmax is a temporal fix to speed up the reading, but it goes against the
-        # philosophy of the Archive that consists on reading all data from the
-        # target simulation
 
         ## check input
         if isinstance(file_name, (str, type(None))) == False:
@@ -37,9 +33,8 @@ class NyxArchive(BaseArchive):
 
         if isinstance(force_recompute_linP_params, bool) == False:
             raise TypeError("update_kp must be boolean")
-        self.update_kp = force_recompute_linP_params
 
-        if self.update_kp:
+        if force_recompute_linP_params:
             if isinstance(kp_Mpc, (int, float)) == False:
                 raise TypeError(
                     "kp_Mpc must be a number if force_recompute_linP_params == True"
@@ -70,7 +65,7 @@ class NyxArchive(BaseArchive):
         self._set_info_sim()
 
         # load power spectrum measurements
-        self._load_data(file_name, zmax)
+        self._load_data(file_name, force_recompute_linP_params)
 
         # extract indexes from data
         self._set_labels()
@@ -207,13 +202,15 @@ class NyxArchive(BaseArchive):
             "lambda_P",
         ]
 
-    def _get_emu_cosmo(self, nyx_data, sim_label):
+    def _get_emu_cosmo(self, nyx_data, sim_label,
+                force_recompute_linP_params=False):
         """
         Get the cosmology and parameters describing linear power spectrum from simulation.
 
         Args:
             nyx_data: file containing nyx data
             sim_label: selected simulation
+            force_recompute_linP_params: compute linP even if kp_Mpc match
 
         Returns:
             tuple: A tuple containing the following info:
@@ -224,8 +221,13 @@ class NyxArchive(BaseArchive):
 
         isim = self.sim_conv[sim_label]
 
-        if self.update_kp == False:
-            # open file with precomputed values
+        # figure out whether we need to compute linP params
+        compute_linP_params=False
+
+        if force_recompute_linP_params:
+            compute_linP_params=True
+        else:
+            # open file with precomputed values to check kp_Mpc
             try:
                 file_cosmo = np.load(self.file_cosmo, allow_pickle=True)
             except:
@@ -241,13 +243,13 @@ class NyxArchive(BaseArchive):
                     if self.kp_Mpc != file_cosmo[ii]["linP_params"]["kp_Mpc"]:
                         if self.verbose:
                             print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
-                        self.update_kp = True
+                        compute_linP_params = True
                     else:
                         cosmo_params = file_cosmo[ii]["cosmo_params"]
                         linP_params = file_cosmo[ii]["linP_params"]
                     break
 
-        if self.update_kp == True:
+        if compute_linP_params == True:
             # this is the only place where you need CAMB
             from lace.cosmo import camb_cosmo, fit_linP
 
@@ -282,7 +284,8 @@ class NyxArchive(BaseArchive):
 
         return cosmo_params, linP_params
 
-    def _load_data(self, file_name, zmax):
+    def _load_data(self, file_name, force_recompute_linP_params=False):
+
         # if file_name was not provided, search for default one
         if file_name is None:
             if "NYX_PATH" not in os.environ:
@@ -311,18 +314,13 @@ class NyxArchive(BaseArchive):
 
             # read cosmo information and linear power parameters
             # (will only need CAMB if pivot point kp_Mpc is changed)
-            cosmo_params, linP_params = self._get_emu_cosmo(ff, isim)
+            cosmo_params, linP_params = self._get_emu_cosmo(
+                    ff, isim, force_recompute_linP_params)
 
             # loop over redshifts
             z_avail = list(ff[isim].keys())
             for iz in z_avail:
                 zval = float(split_string(iz)[1])
-
-                if zmax:
-                    if zval > zmax:
-                        if self.verbose:
-                            print("do not read snapshot at", zval)
-                        continue
 
                 # find redshift index to read linear power parameters
                 ind_z = np.where(
