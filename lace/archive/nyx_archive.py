@@ -2,11 +2,9 @@ import numpy as np
 import os
 import h5py
 
-from lace.cosmo import camb_cosmo
-from lace.cosmo import fit_linP
 from lace.cosmo.thermal_broadening import thermal_broadening_kms
-from lace.emulator.utils import split_string
 from lace.archive.base_archive import BaseArchive
+from lace.utils.misc import split_string
 
 
 def get_attrs(h5py_data):
@@ -21,14 +19,33 @@ class NyxArchive(BaseArchive):
     Bookkeeping of Lya flux P1D & P3D measurements from a suite of Nyx simulations.
     """
 
-    def __init__(self, file_name=None, kp_Mpc=0.7, verbose=False, zmax=None):
+    def __init__(
+        self,
+        file_name=None,
+        kp_Mpc=None,
+        force_recompute_linP_params=False,
+        verbose=False
+    ):
+
         ## check input
         if isinstance(file_name, (str, type(None))) == False:
             raise TypeError("file_name must be a string or None")
 
-        if isinstance(kp_Mpc, (int, float, type(None))) == False:
-            raise TypeError("kp_Mpc must be a number or None")
+        if isinstance(force_recompute_linP_params, bool) == False:
+            raise TypeError("update_kp must be boolean")
+
+        if force_recompute_linP_params:
+            if isinstance(kp_Mpc, (int, float)) == False:
+                raise TypeError(
+                    "kp_Mpc must be a number if force_recompute_linP_params == True"
+                )
+        else:
+            if isinstance(kp_Mpc, (int, float, type(None))) == False:
+                raise TypeError("kp_Mpc must be a number or None")
         self.kp_Mpc = kp_Mpc
+
+        if isinstance(verbose, bool) == False:
+            raise TypeError("verbose must be boolean")
         self.verbose = verbose
         ## done check input
 
@@ -43,21 +60,15 @@ class NyxArchive(BaseArchive):
         # list all simulations
         self.list_sim = self.list_sim_cube + self.list_sim_test
         ## done set simulation list
-        
-        # list of available redshifts at Nyx (not all sims have them)
-        #self.list_sim_redshifts=np.append(np.arange(2.0,4.5,0.2),
-        #        np.arange(4.6,5.5,0.4))
-        self.list_sim_redshifts=[2,2.2,2.4,2.6,2.8,3,3.2,3.4,3.6,3.8,4,4.2,4.4,4.6,5,5.4]
 
         # get relevant flags for post-processing
         self._set_info_sim()
 
         # load power spectrum measurements
-        self._load_data(file_name, zmax)
+        self._load_data(file_name, force_recompute_linP_params)
 
         # extract indexes from data
         self._set_labels()
-
 
     def _set_info_sim(self):
         # number of simulation phases (IC)
@@ -127,6 +138,28 @@ class NyxArchive(BaseArchive):
             "redshift_5.4": 15,
         }
 
+        # list of available redshifts at Nyx (not all sims have them)
+        # self.list_sim_redshifts=np.append(np.arange(2.0,4.5,0.2),
+        #        np.arange(4.6,5.5,0.4))
+        self.list_sim_redshifts = [
+            2,
+            2.2,
+            2.4,
+            2.6,
+            2.8,
+            3,
+            3.2,
+            3.4,
+            3.6,
+            3.8,
+            4,
+            4.2,
+            4.4,
+            4.6,
+            5,
+            5.4,
+        ]
+
         self.scaling_conv = {
             "native_parameters": 0,
             "rescale_Fbar_fiducial": 1,
@@ -169,12 +202,98 @@ class NyxArchive(BaseArchive):
             "lambda_P",
         ]
 
-    def _load_data(self, file_name, zmax):
+    def _get_emu_cosmo(self, nyx_data, sim_label,
+                force_recompute_linP_params=False):
+        """
+        Get the cosmology and parameters describing linear power spectrum from simulation.
+
+        Args:
+            nyx_data: file containing nyx data
+            sim_label: selected simulation
+            force_recompute_linP_params: compute linP even if kp_Mpc match
+
+        Returns:
+            tuple: A tuple containing the following info:
+                - cosmo_params (dict): contains cosmlogical parameters
+                - linP_params (dict): contains parameters describing linear power spectrum
+
+        """
+
+        isim = self.sim_conv[sim_label]
+
+        # figure out whether we need to compute linP params
+        compute_linP_params=False
+
+        if force_recompute_linP_params:
+            compute_linP_params=True
+        else:
+            # open file with precomputed values to check kp_Mpc
+            try:
+                file_cosmo = np.load(self.file_cosmo, allow_pickle=True)
+            except:
+                raise IOError("The file " + file_cosmo + " does not exist")
+
+            for ii in range(len(file_cosmo)):
+                if file_cosmo[ii]["sim_label"] == isim:
+                    # if kp_Mpc not defined, use precomputed value
+                    if self.kp_Mpc is None:
+                        self.kp_Mpc = file_cosmo[ii]["linP_params"]["kp_Mpc"]
+
+                    # if kp_Mpc different from precomputed value, compute
+                    if self.kp_Mpc != file_cosmo[ii]["linP_params"]["kp_Mpc"]:
+                        if self.verbose:
+                            print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
+                        compute_linP_params = True
+                    else:
+                        cosmo_params = file_cosmo[ii]["cosmo_params"]
+                        linP_params = file_cosmo[ii]["linP_params"]
+                    break
+
+        if compute_linP_params == True:
+            # this is the only place where you need CAMB
+            from lace.cosmo import camb_cosmo, fit_linP
+
+            cosmo_params = get_attrs(nyx_data[sim_label])
+            if isim == "nyx_central":
+                cosmo_params["A_s"] = 2.10e-9
+                cosmo_params["n_s"] = 0.966
+                cosmo_params["h"] = cosmo_params["H_0"] / 100
+            # setup CAMB object
+            sim_cosmo = camb_cosmo.get_Nyx_cosmology(cosmo_params)
+
+            # compute linear power parameters at each z (in Mpc units)
+            linP_zs = fit_linP.get_linP_Mpc_zs(
+                sim_cosmo, self.list_sim_redshifts, self.kp_Mpc
+            )
+            zs = np.array(self.list_sim_redshifts)
+            # compute conversion from Mpc to km/s using cosmology
+            dkms_dMpc_zs = camb_cosmo.dkms_dMpc(sim_cosmo, z=zs)
+
+            linP_params = {}
+            linP_params["kp_Mpc"] = self.kp_Mpc
+            labels = ["z", "dkms_dMpc", "Delta2_p", "n_p", "alpha_p", "f_p"]
+            for lab in labels:
+                linP_params[lab] = np.zeros(zs.shape[0])
+                for ii in range(zs.shape[0]):
+                    if lab == "z":
+                        linP_params[lab][ii] = zs[ii]
+                    elif lab == "dkms_dMpc":
+                        linP_params[lab][ii] = dkms_dMpc_zs[ii]
+                    else:
+                        linP_params[lab][ii] = linP_zs[ii][lab]
+
+        return cosmo_params, linP_params
+
+    def _load_data(self, file_name, force_recompute_linP_params=False):
+
         # if file_name was not provided, search for default one
         if file_name is None:
             if "NYX_PATH" not in os.environ:
                 raise ValueError("Define NYX_PATH variable or pass file_name")
             file_name = os.environ["NYX_PATH"] + "/models.hdf5"
+            self.file_cosmo = os.environ["NYX_PATH"] + "/nyx_emu_cosmo.npy"
+        else:
+            self.file_cosmo = os.path.dirname(file_name) + "/nyx_emu_cosmo.npy"
 
         # read data
         ff = h5py.File(file_name, "r")
@@ -191,36 +310,22 @@ class NyxArchive(BaseArchive):
                 continue
 
             if self.verbose:
-                print('read Nyx sim',isim)
+                print("read Nyx sim", isim)
 
-            # setup CAMB object from sim_params
-            sim_params = get_attrs(ff[isim])
-            if isim == "fiducial":
-                sim_params["A_s"] = 2.10e-9
-                sim_params["n_s"] = 0.966
-                sim_params["h"] = sim_params["H_0"] / 100
-            sim_cosmo = camb_cosmo.get_Nyx_cosmology(sim_params)
-
-            # compute linear power parameters at each z (will call CAMB)
-            linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo,
-                    self.list_sim_redshifts,self.kp_Mpc)
+            # read cosmo information and linear power parameters
+            # (will only need CAMB if pivot point kp_Mpc is changed)
+            cosmo_params, linP_params = self._get_emu_cosmo(
+                    ff, isim, force_recompute_linP_params)
 
             # loop over redshifts
             z_avail = list(ff[isim].keys())
             for iz in z_avail:
                 zval = float(split_string(iz)[1])
 
-                if zmax:
-                    if zval > zmax:
-                        if self.verbose:
-                            print('do not read snapshot at',zval)
-                        continue
-
                 # find redshift index to read linear power parameters
-                iz_linP = np.where(np.isclose(self.list_sim_redshifts, zval, 1e-10))[0][0]
-                linP_iz = linP_zs[iz_linP]
-                # compute conversion from Mpc to km/s using cosmology
-                dkms_dMpc = camb_cosmo.dkms_dMpc(sim_cosmo, z=zval)
+                ind_z = np.where(
+                    np.isclose(self.list_sim_redshifts, zval, 1e-10)
+                )[0][0]
 
                 scalings_avail = list(ff[isim][iz].keys())
                 # loop over scalings
@@ -234,13 +339,12 @@ class NyxArchive(BaseArchive):
                     for iaxis in axes_avail:
                         # dictionary containing measurements and relevant info
                         _arch = {}
-
-                        _arch["cosmo_pars"] = sim_params
-
-                        # set linp params
-                        for key in linP_iz.keys():
-                            _arch[key] = linP_iz[key]
-                        _arch["z"] = zval
+                        _arch["cosmo_params"] = cosmo_params
+                        for lab in linP_params.keys():
+                            if lab == "kp_Mpc":
+                                _arch[lab] = linP_params[lab]
+                            else:
+                                _arch[lab] = linP_params[lab][ind_z]
 
                         _arch["sim_label"] = self.sim_conv[isim]
                         _arch["ind_snap"] = self.z_conv[iz]
@@ -257,8 +361,9 @@ class NyxArchive(BaseArchive):
 
                         # compute thermal broadening in Mpc
                         sigma_T_kms = thermal_broadening_kms(_arch["T0"])
-                        sigma_T_Mpc = sigma_T_kms / dkms_dMpc
-                        _arch["sigT_Mpc"] = sigma_T_Mpc
+                        _arch["sigT_Mpc"] = (
+                            sigma_T_kms / linP_params["dkms_dMpc"][ind_z]
+                        )
 
                         # store pressure parameters
                         # not available in bar_ic_grid_3 and wdm_3.5kev_grid_1
