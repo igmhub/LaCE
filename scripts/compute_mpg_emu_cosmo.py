@@ -6,7 +6,9 @@ from lace.cosmo import camb_cosmo, fit_linP
 
 def main():
     labels = ["z", "dkms_dMpc", "Delta2_p", "n_p", "alpha_p", "f_p"]
-    archive = GadgetArchive(postproc="Pedersen21", update_kp=True, kp_Mpc=0.7)
+    archive = GadgetArchive(
+        postproc="Pedersen21", kp_Mpc=0.7, force_recompute_linP_params=True
+    )
 
     list_snap = np.unique(archive.ind_snap)
 
