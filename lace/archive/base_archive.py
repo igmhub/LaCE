@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import product
-from lace.archive.exceptions import ExceptionList
-from lace.emulator.utils import split_string
+
+from lace.utils.exceptions import ExceptionList
+from lace.utils.misc import split_string
 
 
 class BaseArchive(object):
@@ -72,7 +73,7 @@ class BaseArchive(object):
             "ind_phase",
             "ind_axis",
             "ind_rescaling",
-            "cosmo_pars",
+            "cosmo_params",
         ]
 
         keys_spe = ["p1d_Mpc"]
@@ -161,6 +162,7 @@ class BaseArchive(object):
             dict_av["sim_label"] = sim_label
             dict_av["ind_rescaling"] = ind_rescaling
             dict_av["ind_snap"] = ind_snap
+            dict_av["cosmo_params"] = self.data[ind_merge[0]]["cosmo_params"]
 
             # list of available keys to merger
             key_list = self.data[ind_merge[0]].keys()
@@ -466,3 +468,30 @@ class BaseArchive(object):
         plt.show()
 
         return
+
+    def print_entry(self, entry):
+        """
+        Print basic information about a particular entry in the archive.
+
+        Parameters:
+            self (object): The object instance.
+            entry (int): The index of the entry to print.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the provided entry index is out of range.
+
+        """
+
+        if entry >= len(self.data):
+            raise ValueError("{} entry does not exist in archive".format(entry))
+
+        list_print = ["z"] + self.emu_params
+
+        info = "entry = {}".format(entry)
+        for key in list_print:
+            info += ", {} = {:.4f}".format(key, self.data[entry][key])
+
+        print(info)
