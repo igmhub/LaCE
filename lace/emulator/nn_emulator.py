@@ -12,14 +12,9 @@ from torch import nn, optim
 from torch.optim import lr_scheduler
 
 # LaCE modules
-from lace.cosmo import camb_cosmo
-from lace.cosmo import fit_linP
-from lace.archive import gadget_archive
-from lace.archive import nyx_archive
-from lace.emulator import utils
-from lace.emulator import nn_architecture
-from lace.emulator import base_emulator
-
+from lace.archive import gadget_archive, nyx_archive
+from lace.emulator import nn_architecture, base_emulator
+from lace.utils import poly_p1d
 
 
 class NNEmulator(base_emulator.BaseEmulator):
@@ -44,7 +39,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         self,
         archive=None,
         training_set=None,
-        emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc'], 
+        emu_params=["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
         emulator_label=None,
         kmax_Mpc=4,
         ndeg=5,
@@ -67,17 +62,21 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.save_path = save_path
         self.model_path = model_path
         lace_path = os.environ["LACE_REPO"] + "/"
-        self.models_dir = os.path.join(lace_path, "lace/emulator/")
+        self.models_dir = os.path.join(lace_path, "data/")
         # CPU vs GPU
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
         # training data settings
-        self.drop_sim=drop_sim
-        self.drop_z=drop_z
- 
+        self.drop_sim = drop_sim
+        self.drop_z = drop_z
+
         # check input #
-        training_set_all = ["Pedersen21", "Cabayol23","Nyx23"]
-        if (archive!=None)&(training_set!=None):
-            raise ValueError("Conflict! Both custom archive and training_set provided")
+        training_set_all = ["Pedersen21", "Cabayol23", "Nyx23"]
+        if (archive != None) & (training_set != None):
+            raise ValueError(
+                "Conflict! Both custom archive and training_set provided"
+            )
         if training_set is not None:
             try:
                 if training_set in training_set_all:
@@ -90,10 +89,12 @@ class NNEmulator(base_emulator.BaseEmulator):
                     )
                     raise
             except:
-                print("An error occurred while checking the training_set value.")
+                print(
+                    "An error occurred while checking the training_set value."
+                )
                 raise
         emulator_label_all = ["Cabayol23", "Cabayol23_Nyx"]
-        if emulator_label is not None:  
+        if emulator_label is not None:
             try:
                 if emulator_label in emulator_label_all:
                     print(f"Select emulator in {emulator_label}")
@@ -106,10 +107,12 @@ class NNEmulator(base_emulator.BaseEmulator):
                     raise
 
             except:
-                print("An error occurred while checking the emulator_label value.")
+                print(
+                    "An error occurred while checking the emulator_label value."
+                )
                 raise
         else:
-            print("Selected custom emulator")            
+            print("Selected custom emulator")
         # end check input #
 
         # define emulator settings
@@ -121,9 +124,16 @@ class NNEmulator(base_emulator.BaseEmulator):
                 + "passed to the emulator will be overwritten to match "
                 + "these ones"
             )
-            self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
+            self.emu_params = [
+                "Delta2_p",
+                "n_p",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "kF_Mpc",
+            ]
             self.kmax_Mpc, self.ndeg, self.step_size = 4, 5, 75
-            
+
         if emulator_label == "Cabayol23_Nyx":
             print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
@@ -132,84 +142,113 @@ class NNEmulator(base_emulator.BaseEmulator):
                 + "passed to the emulator will be overwritten to match "
                 + "these ones"
             )
-            self.emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "lambda_P"]
-            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size = 4, 5, 1000, 750
+            self.emu_params = [
+                "Delta2_p",
+                "n_p",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "lambda_P",
+            ]
+            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size = (
+                4,
+                5,
+                1000,
+                750,
+            )
 
         # set archive and training set
-        if archive!=None and training_set==None:
+        if archive != None and training_set == None:
             print("Use custom archive provided by the user")
             self.archive = archive
-            self.training_data = self.archive.get_training_data(emu_params=self.emu_params, drop_sim=self.drop_sim, drop_z=self.drop_z)
-            print(f'Training samples in archive : {len(self.training_data)}')
+            self.training_data = self.archive.get_training_data(
+                emu_params=self.emu_params,
+                drop_sim=self.drop_sim,
+                drop_z=self.drop_z,
+            )
+            print(f"Training samples in archive : {len(self.training_data)}")
 
-        elif (archive==None)&(training_set==None):
-            raise(ValueError('Archive or training_set must be provided'))
+        elif (archive == None) & (training_set == None):
+            raise (ValueError("Archive or training_set must be provided"))
 
-        if training_set in ['Pedersen21','Cabayol23']:
-            self.archive=gadget_archive.GadgetArchive(postproc=training_set)
-            self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+        if training_set in ["Pedersen21", "Cabayol23"]:
+            self.archive = gadget_archive.GadgetArchive(postproc=training_set)
+            self.training_data = self.archive.get_training_data(
+                emu_params=self.emu_params
+            )
 
-        elif training_set in ['Nyx23']:
+        elif training_set in ["Nyx23"]:
             self.archive = nyx_archive.NyxArchive()
-            self.training_data = self.archive.get_training_data(emu_params=self.emu_params)
+            self.training_data = self.archive.get_training_data(
+                emu_params=self.emu_params
+            )
 
         # check consistency
         if emulator_label == "Cabayol23":
             # make sure that input archive / training data are Gadget sims
-            if 'mpg_' not in self.training_data[0]['sim_label']:
+            if "mpg_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Gadget sims")
 
         if emulator_label == "Cabayol23_Nyx":
             # make sure that input archive / training data are Nyx sims
-            if 'nyx_' not in self.training_data[0]['sim_label']:
+            if "nyx_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Nyx sims")
 
         # decide whether to train emulator or read from file
-        if train == False: 
-            if (emulator_label==None)|(training_set==None):
-                raise ValueError("Pre-trained models can only be loaded passing an emulator_label and a training_set")
+        if train == False:
+            if (emulator_label == None) | (training_set == None):
+                raise ValueError(
+                    "Pre-trained models can only be loaded passing an emulator_label and a training_set"
+                )
 
             if self.model_path == None:
                 raise ValueError("If train==False, model path is required.")
 
             pretrained_weights = torch.load(
-                os.path.join(self.models_dir, self.model_path), map_location="cpu"
+                os.path.join(self.models_dir, self.model_path),
+                map_location="cpu",
             )
             self.nn = nn_architecture.MDNemulator_polyfit(
                 nhidden=5, ndeg=self.ndeg, ninput=len(self.emu_params)
             )
-            self.nn.load_state_dict(pretrained_weights['model'])
+            self.nn.load_state_dict(pretrained_weights["model"])
             self.nn.to(self.device)
             print("Model loaded. No training needed")
 
             # check consistency between required settings and read ones
-            emulator_settings = pretrained_weights['emulator_params']
-            training_set_loaded = emulator_settings['training_set']
-            emulator_label_loaded = emulator_settings['emulator_label']
-            drop_sim_loaded = emulator_settings['drop_sim']
+            emulator_settings = pretrained_weights["emulator_params"]
+            training_set_loaded = emulator_settings["training_set"]
+            emulator_label_loaded = emulator_settings["emulator_label"]
+            drop_sim_loaded = emulator_settings["drop_sim"]
 
-            if emulator_label_loaded!=emulator_label:
-                raise ValueError(f"Asked for emulator_label {emulator_label} but loaded file with {emulator_label_loaded}")
-            if training_set_loaded!=training_set:
-                raise ValueError(f"Asked for training_set {training_set} but loaded file with {training_set_loaded}")
+            if emulator_label_loaded != emulator_label:
+                raise ValueError(
+                    f"Asked for emulator_label {emulator_label} but loaded file with {emulator_label_loaded}"
+                )
+            if training_set_loaded != training_set:
+                raise ValueError(
+                    f"Asked for training_set {training_set} but loaded file with {training_set_loaded}"
+                )
 
             if False:
                 # AFR: I would have liked to check this, but not possible now
-                if drop_sim_loaded!=drop_sim:
-                    raise ValueError(f"Asked for drop_sim {drop_sim} but loaded file with drop_sim {drop_sim_loaded}")
+                if drop_sim_loaded != drop_sim:
+                    raise ValueError(
+                        f"Asked for drop_sim {drop_sim} but loaded file with drop_sim {drop_sim_loaded}"
+                    )
 
-            if emulator_settings['drop_sim'] != None:
-                drop_sim=emulator_params['drop_sim']
-                print(f'WARNING: Model trained without simulation {drop_sim}')
+            if emulator_settings["drop_sim"] != None:
+                drop_sim = emulator_params["drop_sim"]
+                print(f"WARNING: Model trained without simulation {drop_sim}")
+
 
 
             kMpc_train = self._obtain_sim_params()
             log_kMpc_train = torch.log10(kMpc_train).to(self.device)
             self.log_kMpc = log_kMpc_train
                 
-                
-        else:           
-
+               
+        else:
             # AFR: it looks like this block could be moved to self.train()
             # and that it could be self._train(initial_weights) instead
 
@@ -222,7 +261,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                     )
                 if self.kmax_Mpc == 8:
                     self.initial_weights_path = os.path.join(
-                        self.models_dir, "initial_params/initial_weights_extended.pt"
+                        self.models_dir,
+                        "initial_params/initial_weights_extended.pt",
                     )
 
             t0=time.time()
@@ -264,20 +304,19 @@ class NNEmulator(base_emulator.BaseEmulator):
             Nk (int): Number of k values.
             k_Mpc_train (tensor): k values in the k training range
         """
-        
+
         k_mask = [
-            (self.training_data[i]["k_Mpc"] < self.kmax_Mpc) & (self.training_data[i]["k_Mpc"] > 0)
+            (self.training_data[i]["k_Mpc"] < self.kmax_Mpc)
+            & (self.training_data[i]["k_Mpc"] > 0)
             for i in range(len(self.training_data))
         ]
-        
-        self.k_mask= k_mask
-        
+
+        self.k_mask = k_mask
+
         k_Mpc_train = self.training_data[0]["k_Mpc"][k_mask[0]]
-        k_Mpc_train=torch.Tensor(k_Mpc_train)
+        k_Mpc_train = torch.Tensor(k_Mpc_train)
         Nk = len(k_Mpc_train)
         self.Nk = Nk
-        
-        
 
         data = [
             {
@@ -287,8 +326,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(self.training_data))
         ]
-        
-        
+
         data = self._sort_dict(
             data, self.emu_params
         )  # sort the data by emulator parameters
@@ -302,7 +340,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             ),
             1,
         )
-        
+
         self.paramLims = paramlims
 
         training_label = [
@@ -313,9 +351,9 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(self.training_data))
         ]
-                        
+
         training_label = [
-            training_label[i]['p1d_Mpc'][k_mask[i]].tolist()
+            training_label[i]["p1d_Mpc"][k_mask[i]].tolist()
             for i in range(len(self.training_data))
         ]
         training_label = np.array(training_label)
@@ -379,7 +417,6 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         return training_label  # , yscalings
 
-
     def train(self):
         """
         Trains the emulator with given key_list using the archive data.
@@ -395,9 +432,13 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         self.log_kMpc = log_kMpc_train
 
-        self.nn = nn_architecture.MDNemulator_polyfit(nhidden=5, ndeg=self.ndeg, ninput=len(self.emu_params))
+        self.nn = nn_architecture.MDNemulator_polyfit(
+            nhidden=5, ndeg=self.ndeg, ninput=len(self.emu_params)
+        )
         if self.initial_weights == True:
-            initial_weights_params = torch.load(self.initial_weights_path, map_location="cpu")
+            initial_weights_params = torch.load(
+                self.initial_weights_path, map_location="cpu"
+            )
             self.nn.load_state_dict(initial_weights_params)
 
         optimizer = optim.Adam(
@@ -407,7 +448,6 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         training_data = self._get_training_data_nn()
         training_label = self._get_training_pd1_nn()
-
 
         trainig_dataset = TensorDataset(training_data, training_label)
         loader_train = DataLoader(trainig_dataset, batch_size=100, shuffle=True)
@@ -430,7 +470,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                     axis=1,
                 )
 
-                powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(self.device)
+                powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(
+                    self.device
+                )
                 P1Derr = torch.sqrt(
                     torch.sum(
                         coeffserr[:, powers, None]
@@ -456,17 +498,15 @@ class NNEmulator(base_emulator.BaseEmulator):
     def save_emulator(self):
         torch.save(self.nn.state_dict(), self.save_path)
 
-        
     def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
         k_Mpc = torch.Tensor(k_Mpc)
         log_kMpc = torch.log10(k_Mpc).to(self.device)
 
         with torch.no_grad():
-
             emu_call = {}
             for param in self.emu_params:
                 if param not in model:
-                    raise(ValueError(param+' not in input model'))
+                    raise (ValueError(param + " not in input model"))
                 emu_call[param] = model[param]
 
             emu_call = {k: emu_call[k] for k in self.emu_params}
@@ -502,12 +542,14 @@ class NNEmulator(base_emulator.BaseEmulator):
             emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
             emu_p1derr = emu_p1derr.detach().cpu().numpy().flatten()
 
-            emu_p1derr = 10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
+            emu_p1derr = (
+                10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
+            )
             emu_p1d = 10 ** (emu_p1d) * self.yscalings
 
-        if return_covar==True:
+        if return_covar == True:
             covar = np.outer(emu_p1derr, emu_p1derr)
             return emu_p1d, covar
-        
+
         else:
             return emu_p1d
