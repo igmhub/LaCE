@@ -314,6 +314,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         k_Mpc_train = self.training_data[0]["k_Mpc"][k_mask[0]]
         k_Mpc_train = torch.Tensor(k_Mpc_train)
+        self.k_Mpc = k_Mpc_train
         Nk = len(k_Mpc_train)
         self.Nk = Nk
 
@@ -416,6 +417,18 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         return training_label  # , yscalings
 
+    def _set_weights(self):
+	"""
+        Method to set the loss function weights to train the extended emulator
+        as studied by Emma Clarasó
+	"""
+        w = torch.ones(size=(self.Nk,))
+        exponential_values = torch.linspace(0, 1.4, len(self.k_Mpc[self.k_Mpc>4]))
+        w[self.k_Mpc>4]= torch.exp(-exponential_values)
+
+        return w
+
+
     def train(self):
         """
         Trains the emulator with given key_list using the archive data.
@@ -426,6 +439,9 @@ class NNEmulator(base_emulator.BaseEmulator):
         """
 
         kMpc_train = self._obtain_sim_params()
+
+        loss_function_weights = self._set_weights()
+        loss_function_weights=loss_function_weights.to(self.device)
 
         log_kMpc_train = torch.log10(kMpc_train).to(self.device)
 
@@ -485,6 +501,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                 log_prob = ((P1Dpred - p1D_true.to(self.device)) / P1Derr).pow(
                     2
                 ) + 2 * P1Dlogerr  #
+
+                log_prob = loss_function_weights[None,:] * log_prob
 
                 loss = torch.nansum(log_prob, 1)
                 loss = torch.nanmean(loss, 0)
