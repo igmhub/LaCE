@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import time
 import sys
 import copy
 
@@ -264,10 +263,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                         self.models_dir,
                         "initial_params/initial_weights_extended.pt",
                     )
-
-            t0=time.time()
+ 
             self.train()
-            print(f'Emulator trained in {time.time()-t0} seconds')
 
             if self.save_path != None:
                 # saves the model in the predefined path after training
@@ -454,7 +451,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         self.nn.to(self.device)
 
-        t0 = time.time()
+
         for epoch in range(self.nepochs):
             for datain, p1D_true in loader_train:
                 optimizer.zero_grad()
