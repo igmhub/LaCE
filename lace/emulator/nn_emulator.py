@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import time
 import sys
 import copy
 
@@ -241,14 +240,13 @@ class NNEmulator(base_emulator.BaseEmulator):
                 drop_sim = emulator_params["drop_sim"]
                 print(f"WARNING: Model trained without simulation {drop_sim}")
 
-            if training_set == "Cabayol23":
-                kMpc_train = self._obtain_sim_params()
-                log_kMpc_train = torch.log10(kMpc_train).to(self.device)
-                self.log_kMpc = log_kMpc_train
 
-            elif training_set == "Nyx":
-                raise ValueError("Work in progress")
 
+            kMpc_train = self._obtain_sim_params()
+            log_kMpc_train = torch.log10(kMpc_train).to(self.device)
+            self.log_kMpc = log_kMpc_train
+                
+               
         else:
             # AFR: it looks like this block could be moved to self.train()
             # and that it could be self._train(initial_weights) instead
@@ -265,7 +263,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                         self.models_dir,
                         "initial_params/initial_weights_extended.pt",
                     )
-
+ 
             self.train()
 
             if self.save_path != None:
@@ -453,7 +451,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         self.nn.to(self.device)
 
-        t0 = time.time()
+
         for epoch in range(self.nepochs):
             for datain, p1D_true in loader_train:
                 optimizer.zero_grad()
