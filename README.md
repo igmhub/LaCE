@@ -49,23 +49,15 @@ The following modules are required:
 
 ### Installation at NERSC
 
-(Instructions by Laura Cabayol on July 21st 2023)
+(Instructions by Laura Cabayol on July 21st 2023. Updated by Naim Karacayli on Oct 12, 2023)
 
 On a fresh terminal:
 
 `module load python`
 
-`conda create -n lace pip`
+`conda create -n lace python=3.10`
 
 `conda activate lace`
-
-`pip install numpy==1.24.4`
-
-`pip install gpy pandas configobj matplotlib h5py scikit_learn`
-
-`pip install torch`
-
-`pip install camb`
 
 Followed by:
 
@@ -79,7 +71,7 @@ then
 
 `cd LaCE`
 
-`python setup.py install`
+`pip install -e .`
 
 If you want to use notebooks via JupyterHub, you'll also need:
 
