@@ -61,7 +61,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         # paths to save/load models
         self.save_path = save_path
         self.model_path = model_path
-        lace_path = f"{lace.__path__}/"
+        lace_path = f"{lace.__path__[0]}/"
         self.models_dir = os.path.join(lace_path, "data/")
         # CPU vs GPU
         self.device = torch.device(
