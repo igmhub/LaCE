@@ -11,6 +11,7 @@ from torch import nn, optim
 from torch.optim import lr_scheduler
 
 # LaCE modules
+import lace
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator import nn_architecture, base_emulator
 from lace.utils import poly_p1d
@@ -60,7 +61,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         # paths to save/load models
         self.save_path = save_path
         self.model_path = model_path
-        lace_path = os.environ["LACE_REPO"] + "/"
+        lace_path = f"{lace.__path__}/"
         self.models_dir = os.path.join(lace_path, "data/")
         # CPU vs GPU
         self.device = torch.device(

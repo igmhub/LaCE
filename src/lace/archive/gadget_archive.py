@@ -4,6 +4,7 @@ import sys
 import os
 import json
 
+import lace
 from lace.setup_simulations import read_genic, read_gadget
 from lace.archive.base_archive import BaseArchive
 from lace.utils.exceptions import ExceptionList
@@ -112,9 +113,6 @@ class GadgetArchive(BaseArchive):
 
         Returns:
             None
-
-        Raises:
-            AssertionError: If the environment variable "LACE_REPO" is not set.
         """
 
         self.postproc = postproc
@@ -184,9 +182,7 @@ class GadgetArchive(BaseArchive):
             self.testing_z_max = 10
 
         ## get path of the repo
-
-        assert "LACE_REPO" in os.environ, "export LACE_REPO"
-        repo = os.environ["LACE_REPO"] + "/"
+        repo = f"{lace.__path__}/"
 
         self.fulldir = repo + self.basedir
         self.fulldir_param = repo + self.basedir_params
