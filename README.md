@@ -5,90 +5,45 @@ of the Lyman-alpha forest, and was used to generate the results shown in
 https://arxiv.org/abs/2011.15127. Please cite this article if you use this emulator in your research.
 
 ## Installation
-
-Set an environment variable `export LACE_REPO=/path/to/repo/LaCE`. This will be needed to use the code, so its best to have this
-in something like a `.bashrc` so it is always defined.
-
-### Dependencies:
-
-The following modules are required:
-
-`numpy`
-
-`pandas`
-
-`scipy`
-
-`scikit_learn`
-
-`copy`
-
-`matplotlib`
-
-`os`
-
-`sys`
-
-`time`
-
-`json`
-
-`pickle`
-
-`configobj`
-
-`itertools`
-
-`CAMB` version 1.1.3 or later https://github.com/cmbant/CAMB (only works with Python 3.6 or later as of 14/01/2021)
-
-`GPy`
-
-`pytorch`
-
-`classylss` (not at this point, I think)
-
-### Installation at NERSC
-
 (Instructions by Laura Cabayol on July 21st 2023. Updated by Naim Karacayli on Oct 12, 2023)
 
-On a fresh terminal:
+- To install on NERSC, you first need to load python module with `module load python`. This is not necessary for personal computers.
 
-`module load python`
+- Create a new conda environment. It is usually better to follow python version one or two behind. In October 2023, latest is 3.11, so we recommend 3.10.
 
-`conda create -n lace python=3.10`
+```
+conda create -n lace python=3.10
+conda activate lace
+```
 
-`conda activate lace`
+- If you are **not** a developer, simply pip install. The following command will take care of the dependencies.
 
-Followed by:
+`pip install git@github.com:igmhub/LaCE.git`
+    
+- If you are a developer, first clone the repo into your machine and perform an *editable* installation:
 
-`git clone git@github.com:igmhub/LaCE.git`
+```
+git clone git@github.com:igmhub/LaCE.git
+cd LacE
+pip install -e .
+``` 
 
-or
+- If you want to use notebooks via JupyterHub, you'll also need to download `ipykernel`:
 
-`git clone https://github.com/igmhub/LaCE.git`
+```
+pip install ipykernel
+python -m ipykernel install --user --name lace --display-name lace
+```
 
-then 
 
-`cd LaCE`
-
-`pip install -e .`
-
-If you want to use notebooks via JupyterHub, you'll also need:
-
-`pip install ipykernel`
-
-`python -m ipykernel install --user --name lace --display-name lace`
-
-You need to add the Nyx path as an enviroment variable. Also, if you
-want to use the Nyx archive, the path also needs to be added as an environment variable.
+- You may need to add the Nyx path as an enviroment variable in your notebook kernel. Also, if you want to use the Nyx archive, the path also needs to be added as an environment variable.
 This is done writting in the kernel.json file:
 
+```
  "env": {
-  "LACE_REPO":"/path_to_lace",
   "NYX_PATH":"path_to_Nyx"
  }
- 
- 
+```
 
 ## Emulator parameters:
 
