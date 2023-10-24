@@ -1,0 +1,10 @@
+numpy==1.24.4
+pandas
+scipy
+h5py
+scikit_learn
+matplotlib
+configobj
+camb>=1.1.3
+GPy
+torch
