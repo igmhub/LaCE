@@ -6,7 +6,9 @@ from lace.cosmo import camb_cosmo, fit_linP
 
 def main():
     labels = ["z", "dkms_dMpc", "Delta2_p", "n_p", "alpha_p", "f_p"]
-    nyx_fname = "/home/jchaves/Proyectos/projects/lya/data/nyx/models.hdf5"
+    nyx_fname = (
+        "/home/jchaves/Proyectos/projects/lya/data/nyx/models_Nyx_Oct2023.hdf5"
+    )
     nyx_archive = NyxArchive(
         file_name=nyx_fname, kp_Mpc=0.7, force_recompute_linP_params=True
     )
