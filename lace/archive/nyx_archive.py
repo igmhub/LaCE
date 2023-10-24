@@ -24,9 +24,9 @@ class NyxArchive(BaseArchive):
         file_name=None,
         kp_Mpc=None,
         force_recompute_linP_params=False,
-        verbose=False
+        verbose=False,
+        nfiles=18,
     ):
-
         ## check input
         if isinstance(file_name, (str, type(None))) == False:
             raise TypeError("file_name must be a string or None")
@@ -55,14 +55,14 @@ class NyxArchive(BaseArchive):
         # list of hypercube simulations
         self.list_sim_cube = []
         # simulation 14 was identified as problematic by the Nyx team
-        for ii in range(14):
+        for ii in range(nfiles):
             self.list_sim_cube.append("nyx_" + str(ii))
         # list all simulations
         self.list_sim = self.list_sim_cube + self.list_sim_test
         ## done set simulation list
 
         # get relevant flags for post-processing
-        self._set_info_sim()
+        self._set_info_sim(nfiles)
 
         # load power spectrum measurements
         self._load_data(file_name, force_recompute_linP_params)
@@ -70,7 +70,7 @@ class NyxArchive(BaseArchive):
         # extract indexes from data
         self._set_labels()
 
-    def _set_info_sim(self):
+    def _set_info_sim(self, nfiles):
         # number of simulation phases (IC)
         self.n_phases = 1
         # number of simulation axes in the post-processing
@@ -98,92 +98,53 @@ class NyxArchive(BaseArchive):
         }
         # sigT_Mpc missing after gamma
 
+        # conversion between names of the simulations in Nyx
+        # file and lace bookkeeping
         self.sim_conv = {
-            "cosmo_grid_0": "nyx_0",
-            "cosmo_grid_1": "nyx_1",
-            "cosmo_grid_2": "nyx_2",
-            "cosmo_grid_3": "nyx_3",
-            "cosmo_grid_4": "nyx_4",
-            "cosmo_grid_5": "nyx_5",
-            "cosmo_grid_6": "nyx_6",
-            "cosmo_grid_7": "nyx_7",
-            "cosmo_grid_8": "nyx_8",
-            "cosmo_grid_9": "nyx_9",
-            "cosmo_grid_10": "nyx_10",
-            "cosmo_grid_11": "nyx_11",
-            "cosmo_grid_12": "nyx_12",
-            "cosmo_grid_13": "nyx_13",
-            "cosmo_grid_14": "nyx_14",
             "fiducial": "nyx_central",
             "bar_ic_grid_3": "nyx_seed",
             "wdm_3.5kev_grid_1": "nyx_wdm",
         }
-
-        self.z_conv = {
-            "redshift_2.0": 0,
-            "redshift_2.2": 1,
-            "redshift_2.4": 2,
-            "redshift_2.6": 3,
-            "redshift_2.8": 4,
-            "redshift_3.0": 5,
-            "redshift_3.2": 6,
-            "redshift_3.4": 7,
-            "redshift_3.6": 8,
-            "redshift_3.8": 9,
-            "redshift_4.0": 10,
-            "redshift_4.2": 11,
-            "redshift_4.4": 12,
-            "redshift_4.6": 13,
-            "redshift_5.0": 14,
-            "redshift_5.4": 15,
-        }
+        for ii in range(nfiles):
+            self.sim_conv["cosmo_grid_" + str(ii)] = "nyx_" + str(ii)
 
         # list of available redshifts at Nyx (not all sims have them)
         # self.list_sim_redshifts=np.append(np.arange(2.0,4.5,0.2),
         #        np.arange(4.6,5.5,0.4))
         self.list_sim_redshifts = [
-            2,
+            2.0,
             2.2,
             2.4,
             2.6,
             2.8,
-            3,
+            3.0,
             3.2,
             3.4,
             3.6,
             3.8,
-            4,
+            4.0,
             4.2,
             4.4,
             4.6,
-            5,
+            5.0,
             5.4,
         ]
 
+        # conversion between nyx and lace snapshot names
+        self.z_conv = {}
+        for ii in range(len(self.list_sim_redshifts)):
+            flag = "redshift_" + str(self.list_sim_redshifts[ii])
+            self.z_conv[flag] = ii
+
+        # conversion between scaling names
         self.scaling_conv = {
             "native_parameters": 0,
             "rescale_Fbar_fiducial": 1,
-            "thermal_grid_0": 2,
-            "thermal_grid_1": 3,
-            "thermal_grid_2": 4,
-            "thermal_grid_3": 5,
-            "thermal_grid_4": 6,
-            "thermal_grid_5": 7,
-            "thermal_grid_6": 8,
-            "thermal_grid_7": 9,
-            "thermal_grid_8": 10,
-            "thermal_grid_9": 11,
-            "thermal_grid_10": 12,
-            "thermal_grid_11": 13,
-            "thermal_grid_12": 14,
-            "thermal_grid_13": 15,
-            "thermal_grid_14": 16,
-            "new_thermal_lhd_0": 17,
-            "new_thermal_lhd_1": 18,
-            "new_thermal_lhd_2": 19,
-            "new_thermal_lhd_3": 20,
-            "new_thermal_lhd_4": 21,
         }
+        for ii in range(15):
+            self.scaling_conv["thermal_grid_" + str(ii)] = ii + 2
+        for ii in range(5):
+            self.scaling_conv["new_thermal_lhd_" + str(ii)] = ii + 17
 
         self.axis_conv = {
             "x": 0,
@@ -202,8 +163,9 @@ class NyxArchive(BaseArchive):
             "lambda_P",
         ]
 
-    def _get_emu_cosmo(self, nyx_data, sim_label,
-                force_recompute_linP_params=False):
+    def _get_emu_cosmo(
+        self, nyx_data, sim_label, force_recompute_linP_params=False
+    ):
         """
         Get the cosmology and parameters describing linear power spectrum from simulation.
 
@@ -222,32 +184,39 @@ class NyxArchive(BaseArchive):
         isim = self.sim_conv[sim_label]
 
         # figure out whether we need to compute linP params
-        compute_linP_params=False
+        compute_linP_params = False
 
         if force_recompute_linP_params:
-            compute_linP_params=True
+            compute_linP_params = True
         else:
             # open file with precomputed values to check kp_Mpc
             try:
                 file_cosmo = np.load(self.file_cosmo, allow_pickle=True)
             except:
                 raise IOError("The file " + file_cosmo + " does not exist")
+            else:
+                for ii in range(len(file_cosmo)):
+                    if file_cosmo[ii]["sim_label"] == isim:
+                        # if kp_Mpc not defined, use precomputed value
+                        if self.kp_Mpc is None:
+                            self.kp_Mpc = file_cosmo[ii]["linP_params"][
+                                "kp_Mpc"
+                            ]
 
-            for ii in range(len(file_cosmo)):
-                if file_cosmo[ii]["sim_label"] == isim:
-                    # if kp_Mpc not defined, use precomputed value
-                    if self.kp_Mpc is None:
-                        self.kp_Mpc = file_cosmo[ii]["linP_params"]["kp_Mpc"]
-
-                    # if kp_Mpc different from precomputed value, compute
-                    if self.kp_Mpc != file_cosmo[ii]["linP_params"]["kp_Mpc"]:
-                        if self.verbose:
-                            print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
-                        compute_linP_params = True
-                    else:
-                        cosmo_params = file_cosmo[ii]["cosmo_params"]
-                        linP_params = file_cosmo[ii]["linP_params"]
-                    break
+                        # if kp_Mpc different from precomputed value, compute
+                        if (
+                            self.kp_Mpc
+                            != file_cosmo[ii]["linP_params"]["kp_Mpc"]
+                        ):
+                            if self.verbose:
+                                print(
+                                    "Recomputing kp_Mpc at " + str(self.kp_Mpc)
+                                )
+                            compute_linP_params = True
+                        else:
+                            cosmo_params = file_cosmo[ii]["cosmo_params"]
+                            linP_params = file_cosmo[ii]["linP_params"]
+                        break
 
         if compute_linP_params == True:
             # this is the only place where you need CAMB
@@ -285,12 +254,11 @@ class NyxArchive(BaseArchive):
         return cosmo_params, linP_params
 
     def _load_data(self, file_name, force_recompute_linP_params=False):
-
         # if file_name was not provided, search for default one
         if file_name is None:
             if "NYX_PATH" not in os.environ:
                 raise ValueError("Define NYX_PATH variable or pass file_name")
-            file_name = os.environ["NYX_PATH"] + "/models.hdf5"
+            file_name = os.environ["NYX_PATH"] + "/models_Nyx_Oct2023.hdf5"
             self.file_cosmo = os.environ["NYX_PATH"] + "/nyx_emu_cosmo.npy"
         else:
             self.file_cosmo = os.path.dirname(file_name) + "/nyx_emu_cosmo.npy"
@@ -315,7 +283,8 @@ class NyxArchive(BaseArchive):
             # read cosmo information and linear power parameters
             # (will only need CAMB if pivot point kp_Mpc is changed)
             cosmo_params, linP_params = self._get_emu_cosmo(
-                    ff, isim, force_recompute_linP_params)
+                ff, isim, force_recompute_linP_params
+            )
 
             # loop over redshifts
             z_avail = list(ff[isim].keys())
