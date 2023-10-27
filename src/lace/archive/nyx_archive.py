@@ -21,7 +21,7 @@ class NyxArchive(BaseArchive):
 
     def __init__(
         self,
-        nyx_version,
+        nyx_version="Oct2023",
         file_name=None,
         kp_Mpc=None,
         force_recompute_linP_params=False,
