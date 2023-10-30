@@ -13,10 +13,10 @@ def main():
 
     # file containing Nyx data
     nyx_version = "Oct2023"
-    nyx_fname = os.environ["NYX_PATH"] + "models_Nyx_" + nyx_version + ".hdf5"
+    nyx_fname = os.environ["NYX_PATH"] + "/models_Nyx_" + nyx_version + ".hdf5"
     # file that will be written containing cosmo data for Nyx file
     cosmo_fname = (
-        os.environ["NYX_PATH"] + "nyx_emu_cosmo_" + nyx_version + ".npy"
+        os.environ["NYX_PATH"] + "/nyx_emu_cosmo_" + nyx_version + ".npy"
     )
 
     nyx_archive = NyxArchive(
