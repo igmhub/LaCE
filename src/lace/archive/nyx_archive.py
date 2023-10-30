@@ -21,6 +21,7 @@ class NyxArchive(BaseArchive):
 
     def __init__(
         self,
+        nyx_version="Oct2023",
         file_name=None,
         kp_Mpc=None,
         force_recompute_linP_params=False,
@@ -28,6 +29,10 @@ class NyxArchive(BaseArchive):
         nfiles=18,
     ):
         ## check input
+        if isinstance(nyx_version, str) == False:
+            raise TypeError("nyx_version must be a string")
+        self.nyx_version = nyx_version
+
         if isinstance(file_name, (str, type(None))) == False:
             raise TypeError("file_name must be a string or None")
 
@@ -194,32 +199,42 @@ class NyxArchive(BaseArchive):
                 file_cosmo = np.load(self.file_cosmo, allow_pickle=True)
             except:
                 raise IOError("The file " + file_cosmo + " does not exist")
-            else:
-                for ii in range(len(file_cosmo)):
-                    if file_cosmo[ii]["sim_label"] == isim:
-                        # if kp_Mpc not defined, use precomputed value
-                        if self.kp_Mpc is None:
-                            self.kp_Mpc = file_cosmo[ii]["linP_params"][
-                                "kp_Mpc"
-                            ]
 
-                        # if kp_Mpc different from precomputed value, compute
-                        if (
-                            self.kp_Mpc
-                            != file_cosmo[ii]["linP_params"]["kp_Mpc"]
-                        ):
-                            if self.verbose:
-                                print(
-                                    "Recomputing kp_Mpc at " + str(self.kp_Mpc)
-                                )
-                            compute_linP_params = True
-                        else:
-                            cosmo_params = file_cosmo[ii]["cosmo_params"]
-                            linP_params = file_cosmo[ii]["linP_params"]
-                        break
+            sim_in_file = False
+            for ii in range(len(file_cosmo)):
+                if file_cosmo[ii]["sim_label"] == isim:
+                    sim_in_file = True
+                    # if kp_Mpc not defined, use precomputed value
+                    if self.kp_Mpc is None:
+                        self.kp_Mpc = file_cosmo[ii]["linP_params"]["kp_Mpc"]
+
+                    # if kp_Mpc different from precomputed value, compute
+                    if self.kp_Mpc != file_cosmo[ii]["linP_params"]["kp_Mpc"]:
+                        if self.verbose:
+                            print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
+                        compute_linP_params = True
+                    else:
+                        cosmo_params = file_cosmo[ii]["cosmo_params"]
+                        linP_params = file_cosmo[ii]["linP_params"]
+                    break
+            if sim_in_file == False:
+                file_error = (
+                    "The file "
+                    + file_cosmo
+                    + " does not contain "
+                    + isim
+                    + ". To speed up calculations, "
+                    + " you can recompute the file by running "
+                    + "lace/scripts/compute_nyx_emu_cosmo.py"
+                )
+                if self.verbose:
+                    print(file_error)
+                compute_linP_params = True
 
         if compute_linP_params == True:
             # this is the only place where you need CAMB
+            if self.verbose:
+                print("We are using CAMB")
             from lace.cosmo import camb_cosmo, fit_linP
 
             cosmo_params = get_attrs(nyx_data[sim_label])
@@ -253,18 +268,36 @@ class NyxArchive(BaseArchive):
 
         return cosmo_params, linP_params
 
-    def _load_data(self, file_name, force_recompute_linP_params=False):
-        # if file_name was not provided, search for default one
+    def _load_data(self, file_name=None, force_recompute_linP_params=False):
+        # set file_name if not provided
         if file_name is None:
             if "NYX_PATH" not in os.environ:
-                raise ValueError("Define NYX_PATH variable or pass file_name")
-            file_name = os.environ["NYX_PATH"] + "/models_Nyx_Oct2023.hdf5"
-            self.file_cosmo = os.environ["NYX_PATH"] + "/nyx_emu_cosmo.npy"
-        else:
-            self.file_cosmo = os.path.dirname(file_name) + "/nyx_emu_cosmo.npy"
+                error_text = (
+                    "If file_name is not provided, you must define"
+                    + "the environ variable NYX_PATH pointing to the folder containing"
+                    + "the hdf5 file containing Nyx data"
+                )
+                raise ValueError(error_text)
+            file_name = (
+                os.environ["NYX_PATH"]
+                + "/models_Nyx_"
+                + self.nyx_version
+                + ".hdf5"
+            )
 
-        # read data
-        ff = h5py.File(file_name, "r")
+        try:
+            ff = h5py.File(file_name, "r")
+        except:
+            raise IOError("The file " + file_name + " does not exist")
+        else:
+            # set self.file_cosmo
+            if "NYX_PATH" not in os.environ:
+                folder = os.path.dirname(file_name)
+            else:
+                folder = os.environ["NYX_PATH"]
+            self.file_cosmo = (
+                folder + "/nyx_emu_cosmo_" + self.nyx_version + ".npy"
+            )
 
         # store each measurement as an entry of the following list
         # each entry is a dictionary containing all relevant info

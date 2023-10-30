@@ -5,7 +5,7 @@ of the Lyman-alpha forest, and was used to generate the results shown in
 https://arxiv.org/abs/2011.15127. Please cite this article if you use this emulator in your research.
 
 ## Installation
-(Instructions by Laura Cabayol on July 21st 2023. Updated by Naim Karacayli on Oct 12, 2023)
+(Last update Oct 27)
 
 - To install on NERSC, you first need to load python module with `module load python`. This is not necessary for personal computers.
 
@@ -35,15 +35,26 @@ pip install ipykernel
 python -m ipykernel install --user --name lace --display-name lace
 ```
 
+#### Nyx users:
 
-- You may need to add the Nyx path as an enviroment variable in your notebook kernel. Also, if you want to use the Nyx archive, the path also needs to be added as an environment variable.
-This is done writting in the kernel.json file:
+- You may need to add the Nyx path as an enviroment variable in your notebook kernel. The first is done writting in the kernel.json file:
 
 ```
  "env": {
   "NYX_PATH":"path_to_Nyx"
  }
 ```
+
+For convenience, you could also add the Nyx path as an environment variable.
+
+- To improve the reading time, you can precompute all cosmological information needed using CAMB. This is done by running the script 
+
+```
+python src/lace/scripts/compute_nyx_emu_cosmo.py
+```
+
+Note that you may need to update it as explained inside the file.
+
 
 ## Emulator parameters:
 

@@ -2,15 +2,25 @@ import numpy as np
 import h5py
 from lace.archive.nyx_archive import NyxArchive, get_attrs
 from lace.cosmo import camb_cosmo, fit_linP
+import os
 
 
 def main():
+    """Runs script to speed up the reading of Nyx data"""
+
     labels = ["z", "dkms_dMpc", "Delta2_p", "n_p", "alpha_p", "f_p"]
-    nyx_fname = (
-        "/home/jchaves/Proyectos/projects/lya/data/nyx/models_Nyx_Oct2023.hdf5"
+    # os.environ["NYX_PATH"] = # path to the Nyx files in your local computer
+
+    # file containing Nyx data
+    nyx_version = "Oct2023"
+    nyx_fname = os.environ["NYX_PATH"] + "/models_Nyx_" + nyx_version + ".hdf5"
+    # file that will be written containing cosmo data for Nyx file
+    cosmo_fname = (
+        os.environ["NYX_PATH"] + "/nyx_emu_cosmo_" + nyx_version + ".npy"
     )
+
     nyx_archive = NyxArchive(
-        file_name=nyx_fname, kp_Mpc=0.7, force_recompute_linP_params=True
+        nyx_version=nyx_version, force_recompute_linP_params=True, kp_Mpc=0.7
     )
 
     ff = h5py.File(nyx_fname, "r")
@@ -55,9 +65,7 @@ def main():
                 first = False
         all_dict.append(sim_dict)
 
-    fout = "/home/jchaves/Proyectos/projects/lya/data/nyx/nyx_emu_cosmo.npy"
-    print(fout)
-    np.save(fout, all_dict)
+    np.save(cosmo_fname, all_dict)
 
 
 if __name__ == "__main__":
