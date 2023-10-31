@@ -4,6 +4,7 @@ import os
 import sys
 import copy
 import random
+import time
 
 # Torch related modules
 import torch
@@ -496,8 +497,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         loader_train = DataLoader(trainig_dataset, batch_size=100, shuffle=True)
 
         self.nn.to(self.device)
-
-
+        print(f'Training NN on {len(training_data)} points')
+        t0=time.time()
         for epoch in range(self.nepochs):
             for datain, p1D_true in loader_train:
                 optimizer.zero_grad()
@@ -539,7 +540,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 optimizer.step()
 
             scheduler.step()
-
+        print(f'GPs optimised in {time.time()-t0} seconds')
     def save_emulator(self):
         torch.save(self.nn.state_dict(), self.save_path)
 
