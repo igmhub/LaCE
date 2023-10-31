@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import sys
 import copy
+import random
 
 # Torch related modules
 import torch
@@ -72,6 +73,11 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.drop_sim = drop_sim
         self.drop_z = drop_z
         self.weighted_emulator=weighted_emulator
+        
+        #remove randomness
+        torch.manual_seed(32)
+        np.random.seed(32)
+        random.seed(32)
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23", "Nyx23"]
