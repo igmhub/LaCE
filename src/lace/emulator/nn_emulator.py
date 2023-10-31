@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import os
 import sys
 import copy
+import random
+import time
 
 # Torch related modules
 import torch
@@ -72,6 +74,10 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.drop_sim = drop_sim
         self.drop_z = drop_z
         self.weighted_emulator=weighted_emulator
+        
+        torch.manual_seed(32)
+        np.random.seed(32)
+        random.seed(32)
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23", "Nyx23"]
@@ -491,8 +497,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         loader_train = DataLoader(trainig_dataset, batch_size=100, shuffle=True)
 
         self.nn.to(self.device)
-
-
+        print(f'Training NN on {len(training_data)} points')
+        t0=time.time()
         for epoch in range(self.nepochs):
             for datain, p1D_true in loader_train:
                 optimizer.zero_grad()
@@ -534,7 +540,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 optimizer.step()
 
             scheduler.step()
-
+        print(f'NN optimised in {time.time()-t0} seconds')
     def save_emulator(self):
         torch.save(self.nn.state_dict(), self.save_path)
 
