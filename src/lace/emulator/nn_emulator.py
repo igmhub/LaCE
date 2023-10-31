@@ -51,6 +51,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         initial_weights=True,
         save_path=None,
         model_path=None,
+        weighted_emulator=True
     ):
         # store emulator settings
         self.emu_params = emu_params
@@ -70,6 +71,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         # training data settings
         self.drop_sim = drop_sim
         self.drop_z = drop_z
+        self.weighted_emulator=weighted_emulator
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23", "Nyx23"]
@@ -422,8 +424,10 @@ class NNEmulator(base_emulator.BaseEmulator):
         as studied by Emma Clarasó
 	"""
         w = torch.ones(size=(self.Nk,))
-        exponential_values = torch.linspace(0, 1.4, len(self.k_Mpc[self.k_Mpc>4]))
-        w[self.k_Mpc>4]= torch.exp(-exponential_values)
+        if (self.kmax_Mpc>4)&(self.weighted_emulator==True):
+            print('Exponential downweighting loss function at k>4')
+            exponential_values = torch.linspace(0, 1.4, len(self.k_Mpc[self.k_Mpc>4]))
+            w[self.k_Mpc>4]= torch.exp(-exponential_values)
 
         return w
 
@@ -438,7 +442,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         """
 
         kMpc_train = self._obtain_sim_params()
-
+ 
         loss_function_weights = self._set_weights()
         loss_function_weights=loss_function_weights.to(self.device)
 
