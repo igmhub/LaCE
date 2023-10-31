@@ -19,7 +19,7 @@ from lace.utils import poly_p1d
 
 class NNEmulator(base_emulator.BaseEmulator):
     """A class for training an emulator.
-
+    
     Args:
         archive (class): Data archive used for training the emulator.
             Required when using a custom emulator.
@@ -27,7 +27,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             'Cabayol23'.
         emu_params (lsit): A list of emulator parameters.
         emulator_label (str): Specific emulator label. Options are
-            'Cabayol23' and 'Cabayol23_Nyx'.
+            'Cabayol23' and 'Nyx_vo'.
         kmax_Mpc (float): The maximum k in Mpc^-1 to use for training. Default is 3.5.
         nepochs (int): The number of epochs to train for. Default is 200.
         model_path (str): The path to a pretrained model. Default is None.
@@ -51,6 +51,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         initial_weights=True,
         save_path=None,
         model_path=None,
+        weighted_emulator=True
     ):
         # store emulator settings
         self.emu_params = emu_params
@@ -70,6 +71,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         # training data settings
         self.drop_sim = drop_sim
         self.drop_z = drop_z
+        self.weighted_emulator=weighted_emulator
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23", "Nyx23"]
@@ -93,7 +95,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                     "An error occurred while checking the training_set value."
                 )
                 raise
-        emulator_label_all = ["Cabayol23", "Cabayol23_Nyx"]
+        emulator_label_all = ["Cabayol23", "Nyx_v0", "Cabayol23_extended"]
         if emulator_label is not None:
             try:
                 if emulator_label in emulator_label_all:
@@ -113,6 +115,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                 raise
         else:
             print("Selected custom emulator")
+            if self.kmax_Mpc==8:
+                print(r"Emulating to k=8 1/Mpc requires a 7 order polynomial. " 
+                      "Forced setting of ndeg=7.")
         # end check input #
 
         # define emulator settings
@@ -134,7 +139,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             ]
             self.kmax_Mpc, self.ndeg, self.step_size = 4, 5, 75
 
-        if emulator_label == "Cabayol23_Nyx":
+        if emulator_label == "Nyx_v0":
             print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
                 + "fitting coefficients to a 5th degree polynomial. It "
@@ -156,6 +161,24 @@ class NNEmulator(base_emulator.BaseEmulator):
                 1000,
                 750,
             )
+            
+        if emulator_label == "Cabayol23_extended":
+            print(
+                r"Neural network emulating the optimal P1D of Nyx simulations "
+                + "fitting coefficients to a 7th degree polynomial. It "
+                + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
+                + "passed to the emulator will be overwritten to match "
+                + "these ones. This configuration does not downweight the "
+                + "contribution of small scales."
+            )   
+            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size, self.weighted_emulator = (
+                8,
+                7,
+                100,
+                75,
+                False
+            )
+    
 
         # set archive and training set
         if archive != None and training_set == None:
@@ -189,7 +212,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             if "mpg_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Gadget sims")
 
-        if emulator_label == "Cabayol23_Nyx":
+        if emulator_label == "Nyx_v0":
             # make sure that input archive / training data are Nyx sims
             if "nyx_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Nyx sims")
@@ -313,6 +336,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         k_Mpc_train = self.training_data[0]["k_Mpc"][k_mask[0]]
         k_Mpc_train = torch.Tensor(k_Mpc_train)
+        self.k_Mpc = k_Mpc_train
         Nk = len(k_Mpc_train)
         self.Nk = Nk
 
@@ -415,6 +439,19 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         return training_label  # , yscalings
 
+    def _set_weights(self):
+        """
+        Method to set downscale the impact of small scales on the extended emulator setup. 
+        Studied by Emma Clarassó.
+        """
+        w = torch.ones(size=(self.Nk,))
+        if (self.kmax_Mpc>4)&(self.weighted_emulator==True):
+            print('Exponential downweighting loss function at k>4')
+            exponential_values = torch.linspace(0, 1.4, len(self.k_Mpc[self.k_Mpc>4]))
+            w[self.k_Mpc>4]= torch.exp(-exponential_values)
+        return w
+
+
     def train(self):
         """
         Trains the emulator with given key_list using the archive data.
@@ -425,6 +462,9 @@ class NNEmulator(base_emulator.BaseEmulator):
         """
 
         kMpc_train = self._obtain_sim_params()
+ 
+        loss_function_weights = self._set_weights()
+        loss_function_weights=loss_function_weights.to(self.device)
 
         log_kMpc_train = torch.log10(kMpc_train).to(self.device)
 
@@ -484,6 +524,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                 log_prob = ((P1Dpred - p1D_true.to(self.device)) / P1Derr).pow(
                     2
                 ) + 2 * P1Dlogerr  #
+
+                log_prob = loss_function_weights[None,:] * log_prob
 
                 loss = torch.nansum(log_prob, 1)
                 loss = torch.nanmean(loss, 0)
