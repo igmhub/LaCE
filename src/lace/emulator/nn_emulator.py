@@ -540,7 +540,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 optimizer.step()
 
             scheduler.step()
-        print(f'GPs optimised in {time.time()-t0} seconds')
+        print(f'NN optimised in {time.time()-t0} seconds')
     def save_emulator(self):
         torch.save(self.nn.state_dict(), self.save_path)
 
