@@ -27,7 +27,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             'Cabayol23'.
         emu_params (lsit): A list of emulator parameters.
         emulator_label (str): Specific emulator label. Options are
-            'Cabayol23' and 'Cabayol23_Nyx'.
+            'Cabayol23' and 'Nyx_vo'.
         kmax_Mpc (float): The maximum k in Mpc^-1 to use for training. Default is 3.5.
         nepochs (int): The number of epochs to train for. Default is 200.
         model_path (str): The path to a pretrained model. Default is None.
@@ -95,7 +95,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                     "An error occurred while checking the training_set value."
                 )
                 raise
-        emulator_label_all = ["Cabayol23", "Cabayol23_Nyx", "Cabayol23_extended"]
+        emulator_label_all = ["Cabayol23", "Nyx_v0", "Cabayol23_extended"]
         if emulator_label is not None:
             try:
                 if emulator_label in emulator_label_all:
@@ -139,7 +139,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             ]
             self.kmax_Mpc, self.ndeg, self.step_size = 4, 5, 75
 
-        if emulator_label == "Cabayol23_Nyx":
+        if emulator_label == "Nyx_v0":
             print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
                 + "fitting coefficients to a 5th degree polynomial. It "
@@ -212,7 +212,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             if "mpg_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Gadget sims")
 
-        if emulator_label == "Cabayol23_Nyx":
+        if emulator_label == "Nyx_v0":
             # make sure that input archive / training data are Nyx sims
             if "nyx_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Nyx sims")
