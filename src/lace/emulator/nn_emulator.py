@@ -19,7 +19,7 @@ from lace.utils import poly_p1d
 
 class NNEmulator(base_emulator.BaseEmulator):
     """A class for training an emulator.
-
+    
     Args:
         archive (class): Data archive used for training the emulator.
             Required when using a custom emulator.
@@ -95,7 +95,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                     "An error occurred while checking the training_set value."
                 )
                 raise
-        emulator_label_all = ["Cabayol23", "Cabayol23_Nyx"]
+        emulator_label_all = ["Cabayol23", "Cabayol23_Nyx", "Cabayol23_extended"]
         if emulator_label is not None:
             try:
                 if emulator_label in emulator_label_all:
@@ -115,6 +115,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                 raise
         else:
             print("Selected custom emulator")
+            if self.kmax_Mpc==8:
+                print(r"Emulating to k=8 1/Mpc requires a 7 order polynomial. " 
+                      "Forced setting of ndeg=7.")
         # end check input #
 
         # define emulator settings
@@ -158,6 +161,24 @@ class NNEmulator(base_emulator.BaseEmulator):
                 1000,
                 750,
             )
+            
+        if emulator_label == "Cabayol23_extended":
+            print(
+                r"Neural network emulating the optimal P1D of Nyx simulations "
+                + "fitting coefficients to a 7th degree polynomial. It "
+                + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
+                + "passed to the emulator will be overwritten to match "
+                + "these ones. This configuration does not downweight the "
+                + "contribution of small scales."
+            )   
+            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size, self.weighted_emulator = (
+                8,
+                7,
+                100,
+                75,
+                False
+            )
+    
 
         # set archive and training set
         if archive != None and training_set == None:
@@ -419,16 +440,15 @@ class NNEmulator(base_emulator.BaseEmulator):
         return training_label  # , yscalings
 
     def _set_weights(self):
-	"""
-        Method to set the loss function weights to train the extended emulator
-        as studied by Emma Clarasó
-	"""
+        """
+        Method to set downscale the impact of small scales on the extended emulator setup. 
+        Studied by Emma Clarassó.
+        """
         w = torch.ones(size=(self.Nk,))
         if (self.kmax_Mpc>4)&(self.weighted_emulator==True):
             print('Exponential downweighting loss function at k>4')
             exponential_values = torch.linspace(0, 1.4, len(self.k_Mpc[self.k_Mpc>4]))
             w[self.k_Mpc>4]= torch.exp(-exponential_values)
-
         return w
 
 
