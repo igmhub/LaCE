@@ -53,7 +53,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         initial_weights=True,
         save_path=None,
         model_path=None,
-        weighted_emulator=True
+        weighted_emulator=True,
+        nhidden=5
     ):
         # store emulator settings
         self.emu_params = emu_params
@@ -74,6 +75,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.drop_sim = drop_sim
         self.drop_z = drop_z
         self.weighted_emulator=weighted_emulator
+        self.nhidden=nhidden
         
         torch.manual_seed(32)
         np.random.seed(32)
@@ -238,7 +240,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 map_location="cpu",
             )
             self.nn = nn_architecture.MDNemulator_polyfit(
-                nhidden=5, ndeg=self.ndeg, ninput=len(self.emu_params)
+                nhidden=self.nhidden, ndeg=self.ndeg, ninput=len(self.emu_params)
             )
             self.nn.load_state_dict(pretrained_weights["model"])
             self.nn.to(self.device)
