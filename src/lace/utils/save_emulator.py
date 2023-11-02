@@ -1,7 +1,6 @@
 import argparse
 from lace.emulator.nn_emulator import NNEmulator
 from lace.archive import nyx_archive, gadget_archive
-
 import torch
 
 def main():
