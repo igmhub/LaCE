@@ -103,7 +103,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                     "An error occurred while checking the training_set value."
                 )
                 raise
-        emulator_label_all = ["Cabayol23", "Nyx_v0", "Cabayol23_extended"]
+        emulator_label_all = ["Cabayol23", "Nyx_v0", "Nyx_v1", "Cabayol23_extended"]
         if emulator_label is not None:
             try:
                 if emulator_label in emulator_label_all:
@@ -163,11 +163,36 @@ class NNEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "lambda_P",
             ]
-            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size = (
+            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size, self.nhidden = (
                 4,
                 5,
                 1000,
                 750,
+                5
+            )
+            
+        if emulator_label == "Nyx_v1":
+            print(
+                r"Neural network emulating the optimal P1D of Nyx simulations "
+                + "fitting coefficients to a 5th degree polynomial. It "
+                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
+                + "passed to the emulator will be overwritten to match "
+                + "these ones"
+            )
+            self.emu_params = [
+                "Delta2_p",
+                "n_p",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "lambda_P",
+            ]
+            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size, self.nhidden = (
+                4,
+                5,
+                1000,
+                750,
+                2
             )
             
         if emulator_label == "Cabayol23_extended":
@@ -252,7 +277,10 @@ class NNEmulator(base_emulator.BaseEmulator):
             training_set_loaded = model_metadata["training_set"]
             emulator_label_loaded = model_metadata["emulator_label"]
             drop_sim_loaded = model_metadata["drop_sim"]
-            drop_z_loaded = float(model_metadata["drop_z"])
+            drop_z_loaded = model_metadata["drop_z"]
+            if drop_z_loaded is not None:
+                drop_z_loaded = float(drop_z_loaded)
+            
 
             if emulator_label_loaded != emulator_label:
                 raise ValueError(f"Emulator label mismatch: Expected '{emulator_label}' but loaded '{emulator_label_loaded}'")
