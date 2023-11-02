@@ -235,42 +235,42 @@ class NNEmulator(base_emulator.BaseEmulator):
             if self.model_path == None:
                 raise ValueError("If train==False, model path is required.")
 
-            pretrained_weights = torch.load(
+            pretrained_model = torch.load(
                 os.path.join(self.models_dir, self.model_path),
                 map_location="cpu",
             )
             self.nn = nn_architecture.MDNemulator_polyfit(
                 nhidden=self.nhidden, ndeg=self.ndeg, ninput=len(self.emu_params)
             )
-            self.nn.load_state_dict(pretrained_weights["model"])
+            self.nn.load_state_dict(pretrained_model["emulator"])
             self.nn.to(self.device)
             print("Model loaded. No training needed")
+            
+            model_metadata=pretrained_model["metadata"]
 
             # check consistency between required settings and read ones
-            emulator_settings = pretrained_weights["emulator_params"]
-            training_set_loaded = emulator_settings["training_set"]
-            emulator_label_loaded = emulator_settings["emulator_label"]
-            drop_sim_loaded = emulator_settings["drop_sim"]
+            training_set_loaded = model_metadata["training_set"]
+            emulator_label_loaded = model_metadata["emulator_label"]
+            drop_sim_loaded = model_metadata["drop_sim"]
+            drop_z_loaded = float(model_metadata["drop_z"])
 
             if emulator_label_loaded != emulator_label:
-                raise ValueError(
-                    f"Asked for emulator_label {emulator_label} but loaded file with {emulator_label_loaded}"
-                )
+                raise ValueError(f"Emulator label mismatch: Expected '{emulator_label}' but loaded '{emulator_label_loaded}'")
+
             if training_set_loaded != training_set:
-                raise ValueError(
-                    f"Asked for training_set {training_set} but loaded file with {training_set_loaded}"
-                )
+                raise ValueError(f"Training set mismatch: Expected '{training_set}' but loaded '{training_set_loaded}'")
 
-            if False:
-                # AFR: I would have liked to check this, but not possible now
-                if drop_sim_loaded != drop_sim:
-                    raise ValueError(
-                        f"Asked for drop_sim {drop_sim} but loaded file with drop_sim {drop_sim_loaded}"
-                    )
+            if drop_sim_loaded != self.drop_sim:
+                raise ValueError(f"drop_sim mismatch: Expected '{self.drop_sim}' but loaded '{drop_sim_loaded}'")
 
-            if emulator_settings["drop_sim"] != None:
-                drop_sim = emulator_params["drop_sim"]
-                print(f"WARNING: Model trained without simulation {drop_sim}")
+            if drop_z_loaded != self.drop_z:
+                raise ValueError(f"drop_z mismatch: Expected '{self.drop_z}' but loaded '{drop_z_loaded}'")
+
+            if model_metadata["drop_sim"] is not None and self.drop_sim is None:
+                print(f"WARNING: Model trained without simulation {model_metadata['drop_sim']}")
+
+            if model_metadata["drop_z"] is not None and self.drop_z is None:
+                print(f"WARNING: Model trained without redshift {model_metadata['drop_z']}")
 
 
 
