@@ -96,6 +96,9 @@ def main():
         archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
     elif args.training_set[:5] == "Nyx23":
         archive = nyx_archive.NyxArchive(nyx_version=args.training_set[6:])
+    else:
+        print("Training_set not implemented")
+        sys.exit()
 
     # l1O sims
     if args.drop_sim == True:
@@ -106,6 +109,7 @@ def main():
                 emulator_label=args.emulator_label,
                 drop_sim=sim_label,
                 drop_z=None,
+                initial_weights=False,
             )
             save_emu(
                 nn_emu.nn.state_dict(),
@@ -124,6 +128,7 @@ def main():
                 emulator_label=args.emulator_label,
                 drop_sim=None,
                 drop_z=redshift,
+                initial_weights=False,
             )
             save_emu(
                 nn_emu.nn.state_dict(),
@@ -141,6 +146,7 @@ def main():
             emulator_label=args.emulator_label,
             drop_sim=None,
             drop_z=None,
+            initial_weights=False,
         )
         save_emu(
             nn_emu.nn.state_dict(),
