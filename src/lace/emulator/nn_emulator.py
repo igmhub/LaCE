@@ -54,6 +54,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         save_path=None,
         model_path=None,
         weighted_emulator=True,
+        nhidden=5,
     ):
         # store emulator settings
         self.emu_params = emu_params
@@ -73,8 +74,9 @@ class NNEmulator(base_emulator.BaseEmulator):
         # training data settings
         self.drop_sim = drop_sim
         self.drop_z = drop_z
-        self.weighted_emulator = weighted_emulator
-
+        self.weighted_emulator=weighted_emulator
+        self.nhidden=nhidden
+        
         torch.manual_seed(32)
         np.random.seed(32)
         random.seed(32)
@@ -101,7 +103,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                     "An error occurred while checking the training_set value."
                 )
                 raise
-        emulator_label_all = ["Cabayol23", "Nyx_v0", "Cabayol23_extended"]
+        emulator_label_all = ["Cabayol23", "Nyx_v0", "Nyx_v1", "Cabayol23_extended"]
         if emulator_label is not None:
             try:
                 if emulator_label in emulator_label_all:
@@ -164,11 +166,36 @@ class NNEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "kF_Mpc",
             ]
-            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size = (
+            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size, self.nhidden = (
                 4,
                 5,
                 1000,
                 750,
+                5
+            )
+            
+        if emulator_label == "Nyx_v1":
+            print(
+                r"Neural network emulating the optimal P1D of Nyx simulations "
+                + "fitting coefficients to a 5th degree polynomial. It "
+                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
+                + "passed to the emulator will be overwritten to match "
+                + "these ones"
+            )
+            self.emu_params = [
+                "Delta2_p",
+                "n_p",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "lambda_P",
+            ]
+            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size, self.nhidden = (
+                4,
+                5,
+                1000,
+                750,
+                2
             )
 
         if emulator_label == "Cabayol23_extended":
@@ -252,42 +279,45 @@ class NNEmulator(base_emulator.BaseEmulator):
             if self.model_path == None:
                 raise ValueError("If train==False, model path is required.")
 
-            pretrained_weights = torch.load(
+            pretrained_model = torch.load(
                 os.path.join(self.models_dir, self.model_path),
                 map_location="cpu",
             )
             self.nn = nn_architecture.MDNemulator_polyfit(
-                nhidden=5, ndeg=self.ndeg, ninput=len(self.emu_params)
+                nhidden=self.nhidden, ndeg=self.ndeg, ninput=len(self.emu_params)
             )
-            self.nn.load_state_dict(pretrained_weights["model"])
+            self.nn.load_state_dict(pretrained_model["emulator"])
             self.nn.to(self.device)
             print("Model loaded. No training needed")
+            
+            model_metadata=pretrained_model["metadata"]
 
             # check consistency between required settings and read ones
-            emulator_settings = pretrained_weights["emulator_params"]
-            training_set_loaded = emulator_settings["training_set"]
-            emulator_label_loaded = emulator_settings["emulator_label"]
-            drop_sim_loaded = emulator_settings["drop_sim"]
+            training_set_loaded = model_metadata["training_set"]
+            emulator_label_loaded = model_metadata["emulator_label"]
+            drop_sim_loaded = model_metadata["drop_sim"]
+            drop_z_loaded = model_metadata["drop_z"]
+            if drop_z_loaded is not None:
+                drop_z_loaded = float(drop_z_loaded)
+            
 
             if emulator_label_loaded != emulator_label:
-                raise ValueError(
-                    f"Asked for emulator_label {emulator_label} but loaded file with {emulator_label_loaded}"
-                )
+                raise ValueError(f"Emulator label mismatch: Expected '{emulator_label}' but loaded '{emulator_label_loaded}'")
+
             if training_set_loaded != training_set:
-                raise ValueError(
-                    f"Asked for training_set {training_set} but loaded file with {training_set_loaded}"
-                )
+                raise ValueError(f"Training set mismatch: Expected '{training_set}' but loaded '{training_set_loaded}'")
 
-            if False:
-                # AFR: I would have liked to check this, but not possible now
-                if drop_sim_loaded != drop_sim:
-                    raise ValueError(
-                        f"Asked for drop_sim {drop_sim} but loaded file with drop_sim {drop_sim_loaded}"
-                    )
+            if drop_sim_loaded != self.drop_sim:
+                raise ValueError(f"drop_sim mismatch: Expected '{self.drop_sim}' but loaded '{drop_sim_loaded}'")
 
-            if emulator_settings["drop_sim"] != None:
-                drop_sim = emulator_settings["drop_sim"]
-                print(f"WARNING: Model trained without simulation {drop_sim}")
+            if drop_z_loaded != self.drop_z:
+                raise ValueError(f"drop_z mismatch: Expected '{self.drop_z}' but loaded '{drop_z_loaded}'")
+
+            if model_metadata["drop_sim"] is not None and self.drop_sim is None:
+                print(f"WARNING: Model trained without simulation {emulator_settings['drop_sim']}")
+
+            if model_metadata["drop_z"] is not None and self.drop_z is None:
+                print(f"WARNING: Model trained without redshift {emulator_settings['drop_z']}")
 
             kMpc_train = self._obtain_sim_params()
             log_kMpc_train = torch.log10(kMpc_train).to(self.device)
