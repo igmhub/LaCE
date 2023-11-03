@@ -99,7 +99,7 @@ class NyxArchive(BaseArchive):
             "T_0": "T0",
             "gamma": "gamma",
             "tau_rescale_factor": "val_scaling",
-            "lambda_P": "lambda_P",
+            "lambda_P": "kF_Mpc",
         }
         # sigT_Mpc missing after gamma
 
@@ -165,7 +165,7 @@ class NyxArchive(BaseArchive):
             "mF",
             "sigT_Mpc",
             "gamma",
-            "lambda_P",
+            "kF_Mpc",
         ]
 
     def _get_emu_cosmo(
@@ -373,7 +373,9 @@ class NyxArchive(BaseArchive):
                         _pressure = get_attrs(ff[isim][iz])
                         key = "lambda_P"
                         if key in _pressure.keys():
-                            _arch[self.key_conv[key]] = _pressure[key]
+                            _arch[self.key_conv[key]] = 1 / (
+                                1e-3 * _pressure[key]
+                            )
                         ## done store IGM parameters
 
                         ## store P1D and P3D measurements (if available)

@@ -21,7 +21,7 @@ from lace.utils import poly_p1d
 
 class NNEmulator(base_emulator.BaseEmulator):
     """A class for training an emulator.
-    
+
     Args:
         archive (class): Data archive used for training the emulator.
             Required when using a custom emulator.
@@ -54,7 +54,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         save_path=None,
         model_path=None,
         weighted_emulator=True,
-        nhidden=5
+        nhidden=5,
     ):
         # store emulator settings
         self.emu_params = emu_params
@@ -123,9 +123,12 @@ class NNEmulator(base_emulator.BaseEmulator):
                 raise
         else:
             print("Selected custom emulator")
-            if self.kmax_Mpc==8:
-                print(r"Emulating to k=8 1/Mpc requires a 7 order polynomial. " 
-                      "Forced setting of ndeg=7.")
+
+            if self.kmax_Mpc == 8:
+                print(
+                    r"Emulating to k=8 1/Mpc requires a 7 order polynomial. "
+                    "Forced setting of ndeg=7."
+                )
         # end check input #
 
         # define emulator settings
@@ -161,7 +164,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 "mF",
                 "sigT_Mpc",
                 "gamma",
-                "lambda_P",
+                "kF_Mpc",
             ]
             self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size, self.nhidden = (
                 4,
@@ -194,7 +197,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 750,
                 2
             )
-            
+
         if emulator_label == "Cabayol23_extended":
             print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
@@ -203,15 +206,31 @@ class NNEmulator(base_emulator.BaseEmulator):
                 + "passed to the emulator will be overwritten to match "
                 + "these ones. This configuration does not downweight the "
                 + "contribution of small scales."
-            )   
-            self.kmax_Mpc, self.ndeg, self.nepochs, self.step_size, self.weighted_emulator = (
-                8,
-                7,
-                100,
-                75,
-                False
             )
-    
+            (
+                self.kmax_Mpc,
+                self.ndeg,
+                self.nepochs,
+                self.step_size,
+                self.weighted_emulator,
+            ) = (8, 7, 100, 75, False)
+
+        if emulator_label == "Cabayol23_extended":
+            print(
+                r"Neural network emulating the optimal P1D of Nyx simulations "
+                + "fitting coefficients to a 7th degree polynomial. It "
+                + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
+                + "passed to the emulator will be overwritten to match "
+                + "these ones. This configuration does not downweight the "
+                + "contribution of small scales."
+            )
+            (
+                self.kmax_Mpc,
+                self.ndeg,
+                self.nepochs,
+                self.step_size,
+                self.weighted_emulator,
+            ) = (8, 7, 100, 75, False)
 
         # set archive and training set
         if archive != None and training_set == None:
@@ -295,18 +314,15 @@ class NNEmulator(base_emulator.BaseEmulator):
                 raise ValueError(f"drop_z mismatch: Expected '{self.drop_z}' but loaded '{drop_z_loaded}'")
 
             if model_metadata["drop_sim"] is not None and self.drop_sim is None:
-                print(f"WARNING: Model trained without simulation {model_metadata['drop_sim']}")
+                print(f"WARNING: Model trained without simulation {emulator_settings['drop_sim']}")
 
             if model_metadata["drop_z"] is not None and self.drop_z is None:
-                print(f"WARNING: Model trained without redshift {model_metadata['drop_z']}")
-
-
+                print(f"WARNING: Model trained without redshift {emulator_settings['drop_z']}")
 
             kMpc_train = self._obtain_sim_params()
             log_kMpc_train = torch.log10(kMpc_train).to(self.device)
             self.log_kMpc = log_kMpc_train
-                
-               
+
         else:
             # AFR: it looks like this block could be moved to self.train()
             # and that it could be self._train(initial_weights) instead
@@ -323,7 +339,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                         self.models_dir,
                         "initial_params/initial_weights_extended.pt",
                     )
- 
+
             self.train()
 
             if self.save_path != None:
@@ -477,16 +493,17 @@ class NNEmulator(base_emulator.BaseEmulator):
 
     def _set_weights(self):
         """
-        Method to set downscale the impact of small scales on the extended emulator setup. 
+        Method to set downscale the impact of small scales on the extended emulator setup.
         Studied by Emma Clarassó.
         """
         w = torch.ones(size=(self.Nk,))
-        if (self.kmax_Mpc>4)&(self.weighted_emulator==True):
-            print('Exponential downweighting loss function at k>4')
-            exponential_values = torch.linspace(0, 1.4, len(self.k_Mpc[self.k_Mpc>4]))
-            w[self.k_Mpc>4]= torch.exp(-exponential_values)
+        if (self.kmax_Mpc > 4) & (self.weighted_emulator == True):
+            print("Exponential downweighting loss function at k>4")
+            exponential_values = torch.linspace(
+                0, 1.4, len(self.k_Mpc[self.k_Mpc > 4])
+            )
+            w[self.k_Mpc > 4] = torch.exp(-exponential_values)
         return w
-
 
     def train(self):
         """
@@ -498,9 +515,12 @@ class NNEmulator(base_emulator.BaseEmulator):
         """
 
         kMpc_train = self._obtain_sim_params()
- 
+
         loss_function_weights = self._set_weights()
-        loss_function_weights=loss_function_weights.to(self.device)
+        loss_function_weights = loss_function_weights.to(self.device)
+
+        loss_function_weights = self._set_weights()
+        loss_function_weights = loss_function_weights.to(self.device)
 
         log_kMpc_train = torch.log10(kMpc_train).to(self.device)
 
@@ -527,8 +547,9 @@ class NNEmulator(base_emulator.BaseEmulator):
         loader_train = DataLoader(trainig_dataset, batch_size=100, shuffle=True)
 
         self.nn.to(self.device)
-        print(f'Training NN on {len(training_data)} points')
-        t0=time.time()
+        print(f"Training NN on {len(training_data)} points")
+        t0 = time.time()
+
         for epoch in range(self.nepochs):
             for datain, p1D_true in loader_train:
                 optimizer.zero_grad()
@@ -561,7 +582,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                     2
                 ) + 2 * P1Dlogerr  #
 
-                log_prob = loss_function_weights[None,:] * log_prob
+                log_prob = loss_function_weights[None, :] * log_prob
 
                 loss = torch.nansum(log_prob, 1)
                 loss = torch.nanmean(loss, 0)
@@ -570,7 +591,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                 optimizer.step()
 
             scheduler.step()
-        print(f'NN optimised in {time.time()-t0} seconds')
+
+        print(f"NN optimised in {time.time()-t0} seconds")
+
     def save_emulator(self):
         torch.save(self.nn.state_dict(), self.save_path)
 
