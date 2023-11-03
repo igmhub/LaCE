@@ -1,6 +1,7 @@
 import argparse
 import os, sys
 import torch
+import numpy as np
 from lace.emulator.nn_emulator import NNEmulator
 from lace.archive import nyx_archive, gadget_archive
 
