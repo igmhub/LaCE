@@ -34,7 +34,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         nepochs (int): The number of epochs to train for. Default is 200.
         model_path (str): The path to a pretrained model. Default is None.
         train (bool): Wheather to train the emulator or not. Default True. If False, a model path must is required.
-        initial_weights (bool): Wheather to initialize the network always with a set of pre-defined random weights
     """
 
     def __init__(
@@ -50,7 +49,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         drop_sim=None,
         drop_z=None,
         train=True,
-        initial_weights=True,
         save_path=None,
         model_path=None,
         weighted_emulator=True,
