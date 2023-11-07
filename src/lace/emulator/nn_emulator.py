@@ -82,9 +82,10 @@ class NNEmulator(base_emulator.BaseEmulator):
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23", "Nyx23_Oct2023"]
         if (archive is not None) & (training_set is not None):
-            raise ValueError(
-                "Conflict! Both custom archive and training_set provided"
-            )
+            if train == True:
+                raise ValueError(
+                    "Conflict! Both custom archive and training_set provided"
+                )
         if training_set is not None:
             try:
                 if training_set in training_set_all:
@@ -233,8 +234,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.nhidden,
                 self.weighted_emulator,
             ) = (8, 7, 100, 75, 5, False)
-            
-            
+
         elif emulator_label == "Nyx_v1_extended":
             print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
@@ -275,20 +275,23 @@ class NNEmulator(base_emulator.BaseEmulator):
             raise (ValueError("Archive or training_set must be provided"))
 
         if training_set is not None:
-            if training_set in ["Pedersen21", "Cabayol23"]:
-                self.archive = gadget_archive.GadgetArchive(
-                    postproc=training_set
-                )
-                self.training_data = self.archive.get_training_data(
-                    emu_params=self.emu_params
-                )
-            elif training_set[:5] in ["Nyx23"]:
-                self.archive = nyx_archive.NyxArchive(
-                    nyx_version=training_set[6:]
-                )
-                self.training_data = self.archive.get_training_data(
-                    emu_params=self.emu_params
-                )
+            if archive is None:
+                if training_set in ["Pedersen21", "Cabayol23"]:
+                    self.archive = gadget_archive.GadgetArchive(
+                        postproc=training_set
+                    )
+                    self.training_data = self.archive.get_training_data(
+                        emu_params=self.emu_params
+                    )
+                elif training_set[:5] in ["Nyx23"]:
+                    self.archive = nyx_archive.NyxArchive(
+                        nyx_version=training_set[6:]
+                    )
+            else:
+                self.archive = archive
+            self.training_data = self.archive.get_training_data(
+                emu_params=self.emu_params
+            )
 
         # check consistency
         if emulator_label == "Cabayol23":
