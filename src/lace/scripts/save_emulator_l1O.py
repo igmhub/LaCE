@@ -69,7 +69,13 @@ def main():
     parser.add_argument(
         "--emulator_label",
         default=None,
-        choices=["Cabayol23", "Cabayol23_extended", "Nyx_v0", "Nyx_v1"],
+        choices=[
+            "Cabayol23",
+            "Cabayol23_extended",
+            "Nyx_v0",
+            "Nyx_v1",
+            "Nyx_v1_extended",
+        ],
         required=True,
     )
     parser.add_argument(
@@ -109,7 +115,6 @@ def main():
                 emulator_label=args.emulator_label,
                 drop_sim=sim_label,
                 drop_z=None,
-                initial_weights=False,
             )
             save_emu(
                 nn_emu.nn.state_dict(),
@@ -128,7 +133,6 @@ def main():
                 emulator_label=args.emulator_label,
                 drop_sim=None,
                 drop_z=redshift,
-                initial_weights=False,
             )
             save_emu(
                 nn_emu.nn.state_dict(),
@@ -146,7 +150,6 @@ def main():
             emulator_label=args.emulator_label,
             drop_sim=None,
             drop_z=None,
-            initial_weights=False,
         )
         save_emu(
             nn_emu.nn.state_dict(),
