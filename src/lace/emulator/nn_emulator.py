@@ -344,22 +344,6 @@ class NNEmulator(base_emulator.BaseEmulator):
             self.log_kMpc = log_kMpc_train
 
         else:
-            # AFR: it looks like this block could be moved to self.train()
-            # and that it could be self._train(initial_weights) instead
-
-            self.initial_weights = initial_weights
-            if self.initial_weights == True:
-                # loads set of pre-defined random weights
-                if self.kmax_Mpc == 4:
-                    self.initial_weights_path = os.path.join(
-                        self.models_dir, "initial_params/initial_weights.pt"
-                    )
-                if self.kmax_Mpc == 8:
-                    self.initial_weights_path = os.path.join(
-                        self.models_dir,
-                        "initial_params/initial_weights_extended.pt",
-                    )
-
             self.train()
 
             if self.save_path is not None:
@@ -549,11 +533,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.nn = nn_architecture.MDNemulator_polyfit(
             nhidden=self.nhidden, ndeg=self.ndeg, ninput=len(self.emu_params)
         )
-        if self.initial_weights == True:
-            initial_weights_params = torch.load(
-                self.initial_weights_path, map_location="cpu"
-            )
-            self.nn.load_state_dict(initial_weights_params)
 
         optimizer = optim.Adam(
             self.nn.parameters(), lr=1e-3, weight_decay=1e-4
