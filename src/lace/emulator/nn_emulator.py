@@ -548,9 +548,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         loss_function_weights = self._set_weights()
         loss_function_weights = loss_function_weights.to(self.device)
 
-        loss_function_weights = self._set_weights()
-        loss_function_weights = loss_function_weights.to(self.device)
-
         log_kMpc_train = torch.log10(kMpc_train).to(self.device)
 
         self.log_kMpc = log_kMpc_train
