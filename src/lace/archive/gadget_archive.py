@@ -145,6 +145,7 @@ class GadgetArchive(BaseArchive):
             self.training_z_max = 10
             # testing options
             self.testing_ind_rescaling = 0
+            self.testing_z_min = 0
             self.testing_z_max = 10
         elif postproc == "Cabayol23":
             self.basedir = "/data/sim_suites/post_768/"
@@ -162,6 +163,7 @@ class GadgetArchive(BaseArchive):
             self.training_val_scaling = "all"
             self.training_z_max = 10
             self.testing_ind_rescaling = 0
+            self.testing_z_min = 0
             self.testing_z_max = 10
         elif postproc == "768_768":
             self.basedir = "/data/sim_suites/post_768/"
@@ -179,6 +181,7 @@ class GadgetArchive(BaseArchive):
             self.training_val_scaling = "all"
             self.training_z_max = 10
             self.testing_ind_rescaling = 0
+            self.testing_z_min = 0
             self.testing_z_max = 10
 
         ## get path of the repo
@@ -270,7 +273,6 @@ class GadgetArchive(BaseArchive):
 
         return dict_conv[sim_label], dict_conv_params[sim_label], tag_param
 
-
     def _get_emu_cosmo(self, sim_label, force_recompute_linP_params=False):
         """
         Get the cosmology and parameters describing linear power spectrum from simulation.
@@ -287,10 +289,10 @@ class GadgetArchive(BaseArchive):
         """
 
         # figure out whether we need to compute linP params
-        compute_linP_params=False
+        compute_linP_params = False
 
         if force_recompute_linP_params:
-            compute_linP_params=True
+            compute_linP_params = True
         else:
             # open file with precomputed values to check kp_Mpc
             try:
@@ -310,7 +312,7 @@ class GadgetArchive(BaseArchive):
                     if self.kp_Mpc != file_cosmo[ii]["linP_params"]["kp_Mpc"]:
                         if self.verbose:
                             print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
-                        compute_linP_params=True
+                        compute_linP_params = True
                     else:
                         cosmo_params = file_cosmo[ii]["cosmo_params"]
                         linP_params = file_cosmo[ii]["linP_params"]
@@ -527,7 +529,8 @@ class GadgetArchive(BaseArchive):
         # iterate over simulations
         for sim_label in self.list_sim:
             cosmo_params, linP_params = self._get_emu_cosmo(
-                    sim_label, force_recompute_linP_params)
+                sim_label, force_recompute_linP_params
+            )
 
             # iterate over snapshots
             for ind_z in range(linP_params["z"].shape[0]):
