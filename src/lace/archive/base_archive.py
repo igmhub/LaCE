@@ -339,6 +339,7 @@ class BaseArchive(object):
         self,
         sim_label,
         ind_rescaling=None,
+        z_min=None,
         z_max=None,
         emu_params=None,
         verbose=False,
@@ -349,7 +350,8 @@ class BaseArchive(object):
         Parameters:
             sim_label (str): The simulation label.
             val_scaling (int or None, optional): The scaling value. Defaults to None.
-            z_max (int, float or None, optional): The maximum redshift. Defaults to None.
+            z_min (int, float or None, optional): The minimum redshift (included). Defaults to None.
+            z_max (int, float or None, optional): The maximum redshift (included). Defaults to None.
             emu_params (list, optional): The parameters that must be defined for each
                 element of the training data. There are intended to be emulator parameters.
                 Only relevant if evaluating the emulator for the testing data.
@@ -378,6 +380,11 @@ class BaseArchive(object):
         if z_max is None:
             z_max = self.testing_z_max
 
+        if isinstance(z_min, (int, float, type(None))) == False:
+            raise TypeError("z_min must be a number or None")
+        if z_min is None:
+            z_min = self.testing_z_min
+
         if isinstance(emu_params, (list, type(None))) == False:
             raise TypeError("emu_params must be a list or None")
         ## done
@@ -395,6 +402,7 @@ class BaseArchive(object):
                 (arch_av[ii]["sim_label"] == sim_label)
                 & (arch_av[ii]["ind_rescaling"] == ind_rescaling)
                 & (arch_av[ii]["z"] <= z_max)
+                & (arch_av[ii]["z"] >= z_min)
             )
             if mask:
                 if emu_params is None:

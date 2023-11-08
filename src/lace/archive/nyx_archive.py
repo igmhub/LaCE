@@ -92,6 +92,7 @@ class NyxArchive(BaseArchive):
         self.training_z_max = 10
         # testing options
         self.testing_ind_rescaling = 0
+        self.testing_z_min = 0
         self.testing_z_max = 10
 
         self.key_conv = {
