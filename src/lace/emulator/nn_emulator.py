@@ -187,7 +187,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         elif emulator_label == "Cabayol23_extended":
             print(
-                r"Neural network emulating the optimal P1D of Nyx simulations "
+                r"Neural network emulating the optimal P1D of Gadget simulations "
                 + "fitting coefficients to a 7th degree polynomial. It "
                 + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
                 + "passed to the emulator will be overwritten to match "
@@ -214,8 +214,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         elif emulator_label == "Nyx_v0_extended":
             print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
-                + "fitting coefficients to a 5th degree polynomial. It "
-                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
+                + "fitting coefficients to a 7th degree polynomial. It "
+                + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
                 + "passed to the emulator will be overwritten to match "
                 + "these ones"
             )
