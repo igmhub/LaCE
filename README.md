@@ -89,4 +89,5 @@ In the `Notebooks` folder, there are several tutorials one can run to learn how 
 the emulators and archives. The `Durham2023_LaCETutorial` is the more complete one that
 shows how to get the different archives and run them with the available emulator options.
 
-
+In the `tests` folder, there are four scripts that you can run to open a Gadget or Nyx archive
+and run the G^and NN emulators.
