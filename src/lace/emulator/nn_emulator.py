@@ -106,6 +106,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             "Cabayol23",
             "Nyx_v0",
             "Cabayol23_extended",
+            "Nyx_v0_extended",
         ]
         if emulator_label is not None:
             try:
