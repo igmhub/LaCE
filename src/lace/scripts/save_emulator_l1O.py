@@ -73,8 +73,7 @@ def main():
             "Cabayol23",
             "Cabayol23_extended",
             "Nyx_v0",
-            "Nyx_v1",
-            "Nyx_v1_extended",
+            "Nyx_v0_extended",
         ],
         required=True,
     )
