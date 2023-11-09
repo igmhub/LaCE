@@ -105,9 +105,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         emulator_label_all = [
             "Cabayol23",
             "Nyx_v0",
-            "Nyx_v1",
             "Cabayol23_extended",
-            "Nyx_v1_extended",
+            "Nyx_v0_extended",
         ]
         if emulator_label is not None:
             try:
@@ -185,33 +184,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.nhidden,
             ) = (4, 5, 1000, 750, 5)
 
-        elif emulator_label == "Nyx_v1":
-            print(
-                r"Neural network emulating the optimal P1D of Nyx simulations "
-                + "fitting coefficients to a 5th degree polynomial. It "
-                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
-                + "passed to the emulator will be overwritten to match "
-                + "these ones"
-            )
-            self.emu_params = [
-                "Delta2_p",
-                "n_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-            ]
-            (
-                self.kmax_Mpc,
-                self.ndeg,
-                self.nepochs,
-                self.step_size,
-                self.nhidden,
-            ) = (4, 5, 1000, 750, 2)
 
         elif emulator_label == "Cabayol23_extended":
             print(
-                r"Neural network emulating the optimal P1D of Nyx simulations "
+                r"Neural network emulating the optimal P1D of Gadget simulations "
                 + "fitting coefficients to a 7th degree polynomial. It "
                 + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
                 + "passed to the emulator will be overwritten to match "
@@ -235,11 +211,11 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.weighted_emulator,
             ) = (8, 7, 100, 75, 5, False)
 
-        elif emulator_label == "Nyx_v1_extended":
+        elif emulator_label == "Nyx_v0_extended":
             print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
-                + "fitting coefficients to a 5th degree polynomial. It "
-                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
+                + "fitting coefficients to a 7th degree polynomial. It "
+                + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
                 + "passed to the emulator will be overwritten to match "
                 + "these ones"
             )
@@ -258,7 +234,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.step_size,
                 self.nhidden,
                 self.weighted_emulator,
-            ) = (8, 7, 1000, 750, 2, True)
+            ) = (8, 7, 1000, 750, 5, True)
 
         # set archive and training set
         if (archive is not None) and (training_set is None):
@@ -299,7 +275,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             if "mpg_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Gadget sims")
 
-        if (emulator_label == "Nyx_v0") | (emulator_label == "Nyx_v1"):
+        if (emulator_label == "Nyx_v0"):
             # make sure that input archive / training data are Nyx sims
             if "nyx_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Nyx sims")
