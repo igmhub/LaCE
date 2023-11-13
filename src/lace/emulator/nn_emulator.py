@@ -184,7 +184,6 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.nhidden,
             ) = (4, 5, 1000, 750, 5)
 
-
         elif emulator_label == "Cabayol23_extended":
             print(
                 r"Neural network emulating the optimal P1D of Gadget simulations "
@@ -275,7 +274,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             if "mpg_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Gadget sims")
 
-        if (emulator_label == "Nyx_v0"):
+        if emulator_label == "Nyx_v0":
             # make sure that input archive / training data are Nyx sims
             if "nyx_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Nyx sims")
@@ -619,8 +618,6 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             # ask emulator to emulate P1D (and its uncertainty)
             coeffsPred, coeffs_logerr = self.nn(emu_call.to(self.device))
-            coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
-            coeffserr = torch.exp(coeffs_logerr) ** 2
 
             powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
             emu_p1d = torch.sum(
@@ -629,6 +626,13 @@ class NNEmulator(base_emulator.BaseEmulator):
                 axis=1,
             )
 
+            emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
+
+            emu_p1d = 10 ** (emu_p1d) * self.yscalings
+
+        if return_covar == True:
+            coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
+            coeffserr = torch.exp(coeffs_logerr) ** 2
             powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(self.device)
             emu_p1derr = torch.sqrt(
                 torch.sum(
@@ -637,16 +641,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                     axis=1,
                 )
             )
-
-            emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
             emu_p1derr = emu_p1derr.detach().cpu().numpy().flatten()
-
             emu_p1derr = (
                 10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
             )
-            emu_p1d = 10 ** (emu_p1d) * self.yscalings
-
-        if return_covar == True:
             covar = np.outer(emu_p1derr, emu_p1derr)
             return emu_p1d, covar
 
