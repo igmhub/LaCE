@@ -184,7 +184,6 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.nhidden,
             ) = (4, 5, 1000, 750, 5)
 
-
         elif emulator_label == "Cabayol23_extended":
             print(
                 r"Neural network emulating the optimal P1D of Gadget simulations "
@@ -275,7 +274,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             if "mpg_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Gadget sims")
 
-        if (emulator_label == "Nyx_v0"):
+        if emulator_label == "Nyx_v0":
             # make sure that input archive / training data are Nyx sims
             if "nyx_" not in self.training_data[0]["sim_label"]:
                 raise ValueError("Training data are not Nyx sims")
@@ -386,15 +385,13 @@ class NNEmulator(base_emulator.BaseEmulator):
             k_Mpc_train (tensor): k values in the k training range
         """
 
-        k_mask = [
+        self.k_mask = [
             (self.training_data[i]["k_Mpc"] < self.kmax_Mpc)
             & (self.training_data[i]["k_Mpc"] > 0)
             for i in range(len(self.training_data))
         ]
 
-        self.k_mask = k_mask
-
-        k_Mpc_train = self.training_data[0]["k_Mpc"][k_mask[0]]
+        k_Mpc_train = self.training_data[0]["k_Mpc"][self.k_mask[0]]
         k_Mpc_train = torch.Tensor(k_Mpc_train)
         self.k_Mpc = k_Mpc_train
         Nk = len(k_Mpc_train)
@@ -415,15 +412,13 @@ class NNEmulator(base_emulator.BaseEmulator):
         data = [list(data[i].values()) for i in range(len(self.training_data))]
         data = np.array(data)
 
-        paramlims = np.concatenate(
+        self.paramLims = np.concatenate(
             (
                 data.min(0).reshape(len(data.min(0)), 1),
                 data.max(0).reshape(len(data.max(0)), 1),
             ),
             1,
         )
-
-        self.paramLims = paramlims
 
         training_label = [
             {
@@ -435,7 +430,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         ]
 
         training_label = [
-            training_label[i]["p1d_Mpc"][k_mask[i]].tolist()
+            training_label[i]["p1d_Mpc"][self.k_mask[i]].tolist()
             for i in range(len(self.training_data))
         ]
         training_label = np.array(training_label)
@@ -619,8 +614,6 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             # ask emulator to emulate P1D (and its uncertainty)
             coeffsPred, coeffs_logerr = self.nn(emu_call.to(self.device))
-            coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
-            coeffserr = torch.exp(coeffs_logerr) ** 2
 
             powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
             emu_p1d = torch.sum(
@@ -629,6 +622,13 @@ class NNEmulator(base_emulator.BaseEmulator):
                 axis=1,
             )
 
+            emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
+
+            emu_p1d = 10 ** (emu_p1d) * self.yscalings
+
+        if return_covar == True:
+            coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
+            coeffserr = torch.exp(coeffs_logerr) ** 2
             powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(self.device)
             emu_p1derr = torch.sqrt(
                 torch.sum(
@@ -637,17 +637,61 @@ class NNEmulator(base_emulator.BaseEmulator):
                     axis=1,
                 )
             )
-
-            emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
             emu_p1derr = emu_p1derr.detach().cpu().numpy().flatten()
-
             emu_p1derr = (
                 10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
             )
-            emu_p1d = 10 ** (emu_p1d) * self.yscalings
+            covar = np.outer(emu_p1derr, emu_p1derr)
+            return emu_p1d, covar
+
+        else:
+            return emu_p1d
+
+    def emulate_arr_p1d_Mpc(
+        self, emu_calls, log_kMpc, return_covar=False, z=None
+    ):
+        log_kMpc = torch.Tensor(log_kMpc).to(self.device)
+
+        with torch.no_grad():
+            emu_calls = (emu_calls - self.paramLims[None, :, 0]) / (
+                self.paramLims[None, :, 1] - self.paramLims[None, :, 0]
+            ) - 0.5
+            emu_calls = torch.Tensor(emu_calls)
+
+            # ask emulator to emulate P1D (and its uncertainty)
+            coeffsPred, coeffs_logerr = self.nn(emu_calls.to(self.device))
+
+            powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
+            emu_p1d = torch.sum(
+                coeffsPred[:, :, None]
+                * (log_kMpc[:, None, :] ** powers[None, :, None]),
+                axis=1,
+            )
+
+            emu_p1d = emu_p1d.detach().cpu().numpy()
+
+            emu_p1d = 10**emu_p1d * self.yscalings
 
         if return_covar == True:
-            covar = np.outer(emu_p1derr, emu_p1derr)
+            coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
+            coeffserr = torch.exp(coeffs_logerr) ** 2
+            powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(self.device)
+            emu_p1derr = torch.sqrt(
+                torch.sum(
+                    coeffserr[:, :, None]
+                    * (log_kMpc[:, None, :] ** powers_err[None, :, None]),
+                    axis=1,
+                )
+            )
+            emu_p1derr = emu_p1derr.detach().cpu().numpy()
+            emu_p1derr = (
+                10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
+            )
+            covar = np.zeros(
+                (emu_p1derr.shape[0], emu_p1derr.shape[1], emu_p1derr.shape[1])
+            )
+            for ii in range(emu_p1derr.shape[0]):
+                covar[ii] = np.outer(emu_p1derr[ii], emu_p1derr[ii])
             return emu_p1d, covar
 
         else:
