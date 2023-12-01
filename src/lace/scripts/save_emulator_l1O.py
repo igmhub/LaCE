@@ -7,6 +7,7 @@ from lace.archive import nyx_archive, gadget_archive
 
 
 def str_to_bool(s):
+    """Convert string to boolean"""
     if s == "True":
         return True
     elif s == "False":
@@ -14,6 +15,7 @@ def str_to_bool(s):
 
 
 def save_emu(model, label_training_set, emulator_label, drop_sim, drop_z):
+    """Save the emulator model in a file"""
     # set folder name
     folder = (
         os.environ["LACE_REPO"]
@@ -55,6 +57,7 @@ def save_emu(model, label_training_set, emulator_label, drop_sim, drop_z):
 
 
 def main():
+    """Main function to run the script"""
     # Create an ArgumentParser instance
     parser = argparse.ArgumentParser(
         description="Passing the emulator_label option"
