@@ -366,10 +366,20 @@ class BaseArchive(object):
         """
 
         ## check input
+
+        if isinstance(sim_label, str) == False:
+            raise TypeError("sim_label must be a string")
+        if sim_label not in self.list_sim:
+            msg = "Invalid sim_label value. Available options:"
+            raise ExceptionList(msg, self.list_sim)
+
         if isinstance(ind_rescaling, (int, type(None))) == False:
             raise TypeError("val_scaling must be an int or None")
         if ind_rescaling is None:
-            ind_rescaling = self.testing_ind_rescaling
+            if sim_label == "nyx_central":
+                ind_rescaling = 1
+            else:
+                ind_rescaling = self.testing_ind_rescaling
         else:
             if ind_rescaling not in self.scalings_avail:
                 msg = "Invalid ind_rescaling value. Available options:"
