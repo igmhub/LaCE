@@ -76,6 +76,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.drop_z = drop_z
         self.weighted_emulator = weighted_emulator
         self.nhidden = nhidden
+        self.print = fprint
 
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -92,7 +93,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         # check input
 
-        ## check training set and archive
+        ## set training_set
         if (archive is None) & (training_set is None):
             raise ValueError("Archive or training_set must be provided")
 
@@ -102,47 +103,50 @@ class NNEmulator(base_emulator.BaseEmulator):
                     f"Invalid training_set value {training_set}. Available options:",
                     training_set_all,
                 )
-            else:
-                if train:
-                    fprint(f"Training emulator {training_set}")
-                    if training_set in ["Pedersen21", "Cabayol23"]:
-                        archive = gadget_archive.GadgetArchive(
-                            postproc=training_set
-                        )
-                    elif training_set[:5] in ["Nyx23"]:
-                        archive = nyx_archive.NyxArchive(
-                            nyx_version=training_set[6:]
-                        )
 
-                    self.training_data = archive.get_training_data(
-                        emu_params=self.emu_params
-                    )
-                else:
-                    fprint(f"Reading pre-trained emulator {training_set}")
+            self.print(f"Selected emulator {training_set}")
+
+            if training_set in ["Pedersen21", "Cabayol23"]:
+                archive = gadget_archive.GadgetArchive(postproc=training_set)
+            elif training_set[:5] in ["Nyx23"]:
+                archive = nyx_archive.NyxArchive(nyx_version=training_set[6:])
+
+            self.training_data = archive.get_training_data(
+                emu_params=self.emu_params
+            )
 
         elif (training_set is None) & (archive is not None):
-            fprint("Use custom archive provided by the user to train emulator")
+            self.print(
+                "Use custom archive provided by the user to train emulator"
+            )
             self.training_data = archive.get_training_data(
                 emu_params=self.emu_params,
                 drop_sim=self.drop_sim,
                 drop_z=self.drop_z,
             )
-            fprint(f"Training samples in archive : {len(self.training_data)}")
 
         elif (training_set is not None) & (archive is not None):
             if train:
                 raise ValueError(
                     "Provide either archive or training set for training"
                 )
+            else:
+                self.print(
+                    "Using custom archive provided by the user to load emulator"
+                )
+                self.training_data = archive.get_training_data(
+                    emu_params=self.emu_params,
+                    drop_sim=self.drop_sim,
+                    drop_z=self.drop_z,
+                )
 
-        # set kp_Mpc
-        if archive is not None:
-            self.kp_Mpc = archive.kp_Mpc
+        self.print(f"Samples in training_set: {len(self.training_data)}")
+        self.kp_Mpc = archive.kp_Mpc
 
         ## check emulator label
         if emulator_label is not None:
             if emulator_label in emulator_label_all:
-                fprint(f"Selected emulator {emulator_label}")
+                self.print(f"Selected emulator {emulator_label}")
             else:
                 raise ValueError(
                     f"Invalid emulator_label value {emulator_label}. Available options:",
@@ -150,13 +154,13 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
         else:
             if train:
-                fprint("Selected custom emulator")
+                self.print("Selected custom emulator")
             else:
                 raise ValueError("Provide emulator_label when loading emulator")
 
         # define emulator settings
         if emulator_label == "Cabayol23":
-            fprint(
+            self.print(
                 r"Neural network emulating the optimal P1D of Gadget simulations "
                 + "fitting coefficients to a 5th degree polynomial. It "
                 + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
@@ -180,7 +184,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             ) = (4, 5, 100, 75, 5)
 
         elif emulator_label == "Nyx_v0":
-            fprint(
+            self.print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
                 + "fitting coefficients to a 5th degree polynomial. It "
                 + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
@@ -204,7 +208,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             ) = (4, 5, 1000, 750, 5)
 
         elif emulator_label == "Cabayol23_extended":
-            fprint(
+            self.print(
                 r"Neural network emulating the optimal P1D of Gadget simulations "
                 + "fitting coefficients to a 7th degree polynomial. It "
                 + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
@@ -230,7 +234,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             ) = (8, 7, 100, 75, 5, False)
 
         elif emulator_label == "Nyx_v0_extended":
-            fprint(
+            self.print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
                 + "fitting coefficients to a 7th degree polynomial. It "
                 + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
@@ -288,7 +292,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             )
             self.nn.load_state_dict(pretrained_model["emulator"])
             self.nn.to(self.device)
-            fprint("Model loaded. No training needed")
+            self.print("Model loaded. No training needed")
 
             model_metadata = pretrained_model["metadata"]
 
@@ -321,12 +325,12 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
 
             if model_metadata["drop_sim"] is not None and self.drop_sim is None:
-                fprint(
+                self.print(
                     f"WARNING: Model trained without simulation {emulator_settings['drop_sim']}"
                 )
 
             if model_metadata["drop_z"] is not None and self.drop_z is None:
-                fprint(
+                self.print(
                     f"WARNING: Model trained without redshift {emulator_settings['drop_z']}"
                 )
 
@@ -457,7 +461,7 @@ class NNEmulator(base_emulator.BaseEmulator):
     def _get_training_pd1_nn(self):
         """
         Method to get the p1d_Mpc values from the training data in a format that the NN emulator can ingest
-        It gets the P!D from the archive and scales it.
+        It gets the P1D from the archive and scales it.
         Finally, it returns the scaled values as a torch.Tensor object along with the scaling factor.
         """
         training_label = [
@@ -489,7 +493,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         """
         w = torch.ones(size=(self.Nk,))
         if (self.kmax_Mpc > 4) & (self.weighted_emulator == True):
-            fprint("Exponential downweighting loss function at k>4")
+            self.print("Exponential downweighting loss function at k>4")
             exponential_values = torch.linspace(
                 0, 1.4, len(self.k_Mpc[self.k_Mpc > 4])
             )
@@ -530,7 +534,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         loader_train = DataLoader(trainig_dataset, batch_size=100, shuffle=True)
 
         self.nn.to(self.device)
-        fprint(f"Training NN on {len(training_data)} points")
+        self.print(f"Training NN on {len(training_data)} points")
         t0 = time.time()
 
         for epoch in range(self.nepochs):
@@ -575,7 +579,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             scheduler.step()
 
-        fprint(f"NN optimised in {time.time()-t0} seconds")
+        self.print(f"NN optimised in {time.time()-t0} seconds")
 
     def save_emulator(self):
         torch.save(self.nn.state_dict(), self.save_path)
