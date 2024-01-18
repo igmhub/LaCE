@@ -185,7 +185,7 @@ class GadgetArchive(BaseArchive):
             self.testing_z_max = 10
 
         ## get path of the repo
-        repo = f"{lace.__path__[0]}/"
+        repo = os.path.dirname(lace.__path__[0]) + "/"
 
         self.fulldir = repo + self.basedir
         self.fulldir_param = repo + self.basedir_params
