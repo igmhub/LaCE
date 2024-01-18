@@ -53,6 +53,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         model_path=None,
         weighted_emulator=True,
         nhidden=5,
+        seed=32,
+        fprint=print,
     ):
         # store emulator settings
         self.emu_params = emu_params
@@ -74,70 +76,91 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.drop_z = drop_z
         self.weighted_emulator = weighted_emulator
         self.nhidden = nhidden
+        self.print = fprint
 
-        torch.manual_seed(32)
-        np.random.seed(32)
-        random.seed(32)
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+        random.seed(seed)
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23", "Nyx23_Oct2023"]
-        if (archive is not None) & (training_set is not None):
-            if train == True:
-                raise ValueError(
-                    "Conflict! Both custom archive and training_set provided"
-                )
-        if training_set is not None:
-            try:
-                if training_set in training_set_all:
-                    print(f"Selected training set from {training_set}")
-                    pass
-                else:
-                    print(
-                        "Invalid training_set value. Available options: ",
-                        training_set_all,
-                    )
-                    raise
-            except:
-                print(
-                    "An error occurred while checking the training_set value."
-                )
-                raise
         emulator_label_all = [
             "Cabayol23",
             "Nyx_v0",
             "Cabayol23_extended",
             "Nyx_v0_extended",
         ]
+
+        # check input
+
+        ## set training_set
+        if (archive is None) & (training_set is None):
+            raise ValueError("Archive or training_set must be provided")
+
+        elif (training_set is not None) & (archive is None):
+            if training_set not in training_set_all:
+                raise ValueError(
+                    f"Invalid training_set value {training_set}. Available options:",
+                    training_set_all,
+                )
+
+            self.print(f"Selected emulator {training_set}")
+
+            if training_set in ["Pedersen21", "Cabayol23"]:
+                archive = gadget_archive.GadgetArchive(postproc=training_set)
+            elif training_set[:5] in ["Nyx23"]:
+                archive = nyx_archive.NyxArchive(nyx_version=training_set[6:])
+
+            self.training_data = archive.get_training_data(
+                emu_params=self.emu_params
+            )
+
+        elif (training_set is None) & (archive is not None):
+            self.print(
+                "Use custom archive provided by the user to train emulator"
+            )
+            self.training_data = archive.get_training_data(
+                emu_params=self.emu_params,
+                drop_sim=self.drop_sim,
+                drop_z=self.drop_z,
+            )
+
+        elif (training_set is not None) & (archive is not None):
+            if train:
+                raise ValueError(
+                    "Provide either archive or training set for training"
+                )
+            else:
+                self.print(
+                    "Using custom archive provided by the user to load emulator"
+                )
+                self.training_data = archive.get_training_data(
+                    emu_params=self.emu_params,
+                    drop_sim=self.drop_sim,
+                    drop_z=self.drop_z,
+                )
+
+        self.print(f"Samples in training_set: {len(self.training_data)}")
+        self.kp_Mpc = archive.kp_Mpc
+
+        ## check emulator label
         if emulator_label is not None:
-            try:
-                if emulator_label in emulator_label_all:
-                    print(f"Select emulator in {emulator_label}")
-                    pass
-                else:
-                    print(
-                        "Invalid emulator_label value. Available options: ",
-                        emulator_label_all,
-                    )
-                    raise
-
-            except:
-                print(
-                    "An error occurred while checking the emulator_label value."
+            if emulator_label in emulator_label_all:
+                self.print(f"Selected emulator {emulator_label}")
+            else:
+                raise ValueError(
+                    f"Invalid emulator_label value {emulator_label}. Available options:",
+                    emulator_label_all,
                 )
-                raise
         else:
-            print("Selected custom emulator")
-
-            if self.kmax_Mpc == 8:
-                print(
-                    r"Emulating to k=8 1/Mpc requires a 7 order polynomial. "
-                    "Forced setting of ndeg=7."
-                )
-        # end check input #
+            if train:
+                self.print("Selected custom emulator")
+            else:
+                raise ValueError("Provide emulator_label when loading emulator")
 
         # define emulator settings
         if emulator_label == "Cabayol23":
-            print(
+            self.print(
                 r"Neural network emulating the optimal P1D of Gadget simulations "
                 + "fitting coefficients to a 5th degree polynomial. It "
                 + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
@@ -161,7 +184,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             ) = (4, 5, 100, 75, 5)
 
         elif emulator_label == "Nyx_v0":
-            print(
+            self.print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
                 + "fitting coefficients to a 5th degree polynomial. It "
                 + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
@@ -185,7 +208,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             ) = (4, 5, 1000, 750, 5)
 
         elif emulator_label == "Cabayol23_extended":
-            print(
+            self.print(
                 r"Neural network emulating the optimal P1D of Gadget simulations "
                 + "fitting coefficients to a 7th degree polynomial. It "
                 + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
@@ -211,7 +234,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             ) = (8, 7, 100, 75, 5, False)
 
         elif emulator_label == "Nyx_v0_extended":
-            print(
+            self.print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
                 + "fitting coefficients to a 7th degree polynomial. It "
                 + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
@@ -235,57 +258,26 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.weighted_emulator,
             ) = (8, 7, 1000, 750, 5, True)
 
-        # set archive and training set
-        if (archive is not None) and (training_set is None):
-            print("Use custom archive provided by the user")
-            self.archive = archive
-            self.training_data = self.archive.get_training_data(
-                emu_params=self.emu_params,
-                drop_sim=self.drop_sim,
-                drop_z=self.drop_z,
-            )
-            print(f"Training samples in archive : {len(self.training_data)}")
-
-        elif (archive is None) & (training_set is None):
-            raise (ValueError("Archive or training_set must be provided"))
-
-        if training_set is not None:
-            if archive is None:
-                if training_set in ["Pedersen21", "Cabayol23"]:
-                    self.archive = gadget_archive.GadgetArchive(
-                        postproc=training_set
-                    )
-                    self.training_data = self.archive.get_training_data(
-                        emu_params=self.emu_params
-                    )
-                elif training_set[:5] in ["Nyx23"]:
-                    self.archive = nyx_archive.NyxArchive(
-                        nyx_version=training_set[6:]
-                    )
-            else:
-                self.archive = archive
-            self.training_data = self.archive.get_training_data(
-                emu_params=self.emu_params
-            )
-
-        # check consistency
-        if emulator_label == "Cabayol23":
+        # check consistency between training data an emulator label
+        if (emulator_label == "Cabayol23") | (
+            emulator_label == "Cabayol23_extended"
+        ):
             # make sure that input archive / training data are Gadget sims
-            if "mpg_" not in self.training_data[0]["sim_label"]:
-                raise ValueError("Training data are not Gadget sims")
-
-        if emulator_label == "Nyx_v0":
+            if self.training_data[0]["sim_label"][:3] != "mpg":
+                raise ValueError(
+                    f"Training data for {emulator_label} are not Gadget sims"
+                )
+        elif (emulator_label == "Nyx_v0") | (
+            emulator_label == "Nyx_v0_extended"
+        ):
             # make sure that input archive / training data are Nyx sims
-            if "nyx_" not in self.training_data[0]["sim_label"]:
-                raise ValueError("Training data are not Nyx sims")
+            if self.training_data[0]["sim_label"][:3] != "nyx":
+                raise ValueError(
+                    f"Training data for {emulator_label} are not Nyx sims"
+                )
 
         # decide whether to train emulator or read from file
         if train == False:
-            if (emulator_label is None) | (training_set is None):
-                raise ValueError(
-                    "Pre-trained models can only be loaded passing an emulator_label and a training_set"
-                )
-
             if self.model_path is None:
                 raise ValueError("If train==False, model path is required.")
 
@@ -300,7 +292,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             )
             self.nn.load_state_dict(pretrained_model["emulator"])
             self.nn.to(self.device)
-            print("Model loaded. No training needed")
+            self.print("Model loaded. No training needed")
 
             model_metadata = pretrained_model["metadata"]
 
@@ -333,12 +325,12 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
 
             if model_metadata["drop_sim"] is not None and self.drop_sim is None:
-                print(
+                self.print(
                     f"WARNING: Model trained without simulation {emulator_settings['drop_sim']}"
                 )
 
             if model_metadata["drop_z"] is not None and self.drop_z is None:
-                print(
+                self.print(
                     f"WARNING: Model trained without redshift {emulator_settings['drop_z']}"
                 )
 
@@ -469,7 +461,7 @@ class NNEmulator(base_emulator.BaseEmulator):
     def _get_training_pd1_nn(self):
         """
         Method to get the p1d_Mpc values from the training data in a format that the NN emulator can ingest
-        It gets the P!D from the archive and scales it.
+        It gets the P1D from the archive and scales it.
         Finally, it returns the scaled values as a torch.Tensor object along with the scaling factor.
         """
         training_label = [
@@ -501,7 +493,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         """
         w = torch.ones(size=(self.Nk,))
         if (self.kmax_Mpc > 4) & (self.weighted_emulator == True):
-            print("Exponential downweighting loss function at k>4")
+            self.print("Exponential downweighting loss function at k>4")
             exponential_values = torch.linspace(
                 0, 1.4, len(self.k_Mpc[self.k_Mpc > 4])
             )
@@ -542,7 +534,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         loader_train = DataLoader(trainig_dataset, batch_size=100, shuffle=True)
 
         self.nn.to(self.device)
-        print(f"Training NN on {len(training_data)} points")
+        self.print(f"Training NN on {len(training_data)} points")
         t0 = time.time()
 
         for epoch in range(self.nepochs):
@@ -587,7 +579,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             scheduler.step()
 
-        print(f"NN optimised in {time.time()-t0} seconds")
+        self.print(f"NN optimised in {time.time()-t0} seconds")
 
     def save_emulator(self):
         torch.save(self.nn.state_dict(), self.save_path)
