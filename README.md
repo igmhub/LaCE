@@ -1,31 +1,29 @@
 # LaCE
 
-Lyman-alpha Cosmology Emulator. This code is a Gaussian process emulator for the 1D flux power spectrum
-of the Lyman-alpha forest, and was used to generate the results shown in
-https://arxiv.org/abs/2011.15127. Please cite this article if you use this emulator in your research.
+LaCE contains a set of emulators for the one-dimensional flux power spectrum of the Lyman-alpha forest. It has been used in the papers:
+
+- https://arxiv.org/abs/2011.15127
+- https://arxiv.org/abs/2209.09895
+- https://arxiv.org/abs/2305.19064 (latest version)
+
+Please cite at least https://arxiv.org/abs/2305.19064 if you use this emulator in your research.
 
 ## Installation
-(Last update Oct 27)
+(Last update Jan 19 2024)
 
-- To install on NERSC, you first need to load python module with `module load python`. This is not necessary for personal computers.
-
-- Create a new conda environment. It is usually better to follow python version one or two behind. In October 2023, latest is 3.11, so we recommend 3.10.
+- Create a new conda environment. It is usually better to follow python version one or two behind. In January 2024, the latest is 3.12, so we recommend 3.11.
 
 ```
-conda create -n lace python=3.10
+conda create -n lace python=3.11 camb
 conda activate lace
 ```
 
-- If you are **not** a developer, simply pip install. The following command will take care of the dependencies.
-
-`pip install git@github.com:igmhub/LaCE.git`
-    
-- If you are a developer, first clone the repo into your machine and perform an *editable* installation:
+- Clone the repo into your machine and perform an *editable* installation:
 
 ```
-git clone git@github.com:igmhub/LaCE.git
+git clone https://github.com/igmhub/LaCE.git
 cd LacE
-pip install -e .
+pip install -e .[jupyter]
 ``` 
 
 - If you want to use notebooks via JupyterHub, you'll also need to download `ipykernel`:
@@ -50,7 +48,7 @@ For convenience, you could also add the Nyx path as an environment variable.
 - To improve the reading time, you can precompute all cosmological information needed using CAMB. This is done by running the script 
 
 ```
-python src/lace/scripts/compute_nyx_emu_cosmo.py
+python scripts/compute_nyx_emu_cosmo.py
 ```
 
 Note that you may need to update it as explained inside the file.
@@ -85,9 +83,9 @@ The current version of the emulator, relased in this repo, does not emulate `alp
 
 #### Tutorials:
 
-In the `Notebooks` folder, there are several tutorials one can run to learn how to use
-the emulators and archives. The `Durham2023_LaCETutorial` is the more complete one that
-shows how to get the different archives and run them with the available emulator options.
+In the `Notebooks` folder, there are several tutorials one can run to learn how to use the archives and emulators.
 
-In the `tests` folder, there are four scripts that you can run to open a Gadget or Nyx archive
-and run the G^and NN emulators.
+- Archive tutorial: notebooks/Tutorial_bookkeeping.ipynb
+- Emulator tutorial: notebooks/Tutorial_emulator.ipynb
+
+In the `tests` folder, there are four scripts that you can run to open a Gadget or Nyx archive and run the G^and NN emulators.
