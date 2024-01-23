@@ -88,6 +88,7 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         elif (archive == None) & (training_set == None):
             raise (ValueError("Archive or training_set must be provided"))
+        self.kp_Mpc = self.archive.kp_Mpc
 
         emulator_label_all = ["Pedersen21", "Pedersen23", "Cabayol23"]
         if emulator_label is not None:
