@@ -82,9 +82,11 @@ archive.plot_samples('sigT_Mpc','kF_Mpc')
 take_pars = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
 nelem = len(training_data)
 pars_all = np.zeros((nelem, len(take_pars)))
+sim_in= np.zeros((nelem), dtype=int)
 for ii in range(nelem):
     for jj in range(len(take_pars)):
         pars_all[ii, jj] = training_data[ii][take_pars[jj]]
+        sim_in[ii] = training_data[ii]['sim_label'][4:]
 
 # %%
 data = pars_all
@@ -93,6 +95,7 @@ data = pars_all
 take_pars2 = [r'$\Delta^2_p$', r'$n_p$', r'$\bar{F}$', r'$\sigma_T$', r'$\gamma$', r'$k_F$']
 
 # %%
+path_fig = '/home/jchaves/Proyectos/projects/lya/data/lace/'
 # Get the number of dimensions (columns in the data)
 num_dimensions = data.shape[1]
 
@@ -117,7 +120,56 @@ for i in range(num_dimensions-1):
 axs[-1].axis('off')
 # Adjust layout and show the plot
 plt.tight_layout()
-plt.savefig('project_lace.png', dpi=800)
+# plt.savefig('project_lace.png', dpi=800)
+
+# %% [markdown]
+# #### All
+
+# %%
+path_fig = '/home/jchaves/Proyectos/projects/lya/data/lace/'
+# Get the number of dimensions (columns in the data)
+num_dimensions = data.shape[1]
+
+# Determine the layout for subplots
+# num_rows = 3  # You can adjust the number of rows and columns based on your preference
+# num_cols = (num_dimensions + 1) // num_rows
+
+sym = ['o', 's', '^']
+
+# Create subplots
+# fig.suptitle('Scatter Plots of Data Projections Along the Second Axis', fontsize=16)
+
+# Flatten axs if it's a 2D array
+# if num_rows > 1:
+    # axs = axs.flatten()
+
+# Create scatter plots for all pairs of dimensions
+for isim in range(30):
+    fig, axs = plt.subplots(num_dimensions, num_dimensions, figsize=(16, 16), sharex='col', sharey='row')
+    for i in range(num_dimensions):
+        for j in range(num_dimensions):
+            if(i > j):
+                # axs[i, j].scatter(data[:, j], data[:, i],  s=5, c='C0')
+                axs[i, j].scatter(data[:, j], data[:, i],  s=3, c='C0', label=lab)
+                _ = sim_in == isim
+                axs[i, j].scatter(data[_, j], data[_, i],  s=10, c='C1', label=lab)
+                # _ = sim_in == 5
+                # axs[i, j].scatter(data[_, j], data[_, i],  s=5, c='C2')
+            #     axs[i].set_title(f'Dimension {i} vs Dimension {j}')
+                if(i == num_dimensions-1):
+                    axs[i, j].set_xlabel(take_pars2[j])
+                if(j == 0):
+                    axs[i, j].set_ylabel(take_pars2[i])
+            else:
+                axs[i, j].axis('off')
+    
+            # if((i == 4) & (j == 0)):
+            #     axs[i, j].legend(bbox_to_anchor=(5, 4., 0.5, 0.5), fontsize=20)
+    # Adjust layout and show the plot
+    plt.tight_layout()
+    plt.savefig(path_fig + 'projections/project_lace'+str(isim)+'.png')
+
+# %%
 
 # %% [markdown]
 # ### IGM histories
