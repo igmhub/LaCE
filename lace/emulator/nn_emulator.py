@@ -535,7 +535,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             ninput=len(self.emu_params)
         )
 
-        optimizer = optim.AdamW(
+        optimizer = optim.Adam(
             self.nn.parameters(), lr=self.lr0,weight_decay=1e-4
         )  #
         scheduler = lr_scheduler.StepLR(optimizer, self.step_size, gamma=0.1)
