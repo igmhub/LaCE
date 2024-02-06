@@ -5,13 +5,13 @@ from torch import nn
 
 
 class MDNemulator_polyfit(torch.nn.Module):
-    def __init__(self, nhidden, ndeg, ninput=6):
+    def __init__(self, nhidden, ndeg, max_neurons=100, ninput=6):
         super().__init__()
         self.inputlay = torch.nn.Sequential(
             nn.Linear(ninput, 10), nn.LeakyReLU(0.5)
         )
 
-        params = np.linspace(10, 100, nhidden)
+        params = np.linspace(10, max_neurons, nhidden)
         modules = []
         for k in range(nhidden - 1):
             modules.append(nn.Linear(int(params[k]), int(params[k + 1])))
@@ -19,10 +19,10 @@ class MDNemulator_polyfit(torch.nn.Module):
         self.hiddenlay = nn.Sequential(*modules)
 
         self.means = torch.nn.Sequential(
-            nn.Linear(100, 50), nn.LeakyReLU(0.5), nn.Linear(50, ndeg + 1)
+            nn.Linear(max_neurons, 50), nn.LeakyReLU(0.5), nn.Linear(50, ndeg + 1)
         )
         self.stds = torch.nn.Sequential(
-            nn.Linear(100, 50), nn.LeakyReLU(0.5), nn.Linear(50, ndeg + 1)
+            nn.Linear(max_neurons, 50), nn.LeakyReLU(0.5), nn.Linear(50, ndeg + 1)
         )
 
     def forward(self, inp):
