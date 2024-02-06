@@ -53,8 +53,10 @@ class NNEmulator(base_emulator.BaseEmulator):
         model_path=None,
         weighted_emulator=True,
         nhidden=5,
+        max_neurons=50,
         seed=32,
         fprint=print,
+        lr0=1e-3,
     ):
         # store emulator settings
         self.emu_params = emu_params
@@ -69,14 +71,15 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.models_dir = os.path.join(repo, "data/")
         # CPU vs GPU
         self.device = torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
+            "cuda" if torch.cuda.is_available() else "cpu")
         # training data settings
         self.drop_sim = drop_sim
         self.drop_z = drop_z
         self.weighted_emulator = weighted_emulator
         self.nhidden = nhidden
         self.print = fprint
+        self.lr0=lr0
+        self.max_neurons=max_neurons
 
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -181,7 +184,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.nepochs,
                 self.step_size,
                 self.nhidden,
-            ) = (4, 5, 100, 75, 5)
+                self.max_neurons,
+                self.lr0
+            ) = (4, 5, 100, 75, 5, 100, 1e-3)
 
         elif emulator_label == "Nyx_v0":
             self.print(
@@ -205,7 +210,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.nepochs,
                 self.step_size,
                 self.nhidden,
-            ) = (4, 5, 1000, 750, 5)
+                self.max_neurons,
+                self.lr0
+            ) = (4, 6, 800, 700, 5, 150, 5e-4)
 
         elif emulator_label == "Cabayol23_extended":
             self.print(
@@ -230,8 +237,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.nepochs,
                 self.step_size,
                 self.nhidden,
+                self.max_neurons,
                 self.weighted_emulator,
-            ) = (8, 7, 100, 75, 5, False)
+                self.lr0
+            ) = (8, 7, 100, 75, 5, 100, False, 1e-3)
 
         elif emulator_label == "Nyx_v0_extended":
             self.print(
@@ -288,6 +297,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             self.nn = nn_architecture.MDNemulator_polyfit(
                 nhidden=self.nhidden,
                 ndeg=self.ndeg,
+                max_neurons=self.max_neurons,
                 ninput=len(self.emu_params),
             )
             self.nn.load_state_dict(pretrained_model["emulator"])
@@ -519,11 +529,14 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.log_kMpc = log_kMpc_train
 
         self.nn = nn_architecture.MDNemulator_polyfit(
-            nhidden=self.nhidden, ndeg=self.ndeg, ninput=len(self.emu_params)
+            nhidden=self.nhidden, 
+            ndeg=self.ndeg, 
+            max_neurons=self.max_neurons,
+            ninput=len(self.emu_params)
         )
 
-        optimizer = optim.Adam(
-            self.nn.parameters(), lr=1e-3, weight_decay=1e-4
+        optimizer = optim.AdamW(
+            self.nn.parameters(), lr=self.lr0,weight_decay=1e-4
         )  #
         scheduler = lr_scheduler.StepLR(optimizer, self.step_size, gamma=0.1)
 
