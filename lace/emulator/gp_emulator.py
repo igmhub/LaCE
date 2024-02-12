@@ -63,21 +63,13 @@ class GPEmulator(base_emulator.BaseEmulator):
             )
 
         if training_set is not None:
-            try:
-                if training_set in training_set_all:
-                    print(f"Selected training set from {training_set}")
-                    pass
-                else:
-                    print(
-                        "Invalid training_set value. Available options: ",
-                        training_set_all,
-                    )
-                    raise
-            except:
-                print(
-                    "An error occurred while checking the training_set value."
+            if training_set in training_set_all:
+                print(f"Selected training set from {training_set}")
+            else:
+                raise ValueError(
+                    "Invalid training_set value. Available options: ",
+                    training_set_all,
                 )
-                raise
 
             # read Gadget archive with the right postprocessing
             self.archive = gadget_archive.GadgetArchive(postproc=training_set)
@@ -90,24 +82,22 @@ class GPEmulator(base_emulator.BaseEmulator):
             raise (ValueError("Archive or training_set must be provided"))
         self.kp_Mpc = self.archive.kp_Mpc
 
-        emulator_label_all = ["Pedersen21", "Pedersen23", "Cabayol23"]
+        emulator_label_all = [
+            "Pedersen21",
+            "Pedersen23",
+            "Pedersen21_ext",
+            "Pedersen23_ext",
+            "Pedersen21_ext8",
+            "Pedersen23_ext8",
+        ]
         if emulator_label is not None:
-            try:
-                if emulator_label in emulator_label_all:
-                    print(f"Select emulator in {emulator_label}")
-                    pass
-                else:
-                    print(
-                        "Invalid emulator_label value. Available options: ",
-                        emulator_label_all,
-                    )
-                    raise
-
-            except:
-                print(
-                    "An error occurred while checking the emulator_label value."
+            if emulator_label in emulator_label_all:
+                print(f"Select emulator in {emulator_label}")
+            else:
+                raise ValueError(
+                    "Invalid emulator_label value. Available options: ",
+                    emulator_label_all,
                 )
-                raise
 
             if emulator_label == "Pedersen21":
                 print(
@@ -124,8 +114,7 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "kF_Mpc",
                 ]
                 self.zmax, self.kmax_Mpc, self.emu_type = 4.5, 3, "k_bin"
-
-            if emulator_label == "Pedersen23":
+            elif emulator_label == "Pedersen23":
                 print(
                     r"Gaussian Process emulator predicting the P1D, "
                     + "fitting coefficients to a 4th degree polynomial. It "
@@ -142,13 +131,29 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "gamma",
                     "kF_Mpc",
                 ]
-                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = (
+                self.zmax, self.kmax_Mpc, self.ndeg, self.emu_type = (
                     4.5,
                     3,
                     4,
                     "polyfit",
                 )
-            if emulator_label == "Cabayol23":
+            elif emulator_label == "Pedersen21_ext":
+                print(
+                    r"Gaussian Process emulator predicting the P1D at each k-bin."
+                    + " It goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
+                    + "passed to the emulator will be overwritten to match these ones."
+                )
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+                self.zmax, self.kmax_Mpc, self.emu_type = 4.5, 4, "k_bin"
+
+            elif emulator_label == "Pedersen23_ext":
                 print(
                     r"Gaussian Process emulator predicting the P1D, "
                     + "fitting coefficients to a 5th degree polynomial. It "
@@ -165,10 +170,50 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "gamma",
                     "kF_Mpc",
                 ]
-                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = (
+                self.zmax, self.kmax_Mpc, self.ndeg, self.emu_type = (
                     4.5,
                     4,
                     5,
+                    "polyfit",
+                )
+
+            elif emulator_label == "Pedersen21_ext8":
+                print(
+                    r"Gaussian Process emulator predicting the P1D at each k-bin."
+                    + " It goes to scales of 8 Mpc^{-1} and z<=4.5. The parameters "
+                    + "passed to the emulator will be overwritten to match these ones."
+                )
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+                self.zmax, self.kmax_Mpc, self.emu_type = 4.5, 8, "k_bin"
+
+            elif emulator_label == "Pedersen23_ext8":
+                print(
+                    r"Gaussian Process emulator predicting the P1D, "
+                    + "fitting coefficients to a 5th degree polynomial. It "
+                    + "goes to scales of 8 Mpc^{-1} and z<=4.5. The parameters"
+                    + " passed to the emulator will be overwritten to match "
+                    + "these ones"
+                )
+
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+                self.zmax, self.kmax_Mpc, self.ndeg, self.emu_type = (
+                    4.5,
+                    8,
+                    7,
                     "polyfit",
                 )
 
