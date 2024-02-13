@@ -407,6 +407,12 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(self.training_data))
         ]
+        
+        # Now, if 'A_UVB' is in emu_params, add it to each entry
+        if 'A_UVB' in self.emu_params:
+            for i,d in enumerate(data):
+                d['A_UVB'] = self.training_data[i]['cosmo_params']['A_UVB']
+
 
         data = self._sort_dict(
             data, self.emu_params
@@ -454,6 +460,13 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(self.training_data))
         ]
+
+        # Now, if 'A_UVB' is in emu_params, add it to each entry
+        if 'A_UVB' in self.emu_params:
+            for i,data in enumerate(training_data):
+                data['A_UVB'] = self.training_data[i]['cosmo_params']['A_UVB']
+        
+        
         training_data = self._sort_dict(training_data, self.emu_params)
         training_data = [
             list(training_data[i].values())
