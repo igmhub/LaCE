@@ -311,12 +311,12 @@ class BaseArchive(object):
                     )
 
                 if mask:
-                    if all(x in list_keys for x in emu_params):
+                    if all(x in list_keys or (x == 'A_UVB' and 'cosmo_params' in list_keys) for x in emu_params):
                         if any(
-                            np.isnan(arch_av[ii][x]) for x in emu_params
+                            np.isnan(arch_av[ii][x]) for x in emu_params if x is not 'A_UVB'
                         ) | any(
                             np.any(np.isnan(arch_av[ii][x])) for x in key_power
-                        ):
+                        ):                     
                             if verbose:
                                 print(
                                     "Archive element "

@@ -59,6 +59,9 @@ class NNEmulator(base_emulator.BaseEmulator):
         lr0=1e-3,
     ):
         # store emulator settings
+        self.emulator_label=emulator_label
+        self.training_set=training_set
+        
         self.emu_params = emu_params
         self.kmax_Mpc = kmax_Mpc
         self.ndeg = ndeg
@@ -107,7 +110,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                     training_set_all,
                 )
 
-            self.print(f"Selected emulator {training_set}")
+            self.print(f"Selected training set {training_set}")
 
             if training_set in ["Pedersen21", "Cabayol23"]:
                 archive = gadget_archive.GadgetArchive(postproc=training_set)
@@ -407,6 +410,12 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(self.training_data))
         ]
+        
+        # Now, if 'A_UVB' is in emu_params, add it to each entry
+        if 'A_UVB' in self.emu_params:
+            for i,d in enumerate(data):
+                d['A_UVB'] = self.training_data[i]['cosmo_params']['A_UVB']
+
 
         data = self._sort_dict(
             data, self.emu_params
@@ -454,6 +463,13 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(self.training_data))
         ]
+
+        # Now, if 'A_UVB' is in emu_params, add it to each entry
+        if 'A_UVB' in self.emu_params:
+            for i,data in enumerate(training_data):
+                data['A_UVB'] = self.training_data[i]['cosmo_params']['A_UVB']
+        
+        
         training_data = self._sort_dict(training_data, self.emu_params)
         training_data = [
             list(training_data[i].values())
@@ -595,8 +611,25 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.print(f"NN optimised in {time.time()-t0} seconds")
 
     def save_emulator(self):
-        torch.save(self.nn.state_dict(), self.save_path)
+        
+        model_state_dict = self.nn.state_dict()
 
+        # Define your metadata
+        metadata = {
+            "training_set": self.training_set,
+            "emulator_label": self.emulator_label,
+            "drop_sim": self.drop_sim,
+            "drop_z": self.drop_z
+        }
+
+        # Combine model_state_dict and metadata into a single dictionary
+        model_with_metadata = {
+            "emulator": model_state_dict,
+            "metadata": metadata
+        }
+
+        torch.save(model_with_metadata, self.save_path)
+        
     def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
         k_Mpc = torch.Tensor(k_Mpc)
         log_kMpc = torch.log10(k_Mpc).to(self.device)
