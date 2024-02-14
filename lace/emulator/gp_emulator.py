@@ -7,6 +7,12 @@ import json
 import time
 from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
+from sklearn import decomposition
+
+import skfda
+from skfda.misc.hat_matrix import NadarayaWatsonHatMatrix
+from skfda.misc.kernels import epanechnikov
+from skfda.preprocessing.smoothing import KernelSmoother
 
 from lace.archive import gadget_archive
 from lace.emulator import base_emulator
@@ -46,6 +52,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         check_hull=False,
         emu_per_k=False,
         ndeg=4,
+        bn=None,
+        klist=None,
     ):
         self.kmax_Mpc = kmax_Mpc
         self.emu_type = emu_type
@@ -54,6 +62,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.emu_per_k = emu_per_k
         self.ndeg = ndeg
         self.drop_sim = drop_sim
+        self.bn = bn
+        self.klist = klist
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23"]
@@ -63,21 +73,13 @@ class GPEmulator(base_emulator.BaseEmulator):
             )
 
         if training_set is not None:
-            try:
-                if training_set in training_set_all:
-                    print(f"Selected training set from {training_set}")
-                    pass
-                else:
-                    print(
-                        "Invalid training_set value. Available options: ",
-                        training_set_all,
-                    )
-                    raise
-            except:
-                print(
-                    "An error occurred while checking the training_set value."
+            if training_set in training_set_all:
+                print(f"Selected training set from {training_set}")
+            else:
+                raise ValueError(
+                    "Invalid training_set value. Available options: ",
+                    training_set_all,
                 )
-                raise
 
             # read Gadget archive with the right postprocessing
             self.archive = gadget_archive.GadgetArchive(postproc=training_set)
@@ -90,24 +92,23 @@ class GPEmulator(base_emulator.BaseEmulator):
             raise (ValueError("Archive or training_set must be provided"))
         self.kp_Mpc = self.archive.kp_Mpc
 
-        emulator_label_all = ["Pedersen21", "Pedersen23", "Cabayol23"]
+        emulator_label_all = [
+            "Pedersen21",
+            "Pedersen23",
+            "Pedersen21_ext",
+            "Pedersen23_ext",
+            "Pedersen21_ext8",
+            "Pedersen23_ext8",
+            "k_bin_sm",
+        ]
         if emulator_label is not None:
-            try:
-                if emulator_label in emulator_label_all:
-                    print(f"Select emulator in {emulator_label}")
-                    pass
-                else:
-                    print(
-                        "Invalid emulator_label value. Available options: ",
-                        emulator_label_all,
-                    )
-                    raise
-
-            except:
-                print(
-                    "An error occurred while checking the emulator_label value."
+            if emulator_label in emulator_label_all:
+                print(f"Select emulator in {emulator_label}")
+            else:
+                raise ValueError(
+                    "Invalid emulator_label value. Available options: ",
+                    emulator_label_all,
                 )
-                raise
 
             if emulator_label == "Pedersen21":
                 print(
@@ -124,8 +125,7 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "kF_Mpc",
                 ]
                 self.zmax, self.kmax_Mpc, self.emu_type = 4.5, 3, "k_bin"
-
-            if emulator_label == "Pedersen23":
+            elif emulator_label == "Pedersen23":
                 print(
                     r"Gaussian Process emulator predicting the P1D, "
                     + "fitting coefficients to a 4th degree polynomial. It "
@@ -142,13 +142,29 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "gamma",
                     "kF_Mpc",
                 ]
-                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = (
+                self.zmax, self.kmax_Mpc, self.ndeg, self.emu_type = (
                     4.5,
                     3,
                     4,
                     "polyfit",
                 )
-            if emulator_label == "Cabayol23":
+            elif emulator_label == "Pedersen21_ext":
+                print(
+                    r"Gaussian Process emulator predicting the P1D at each k-bin."
+                    + " It goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
+                    + "passed to the emulator will be overwritten to match these ones."
+                )
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+                self.zmax, self.kmax_Mpc, self.emu_type = 4.5, 4, "k_bin"
+
+            elif emulator_label == "Pedersen23_ext":
                 print(
                     r"Gaussian Process emulator predicting the P1D, "
                     + "fitting coefficients to a 5th degree polynomial. It "
@@ -165,12 +181,71 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "gamma",
                     "kF_Mpc",
                 ]
-                self.zmax, self.kmax_Mpc, self.ndeg, self.empu_type = (
+                self.zmax, self.kmax_Mpc, self.ndeg, self.emu_type = (
                     4.5,
                     4,
                     5,
                     "polyfit",
                 )
+
+            elif emulator_label == "Pedersen21_ext8":
+                print(
+                    r"Gaussian Process emulator predicting the P1D at each k-bin."
+                    + " It goes to scales of 8 Mpc^{-1} and z<=4.5. The parameters "
+                    + "passed to the emulator will be overwritten to match these ones."
+                )
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+                self.zmax, self.kmax_Mpc, self.emu_type = 4.5, 8, "k_bin"
+
+            elif emulator_label == "Pedersen23_ext8":
+                print(
+                    r"Gaussian Process emulator predicting the P1D, "
+                    + "fitting coefficients to a 5th degree polynomial. It "
+                    + "goes to scales of 8 Mpc^{-1} and z<=4.5. The parameters"
+                    + " passed to the emulator will be overwritten to match "
+                    + "these ones"
+                )
+
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+                self.zmax, self.kmax_Mpc, self.ndeg, self.emu_type = (
+                    4.5,
+                    8,
+                    7,
+                    "polyfit",
+                )
+
+            elif emulator_label == "k_bin_sm":
+                print(
+                    r"Gaussian Process emulator predicting the P1D, fitting coefficients "
+                    + " to 6 PCAs. It goes to scales of 4 Mpc^{-1} and z<=4.5. The parameters "
+                    + "passed to the emulator will be overwritten to match these ones."
+                )
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+                self.zmax, self.kmax_Mpc, self.emu_type = (4.5, 4, "k_bin_sm")
+                # bandwidth for different k-ranges
+                self.bn = [0.8, 0.4, 0.2]
+                self.klist = [0.15, 1, 2.5, 4]
 
         else:
             print("Selected custom emulator")
@@ -244,6 +319,17 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         return coeffs
 
+    def _training_points_k_bin_sm(self):
+        """Method to get the Y training points in the form of polyfit
+        coefficients"""
+
+        self._k_bin_sm_p1d_in_archive(self.kmax_Mpc)
+        coeffs = np.empty([len(self.training_data), self.k_bin - 1])
+        for aa in range(len(self.training_data)):
+            coeffs[aa] = self.training_data[aa]["p1d_sm"]
+
+        return coeffs
+
     def _rescale_params(self, params):
         """Rescale a set of parameters to have a unit volume"""
 
@@ -268,6 +354,8 @@ class GPEmulator(base_emulator.BaseEmulator):
             trainingPoints = self._training_points_k_bin()
         elif self.emu_type == "polyfit":
             trainingPoints = self._training_points_polyfit()
+        elif self.emu_type == "k_bin_sm":
+            trainingPoints = self._training_points_k_bin_sm()
         else:
             print("Unknown emulator type, terminating")
             quit()
@@ -292,6 +380,70 @@ class GPEmulator(base_emulator.BaseEmulator):
             entry[
                 "fit_p1d"
             ] = fit_p1d.lnP_fit  ## Add coeffs for each model to archive
+
+    def _inter2smooth(self, data, kmax_Mpc):
+        mask = np.argwhere(
+            (data[0]["k_Mpc"] > 0) & (data[0]["k_Mpc"] < kmax_Mpc)
+        )[:, 0]
+        k_Mpc = data[0]["k_Mpc"][mask]
+
+        logk_Mpc = np.geomspace(k_Mpc[0], k_Mpc[-1], k_Mpc.shape[0] * 2)
+        log_data = np.zeros((len(data), logk_Mpc.shape[0]))
+        for isim in range(len(data)):
+            log_data[isim] = np.interp(
+                np.log(logk_Mpc),
+                np.log(k_Mpc),
+                np.log(data[isim]["p1d_Mpc"][mask]),
+            )
+        return log_data, logk_Mpc, k_Mpc
+
+    def _set_kernel_smoothing(self, data, kmax_Mpc):
+        """For each entry in archive, smooth p1d"""
+
+        log_data, logk_Mpc, k_Mpc = self._inter2smooth(data, kmax_Mpc)
+
+        dat = skfda.FDataGrid(log_data, grid_points=np.log(logk_Mpc))
+        self.kernel_sm = []
+        for ii in range(len(self.bn)):
+            fd_os = KernelSmoother(
+                kernel_estimator=NadarayaWatsonHatMatrix(
+                    bandwidth=self.bn[ii], kernel=epanechnikov
+                ),
+            )
+            self.kernel_sm.append(fd_os.fit(dat))
+
+    def apply_kernel_smoothing(self, data, kmax_Mpc):
+        """Apply kernel smoothing to data"""
+
+        log_data, logk_Mpc, k_Mpc = self._inter2smooth(data, kmax_Mpc)
+
+        # apply smoothing
+        dat = skfda.FDataGrid(log_data, grid_points=np.log(logk_Mpc))
+        for ii in range(len(self.klist) - 1):
+            _ = (logk_Mpc > self.klist[ii]) & (logk_Mpc <= self.klist[ii + 1])
+            log_data[:, _] = (
+                self.kernel_sm[ii].transform(dat).data_matrix[:, :, 0][:, _]
+            )
+
+        data_smooth = np.zeros((len(log_data), k_Mpc.shape[0]))
+        for isim in range(len(data)):
+            data_smooth[isim] = np.exp(
+                np.interp(np.log(k_Mpc), np.log(logk_Mpc), log_data[isim])
+            )
+
+        return data_smooth
+
+    def _k_bin_sm_p1d_in_archive(self, kmax_Mpc):
+        """For each entry in archive, carry out PCA decomposition"""
+
+        # smoothing
+        self._set_kernel_smoothing(self.training_data, self.kmax_Mpc)
+        data_smooth = self.apply_kernel_smoothing(
+            self.training_data, self.kmax_Mpc
+        )
+
+        for isim, entry in enumerate(self.training_data):
+            entry["p1d_sm"] = data_smooth[isim]
 
     def _build_interp(self):
         """Method to build an GP object from a spectra archive and list of parameters
@@ -507,6 +659,37 @@ class GPEmulator(base_emulator.BaseEmulator):
             err = p1d * np.sqrt(erry2)
             covar = np.outer(err, err)
             return p1d, covar
+
+        elif self.emu_type == "k_bin_sm":
+            # gp_pred here are just pcas
+            # unorm_p1d = self.pca.inverse_transform(gp_pred)
+            # p1d = unorm_p1d
+            # p1d = np.exp(unorm_p1d * self.pca_norm)
+            # interpolate predictions to input k values
+            interpolator = interp1d(
+                self.training_k_bins,
+                gp_pred,
+                kind="cubic",
+                fill_value="extrapolate",
+            )
+            p1d = interpolator(k_Mpc)
+            if not return_covar:
+                return p1d
+            else:
+                raise NotImplementedError
+
+            # lk = np.log(k_Mpc)
+            # erry2 = (
+            #     (gp_err[0] * lk**4) ** 2
+            #     + (gp_err[1] * lk**3) ** 2
+            #     + (gp_err[2] * lk**2) ** 2
+            #     + (gp_err[3] * lk) ** 2
+            #     + gp_err[4] ** 2
+            # )
+            # # compute error on P
+            # err = p1d * np.sqrt(erry2)
+            # covar = np.outer(err, err)
+            # return p1d, covar
 
         else:
             raise ValueError("wrong emulator type")
