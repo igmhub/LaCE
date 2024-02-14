@@ -104,6 +104,12 @@ full_emulator_c23_ext = NNEmulator(
 full_emulator_p21_ext8 = GPEmulator(archive=archive_c23, emulator_label='Pedersen21_ext8')
 full_emulator_p23_ext8 = GPEmulator(archive=archive_c23, emulator_label='Pedersen23_ext8')
 
+# %%
+full_emulator_ch24 = GPEmulator(archive=archive_c23, emulator_label='k_bin_sm')
+full_emulator_ch24 = GPEmulator(archive=archive_c23, kmax_Mpc=4, 
+                                emu_type="k_bin_sm", bn=[0.8, 0.4, 0.2], klist=[0.15, 1, 2.5, 4])
+
+
 # %% [markdown]
 # ForestFlow
 
@@ -144,26 +150,33 @@ if use_forestflow:
 # %%
 full_emulator = [
     full_emulator_c23, 
-    full_emulator_p21, 
-    full_emulator_p23, 
+    # full_emulator_p21, 
+    # full_emulator_p23, 
     full_emulator_p21_ext, 
     full_emulator_p23_ext,
-    full_emulator_c23_ext,
-    full_emulator_p21_ext8, 
-    full_emulator_p23_ext8,
+    # full_emulator_c23_ext,
+    # full_emulator_p21_ext8, 
+    # full_emulator_p23_ext8,
+    full_emulator_ch24,
 ]
 
-emu_labs = ['C23', 'P21', 'P23', 'P21_ext', 'P23_ext', 'C23_ext', 'P21_ext8', 'P23_ext8']
-arr_kmax = [4, 3, 3, 4, 4, 8, 8, 8]
-arr_sm =   [1, 0, 1, 0, 1, 1, 0, 1]
+# emu_labs = ['C23', 'P21', 'P23', 'P21_ext', 'P23_ext', 'C23_ext', 'P21_ext8', 'P23_ext8', 'CH24']
+# arr_kmax = [4, 3, 3, 4, 4, 8, 8, 8, 4]
+# arr_sm =   [1, 0, 1, 0, 1, 1, 0, 1, 2]
+emu_labs = ['C23',  'P21_ext', 'P23_ext', 'CH24']
+arr_kmax = [4, 4, 4, 4]
+arr_sm =   [1, 0, 1, 1]
+arr_ids =  [0, 0, 0, 0]
+arr_l1O =  [0, 3, 4, 8]
 arr_training_data = [
     training_data_c23,
-    training_data_p21,
-    training_data_p21,
+    # training_data_p21,
+    # training_data_p21,
     training_data_c23,
     training_data_c23,
-    training_data_c23,
-    training_data_c23,
+    # training_data_c23,
+    # training_data_c23,
+    # training_data_c23,
     training_data_c23,
 ]
 
@@ -195,10 +208,23 @@ for par in input:
     input[par] = testing_data[_id][par]
 input
 
+# %%
+range_par = {
+    'Delta2_p': 0.07,
+    'n_p': 0.1,
+    'mF': 0.02,
+    'gamma': 0.2,
+    'sigT_Mpc': 0.02,
+    'kF_Mpc': 2
+}
+
 # %% [markdown]
 # Range of Dp values in the sim
 
 # %%
+for kk, par in enumerate(input):
+    print(kk, par, range_par[par])
+
 # Dp_range = np.array([10., -10.])
 # for ii in range(len(archive.data)):
 #     dp = archive.data[ii]['Delta2_p']
@@ -208,20 +234,18 @@ input
 #         Dp_range[0] = dp
 # Dp_range
 
-fol = '/home/jchaves/Proyectos/projects/lya/data/cup1d/sampler/v1/Cabayol23_lres/emu_Cabayol23_cov_Chabanier2019_mocksim_mpg_5_cosmosim_mpg_5_igmsim_mpg_5_nigm_2_ydrop_ypoly/chain_1/'
-file = fol + 'chain.npy'
-res = np.load(file)
-Dp_range = np.percentile(res[:, -2], [5, 95])
-Dp_range
+# fol = '/home/jchaves/Proyectos/projects/lya/data/cup1d/sampler/v1/Cabayol23_lres/emu_Cabayol23_cov_Chabanier2019_mocksim_mpg_5_cosmosim_mpg_5_igmsim_mpg_5_nigm_2_ydrop_ypoly/chain_1/'
+# file = fol + 'chain.npy'
+# res = np.load(file)
+# Dp_range = np.percentile(res[:, -2], [5, 95])
+# Dp_range
 
 # %%
 nn = 10
 use_forestflow = False
-arr_kmax = [4, 3, 3, 4, 4, 8, 8, 8]
-training_data = training_data_c23
 
+training_data = training_data_c23
 len_max = np.argwhere((training_data_c23[0]['k_Mpc'] > 0) & (training_data_c23[0]['k_Mpc'] < 8))[:,0].shape[0]
-dp_vals = np.linspace(Dp_range[0], Dp_range[1], nn)
 
 if use_forestflow:
     len_emus = len(full_emulator) + 1
@@ -229,19 +253,24 @@ else:
     len_emus = len(full_emulator)
     
 orig_dp = np.zeros((len_emus, len_max))
-var_dp = np.zeros((len_emus, nn, len_max))
+var_dp = np.zeros((len_emus, 6, nn, len_max))
+all_dp_vals = []
 for jj in range(len_emus):
-        
+    
     mask = (training_data[0]['k_Mpc'] > 0) & (training_data[0]['k_Mpc'] < arr_kmax[jj])
     kMpc = training_data[0]['k_Mpc'][mask]
 
+    
     if(jj != len(full_emulator)):
         orig_dp[jj, :kMpc.shape[0]] = full_emulator[jj].emulate_p1d_Mpc(input, kMpc)
-        
-        for ii in range(nn):
-            input2 = input.copy()
-            input2['Delta2_p'] = dp_vals[ii]
-            var_dp[jj, ii, :kMpc.shape[0]] = full_emulator[jj].emulate_p1d_Mpc(input2, kMpc)
+        for kk, par in enumerate(input):
+            dp_vals = np.linspace(input[par]-range_par[par], input[par]+range_par[par], nn)
+            all_dp_vals.append(dp_vals)
+            
+            for ii in range(nn):
+                input2 = input.copy()
+                input2[par] = dp_vals[ii]
+                var_dp[jj, kk, ii, :kMpc.shape[0]] = full_emulator[jj].emulate_p1d_Mpc(input2, kMpc)
     else:
         out = p3d_emu.predict_P3D_Mpc(
             sim_label='mpg_central',
@@ -270,27 +299,32 @@ for jj in range(len_emus):
         
 
 # %%
-# emu_labs = ['C23', 'P21', 'P23', 'P21_ext', 'P23_ext', 'C23_ext', 'ForestFlow']
-fig, ax = plt.subplots(len(emu_labs), sharex=True, sharey=True, figsize=(15,10))
-for jj in range(len(emu_labs)):
-    for ii in range(nn):
+
+for kk, par in enumerate(input):
+    fig, ax = plt.subplots(len(emu_labs), sharex=True, sharey=True, figsize=(15,10))
+    for jj in range(len(emu_labs)):
+        for ii in range(nn):
+            if(jj == 1):
+                leg = par + '= ' + str(np.round(all_dp_vals[kk][ii],2))
+            else:
+                leg = None
+                
+            mask = (training_data[0]['k_Mpc'] > 0) & (training_data[0]['k_Mpc'] < arr_kmax[jj])
+            kMpc = training_data[0]['k_Mpc'][mask]
+                
+            ax[jj].plot(kMpc, (var_dp[jj, kk, ii, :kMpc.shape[0]]/orig_dp[jj, :kMpc.shape[0]]-1), label=leg)
+            
         if(jj == 1):
-            leg = r'$\Delta^2_p=$' + str(np.round(dp_vals[ii],2))
-        else:
-            leg = None
+            ax[jj].legend(ncol=4)
             
-        mask = (training_data[0]['k_Mpc'] > 0) & (training_data[0]['k_Mpc'] < arr_kmax[jj])
-        kMpc = training_data[0]['k_Mpc'][mask]
-            
-        ax[jj].plot(kMpc, (var_dp[jj, ii, :kMpc.shape[0]]/orig_dp[jj, :kMpc.shape[0]]-1), label=leg)
-    if(jj == 1):
-        ax[jj].legend(ncol=4)
-    ax[jj].axhline(color='k')
-    ax[jj].set_title(emu_labs[jj])
-    ax[jj].set_ylabel('P1D/P1Dcen-1')
-ax[jj].set_xlabel(r'$k$[1/Mpc]')
-plt.tight_layout()
-plt.savefig(path_fig+'Ap_cosmo_dependence.pdf')
+        ax[jj].axhline(color='k')
+        ax[jj].set_title(emu_labs[jj])
+        ax[jj].set_ylabel('P1D/P1Dcen-1')
+        
+    ax[jj].set_xlabel(r'$k$[1/Mpc]')
+    plt.suptitle(par)
+    plt.tight_layout()
+    plt.savefig(path_fig+'/sensitivity/'+par+'_red.pdf')
 
 # %%
 dp_range = np.zeros((3, orig_dp[0].shape[0]))
@@ -353,23 +387,19 @@ wdiff_P1D = np.zeros((len(full_emulator), 2, 2, len(archive_c23.list_sim_cube), 
 chi2 = np.zeros((len(full_emulator), 2, 2, len(archive_c23.list_sim_cube)))
 fob = np.zeros((len(full_emulator), 2, 2, len(archive_c23.list_sim_cube)))
 
-
 for isim, sim_label in enumerate(archive_c23.list_sim_cube):
     print(sim_label)
     print("")
     print("")
     
     for iemu in range(len(full_emulator)):
-        if((iemu == 1) | (iemu == 2)):
-            _ids_all = ids_all[1]
-        else:
-            _ids_all = ids_all[0]
+        _ids_all = ids_all[arr_ids[iemu]]
         training_data = arr_training_data[iemu]
         kmax = arr_kmax[iemu]
         mask = np.argwhere((training_data[0]['k_Mpc'] > 0) & (training_data[0]['k_Mpc'] < kmax))[:,0]
         kMpc = training_data[0]['k_Mpc'][mask]
-
-        if(iemu == 0):
+        
+        if(arr_l1O[iemu] == 0):
             emulator = NNEmulator(
                 archive=archive_c23,
                 training_set='Cabayol23',
@@ -378,15 +408,15 @@ for isim, sim_label in enumerate(archive_c23.list_sim_cube):
                 drop_sim=sim_label,
                 train=False
             )
-        elif(iemu == 1):
+        elif(arr_l1O[iemu] == 1):
             emulator = GPEmulator(archive=archive_p21, emulator_label='Pedersen21', drop_sim=sim_label)
-        elif(iemu == 2):
+        elif(arr_l1O[iemu] == 2):
             emulator = GPEmulator(archive=archive_p21, emulator_label='Pedersen23', drop_sim=sim_label)
-        elif(iemu == 3):
+        elif(arr_l1O[iemu] == 3):
             emulator = GPEmulator(archive=archive_c23, emulator_label='Pedersen21_ext', drop_sim=sim_label)
-        elif(iemu == 4):
+        elif(arr_l1O[iemu] == 4):
             emulator = GPEmulator(archive=archive_c23, emulator_label='Pedersen23_ext', drop_sim=sim_label)
-        elif(iemu == 5):
+        elif(arr_l1O[iemu] == 5):
             emulator = NNEmulator(
                 archive=archive_c23,
                 training_set='Cabayol23',
@@ -395,10 +425,14 @@ for isim, sim_label in enumerate(archive_c23.list_sim_cube):
                 drop_sim=sim_label,
                 train=False
             )
-        elif(iemu == 6):
+        elif(arr_l1O[iemu] == 6):
             emulator = GPEmulator(archive=archive_c23, emulator_label='Pedersen21_ext8', drop_sim=sim_label)
-        elif(iemu == 7):
+        elif(arr_l1O[iemu] == 7):
             emulator = GPEmulator(archive=archive_c23, emulator_label='Pedersen23_ext8', drop_sim=sim_label)
+        elif(arr_l1O[iemu] == 8):
+            # emulator = GPEmulator(archive=archive_c23, emulator_label='k_bin_sm', drop_sim=sim_label)
+            emulator = GPEmulator(archive=archive_c23, kmax_Mpc=4, drop_sim=sim_label,
+                                            emu_type="k_bin_sm", bn=[0.8, 0.4, 0.2], klist=[0.15, 1, 2.5, 4])
     
         p1d_emu = np.zeros((2, 11, kMpc.shape[0]))
         p1d_sim = np.zeros((11, kMpc.shape[0]))
@@ -410,18 +444,22 @@ for isim, sim_label in enumerate(archive_c23.list_sim_cube):
             p1d_emu[0, ii, :] = full_emulator[iemu].emulate_p1d_Mpc(training_data[id], kMpc) * kMpc / np.pi
             p1d_emu[1, ii, :] = emulator.emulate_p1d_Mpc(training_data[id], kMpc) * kMpc / np.pi
             
-            fit_p1d = poly_p1d.PolyP1D(
-                kMpc, 
-                training_data[id]['p1d_Mpc'][mask],
-                kmin_Mpc=1.e-5,
-                kmax_Mpc=emulator.kmax_Mpc, 
-                deg=emulator.ndeg
-            )
             p1d_sim[ii, :] = training_data[id]['p1d_Mpc'][mask] * kMpc / np.pi
-            p1d_sm[ii, :] = fit_p1d.P_Mpc(kMpc) * kMpc / np.pi
+
+            if(emu_labs[iemu] != "CH24"):
+                fit_p1d = poly_p1d.PolyP1D(
+                    kMpc, 
+                    training_data[id]['p1d_Mpc'][mask],
+                    kmin_Mpc=1.e-5,
+                    kmax_Mpc=emulator.kmax_Mpc, 
+                    deg=emulator.ndeg
+                ).P_Mpc(kMpc)
+            else:
+                fit_p1d = full_emulator[iemu].apply_kernel_smoothing([training_data[id]], kmax)[0]
+                
+            p1d_sm[ii, :] = fit_p1d * kMpc / np.pi
     
-            k_kms = kMpc/training_data[id]['dkms_dMpc']
-    
+            k_kms = kMpc/training_data[id]['dkms_dMpc']    
             indz_cov = np.argmin(np.abs(data_boss.z - training_data[id]['z']))
             err_p1d[ii, :] = np.interp(k_kms, data_boss.k_kms, norm_cov[indz_cov], right=1000)
     
@@ -476,7 +514,7 @@ for jj in range(2):
     ax[-1, 0].set_xlabel(flags[0])
     ax[-1, 1].set_xlabel(flags[0])
     plt.tight_layout()
-    plt.savefig(path_fig + labcols[jj] + '_ext.pdf')
+    plt.savefig(path_fig + labcols[jj] + '_red.pdf')
 
 
 # %% [markdown]
@@ -487,7 +525,7 @@ for jj in range(2):
 lab = np.array([" w/o l10", " w/ l10"])
 
 
-for isim, sim_label in enumerate(archive_c23.list_sim_cube):
+for isim, sim_label in enumerate(np.array(archive_c23.list_sim_cube)):
 # for isim in range(5, 6):
     
     fig, ax = plt.subplots(len(full_emulator), 2, sharex=True, sharey=True, figsize=(12, 20))
@@ -517,7 +555,7 @@ for isim, sim_label in enumerate(archive_c23.list_sim_cube):
     plt.suptitle(sim_label)
 
     plt.tight_layout()
-    plt.savefig(path_fig + '/reldiff/' + sim_label + '.png')
+    plt.savefig(path_fig + '/reldiff/' + sim_label + '_red.png')
 
 # %% [markdown]
 # #### weights
@@ -554,12 +592,14 @@ for isim, sim_label in enumerate(archive_c23.list_sim_cube):
     plt.suptitle(sim_label)
 
     plt.tight_layout()
-    plt.savefig(path_fig + '/wdiff/' + sim_label + '.png')
+    plt.savefig(path_fig + '/wdiff/' + sim_label + '_red.png')
 
 # %%
 
 # %% [markdown]
 # ## Extra sims
+
+# %%
 
 # %%
 # emu_type, smooth (n, y), etc
@@ -570,15 +610,18 @@ ewdiff_P1D = np.zeros((len(full_emulator), 2, len(archive_c23.list_sim_test), nz
 
 for isim, sim_label in enumerate(archive_c23.list_sim_test):
     
-    for iemu in range(len(full_emulator)):
+    for iemu in range(3, len(full_emulator)):
+
+        training_data = arr_training_data[iemu]
         kmax = arr_kmax[iemu]
-        if((iemu == 1) | (iemu == 2)):
+        mask = np.argwhere((training_data[0]['k_Mpc'] > 0) & (training_data[0]['k_Mpc'] < kmax))[:,0]
+        kMpc = training_data[0]['k_Mpc'][mask]
+        
+        kmax = arr_kmax[iemu]
+        if(arr_ids[iemu] == 1):
             testing_data = archive_p21.get_testing_data(sim_label=sim_label)
         else:
             testing_data = archive_c23.get_testing_data(sim_label=sim_label)
-        
-        mask = np.argwhere((testing_data[0]['k_Mpc'] > 0) & (testing_data[0]['k_Mpc'] < kmax))[:,0]
-        kMpc = testing_data[0]['k_Mpc'][mask]
     
         p1d_emu = np.zeros((nz, kMpc.shape[0]))
         p1d_sim = np.zeros((nz, kMpc.shape[0]))
@@ -588,16 +631,20 @@ for isim, sim_label in enumerate(archive_c23.list_sim_test):
         
         for ii in range(len(testing_data)):
             p1d_emu[ii, :] = full_emulator[iemu].emulate_p1d_Mpc(testing_data[ii], kMpc) * kMpc / np.pi
-            
-            fit_p1d = poly_p1d.PolyP1D(
-                kMpc, 
-                testing_data[ii]['p1d_Mpc'][mask],
-                kmin_Mpc=1.e-5,
-                kmax_Mpc=full_emulator[iemu].kmax_Mpc, 
-                deg=full_emulator[iemu].ndeg
-            )
             p1d_sim[ii, :] = testing_data[ii]['p1d_Mpc'][mask] * kMpc / np.pi
-            p1d_sm[ii, :] = fit_p1d.P_Mpc(kMpc) * kMpc / np.pi
+            
+            if(emu_labs[iemu] != "CH24"):
+                fit_p1d = poly_p1d.PolyP1D(
+                    kMpc, 
+                    testing_data[ii]['p1d_Mpc'][mask],
+                    kmin_Mpc=1.e-5,
+                    kmax_Mpc=full_emulator[iemu].kmax_Mpc, 
+                    deg=full_emulator[iemu].ndeg
+                ).P_Mpc(kMpc)
+            else:
+                fit_p1d = full_emulator[iemu].apply_kernel_smoothing([testing_data[ii]], kmax)[0]
+                
+            p1d_sm[ii, :] = fit_p1d * kMpc / np.pi
     
             k_kms = kMpc/testing_data[ii]['dkms_dMpc']
     
@@ -612,77 +659,80 @@ for isim, sim_label in enumerate(archive_c23.list_sim_test):
 
 
 # %%
+archive_c23.list_sim_test
 
 # %%
+for isim, sim_label in enumerate(np.array(archive_c23.list_sim_test)):
+    # if((sim_label == "mpg_central") | (sim_label == "mpg_seed")):
+    #     pass
+    # else:
+    #     continue
 
-for isim, sim_label in enumerate(archive_c23.list_sim_test):
-# for isim in range(1):
-    # sim_label = 'mpg_central'
-    
     fig, ax = plt.subplots(len(full_emulator), 1, sharex=True, sharey=True, figsize=(12, 20))
     
     for i0 in range(len(full_emulator)):
         i2 = arr_sm[i0]
         kmax = arr_kmax[i0]
-                
+    
         mask = np.argwhere((testing_data[0]['k_Mpc'] > 0) & (testing_data[0]['k_Mpc'] < kmax))[:,0]
         kMpc = testing_data[0]['k_Mpc'][mask]
         
-        for ii in range(nz):
-            
+        for ii in range(11):
             ax[i0].plot(kMpc, ereldiff_P1D[i0, i2, isim, ii, :kMpc.shape[0]], label=str(zz[ii]))
-        
-            ax[i0].axhline(color='k', ls='--')
-            ax[i0].axhline(0.01, color='k', ls='--')
-            ax[i0].axhline(-0.01, color='k', ls='--')            
-            ax[i0].set_title(emu_labs[i0])
+    
+        ax[i0].axhline(color='k', ls='--')
+        ax[i0].axhline(0.01, color='k', ls='--')
+        ax[i0].axhline(-0.01, color='k', ls='--')
+        ax[i0].set_title(emu_labs[i0])
         ax[i0].set_ylabel("m/d-1")
-        
     ax[0].legend(ncol=5)
     ax[0].set_xscale('log')
     ax[0].set_ylim([-0.02, 0.02])
     ax[-1].set_xlabel("kpar [1/Mpc]")
-
-    fig.suptitle(sim_label)
+    plt.suptitle(sim_label)
 
     plt.tight_layout()
-    plt.savefig(path_fig + '/extra_reldiff/' + sim_label + '.png')
+    plt.savefig(path_fig + '/extra_reldiff/' + sim_label + '_red.png')
+
+
+    
+    
 
 # %%
 
 # %%
 
-for isim, sim_label in enumerate(archive_c23.list_sim_test):
-# for isim in range(1):
-    # sim_label = 'mpg_central'
+# for isim, sim_label in enumerate(archive_c23.list_sim_test):
+# # for isim in range(1):
+#     # sim_label = 'mpg_central'
     
-    fig, ax = plt.subplots(len(full_emulator), 1, sharex=True, sharey=True, figsize=(12, 20))
+#     fig, ax = plt.subplots(len(full_emulator), 1, sharex=True, sharey=True, figsize=(12, 20))
     
-    for i0 in range(len(full_emulator)):
-        i2 = arr_sm[i0]
-        kmax = arr_kmax[i0]
+#     for i0 in range(len(full_emulator)):
+#         i2 = arr_sm[i0]
+#         kmax = arr_kmax[i0]
                 
-        mask = np.argwhere((testing_data[0]['k_Mpc'] > 0) & (testing_data[0]['k_Mpc'] < kmax))[:,0]
-        kMpc = testing_data[0]['k_Mpc'][mask]
+#         mask = np.argwhere((testing_data[0]['k_Mpc'] > 0) & (testing_data[0]['k_Mpc'] < kmax))[:,0]
+#         kMpc = testing_data[0]['k_Mpc'][mask]
         
-        for ii in range(nz):
+#         for ii in range(nz):
             
-            ax[i0].plot(kMpc, ewdiff_P1D[i0, i2, isim, ii, :kMpc.shape[0]], label=str(zz[ii]))
+#             ax[i0].plot(kMpc, ewdiff_P1D[i0, i2, isim, ii, :kMpc.shape[0]], label=str(zz[ii]))
         
-            ax[i0].axhline(color='k', ls='--')
-            ax[i0].axhline(0.25, color='k', ls='--')
-            ax[i0].axhline(-0.25, color='k', ls='--')            
-            ax[i0].set_title(emu_labs[i0])
-        ax[i0].set_ylabel("(m-d)/err")
+#             ax[i0].axhline(color='k', ls='--')
+#             ax[i0].axhline(0.25, color='k', ls='--')
+#             ax[i0].axhline(-0.25, color='k', ls='--')            
+#             ax[i0].set_title(emu_labs[i0])
+#         ax[i0].set_ylabel("(m-d)/err")
         
-    ax[-1].legend(ncol=5, loc="lower right")
-    ax[0].set_xscale('log')
-    ax[0].set_ylim([-0.5, 0.5])
-    ax[-1].set_xlabel("kpar [1/Mpc]")
+#     ax[-1].legend(ncol=5, loc="lower right")
+#     ax[0].set_xscale('log')
+#     ax[0].set_ylim([-0.5, 0.5])
+#     ax[-1].set_xlabel("kpar [1/Mpc]")
 
-    fig.suptitle(sim_label)
+#     fig.suptitle(sim_label)
 
-    plt.tight_layout()
-    plt.savefig(path_fig + '/extra_wdiff/' + sim_label + '.png')
+#     plt.tight_layout()
+#     plt.savefig(path_fig + '/extra_wdiff/' + sim_label + '.png')
 
 # %%
