@@ -78,7 +78,8 @@ full_emulator_c23 = NNEmulator(
     archive=archive_c23,
     training_set='Cabayol23',
     emulator_label='Cabayol23',
-    model_path='NNmodels/Cabayol23/Cabayol23.pt',
+    # model_path='NNmodels/Cabayol23/Cabayol23.pt',
+    model_path='NNmodels/Cabayol23_Feb2024/Cabayol23.pt',
     train=False
 )
 full_emulator_p21 = GPEmulator(training_set='Pedersen21', emulator_label='Pedersen21')
@@ -382,17 +383,18 @@ zz
 
 # %%
 # emu_type, l10 (n, y), smooth (n, y), etc
-reldiff_P1D = np.zeros((len(full_emulator), 2, 2, len(archive_c23.list_sim_cube), 11, len_max))
-wdiff_P1D = np.zeros((len(full_emulator), 2, 2, len(archive_c23.list_sim_cube), 11, len_max))
-chi2 = np.zeros((len(full_emulator), 2, 2, len(archive_c23.list_sim_cube)))
-fob = np.zeros((len(full_emulator), 2, 2, len(archive_c23.list_sim_cube)))
+# reldiff_P1D = np.zeros((len(full_emulator), 2, 2, len(archive_c23.list_sim_cube), 11, len_max))
+# wdiff_P1D = np.zeros((len(full_emulator), 2, 2, len(archive_c23.list_sim_cube), 11, len_max))
+# chi2 = np.zeros((len(full_emulator), 2, 2, len(archive_c23.list_sim_cube)))
+# fob = np.zeros((len(full_emulator), 2, 2, len(archive_c23.list_sim_cube)))
 
 for isim, sim_label in enumerate(archive_c23.list_sim_cube):
     print(sim_label)
     print("")
     print("")
     
-    for iemu in range(len(full_emulator)):
+    # for iemu in range(len(full_emulator)):
+    for iemu in range(1):
         _ids_all = ids_all[arr_ids[iemu]]
         training_data = arr_training_data[iemu]
         kmax = arr_kmax[iemu]
@@ -404,7 +406,7 @@ for isim, sim_label in enumerate(archive_c23.list_sim_cube):
                 archive=archive_c23,
                 training_set='Cabayol23',
                 emulator_label='Cabayol23',
-                model_path='NNmodels/Cabayol23/Cabayol23_drop_sim_'+sim_label+'.pt', 
+                model_path='NNmodels/Cabayol23_Feb2024/Cabayol23_drop_sim_'+sim_label+'.pt', 
                 drop_sim=sim_label,
                 train=False
             )
