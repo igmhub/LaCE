@@ -155,6 +155,9 @@ emulator = GPEmulator(training_set='Pedersen21', emulator_label='Pedersen21')
 # %%
 emulator = GPEmulator(training_set='Pedersen21', emulator_label='Pedersen23')
 
+# %%
+emulator = GPEmulator(training_set='Cabayol23', emulator_label='k_bin_sm')
+
 # %% [markdown]
 # ## LaCE-Nyx emulator (NN)
 
