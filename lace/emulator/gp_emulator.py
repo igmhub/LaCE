@@ -230,9 +230,9 @@ class GPEmulator(base_emulator.BaseEmulator):
 
             elif emulator_label == "CH24":
                 print(
-                    r"Gaussian Process emulator predicting the P1D, fitting coefficients "
-                    + " to 6 PCAs. It goes to scales of 4 Mpc^{-1} and z<=4.5. The parameters "
-                    + "passed to the emulator will be overwritten to match these ones."
+                    r"Gaussian Process emulator predicting the P1D at each k-bin after "
+                    + " applying smoothing. It goes to scales of 4 Mpc^{-1} and z<=4.5."
+                    + "The parameters passed to the emulator will be overwritten to match these ones."
                 )
                 self.emu_params = [
                     "Delta2_p",
@@ -278,6 +278,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             average=average,
             val_scaling=val_scaling,
         )
+        self.kmin_Mpc = self.training_data[0]["k_Mpc"][1]
 
         ## Find max k bin
         self.k_bin = (
@@ -434,7 +435,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         return data_smooth
 
     def _k_bin_sm_p1d_in_archive(self, kmax_Mpc):
-        """For each entry in archive, carry out PCA decomposition"""
+        """For each entry in archive, carry out smoothing"""
 
         # smoothing
         self._set_kernel_smoothing(self.training_data, self.kmax_Mpc)
@@ -591,20 +592,16 @@ class GPEmulator(base_emulator.BaseEmulator):
         by interpolating the trained data.
         Option for reducing variance with z rescaling is not fully tested.
         """
-        try:
-            if max(k_Mpc) > max(self.training_k_bins):
-                print(max(k_Mpc))
-                print(max(self.training_k_bins))
-                print(
-                    "Warning! Your requested k bins are higher than the training values."
-                )
-        except:
-            if k_Mpc > max(self.training_k_bins):
-                print(max(k_Mpc))
-                print(max(self.training_k_bins))
-                print(
-                    "Warning! Your requested k bins are higher than the training values."
-                )
+        if np.max(k_Mpc) > self.kmax_Mpc:
+            print(
+                "WARNING: some of the requested k's are higher than the maximum training value k=",
+                self.kmax_Mpc,
+            )
+        elif np.min(k_Mpc) < self.kmin_Mpc:
+            print(
+                "WARNING: some of the requested k's are lower than the minimum training value k=",
+                self.kmin_Mpc,
+            )
 
         if self.hull:
             # check if outside the convex hull
@@ -614,7 +611,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         # get raw prediction from GPy object
         gp_pred, gp_err = self.predict(model, z)
 
-        if self.emu_type == "k_bin":
+        if (self.emu_type == "k_bin") | (self.emu_type == "k_bin_sm"):
             # interpolate predictions to input k values
             interpolator = interp1d(
                 self.training_k_bins,
@@ -659,37 +656,6 @@ class GPEmulator(base_emulator.BaseEmulator):
             err = p1d * np.sqrt(erry2)
             covar = np.outer(err, err)
             return p1d, covar
-
-        elif self.emu_type == "k_bin_sm":
-            # gp_pred here are just pcas
-            # unorm_p1d = self.pca.inverse_transform(gp_pred)
-            # p1d = unorm_p1d
-            # p1d = np.exp(unorm_p1d * self.pca_norm)
-            # interpolate predictions to input k values
-            interpolator = interp1d(
-                self.training_k_bins,
-                gp_pred,
-                kind="cubic",
-                fill_value="extrapolate",
-            )
-            p1d = interpolator(k_Mpc)
-            if not return_covar:
-                return p1d
-            else:
-                raise NotImplementedError
-
-            # lk = np.log(k_Mpc)
-            # erry2 = (
-            #     (gp_err[0] * lk**4) ** 2
-            #     + (gp_err[1] * lk**3) ** 2
-            #     + (gp_err[2] * lk**2) ** 2
-            #     + (gp_err[3] * lk) ** 2
-            #     + gp_err[4] ** 2
-            # )
-            # # compute error on P
-            # err = p1d * np.sqrt(erry2)
-            # covar = np.outer(err, err)
-            # return p1d, covar
 
         else:
             raise ValueError("wrong emulator type")

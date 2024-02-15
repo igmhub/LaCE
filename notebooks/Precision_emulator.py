@@ -30,6 +30,7 @@ from matplotlib import pyplot as plt
 
 # our modules
 from lace.archive import gadget_archive, nyx_archive
+from lace.emulator.emulator_manager import set_emulator
 from lace.emulator.nn_emulator import NNEmulator
 from lace.emulator.gp_emulator import GPEmulator
 from lace.utils import poly_p1d
@@ -60,6 +61,12 @@ archive_p21 = gadget_archive.GadgetArchive(postproc="Pedersen21")
 archive_c23 = gadget_archive.GadgetArchive(postproc="Cabayol23")
 
 # %%
+plt.loglog(archive_p21.data[0]["k_Mpc"], archive_p21.data[0]["p1d_Mpc"])
+
+# %%
+np.max(archive_p21.data[0]["k_Mpc"])
+
+# %%
 # list of emulator parameters used with Gadget sims
 emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
 
@@ -86,6 +93,8 @@ full_emulator_c23 = NNEmulator(
 )
 full_emulator_p21 = GPEmulator(training_set='Pedersen21', emulator_label='Pedersen21')
 full_emulator_p23 = GPEmulator(training_set='Pedersen21', emulator_label='Pedersen23')
+
+# %%
 
 # %% [markdown]
 # New

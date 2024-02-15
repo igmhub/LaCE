@@ -289,6 +289,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                     f"Training data for {emulator_label} are not Nyx sims"
                 )
 
+        self.kmin_Mpc = self.training_data[0]["k_Mpc"][1]
+
         # decide whether to train emulator or read from file
         if train == False:
             if self.model_path is None:
@@ -629,6 +631,19 @@ class NNEmulator(base_emulator.BaseEmulator):
         torch.save(model_with_metadata, self.save_path)
 
     def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
+        """Emulates the p1d_Mpc at a given set of k_Mpc values"""
+
+        if np.max(k_Mpc) > self.kmax_Mpc:
+            print(
+                "WARNING: some of the requested k's are higher than the maximum training value k=",
+                self.kmax_Mpc,
+            )
+        elif np.min(k_Mpc) < self.kmin_Mpc:
+            print(
+                "WARNING: some of the requested k's are lower than the minimum training value k=",
+                self.kmin_Mpc,
+            )
+
         k_Mpc = torch.Tensor(k_Mpc)
         log_kMpc = torch.log10(k_Mpc).to(self.device)
 

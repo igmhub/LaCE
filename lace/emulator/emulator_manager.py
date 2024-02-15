@@ -1,6 +1,7 @@
 """Emulator manager"""
 
-from lace.emulator.nn_emulator import NNEmulator, GPEmulator
+from lace.emulator.nn_emulator import NNEmulator
+from lace.emulator.gp_emulator import GPEmulator
 
 
 def emulators_supported():
@@ -21,7 +22,7 @@ def emulators_supported():
     return emulators_supported
 
 
-def load_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
+def set_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
     """Loads emulator
 
     Parameters:
@@ -52,7 +53,7 @@ def load_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
         raise ValueError(msg)
 
     if (emulator_label == "Pedersen21") | (emulator_label == "Pedersen23"):
-        if archive is not None:
+        if archive is None:
             emulator = GPEmulator(
                 training_set="Pedersen21",
                 emulator_label=emulator_label,
@@ -77,7 +78,7 @@ def load_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
         | (emulator_label == "Pedersen23_ext8")
         | (emulator_label == "Pedersen23_ext8")
     ):
-        if archive is not None:
+        if archive is None:
             emulator = GPEmulator(
                 training_set="Cabayol23",
                 emulator_label=emulator_label,
@@ -105,7 +106,7 @@ def load_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
             model_path = (
                 folder + emulator_label + "_drop_sim_" + drop_sim + ".pt"
             )
-        if archive is not None:
+        if archive is None:
             emulator = NNEmulator(
                 training_set="Cabayol23",
                 emulator_label=emulator_label,
@@ -129,14 +130,14 @@ def load_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
                 train=False,
             )
     elif emulator_label == "Nyx_v0":
-        folder = "NNmodels/Nyx23_Oct2023/"
+        folder = "NNmodels/Nyx_Feb2024/"
         if drop_sim is None:
             model_path = folder + emulator_label + ".pt"
         else:
             model_path = (
                 folder + emulator_label + "_drop_sim_" + drop_sim + ".pt"
             )
-        if archive is not None:
+        if archive is None:
             emulator = NNEmulator(
                 training_set="Nyx23_Oct2023",
                 emulator_label=emulator_label,
