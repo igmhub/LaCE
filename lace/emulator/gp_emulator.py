@@ -99,7 +99,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             "Pedersen23_ext",
             "Pedersen21_ext8",
             "Pedersen23_ext8",
-            "k_bin_sm",
+            "CH24",
         ]
         if emulator_label is not None:
             if emulator_label in emulator_label_all:
@@ -228,7 +228,7 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "polyfit",
                 )
 
-            elif emulator_label == "k_bin_sm":
+            elif emulator_label == "CH24":
                 print(
                     r"Gaussian Process emulator predicting the P1D, fitting coefficients "
                     + " to 6 PCAs. It goes to scales of 4 Mpc^{-1} and z<=4.5. The parameters "

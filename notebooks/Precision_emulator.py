@@ -29,8 +29,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 # our modules
-from lace.archive import gadget_archive
-from lace.archive import nyx_archive
+from lace.archive import gadget_archive, nyx_archive
 from lace.emulator.nn_emulator import NNEmulator
 from lace.emulator.gp_emulator import GPEmulator
 from lace.utils import poly_p1d
@@ -66,6 +65,9 @@ emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
 
 training_data_p21 = archive_p21.get_training_data(emu_params=emu_params)
 training_data_c23 = archive_c23.get_training_data(emu_params=emu_params)
+
+# %%
+archive_c23.list_sim_test
 
 # %% [markdown]
 # #### Get emulator
@@ -107,8 +109,8 @@ full_emulator_p23_ext8 = GPEmulator(archive=archive_c23, emulator_label='Pederse
 
 # %%
 full_emulator_ch24 = GPEmulator(archive=archive_c23, emulator_label='k_bin_sm')
-full_emulator_ch24 = GPEmulator(archive=archive_c23, kmax_Mpc=4, 
-                                emu_type="k_bin_sm", bn=[0.8, 0.4, 0.2], klist=[0.15, 1, 2.5, 4])
+# full_emulator_ch24 = GPEmulator(archive=archive_c23, kmax_Mpc=4, 
+#                                 emu_type="k_bin_sm", bn=[0.8, 0.4, 0.2], klist=[0.15, 1, 2.5, 4])
 
 
 # %% [markdown]
@@ -297,7 +299,7 @@ for jj in range(len_emus):
                 return_cov=False,
             )
             var_dp[jj, ii, :kMpc.shape[0]] = out['p1d']
-        
+
 
 # %%
 
