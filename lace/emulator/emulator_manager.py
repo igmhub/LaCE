@@ -22,7 +22,7 @@ def emulators_supported():
     return emulators_supported
 
 
-def set_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
+def set_emulator(emulator_label, archive=None, drop_sim=None):
     """Loads emulator
 
     Parameters:
@@ -34,8 +34,6 @@ def set_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
         corresponding to the emulator_label will be loaded
     drop_sim: str, optional
         Drop a specific simulation from the training set
-    verbose: bool, optional
-        Print warnings
 
     Returns:
     -------
@@ -60,12 +58,11 @@ def set_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
                 drop_sim=drop_sim,
             )
         else:
-            if verbose:
-                print(
-                    "WARNING: passing archive for training "
-                    + emulator_label
-                    + " (be sure is the correct one!)"
+            if archive.data[0]["sim_label"][:3] != "mpg":
+                raise ValueError(
+                    "WARNING: training data in archive are not mpg sims"
                 )
+
             emulator = GPEmulator(
                 archive=archive,
                 emulator_label=emulator_label,
@@ -85,12 +82,11 @@ def set_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
                 drop_sim=drop_sim,
             )
         else:
-            if verbose:
-                print(
-                    "WARNING: passing archive for training "
-                    + emulator_label
-                    + " (be sure is the correct one!)"
+            if archive.data[0]["sim_label"][:3] != "mpg":
+                raise ValueError(
+                    "WARNING: training data in archive are not mpg sims"
                 )
+
             emulator = GPEmulator(
                 archive=archive,
                 emulator_label=emulator_label,
@@ -115,12 +111,11 @@ def set_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
                 train=False,
             )
         else:
-            if verbose:
-                print(
-                    "WARNING: passing archive for loading "
-                    + emulator_label
-                    + " (be sure is the correct one!)"
+            if archive.data[0]["sim_label"][:3] != "mpg":
+                raise ValueError(
+                    "WARNING: training data in archive are not mpg sims"
                 )
+
             emulator = NNEmulator(
                 archive=archive,
                 training_set="Cabayol23",
@@ -146,12 +141,11 @@ def set_emulator(emulator_label, archive=None, drop_sim=None, verbose=True):
                 train=False,
             )
         else:
-            if verbose:
-                print(
-                    "WARNING: passing archive for loading "
-                    + emulator_label
-                    + " (be sure is the correct one!)"
+            if archive.data[0]["sim_label"][:3] != "nyx":
+                raise ValueError(
+                    "WARNING: training data in archive are not nyx sims"
                 )
+
             emulator = NNEmulator(
                 archive=archive,
                 training_set="Nyx23_Oct2023",
