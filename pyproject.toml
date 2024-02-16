@@ -53,6 +53,7 @@ jupyter = [
 
 [tool.setuptools.packages.find]
 include = ["lace"]
+namespaces = false
 
 [project.urls]
 Homepage="https://github.com/igmhub/LaCE"
