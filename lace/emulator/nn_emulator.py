@@ -182,6 +182,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "kF_Mpc",
             ]
+            self.emu_type = "polyfit"
             (
                 self.kmax_Mpc,
                 self.ndeg,
@@ -208,6 +209,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "kF_Mpc",
             ]
+            self.emu_type = "polyfit"
             (
                 self.kmax_Mpc,
                 self.ndeg,
@@ -235,6 +237,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "kF_Mpc",
             ]
+            self.emu_type = "polyfit"
             (
                 self.kmax_Mpc,
                 self.ndeg,
@@ -262,6 +265,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "kF_Mpc",
             ]
+            self.emu_type = "polyfit"
             (
                 self.kmax_Mpc,
                 self.ndeg,
