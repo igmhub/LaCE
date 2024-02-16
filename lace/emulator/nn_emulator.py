@@ -118,7 +118,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                 archive = nyx_archive.NyxArchive(nyx_version=training_set[6:])
 
             self.training_data = archive.get_training_data(
-                emu_params=self.emu_params
+                emu_params=self.emu_params,
+                drop_sim=self.drop_sim
             )
 
         elif (training_set is None) & (archive is not None):
