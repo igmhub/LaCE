@@ -4,8 +4,8 @@ from lace.utils import poly_p1d
 def apply_smoothing(emulator, data):
     """Apply smoothing to the p1d"""
 
-    lenk = len(data)
-    if lenk == 0:
+    type_data = type(data)
+    if type_data is not list:
         data = [data]
 
     if (data[0]["p1d_Mpc"] is None) | (data[0]["k_Mpc"] is None):
@@ -28,12 +28,12 @@ def apply_smoothing(emulator, data):
     elif emulator.emu_type == "k_bin_sm":
         # Nonlinear smoothing
         for ii in range(len(data)):
-            data[ii]["p1d_Mpc_smooth"] = emulator.apply_kernel_smoothing(
-                data[ii]["k_Mpc"],
-                data[ii]["p1d_Mpc"],
-            )[0]
+            _ = emulator.Kernel_Smoothing.apply_kernel_smoothing(
+                data[ii]["k_Mpc"], data[ii]
+            )
+            data[ii]["p1d_Mpc_smooth"] = _
     else:
         raise ValueError("Smoothing technique not recognized:", technique)
 
-    if lenk == 0:
+    if type_data is not list:
         data = data[0]

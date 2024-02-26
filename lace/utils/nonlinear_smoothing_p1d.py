@@ -60,7 +60,8 @@ class Nonlinear_Smoothing(object):
     def apply_kernel_smoothing(self, k_Mpc, data):
         """Apply kernel smoothing to data"""
 
-        if len(data) == 0:
+        type_data = type(data)
+        if type_data is not list:
             data = [data]
 
         log_data = np.zeros((len(data), self.interp_logk_Mpc.shape[0]))
@@ -88,5 +89,8 @@ class Nonlinear_Smoothing(object):
             data_smooth[isim] = np.exp(
                 np.interp(logk_Mpc, self.interp_logk_Mpc, log_data[isim])
             )
+
+        if type_data is not list:
+            data_smooth = data_smooth[0]
 
         return data_smooth

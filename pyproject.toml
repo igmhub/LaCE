@@ -33,6 +33,7 @@ dependencies = [
     "camb>=1.5.4",
     "GPy>=1.13.1",
     "torch>=2.1.2",
+    "scikit-fda>=0.9",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
