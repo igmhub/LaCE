@@ -1,101 +1,86 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:percent
+#     formats: ipynb,py
 #     text_representation:
 #       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
+#       format_name: light
+#       format_version: '1.5'
 #       jupytext_version: 1.16.1
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: emulators
 #     language: python
-#     name: python3
+#     name: emulators
 # ---
 
-# %% [markdown]
 # # Load archive and plot P1D as a function of parameters
 
-# %%
 # %matplotlib inline
 # %load_ext autoreload
 # %autoreload 2
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from lace.archive import gadget_archive
+from lace.archive.gadget_archive import GadgetArchive
+from lace.archive.nyx_archive import NyxArchive
 
-# %% [markdown]
-# ### Load Gadget archive
 
-# %%
-archive = gadget_archive.GadgetArchive(postproc='Cabayol23')
+# ### Load archive
 
-# %%
-gadget_emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
-training_data=archive.get_training_data(emu_params=gadget_emu_params)
+plot_archive='Nyx'
 
-# %% [markdown]
+if plot_archive=='Gadget':
+    archive = GadgetArchive(postproc='Cabayol23')
+elif plot_archive=='Nyx':
+    os.environ["NYX_PATH"]='/pscratch/sd/l/lcabayol/P1D/Nyx_files/'
+    nyx_version = "Oct2023"
+    archive = NyxArchive(nyx_version=nyx_version, verbose=True)
+
+emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
+training_data=archive.get_training_data(emu_params=emu_params)
+
 # ### Plot linear power parameters for all entries in archive
 #
 # For a given simulation, the slope ($n_p$) is constant accross redshifts, but the amplitude ($\Delta_p^2$) increases with time.
 
-# %%
 archive.plot_samples('n_p','Delta2_p')
 
-# %% [markdown]
 # Because all simulations in the emulator have the same background cosmology, the logarithmic growth rate ($f_p$) is only a function of redshift.
 
-# %%
 archive.plot_samples('z','f_p')
 
-# %% [markdown]
 # ### Plot IGM parameters for all entries in archive
 #
 # Mean flux as a function of redshift
 
-# %%
 archive.plot_samples('z','mF')
 
-# %% [markdown]
 # Temperature - density relation described as a power law ($T_0$, $\gamma$)
 
-# %%
 archive.plot_samples('T0','gamma')
 
-# %% [markdown]
 # Internally, the emulator uses the thermal broadening length ($\sigma_T$, in units of Mpc). Because of the conversion from km/s to Mpc, the relation between $T_0$ and $\sigma_T$ depends on redshift.
 
-# %%
 archive.plot_samples('T0','sigT_Mpc')
 
-# %% [markdown]
 # Gas pressure is parameterised as the filteringh length ($k_F$, in inverse Mpc), and it is also correlated with temperature
 
-# %%
 archive.plot_samples('sigT_Mpc','kF_Mpc')
 
-# %% [markdown]
 # ### All projections together
 
-# %%
 take_pars = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
 nelem = len(training_data)
 pars_all = np.zeros((nelem, len(take_pars)))
-sim_in= np.zeros((nelem), dtype=int)
 for ii in range(nelem):
     for jj in range(len(take_pars)):
         pars_all[ii, jj] = training_data[ii][take_pars[jj]]
-        sim_in[ii] = training_data[ii]['sim_label'][4:]
 
-# %%
 data = pars_all
 
-# %%
 take_pars2 = [r'$\Delta^2_p$', r'$n_p$', r'$\bar{F}$', r'$\sigma_T$', r'$\gamma$', r'$k_F$']
 
-# %%
-path_fig = '/home/jchaves/Proyectos/projects/lya/data/lace/'
+# +
 # Get the number of dimensions (columns in the data)
 num_dimensions = data.shape[1]
 
@@ -120,69 +105,18 @@ for i in range(num_dimensions-1):
 axs[-1].axis('off')
 # Adjust layout and show the plot
 plt.tight_layout()
-# plt.savefig('project_lace.png', dpi=800)
+plt.savefig('project_lace.png', dpi=800)
+# -
 
-# %% [markdown]
-# #### All
-
-# %%
-path_fig = '/home/jchaves/Proyectos/projects/lya/data/lace/'
-# Get the number of dimensions (columns in the data)
-num_dimensions = data.shape[1]
-
-# Determine the layout for subplots
-# num_rows = 3  # You can adjust the number of rows and columns based on your preference
-# num_cols = (num_dimensions + 1) // num_rows
-
-sym = ['o', 's', '^']
-
-# Create subplots
-# fig.suptitle('Scatter Plots of Data Projections Along the Second Axis', fontsize=16)
-
-# Flatten axs if it's a 2D array
-# if num_rows > 1:
-    # axs = axs.flatten()
-
-# Create scatter plots for all pairs of dimensions
-for isim in range(30):
-    fig, axs = plt.subplots(num_dimensions, num_dimensions, figsize=(16, 16), sharex='col', sharey='row')
-    for i in range(num_dimensions):
-        for j in range(num_dimensions):
-            if(i > j):
-                # axs[i, j].scatter(data[:, j], data[:, i],  s=5, c='C0')
-                axs[i, j].scatter(data[:, j], data[:, i],  s=3, c='C0', label=lab)
-                _ = sim_in == isim
-                axs[i, j].scatter(data[_, j], data[_, i],  s=10, c='C1', label=lab)
-                # _ = sim_in == 5
-                # axs[i, j].scatter(data[_, j], data[_, i],  s=5, c='C2')
-            #     axs[i].set_title(f'Dimension {i} vs Dimension {j}')
-                if(i == num_dimensions-1):
-                    axs[i, j].set_xlabel(take_pars2[j])
-                if(j == 0):
-                    axs[i, j].set_ylabel(take_pars2[i])
-            else:
-                axs[i, j].axis('off')
-    
-            # if((i == 4) & (j == 0)):
-            #     axs[i, j].legend(bbox_to_anchor=(5, 4., 0.5, 0.5), fontsize=20)
-    # Adjust layout and show the plot
-    plt.tight_layout()
-    plt.savefig(path_fig + 'projections/project_lace'+str(isim)+'.png')
-
-# %%
-
-# %% [markdown]
 # ### IGM histories
 
-# %%
-folder = os.environ["LACE_REPO"] + "/data/sim_suites/Australia20/"
+folder = os.environ["LACE_REPO"] + "/src/lace/data/sim_suites/Australia20/"
 igm_lace = np.load(folder + "IGM_histories.npy", allow_pickle=True).item()
 igm_nyx = np.load(os.environ["NYX_PATH"] + "/IGM_histories.npy", allow_pickle=True).item()
 
-# %% [markdown]
 # Plot lace
 
-# %%
+# +
 fig, ax = plt.subplots(2, 2, sharex=True)
 ax = ax.reshape(-1)
 for sim in igm_lace.keys():
@@ -208,11 +142,11 @@ for ii in range(4):
 plt.tight_layout()
 # plt.savefig('/home/jchaves/Proyectos/projects/lya/data/nyx/IGM_histories.png')
 # plt.savefig('/home/jchaves/Proyectos/projects/lya/data/nyx/IGM_histories.pdf')
+# -
 
-# %% [markdown]
 # ### Compare Nyx and LaCE
 
-# %%
+# +
 fig, ax = plt.subplots(2, 2, sharex=True)
 ax = ax.reshape(-1)
 
@@ -246,5 +180,6 @@ for ii in range(4):
 plt.tight_layout()
 # plt.savefig('/home/jchaves/Proyectos/projects/lya/data/nyx/IGM_histories_lace_nyx.png')
 # plt.savefig('/home/jchaves/Proyectos/projects/lya/data/nyx/IGM_histories_lace_nyx.pdf')
+# -
 
-# %%
+
