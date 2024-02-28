@@ -18,6 +18,7 @@ from lace.archive import gadget_archive, nyx_archive
 from lace.emulator import nn_architecture, base_emulator
 from lace.utils import poly_p1d
 
+from scipy.spatial import Delaunay
 
 class NNEmulator(base_emulator.BaseEmulator):
     """A class for training an emulator.
@@ -149,7 +150,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
 
         self.print(f"Samples in training_set: {len(self.training_data)}")
-        self.kp_Mpc = archive.kp_Mpc
+        self.kp_Mpc = archive.kp_Mpc    
 
         ## check emulator label
         if emulator_label is not None:
@@ -659,9 +660,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                     raise (ValueError(param + " not in input model"))
                 emu_call[param] = model[param]
 
-            emu_call = {k: emu_call[k] for k in self.emu_params}
-            emu_call = list(emu_call.values())
-            emu_call = np.array(emu_call)
+            #emu_call = {k: emu_call[k] for k in self.emu_params}
+            #emu_call = list(emu_call.values())
+            #emu_call = np.array(emu_call)
+            emu_call= [emu_call[param] for param in self.emu_params]
 
             emu_call = (emu_call - self.paramLims[:, 0]) / (
                 self.paramLims[:, 1] - self.paramLims[:, 0]
@@ -752,3 +754,31 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         else:
             return emu_p1d
+        
+        
+        
+    def check_hull(self):
+        
+        training_points = [d for d in self.training_data if d['ind_axis']=='average']
+        training_points = [d for d in training_points if d['ind_phase']=='average']
+
+        training_points = [
+            {
+                key: value
+                for key, value in training_points[i].items()
+                if key in self.emu_params
+            }
+            for i in range(len(training_points))
+        ]
+        training_points = self._sort_dict(training_points, self.emu_params)
+        training_points = [list(training_points[i].values()) for i in range(len(training_points))]
+        training_points = np.array(training_points)
+
+        self.hull = Delaunay(training_points)
+        
+        
+    def test_hull(self, model_test):
+        test_point= [model_test[param] for param in self.emu_params]
+        test_point = np.array(test_point)
+        return self.hull.find_simplex(test_point)>=0
+        
