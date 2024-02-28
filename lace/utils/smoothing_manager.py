@@ -1,7 +1,7 @@
 from lace.utils import poly_p1d
 
 
-def apply_smoothing(emulator, data):
+def apply_smoothing(emulator, data, fprint=print):
     """Apply smoothing to the p1d"""
 
     type_data = type(data)
@@ -13,8 +13,10 @@ def apply_smoothing(emulator, data):
 
     if emulator.emu_type == "k_bin":
         # No smoothing
+        fprint("k-bin emulator, no smoothing is applied")
         pass
     elif emulator.emu_type == "polyfit":
+        fprint("polyfit emulator, smoothing is applied")
         # Polynomial smoothing
         for ii in range(len(data)):
             fit_p1d = poly_p1d.PolyP1D(
@@ -26,6 +28,7 @@ def apply_smoothing(emulator, data):
             )
             data[ii]["p1d_Mpc_smooth"] = fit_p1d.P_Mpc(data[ii]["k_Mpc"])
     elif emulator.emu_type == "k_bin_sm":
+        fprint("k_bin_sm emulator, smoothing is applied")
         # Nonlinear smoothing
         for ii in range(len(data)):
             _ = emulator.Kernel_Smoothing.apply_kernel_smoothing(
