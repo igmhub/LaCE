@@ -7,16 +7,11 @@ import json
 import time
 from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
-from sklearn import decomposition
-
-import skfda
-from skfda.misc.hat_matrix import NadarayaWatsonHatMatrix
-from skfda.misc.kernels import epanechnikov
-from skfda.preprocessing.smoothing import KernelSmoother
 
 from lace.archive import gadget_archive
 from lace.emulator import base_emulator
 from lace.utils import poly_p1d
+from lace.utils.nonlinear_smoothing_p1d import Nonlinear_Smoothing
 
 
 class GPEmulator(base_emulator.BaseEmulator):
@@ -52,8 +47,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         check_hull=False,
         emu_per_k=False,
         ndeg=4,
-        bn=None,
-        klist=None,
+        smoothing_bn=None,
+        smoothing_krange=None,
     ):
         self.kmax_Mpc = kmax_Mpc
         self.emu_type = emu_type
@@ -62,8 +57,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.emu_per_k = emu_per_k
         self.ndeg = ndeg
         self.drop_sim = drop_sim
-        self.bn = bn
-        self.klist = klist
+        self.smoothing_bn = smoothing_bn
+        self.smoothing_krange = smoothing_krange
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23"]
@@ -99,7 +94,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             "Pedersen23_ext",
             "Pedersen21_ext8",
             "Pedersen23_ext8",
-            "k_bin_sm",
+            "CH24",
         ]
         if emulator_label is not None:
             if emulator_label in emulator_label_all:
@@ -228,11 +223,11 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "polyfit",
                 )
 
-            elif emulator_label == "k_bin_sm":
+            elif emulator_label == "CH24":
                 print(
-                    r"Gaussian Process emulator predicting the P1D, fitting coefficients "
-                    + " to 6 PCAs. It goes to scales of 4 Mpc^{-1} and z<=4.5. The parameters "
-                    + "passed to the emulator will be overwritten to match these ones."
+                    r"Gaussian Process emulator predicting the P1D at each k-bin after "
+                    + " applying smoothing. It goes to scales of 4 Mpc^{-1} and z<=4.5."
+                    + "The parameters passed to the emulator will be overwritten to match these ones."
                 )
                 self.emu_params = [
                     "Delta2_p",
@@ -244,8 +239,8 @@ class GPEmulator(base_emulator.BaseEmulator):
                 ]
                 self.zmax, self.kmax_Mpc, self.emu_type = (4.5, 4, "k_bin_sm")
                 # bandwidth for different k-ranges
-                self.bn = [0.8, 0.4, 0.2]
-                self.klist = [0.15, 1, 2.5, 4]
+                self.smoothing_bn = [0.8, 0.4, 0.2]
+                self.smoothing_krange = [0.15, 1, 2.5, 4]
 
         else:
             print("Selected custom emulator")
@@ -278,6 +273,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             average=average,
             val_scaling=val_scaling,
         )
+        self.kmin_Mpc = self.training_data[0]["k_Mpc"][1]
 
         ## Find max k bin
         self.k_bin = (
@@ -381,65 +377,19 @@ class GPEmulator(base_emulator.BaseEmulator):
                 "fit_p1d"
             ] = fit_p1d.lnP_fit  ## Add coeffs for each model to archive
 
-    def _inter2smooth(self, data, kmax_Mpc):
-        mask = np.argwhere(
-            (data[0]["k_Mpc"] > 0) & (data[0]["k_Mpc"] < kmax_Mpc)
-        )[:, 0]
-        k_Mpc = data[0]["k_Mpc"][mask]
-
-        logk_Mpc = np.geomspace(k_Mpc[0], k_Mpc[-1], k_Mpc.shape[0] * 2)
-        log_data = np.zeros((len(data), logk_Mpc.shape[0]))
-        for isim in range(len(data)):
-            log_data[isim] = np.interp(
-                np.log(logk_Mpc),
-                np.log(k_Mpc),
-                np.log(data[isim]["p1d_Mpc"][mask]),
-            )
-        return log_data, logk_Mpc, k_Mpc
-
-    def _set_kernel_smoothing(self, data, kmax_Mpc):
-        """For each entry in archive, smooth p1d"""
-
-        log_data, logk_Mpc, k_Mpc = self._inter2smooth(data, kmax_Mpc)
-
-        dat = skfda.FDataGrid(log_data, grid_points=np.log(logk_Mpc))
-        self.kernel_sm = []
-        for ii in range(len(self.bn)):
-            fd_os = KernelSmoother(
-                kernel_estimator=NadarayaWatsonHatMatrix(
-                    bandwidth=self.bn[ii], kernel=epanechnikov
-                ),
-            )
-            self.kernel_sm.append(fd_os.fit(dat))
-
-    def apply_kernel_smoothing(self, data, kmax_Mpc):
-        """Apply kernel smoothing to data"""
-
-        log_data, logk_Mpc, k_Mpc = self._inter2smooth(data, kmax_Mpc)
-
-        # apply smoothing
-        dat = skfda.FDataGrid(log_data, grid_points=np.log(logk_Mpc))
-        for ii in range(len(self.klist) - 1):
-            _ = (logk_Mpc > self.klist[ii]) & (logk_Mpc <= self.klist[ii + 1])
-            log_data[:, _] = (
-                self.kernel_sm[ii].transform(dat).data_matrix[:, :, 0][:, _]
-            )
-
-        data_smooth = np.zeros((len(log_data), k_Mpc.shape[0]))
-        for isim in range(len(data)):
-            data_smooth[isim] = np.exp(
-                np.interp(np.log(k_Mpc), np.log(logk_Mpc), log_data[isim])
-            )
-
-        return data_smooth
-
     def _k_bin_sm_p1d_in_archive(self, kmax_Mpc):
-        """For each entry in archive, carry out PCA decomposition"""
+        """For each entry in archive, carry out smoothing"""
 
         # smoothing
-        self._set_kernel_smoothing(self.training_data, self.kmax_Mpc)
-        data_smooth = self.apply_kernel_smoothing(
-            self.training_data, self.kmax_Mpc
+        self.Kernel_Smoothing = Nonlinear_Smoothing(
+            data_set_kernel=self.training_data,
+            kmax_Mpc=self.kmax_Mpc,
+            bandwidth=self.smoothing_bn,
+            krange=self.smoothing_krange,
+        )
+
+        data_smooth = self.Kernel_Smoothing.apply_kernel_smoothing(
+            self.training_k_bins, self.training_data
         )
 
         for isim, entry in enumerate(self.training_data):
@@ -591,20 +541,16 @@ class GPEmulator(base_emulator.BaseEmulator):
         by interpolating the trained data.
         Option for reducing variance with z rescaling is not fully tested.
         """
-        try:
-            if max(k_Mpc) > max(self.training_k_bins):
-                print(max(k_Mpc))
-                print(max(self.training_k_bins))
-                print(
-                    "Warning! Your requested k bins are higher than the training values."
-                )
-        except:
-            if k_Mpc > max(self.training_k_bins):
-                print(max(k_Mpc))
-                print(max(self.training_k_bins))
-                print(
-                    "Warning! Your requested k bins are higher than the training values."
-                )
+        if np.max(k_Mpc) > self.kmax_Mpc:
+            print(
+                "WARNING: some of the requested k's are higher than the maximum training value k=",
+                self.kmax_Mpc,
+            )
+        elif np.min(k_Mpc) < self.kmin_Mpc:
+            print(
+                "WARNING: some of the requested k's are lower than the minimum training value k=",
+                self.kmin_Mpc,
+            )
 
         if self.hull:
             # check if outside the convex hull
@@ -614,7 +560,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         # get raw prediction from GPy object
         gp_pred, gp_err = self.predict(model, z)
 
-        if self.emu_type == "k_bin":
+        if (self.emu_type == "k_bin") | (self.emu_type == "k_bin_sm"):
             # interpolate predictions to input k values
             interpolator = interp1d(
                 self.training_k_bins,
@@ -625,20 +571,21 @@ class GPEmulator(base_emulator.BaseEmulator):
             p1d = interpolator(k_Mpc)
             if not return_covar:
                 return p1d
-            # compute emulator covariance
-            err_interp = interp1d(
-                self.training_k_bins,
-                gp_err,
-                kind="cubic",
-                fill_value="extrapolate",
-            )
-            p1d_err = err_interp(k_Mpc)
-            if self.emu_per_k:
-                covar = np.diag(p1d_err**2)
             else:
-                # assume fully correlated errors when using same hyperparams
-                covar = np.outer(p1d_err, p1d_err)
-            return p1d, covar
+                # compute emulator covariance
+                err_interp = interp1d(
+                    self.training_k_bins,
+                    gp_err,
+                    kind="cubic",
+                    fill_value="extrapolate",
+                )
+                p1d_err = err_interp(k_Mpc)
+                if self.emu_per_k:
+                    covar = np.diag(p1d_err**2)
+                else:
+                    # assume fully correlated errors when using same hyperparams
+                    covar = np.outer(p1d_err, p1d_err)
+                return p1d, covar
 
         elif self.emu_type == "polyfit":
             # gp_pred here are just the coefficients of the polynomial
@@ -659,37 +606,6 @@ class GPEmulator(base_emulator.BaseEmulator):
             err = p1d * np.sqrt(erry2)
             covar = np.outer(err, err)
             return p1d, covar
-
-        elif self.emu_type == "k_bin_sm":
-            # gp_pred here are just pcas
-            # unorm_p1d = self.pca.inverse_transform(gp_pred)
-            # p1d = unorm_p1d
-            # p1d = np.exp(unorm_p1d * self.pca_norm)
-            # interpolate predictions to input k values
-            interpolator = interp1d(
-                self.training_k_bins,
-                gp_pred,
-                kind="cubic",
-                fill_value="extrapolate",
-            )
-            p1d = interpolator(k_Mpc)
-            if not return_covar:
-                return p1d
-            else:
-                raise NotImplementedError
-
-            # lk = np.log(k_Mpc)
-            # erry2 = (
-            #     (gp_err[0] * lk**4) ** 2
-            #     + (gp_err[1] * lk**3) ** 2
-            #     + (gp_err[2] * lk**2) ** 2
-            #     + (gp_err[3] * lk) ** 2
-            #     + gp_err[4] ** 2
-            # )
-            # # compute error on P
-            # err = p1d * np.sqrt(erry2)
-            # covar = np.outer(err, err)
-            # return p1d, covar
 
         else:
             raise ValueError("wrong emulator type")
