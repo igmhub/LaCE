@@ -60,9 +60,9 @@ class NNEmulator(base_emulator.BaseEmulator):
         lr0=1e-3,
     ):
         # store emulator settings
-        self.emulator_label=emulator_label
-        self.training_set=training_set
-        
+        self.emulator_label = emulator_label
+        self.training_set = training_set
+
         self.emu_params = emu_params
         self.kmax_Mpc = kmax_Mpc
         self.ndeg = ndeg
@@ -75,15 +75,16 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.models_dir = os.path.join(repo, "data/")
         # CPU vs GPU
         self.device = torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu")
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
         # training data settings
         self.drop_sim = drop_sim
         self.drop_z = drop_z
         self.weighted_emulator = weighted_emulator
         self.nhidden = nhidden
         self.print = fprint
-        self.lr0=lr0
-        self.max_neurons=max_neurons
+        self.lr0 = lr0
+        self.max_neurons = max_neurons
 
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -183,6 +184,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "kF_Mpc",
             ]
+            self.emu_type = "polyfit"
             (
                 self.kmax_Mpc,
                 self.ndeg,
@@ -190,7 +192,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.step_size,
                 self.nhidden,
                 self.max_neurons,
-                self.lr0
+                self.lr0,
             ) = (4, 5, 100, 75, 5, 100, 1e-3)
 
         elif emulator_label == "Nyx_v0":
@@ -209,6 +211,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "kF_Mpc",
             ]
+            self.emu_type = "polyfit"
             (
                 self.kmax_Mpc,
                 self.ndeg,
@@ -216,7 +219,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.step_size,
                 self.nhidden,
                 self.max_neurons,
-                self.lr0
+                self.lr0,
             ) = (4, 6, 800, 700, 5, 150, 5e-5)
 
         elif emulator_label == "Cabayol23_extended":
@@ -236,6 +239,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "kF_Mpc",
             ]
+            self.emu_type = "polyfit"
             (
                 self.kmax_Mpc,
                 self.ndeg,
@@ -244,7 +248,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.nhidden,
                 self.max_neurons,
                 self.weighted_emulator,
-                self.lr0
+                self.lr0,
             ) = (8, 7, 100, 75, 5, 100, False, 1e-3)
 
         elif emulator_label == "Nyx_v0_extended":
@@ -263,6 +267,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "kF_Mpc",
             ]
+            self.emu_type = "polyfit"
             (
                 self.kmax_Mpc,
                 self.ndeg,
@@ -289,6 +294,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                 raise ValueError(
                     f"Training data for {emulator_label} are not Nyx sims"
                 )
+
+        self.kmin_Mpc = self.training_data[0]["k_Mpc"][1]
 
         # decide whether to train emulator or read from file
         if train == False:
@@ -412,12 +419,11 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(self.training_data))
         ]
-        
-        # Now, if 'A_UVB' is in emu_params, add it to each entry
-        if 'A_UVB' in self.emu_params:
-            for i,d in enumerate(data):
-                d['A_UVB'] = self.training_data[i]['cosmo_params']['A_UVB']
 
+        # Now, if 'A_UVB' is in emu_params, add it to each entry
+        if "A_UVB" in self.emu_params:
+            for i, d in enumerate(data):
+                d["A_UVB"] = self.training_data[i]["cosmo_params"]["A_UVB"]
 
         data = self._sort_dict(
             data, self.emu_params
@@ -467,11 +473,10 @@ class NNEmulator(base_emulator.BaseEmulator):
         ]
 
         # Now, if 'A_UVB' is in emu_params, add it to each entry
-        if 'A_UVB' in self.emu_params:
-            for i,data in enumerate(training_data):
-                data['A_UVB'] = self.training_data[i]['cosmo_params']['A_UVB']
-        
-        
+        if "A_UVB" in self.emu_params:
+            for i, data in enumerate(training_data):
+                data["A_UVB"] = self.training_data[i]["cosmo_params"]["A_UVB"]
+
         training_data = self._sort_dict(training_data, self.emu_params)
         training_data = [
             list(training_data[i].values())
@@ -547,14 +552,14 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.log_kMpc = log_kMpc_train
 
         self.nn = nn_architecture.MDNemulator_polyfit(
-            nhidden=self.nhidden, 
-            ndeg=self.ndeg, 
+            nhidden=self.nhidden,
+            ndeg=self.ndeg,
             max_neurons=self.max_neurons,
-            ninput=len(self.emu_params)
+            ninput=len(self.emu_params),
         )
 
         optimizer = optim.Adam(
-            self.nn.parameters(), lr=self.lr0,weight_decay=1e-4
+            self.nn.parameters(), lr=self.lr0, weight_decay=1e-4
         )  #
         scheduler = lr_scheduler.StepLR(optimizer, self.step_size, gamma=0.1)
 
@@ -613,7 +618,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.print(f"NN optimised in {time.time()-t0} seconds")
 
     def save_emulator(self):
-        
         model_state_dict = self.nn.state_dict()
 
         # Define your metadata
@@ -621,18 +625,31 @@ class NNEmulator(base_emulator.BaseEmulator):
             "training_set": self.training_set,
             "emulator_label": self.emulator_label,
             "drop_sim": self.drop_sim,
-            "drop_z": self.drop_z
+            "drop_z": self.drop_z,
         }
 
         # Combine model_state_dict and metadata into a single dictionary
         model_with_metadata = {
             "emulator": model_state_dict,
-            "metadata": metadata
+            "metadata": metadata,
         }
 
         torch.save(model_with_metadata, self.save_path)
-        
+
     def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
+        """Emulates the p1d_Mpc at a given set of k_Mpc values"""
+
+        if np.max(k_Mpc) > self.kmax_Mpc:
+            print(
+                "WARNING: some of the requested k's are higher than the maximum training value k=",
+                self.kmax_Mpc,
+            )
+        elif np.min(k_Mpc) < self.kmin_Mpc:
+            print(
+                "WARNING: some of the requested k's are lower than the minimum training value k=",
+                self.kmin_Mpc,
+            )
+
         k_Mpc = torch.Tensor(k_Mpc)
         log_kMpc = torch.log10(k_Mpc).to(self.device)
 

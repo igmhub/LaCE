@@ -14,20 +14,75 @@
 # ---
 
 # %% [markdown]
-# # Tutorial explaining the use of different emulators, from different archives
+# # Tutorial explaining how to use emulators
+
+# %% [markdown]
+# ## For normal users
+
+# %%
+import numpy as np
+from matplotlib import pyplot as plt
+from lace.emulator.emulator_manager import set_emulator
+
+# %% [markdown]
+# We have developed emulators using different architectures and training sets. The preferred emulators are:
+# - Cabayol23 for mpg simulators (Cabayol-Garcia+23, https://ui.adsabs.harvard.edu/abs/2023MNRAS.525.3499C/abstract)
+# - Nyx_v0 for Nyx simulations (WIP)
+#
+# Loading the emulators is fairly simple:
+
+# %%
+# %%time
+emulator_C23 = set_emulator(emulator_label="Cabayol23")
+
+# %% [markdown]
+# To evaluate it, provide input cosmological and IGM parameters and a series of kpar values
+
+# %%
+k_Mpc = np.geomspace(0.1, 3, 100)
+input_params = {
+    'Delta2_p': 0.35,
+    'n_p': -2.3,
+    'mF': 0.66,
+    'gamma': 1.5,
+    'sigT_Mpc': 0.128,
+    'kF_Mpc': 10.5
+}
+p1d = emulator_C23.emulate_p1d_Mpc(input_params, k_Mpc)
+
+# %%
+plt.plot(k_Mpc, k_Mpc * p1d/ np.pi)
+plt.xlabel(r'$k_\parallel$ [1/Mpc]')
+plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
+plt.xscale('log')
+
+# %%
+# %%time
+# You need to specify the path to the Nyx files by setting a NYX_PATH variable
+emulator_Nyx = set_emulator(emulator_label="Nyx_v0")
+
+# %% [markdown]
+# ## For developers
 
 # %%
 import os, sys
 import numpy as np
 from matplotlib import pyplot as plt
-
-# %%
 # our modules
 from lace.archive import gadget_archive
 from lace.archive import nyx_archive
 from lace.emulator.nn_emulator import NNEmulator
 from lace.emulator.gp_emulator import GPEmulator
 from lace.utils import poly_p1d
+from lace.emulator.emulator_manager import set_emulator, emulators_supported
+
+# %% [markdown]
+# ### List of supported emulators
+#
+# Total list of emulators:
+
+# %%
+emulators_supported()
 
 # %% [markdown]
 # ## CREATE TRAINING AND TESTING ARCHIVE (Gadget)
