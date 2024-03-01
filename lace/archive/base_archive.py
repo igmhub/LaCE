@@ -200,6 +200,7 @@ class BaseArchive(object):
         val_scaling=None,
         drop_sim=None,
         drop_z=None,
+        z_min=None,
         z_max=None,
         verbose=False,
     ):
@@ -213,6 +214,7 @@ class BaseArchive(object):
             val_scaling (int or None, optional): The scaling value. Defaults to None.
             drop_sim (str or None, optional): The simulation to drop. Defaults to None.
             drop_z (str or None, optional): The red to drop. Defaults to None.
+            z_min (int, float or None, optional): The minimum redshift. Defaults to None.
             z_max (int, float or None, optional): The maximum redshift. Defaults to None.
 
         Returns:
@@ -237,7 +239,12 @@ class BaseArchive(object):
             average = self.training_average
 
         operations = split_string(average)
-        operations_avail = ["axes", "phases", "both", "individual"]
+        operations_avail = [
+            "axes",
+            "phases",
+            "both",
+            "individual",
+        ]
         for operation in operations:
             if operation not in operations_avail:
                 msg = "Invalid average value. Available options:"
@@ -270,6 +277,11 @@ class BaseArchive(object):
             raise TypeError("z_max must be a number or None")
         if z_max is None:
             z_max = self.training_z_max
+
+        if isinstance(z_min, (int, float, type(None))) == False:
+            raise TypeError("z_max must be a number or None")
+        if z_min is None:
+            z_min = self.training_z_min
         ## done
 
         ## put training points here
@@ -285,38 +297,33 @@ class BaseArchive(object):
             for ii in range(len(arch_av)):
                 list_keys = list(arch_av[ii].keys())
 
-                if drop_sim is None or drop_z is None:
-                    mask = (
-                        (arch_av[ii]["sim_label"] in self.list_sim_cube)
-                        & (arch_av[ii]["sim_label"] != drop_sim)
-                        & (arch_av[ii]["z"] != drop_z)
-                        & (
-                            (val_scaling == "all")
-                            | (arch_av[ii]["val_scaling"] == val_scaling)
-                        )
-                        & (arch_av[ii]["z"] <= z_max)
+                mask = (
+                    (arch_av[ii]["sim_label"] in self.list_sim_cube)
+                    & (
+                        (arch_av[ii]["sim_label"] != drop_sim)
+                        | (arch_av[ii]["z"] != drop_z)
                     )
-                elif drop_sim is not None and drop_z is not None:
-                    mask = (
-                        (arch_av[ii]["sim_label"] in self.list_sim_cube)
-                        & (
-                            (arch_av[ii]["sim_label"] != drop_sim)
-                            | (arch_av[ii]["z"] != drop_z)
-                        )
-                        & (
-                            (val_scaling == "all")
-                            | (arch_av[ii]["val_scaling"] == val_scaling)
-                        )
-                        & (arch_av[ii]["z"] <= z_max)
+                    & (
+                        (val_scaling == "all")
+                        | (arch_av[ii]["val_scaling"] == val_scaling)
                     )
+                    & (arch_av[ii]["z"] <= z_max)
+                    & (arch_av[ii]["z"] >= z_min)
+                )
 
                 if mask:
-                    if all(x in list_keys or (x == 'A_UVB' and 'cosmo_params' in list_keys) for x in emu_params):
+                    if all(
+                        x in list_keys
+                        or (x == "A_UVB" and "cosmo_params" in list_keys)
+                        for x in emu_params
+                    ):
                         if any(
-                            np.isnan(arch_av[ii][x]) for x in emu_params if x is not 'A_UVB'
+                            np.isnan(arch_av[ii][x])
+                            for x in emu_params
+                            if x is not "A_UVB"
                         ) | any(
                             np.any(np.isnan(arch_av[ii][x])) for x in key_power
-                        ):                     
+                        ):
                             if verbose:
                                 print(
                                     "Archive element "
