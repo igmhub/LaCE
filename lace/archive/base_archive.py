@@ -253,7 +253,7 @@ class BaseArchive(object):
                 raise ExceptionList(msg, self.scalings_avail)
 
         if isinstance(drop_sim, (str, type(None), list)) == False:
-            raise TypeError("drop_sim must be a string or None")
+            raise TypeError("drop_sim must be a string, list or None")
         if drop_sim is not None:
             if isinstance(drop_sim, str):
                 drop_sim = [drop_sim]  # Convert single string to list for consistency
