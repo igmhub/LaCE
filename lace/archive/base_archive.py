@@ -259,12 +259,16 @@ class BaseArchive(object):
                 msg = "Invalid val_scaling value. Available options:"
                 raise ExceptionList(msg, self.scalings_avail)
 
-        if isinstance(drop_sim, (str, type(None))) == False:
-            raise TypeError("drop_sim must be a string or None")
+        if isinstance(drop_sim, (str, type(None), list)) == False:
+            raise TypeError("drop_sim must be a string, list or None")
         if drop_sim is not None:
-            if drop_sim not in self.list_sim_cube:
-                msg = "Invalid drop_sim value. Available options:"
-                raise ExceptionList(msg, self.list_sim_cube)
+            if isinstance(drop_sim, str):
+                drop_sim = [drop_sim]  # Convert single string to list for consistency
+            invalid_sims = [sim for sim in drop_sim if sim not in self.list_sim_cube]
+            if invalid_sims:
+                msg = f"Invalid drop_sim value(s). Available options:"
+                raise ExceptionList(msg,self.list_sim_cube)
+            
 
         if drop_z is not None:
             if drop_z not in self.list_sim_redshifts:
@@ -286,6 +290,7 @@ class BaseArchive(object):
 
         ## put training points here
         training_data = []
+        
 
         key_power = ["k_Mpc", "p1d_Mpc"]
         for operation in operations:
@@ -300,7 +305,7 @@ class BaseArchive(object):
                 mask = (
                     (arch_av[ii]["sim_label"] in self.list_sim_cube)
                     & (
-                        (arch_av[ii]["sim_label"] != drop_sim)
+                        (~arch_av[ii]["sim_label"].isin(drop_sim))
                         | (arch_av[ii]["z"] != drop_z)
                     )
                     & (
