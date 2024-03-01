@@ -128,7 +128,7 @@ emu_params = [
     "gamma",
     "kF_Mpc",
 ]
-for ii in range(3):
+for ii in range(2):
     archive_training = archive.get_training_data(emu_params, drop_sim='mpg_'+str(ii))
     # hypercube * nphases * naxes * nscalings * nsnaps
     nelem = (30-1) * 1 * 1 * 1 * 11
@@ -136,7 +136,25 @@ for ii in range(3):
     
     archive_testing = archive.get_testing_data('mpg_'+str(ii))
     nelem = 1 * 1 * 1 * 1 * 11
-    print(len(archive_testing), nelem)    
+    print(len(archive_testing), nelem)
+
+# %% [markdown]
+# #### Multiple sims
+
+# %%
+archive_training = archive.get_training_data(emu_params, drop_sim=['mpg_0', 'mpg_1'])
+# hypercube * nphases * naxes * nscalings * nsnaps
+nelem = (30-2) * 1 * 1 * 1 * 11
+print(len(archive_training), nelem)
+
+# %% [markdown]
+# #### Or redshifts
+
+# %%
+archive_training = archive.get_training_data(emu_params, drop_z=[2., 3.])
+# hypercube * nphases * naxes * nscalings * nsnaps
+nelem = (30) * 1 * 1 * 1 * (11-2)
+print(len(archive_training), nelem)
 
 # %% [markdown]
 # #### Cabayol23

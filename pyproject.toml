@@ -49,7 +49,7 @@ classifiers = [
 [project.optional-dependencies]
 jupyter = [
     "jupyter",
-    "jupytext"
+    "jupytext",
 ]
 
 [tool.setuptools.packages.find]

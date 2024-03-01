@@ -261,21 +261,27 @@ class BaseArchive(object):
 
         if isinstance(drop_sim, (str, type(None), list)) == False:
             raise TypeError("drop_sim must be a string, list or None")
-        if drop_sim is not None:
-            if isinstance(drop_sim, str):
-                drop_sim = [drop_sim]  # Convert single string to list for consistency
-            invalid_sims = [sim for sim in drop_sim if sim not in self.list_sim_cube]
+        if isinstance(drop_sim, list) == False:
+            drop_sim = [drop_sim]
+        if drop_sim[0] is not None:
+            invalid_sims = [
+                sim for sim in drop_sim if sim not in self.list_sim_cube
+            ]
             if invalid_sims:
                 msg = f"Invalid drop_sim value(s). Available options:"
-                raise ExceptionList(msg,self.list_sim_cube)
-            
+                raise ExceptionList(msg, self.list_sim_cube)
 
-        if drop_z is not None:
-            if drop_z not in self.list_sim_redshifts:
-                msg = "Invalid drop_z value. Available options:"
-                raise ExceptionList(
-                    msg, np.array(self.list_sim_redshifts).astype("str")
-                )
+        if isinstance(drop_z, (int, float, type(None), list)) == False:
+            raise TypeError("drop_sim must be a number, list or None")
+        if isinstance(drop_z, list) == False:
+            drop_z = [drop_z]
+        if drop_z[0] is not None:
+            invalid_zs = [
+                sim for sim in drop_z if sim not in self.list_sim_redshifts
+            ]
+            if invalid_zs:
+                msg = f"Invalid drop_z value(s). Available options:"
+                raise ExceptionList(msg, self.list_sim_redshifts)
 
         if isinstance(z_max, (int, float, type(None))) == False:
             raise TypeError("z_max must be a number or None")
@@ -290,7 +296,6 @@ class BaseArchive(object):
 
         ## put training points here
         training_data = []
-        
 
         key_power = ["k_Mpc", "p1d_Mpc"]
         for operation in operations:
@@ -305,8 +310,8 @@ class BaseArchive(object):
                 mask = (
                     (arch_av[ii]["sim_label"] in self.list_sim_cube)
                     & (
-                        (~arch_av[ii]["sim_label"].isin(drop_sim))
-                        | (arch_av[ii]["z"] != drop_z)
+                        (arch_av[ii]["sim_label"] not in drop_sim)
+                        & (arch_av[ii]["z"] not in drop_z)
                     )
                     & (
                         (val_scaling == "all")
@@ -325,7 +330,7 @@ class BaseArchive(object):
                         if any(
                             np.isnan(arch_av[ii][x])
                             for x in emu_params
-                            if x is not "A_UVB"
+                            if x != "A_UVB"
                         ) | any(
                             np.any(np.isnan(arch_av[ii][x])) for x in key_power
                         ):
