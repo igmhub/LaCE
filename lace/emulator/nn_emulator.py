@@ -5,6 +5,7 @@ import sys
 import copy
 import random
 import time
+from warnings import warn
 
 # Torch related modules
 import torch
@@ -19,6 +20,7 @@ from lace.emulator import nn_architecture, base_emulator
 from lace.utils import poly_p1d
 
 from scipy.spatial import Delaunay
+
 
 class NNEmulator(base_emulator.BaseEmulator):
     """A class for training an emulator.
@@ -120,8 +122,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 archive = nyx_archive.NyxArchive(nyx_version=training_set[6:])
 
             self.training_data = archive.get_training_data(
-                emu_params=self.emu_params,
-                drop_sim=self.drop_sim
+                emu_params=self.emu_params, drop_sim=self.drop_sim
             )
 
         elif (training_set is None) & (archive is not None):
@@ -150,7 +151,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
 
         self.print(f"Samples in training_set: {len(self.training_data)}")
-        self.kp_Mpc = archive.kp_Mpc    
+        self.kp_Mpc = archive.kp_Mpc
 
         ## check emulator label
         if emulator_label is not None:
@@ -347,13 +348,13 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
 
             if model_metadata["drop_sim"] is not None and self.drop_sim is None:
-                self.print(
-                    f"WARNING: Model trained without simulation {emulator_settings['drop_sim']}"
+                warn(
+                    f"Model trained without simulation {emulator_settings['drop_sim']}"
                 )
 
             if model_metadata["drop_z"] is not None and self.drop_z is None:
-                self.print(
-                    f"WARNING: Model trained without redshift {emulator_settings['drop_z']}"
+                warn(
+                    f"Model trained without redshift {emulator_settings['drop_z']}"
                 )
 
             kMpc_train = self._obtain_sim_params()
@@ -640,14 +641,12 @@ class NNEmulator(base_emulator.BaseEmulator):
         """Emulates the p1d_Mpc at a given set of k_Mpc values"""
 
         if np.max(k_Mpc) > self.kmax_Mpc:
-            print(
-                "WARNING: some of the requested k's are higher than the maximum training value k=",
-                self.kmax_Mpc,
+            warn(
+                f"Some of the requested k's are higher than the maximum training value k={self.kmax_Mpc}",
             )
         elif np.min(k_Mpc) < self.kmin_Mpc:
-            print(
-                "WARNING: some of the requested k's are lower than the minimum training value k=",
-                self.kmin_Mpc,
+            warn(
+                f"Some of the requested k's are lower than the minimum training value k={self.kmin_Mpc}"
             )
 
         k_Mpc = torch.Tensor(k_Mpc)
@@ -660,10 +659,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                     raise (ValueError(param + " not in input model"))
                 emu_call[param] = model[param]
 
-            #emu_call = {k: emu_call[k] for k in self.emu_params}
-            #emu_call = list(emu_call.values())
-            #emu_call = np.array(emu_call)
-            emu_call= [emu_call[param] for param in self.emu_params]
+            # emu_call = {k: emu_call[k] for k in self.emu_params}
+            # emu_call = list(emu_call.values())
+            # emu_call = np.array(emu_call)
+            emu_call = [emu_call[param] for param in self.emu_params]
 
             emu_call = (emu_call - self.paramLims[:, 0]) / (
                 self.paramLims[:, 1] - self.paramLims[:, 0]
@@ -754,13 +753,14 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         else:
             return emu_p1d
-        
-        
-        
+
     def check_hull(self):
-        
-        training_points = [d for d in self.training_data if d['ind_axis']=='average']
-        training_points = [d for d in training_points if d['ind_phase']=='average']
+        training_points = [
+            d for d in self.training_data if d["ind_axis"] == "average"
+        ]
+        training_points = [
+            d for d in training_points if d["ind_phase"] == "average"
+        ]
 
         training_points = [
             {
@@ -771,14 +771,15 @@ class NNEmulator(base_emulator.BaseEmulator):
             for i in range(len(training_points))
         ]
         training_points = self._sort_dict(training_points, self.emu_params)
-        training_points = [list(training_points[i].values()) for i in range(len(training_points))]
+        training_points = [
+            list(training_points[i].values())
+            for i in range(len(training_points))
+        ]
         training_points = np.array(training_points)
 
         self.hull = Delaunay(training_points)
-        
-        
+
     def test_hull(self, model_test):
-        test_point= [model_test[param] for param in self.emu_params]
+        test_point = [model_test[param] for param in self.emu_params]
         test_point = np.array(test_point)
-        return self.hull.find_simplex(test_point)>=0
-        
+        return self.hull.find_simplex(test_point) >= 0
