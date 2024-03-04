@@ -200,6 +200,7 @@ class BaseArchive(object):
         val_scaling=None,
         drop_sim=None,
         drop_z=None,
+        drop_snap=None,
         z_min=None,
         z_max=None,
         verbose=False,
@@ -212,8 +213,9 @@ class BaseArchive(object):
                 element of the training data. There are intended to be emulator parameters.
             average (str, optional): The flag indicating the type of average computed.
             val_scaling (int or None, optional): The scaling value. Defaults to None.
-            drop_sim (str or None, optional): The simulation to drop. Defaults to None.
-            drop_z (str or None, optional): The red to drop. Defaults to None.
+            drop_sim (str, list, or None, optional): The simulation to drop. Defaults to None.
+            drop_z (str, list, or None, optional): The red to drop. Defaults to None.
+            drop_snap (str, list, or None, optional): The snapshot to drop. Defaults to None.
             z_min (int, float or None, optional): The minimum redshift. Defaults to None.
             z_max (int, float or None, optional): The maximum redshift. Defaults to None.
 
@@ -271,6 +273,31 @@ class BaseArchive(object):
                 msg = f"Invalid drop_sim value(s). Available options:"
                 raise ExceptionList(msg, self.list_sim_cube)
 
+        if isinstance(drop_snap, (str, type(None), list)) == False:
+            raise TypeError("drop_snap must be a string, list or None")
+        if isinstance(drop_snap, list) == False:
+            drop_snap = [drop_snap]
+        if drop_snap[0] is not None:
+            drop_snap_sim = []
+            drop_snap_z = []
+            for ii in range(len(drop_snap)):
+                _drop_snap = split_string(drop_snap[ii])
+                drop_snap_sim.append(_drop_snap[0] + "_" + _drop_snap[1])
+                drop_snap_z.append(float(_drop_snap[2]))
+            invalid_sims = [
+                sim for sim in drop_snap_sim if sim not in self.list_sim_cube
+            ]
+            if invalid_sims:
+                msg = f"Invalid drop_snap value(s). Available options for sims:"
+                raise ExceptionList(msg, self.list_sim_cube)
+
+            invalid_sims = [
+                sim for sim in drop_snap_z if sim not in self.list_sim_redshifts
+            ]
+            if invalid_sims:
+                msg = f"Invalid drop_snap value(s). Available options for redshifts:"
+                raise ExceptionList(msg, self.list_sim_redshifts.astype("str"))
+
         if isinstance(drop_z, (int, float, type(None), list)) == False:
             raise TypeError("drop_sim must be a number, list or None")
         if isinstance(drop_z, list) == False:
@@ -281,7 +308,7 @@ class BaseArchive(object):
             ]
             if invalid_zs:
                 msg = f"Invalid drop_z value(s). Available options:"
-                raise ExceptionList(msg, self.list_sim_redshifts)
+                raise ExceptionList(msg, self.list_sim_redshifts.astype("str"))
 
         if isinstance(z_max, (int, float, type(None))) == False:
             raise TypeError("z_max must be a number or None")
@@ -312,6 +339,14 @@ class BaseArchive(object):
                     & (
                         (arch_av[ii]["sim_label"] not in drop_sim)
                         & (arch_av[ii]["z"] not in drop_z)
+                    )
+                    & (
+                        (
+                            arch_av[ii]["sim_label"]
+                            + "_"
+                            + arch_av[ii]["z"].astype("str")
+                            not in drop_snap
+                        )
                     )
                     & (
                         (val_scaling == "all")

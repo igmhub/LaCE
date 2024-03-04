@@ -157,6 +157,18 @@ nelem = (30) * 1 * 1 * 1 * (11-2)
 print(len(archive_training), nelem)
 
 # %% [markdown]
+# #### Or snapshots
+
+# %%
+archive_training = archive.get_training_data(
+    emu_params, 
+    drop_snap=["mpg_0_2.0", "mpg_1_2.25"]
+)
+# hypercube * nphases * naxes * nscalings * nsnaps
+nelem = (30) * 1 * 1 * 1 * 11 - 2
+print(len(archive_training), nelem)
+
+# %% [markdown]
 # #### Cabayol23
 
 # %%
