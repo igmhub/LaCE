@@ -60,6 +60,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         seed=32,
         fprint=print,
         lr0=1e-3,
+        batch_size=100,
+        weight_decay=1e-4
     ):
         # store emulator settings
         self.emulator_label = emulator_label
@@ -87,6 +89,9 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.print = fprint
         self.lr0 = lr0
         self.max_neurons = max_neurons
+        self.batch_size=batch_size
+        self.weight_decay=weight_decay
+        
 
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -96,6 +101,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_set_all = ["Pedersen21", "Cabayol23", "Nyx23_Oct2023"]
         emulator_label_all = [
             "Cabayol23",
+            "nn_test",
             "Nyx_v0",
             "Cabayol23_extended",
             "Nyx_v0_extended",
@@ -560,7 +566,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         )
 
         optimizer = optim.Adam(
-            self.nn.parameters(), lr=self.lr0, weight_decay=1e-4
+            self.nn.parameters(), lr=self.lr0, weight_decay=self.weight_decay
         )  #
         scheduler = lr_scheduler.StepLR(optimizer, self.step_size, gamma=0.1)
 
@@ -568,7 +574,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_label = self._get_training_pd1_nn()
 
         trainig_dataset = TensorDataset(training_data, training_label)
-        loader_train = DataLoader(trainig_dataset, batch_size=100, shuffle=True)
+        loader_train = DataLoader(trainig_dataset, batch_size=self.batch_size, shuffle=True)
 
         self.nn.to(self.device)
         self.print(f"Training NN on {len(training_data)} points")
