@@ -89,6 +89,7 @@ class NyxArchive(BaseArchive):
         # training options
         self.training_average = "both"
         self.training_val_scaling = "all"
+        self.training_z_min = 0
         self.training_z_max = 10
         # testing options
         self.testing_ind_rescaling = 0

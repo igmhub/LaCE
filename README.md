@@ -14,7 +14,7 @@ Please cite at least https://arxiv.org/abs/2305.19064 if you use this emulator i
 - Create a new conda environment. It is usually better to follow python version one or two behind. In January 2024, the latest is 3.12, so we recommend 3.11.
 
 ```
-conda create -n lace python=3.11 camb
+conda create -n lace python=3.11 camb fdasrsf
 conda activate lace
 ```
 
