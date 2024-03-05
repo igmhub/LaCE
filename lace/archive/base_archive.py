@@ -200,6 +200,8 @@ class BaseArchive(object):
         val_scaling=None,
         drop_sim=None,
         drop_z=None,
+        drop_snap=None,
+        z_min=None,
         z_max=None,
         verbose=False,
     ):
@@ -211,8 +213,10 @@ class BaseArchive(object):
                 element of the training data. There are intended to be emulator parameters.
             average (str, optional): The flag indicating the type of average computed.
             val_scaling (int or None, optional): The scaling value. Defaults to None.
-            drop_sim (str or None, optional): The simulation to drop. Defaults to None.
-            drop_z (str or None, optional): The red to drop. Defaults to None.
+            drop_sim (str, list, or None, optional): The simulation to drop. Defaults to None.
+            drop_z (str, list, or None, optional): The red to drop. Defaults to None.
+            drop_snap (str, list, or None, optional): The snapshot to drop. Defaults to None.
+            z_min (int, float or None, optional): The minimum redshift. Defaults to None.
             z_max (int, float or None, optional): The maximum redshift. Defaults to None.
 
         Returns:
@@ -237,7 +241,12 @@ class BaseArchive(object):
             average = self.training_average
 
         operations = split_string(average)
-        operations_avail = ["axes", "phases", "both", "individual"]
+        operations_avail = [
+            "axes",
+            "phases",
+            "both",
+            "individual",
+        ]
         for operation in operations:
             if operation not in operations_avail:
                 msg = "Invalid average value. Available options:"
@@ -254,31 +263,66 @@ class BaseArchive(object):
 
         if isinstance(drop_sim, (str, type(None), list)) == False:
             raise TypeError("drop_sim must be a string, list or None")
-        if drop_sim is not None:
-            if isinstance(drop_sim, str):
-                drop_sim = [drop_sim]  # Convert single string to list for consistency
-            invalid_sims = [sim for sim in drop_sim if sim not in self.list_sim_cube]
+        if isinstance(drop_sim, list) == False:
+            drop_sim = [drop_sim]
+        if drop_sim[0] is not None:
+            invalid_sims = [
+                sim for sim in drop_sim if sim not in self.list_sim_cube
+            ]
             if invalid_sims:
                 msg = f"Invalid drop_sim value(s). Available options:"
-                raise ExceptionList(msg,self.list_sim_cube)
-            
+                raise ExceptionList(msg, self.list_sim_cube)
 
-        if drop_z is not None:
-            if drop_z not in self.list_sim_redshifts:
-                msg = "Invalid drop_z value. Available options:"
-                raise ExceptionList(
-                    msg, np.array(self.list_sim_redshifts).astype("str")
-                )
+        if isinstance(drop_snap, (str, type(None), list)) == False:
+            raise TypeError("drop_snap must be a string, list or None")
+        if isinstance(drop_snap, list) == False:
+            drop_snap = [drop_snap]
+        if drop_snap[0] is not None:
+            drop_snap_sim = []
+            drop_snap_z = []
+            for ii in range(len(drop_snap)):
+                _drop_snap = split_string(drop_snap[ii])
+                drop_snap_sim.append(_drop_snap[0] + "_" + _drop_snap[1])
+                drop_snap_z.append(float(_drop_snap[2]))
+            invalid_sims = [
+                sim for sim in drop_snap_sim if sim not in self.list_sim_cube
+            ]
+            if invalid_sims:
+                msg = f"Invalid drop_snap value(s). Available options for sims:"
+                raise ExceptionList(msg, self.list_sim_cube)
+
+            invalid_sims = [
+                sim for sim in drop_snap_z if sim not in self.list_sim_redshifts
+            ]
+            if invalid_sims:
+                msg = f"Invalid drop_snap value(s). Available options for redshifts:"
+                raise ExceptionList(msg, self.list_sim_redshifts.astype("str"))
+
+        if isinstance(drop_z, (int, float, type(None), list)) == False:
+            raise TypeError("drop_sim must be a number, list or None")
+        if isinstance(drop_z, list) == False:
+            drop_z = [drop_z]
+        if drop_z[0] is not None:
+            invalid_zs = [
+                sim for sim in drop_z if sim not in self.list_sim_redshifts
+            ]
+            if invalid_zs:
+                msg = f"Invalid drop_z value(s). Available options:"
+                raise ExceptionList(msg, self.list_sim_redshifts.astype("str"))
 
         if isinstance(z_max, (int, float, type(None))) == False:
             raise TypeError("z_max must be a number or None")
         if z_max is None:
             z_max = self.training_z_max
+
+        if isinstance(z_min, (int, float, type(None))) == False:
+            raise TypeError("z_max must be a number or None")
+        if z_min is None:
+            z_min = self.training_z_min
         ## done
 
         ## put training points here
         training_data = []
-        
 
         key_power = ["k_Mpc", "p1d_Mpc"]
         for operation in operations:
@@ -290,51 +334,41 @@ class BaseArchive(object):
             for ii in range(len(arch_av)):
                 list_keys = list(arch_av[ii].keys())
 
-                if drop_sim is None or drop_z is None:
-                    if drop_sim is not None:
-                        mask = (
-                            (arch_av[ii]["sim_label"] in self.list_sim_cube)
-                            #& (~arch_av[ii]["sim_label"].isin(drop_sim))
-                            & (~np.isin(arch_av[ii]["sim_label"], drop_sim))
-                            & (arch_av[ii]["z"] != drop_z)
-                            & (
-                                (val_scaling == "all")
-                                | (arch_av[ii]["val_scaling"] == val_scaling)
-                            )
-                            & (arch_av[ii]["z"] <= z_max)
-                        )
-                    else:
-                        mask = (
-                            (arch_av[ii]["sim_label"] in self.list_sim_cube)
-                            & (arch_av[ii]["sim_label"] != drop_sim)
-                            & (arch_av[ii]["z"] != drop_z)
-                            & (
-                                (val_scaling == "all")
-                                | (arch_av[ii]["val_scaling"] == val_scaling)
-                            )
-                            & (arch_av[ii]["z"] <= z_max)
-                        )
-                elif drop_sim is not None and drop_z is not None:
-                    mask = (
-                        (arch_av[ii]["sim_label"] in self.list_sim_cube)
-                        & (
-                            (~arch_av[ii]["sim_label"].isin(drop_sim))
-                            | (arch_av[ii]["z"] != drop_z)
-                        )
-                        & (
-                            (val_scaling == "all")
-                            | (arch_av[ii]["val_scaling"] == val_scaling)
-                        )
-                        & (arch_av[ii]["z"] <= z_max)
+                mask = (
+                    (arch_av[ii]["sim_label"] in self.list_sim_cube)
+                    & (
+                        (arch_av[ii]["sim_label"] not in drop_sim)
+                        & (arch_av[ii]["z"] not in drop_z)
                     )
+                    & (
+                        (
+                            arch_av[ii]["sim_label"]
+                            + "_"
+                            + arch_av[ii]["z"].astype("str")
+                            not in drop_snap
+                        )
+                    )
+                    & (
+                        (val_scaling == "all")
+                        | (arch_av[ii]["val_scaling"] == val_scaling)
+                    )
+                    & (arch_av[ii]["z"] <= z_max)
+                    & (arch_av[ii]["z"] >= z_min)
+                )
 
                 if mask:
-                    if all(x in list_keys or (x == 'A_UVB' and 'cosmo_params' in list_keys) for x in emu_params):
+                    if all(
+                        x in list_keys
+                        or (x == "A_UVB" and "cosmo_params" in list_keys)
+                        for x in emu_params
+                    ):
                         if any(
-                            np.isnan(arch_av[ii][x]) for x in emu_params if x is not 'A_UVB'
+                            np.isnan(arch_av[ii][x])
+                            for x in emu_params
+                            if x != "A_UVB"
                         ) | any(
                             np.any(np.isnan(arch_av[ii][x])) for x in key_power
-                        ):                     
+                        ):
                             if verbose:
                                 print(
                                     "Archive element "

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import json
 import time
+from warnings import warn
 from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
 
@@ -262,9 +263,9 @@ class GPEmulator(base_emulator.BaseEmulator):
         average = "both"
         val_scaling = 1
         if self.archive.training_average != "both":
-            print("WARNING: Enforce average=both in training of GP emulator")
+            warn("Enforce average=both in training of GP emulator")
         if self.archive.training_val_scaling != 1:
-            print("WARNING: Enforce val_scalinge=1 in training of GP emulator")
+            warn("Enforce val_scalinge=1 in training of GP emulator")
 
         # keep track of training data to be used in emulator
         self.training_data = self.archive.get_training_data(
@@ -542,14 +543,12 @@ class GPEmulator(base_emulator.BaseEmulator):
         Option for reducing variance with z rescaling is not fully tested.
         """
         if np.max(k_Mpc) > self.kmax_Mpc:
-            print(
-                "WARNING: some of the requested k's are higher than the maximum training value k=",
-                self.kmax_Mpc,
+            warn(
+                f"Some of the requested k's are higher than the maximum training value k={self.kmax_Mpc}",
             )
         elif np.min(k_Mpc) < self.kmin_Mpc:
-            print(
-                "WARNING: some of the requested k's are lower than the minimum training value k=",
-                self.kmin_Mpc,
+            warn(
+                f"Some of the requested k's are lower than the minimum training value k={self.kmin_Mpc}"
             )
 
         if self.hull:
