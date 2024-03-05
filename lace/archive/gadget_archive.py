@@ -142,6 +142,7 @@ class GadgetArchive(BaseArchive):
             # training options
             self.training_average = "both"
             self.training_val_scaling = 1
+            self.training_z_min = 0
             self.training_z_max = 10
             # testing options
             self.testing_ind_rescaling = 0
@@ -161,6 +162,7 @@ class GadgetArchive(BaseArchive):
             self.scalings_avail = np.arange(5, dtype=int)
             self.training_average = "axes_phases_both"
             self.training_val_scaling = "all"
+            self.training_z_min = 0
             self.training_z_max = 10
             self.testing_ind_rescaling = 0
             self.testing_z_min = 0
@@ -179,6 +181,7 @@ class GadgetArchive(BaseArchive):
             self.scalings_avail = np.arange(5, dtype=int)
             self.training_average = "axes_phases_both"
             self.training_val_scaling = "all"
+            self.training_z_min = 0
             self.training_z_max = 10
             self.testing_ind_rescaling = 0
             self.testing_z_min = 0
