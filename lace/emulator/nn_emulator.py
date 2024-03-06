@@ -214,7 +214,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 + "fitting coefficients to a 5th degree polynomial. It "
                 + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
                 + "passed to the emulator will be overwritten to match "
-                + "these ones"
+                + "these ones. This option is an updated on wrt to the one in the Cabayol+23 paper."
             )
             self.emu_params = [
                 "Delta2_p",
