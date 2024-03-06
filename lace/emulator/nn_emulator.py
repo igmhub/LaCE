@@ -61,7 +61,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         fprint=print,
         lr0=1e-3,
         batch_size=100,
-        weight_decay=1e-4
+        weight_decay=1e-4,
+        amsgrad=True,
     ):
         # store emulator settings
         self.emulator_label = emulator_label
@@ -91,6 +92,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.max_neurons = max_neurons
         self.batch_size=batch_size
         self.weight_decay=weight_decay
+        self.amsgrad=True
         
 
         torch.manual_seed(seed)
@@ -101,7 +103,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_set_all = ["Pedersen21", "Cabayol23", "Nyx23_Oct2023"]
         emulator_label_all = [
             "Cabayol23",
-            "nn_test",
+            "Cabayol23+",
             "Nyx_v0",
             "Cabayol23_extended",
             "Nyx_v0_extended",
@@ -200,7 +202,41 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.nhidden,
                 self.max_neurons,
                 self.lr0,
-            ) = (4, 5, 100, 75, 5, 100, 1e-3)
+                self.weight_decay,
+                self.batch_size,
+                self.amsgrad
+            ) = (4, 5, 100, 75, 5, 100, 1e-3, 1e-4, 100, False)
+            
+            
+        if emulator_label == "Cabayol23+":
+            self.print(
+                r"Neural network emulating the optimal P1D of Gadget simulations "
+                + "fitting coefficients to a 5th degree polynomial. It "
+                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
+                + "passed to the emulator will be overwritten to match "
+                + "these ones"
+            )
+            self.emu_params = [
+                "Delta2_p",
+                "n_p",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "kF_Mpc",
+            ]
+            self.emu_type = "polyfit"
+            (
+                self.kmax_Mpc,
+                self.ndeg,
+                self.nepochs,
+                self.step_size,
+                self.nhidden,
+                self.max_neurons,
+                self.lr0,
+                self.weight_decay,
+                self.batch_size,
+                self.amsgrad
+            ) = (4, 5, 310, 300, 4, 150, 7e-4,9.6e-3,100,True)
 
         elif emulator_label == "Nyx_v0":
             self.print(
@@ -518,13 +554,16 @@ class NNEmulator(base_emulator.BaseEmulator):
         ]
 
         training_label = np.array(training_label)
-        # yscalings = np.median(training_label)
+        
+        if self.emulator_label is not 'Cabayol23':
+            for ii, p1d in enumerate(training_label):
+                fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,p1d,deg=self.ndeg)
+                training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc)  
+        
         training_label = np.log10(training_label / self.yscalings)
         training_label = torch.Tensor(training_label)
 
-        # self.yscalings=yscalings
-
-        return training_label  # , yscalings
+        return training_label 
 
     def _set_weights(self):
         """
@@ -566,7 +605,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         )
 
         optimizer = optim.Adam(
-            self.nn.parameters(), lr=self.lr0, weight_decay=self.weight_decay
+            self.nn.parameters(), lr=self.lr0, weight_decay=self.weight_decay, amsgrad=self.amsgrad
         )  #
         scheduler = lr_scheduler.StepLR(optimizer, self.step_size, gamma=0.1)
 
