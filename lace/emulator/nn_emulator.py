@@ -107,6 +107,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             "Nyx_v0",
             "Cabayol23_extended",
             "Nyx_v0_extended",
+            "Cabayol23+_extended"
         ]
 
         # check input
@@ -293,6 +294,37 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.weighted_emulator,
                 self.lr0,
             ) = (8, 7, 100, 75, 5, 100, False, 1e-3)
+            
+        if emulator_label == "Cabayol23+_extended":
+            self.print(
+                r"Neural network emulating the optimal P1D of Gadget simulations "
+                + "fitting coefficients to a 5th degree polynomial. It "
+                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
+                + "passed to the emulator will be overwritten to match "
+                + "these ones. This option is an updated on wrt to the one in the Cabayol+23 paper."
+            )
+            self.emu_params = [
+                "Delta2_p",
+                "n_p",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "kF_Mpc",
+            ]
+            self.emu_type = "polyfit"
+            (
+                self.kmax_Mpc,
+                self.ndeg,
+                self.nepochs,
+                self.step_size,
+                self.nhidden,
+                self.max_neurons,
+                self.lr0,
+                self.weight_decay,
+                self.batch_size,
+                self.amsgrad,
+                self.weighted_emulator,
+            ) = (8, 7, 250, 200, 4, 250, 7.1e-4, 4.1e-3, 100,True, True)
 
         elif emulator_label == "Nyx_v0_extended":
             self.print(
@@ -704,9 +736,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                     raise (ValueError(param + " not in input model"))
                 emu_call[param] = model[param]
 
-            # emu_call = {k: emu_call[k] for k in self.emu_params}
-            # emu_call = list(emu_call.values())
-            # emu_call = np.array(emu_call)
+
             emu_call = [emu_call[param] for param in self.emu_params]
 
             emu_call = (emu_call - self.paramLims[:, 0]) / (
