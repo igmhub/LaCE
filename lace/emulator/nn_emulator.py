@@ -528,7 +528,14 @@ class NNEmulator(base_emulator.BaseEmulator):
             for i in range(len(self.training_data))
         ]
         training_label = np.array(training_label)
-        self.yscalings = np.median(training_label)
+        
+        if self.emulator_label != 'Cabayol23':
+            for ii, p1d in enumerate(training_label):
+                fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,p1d,deg=self.ndeg)
+                training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc)  
+                
+        if self.emulator_label != 'Cabayol23':
+            self.yscalings = np.median(training_label, axis = 0)
 
         return k_Mpc_train
 
@@ -587,7 +594,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         training_label = np.array(training_label)
         
-        if self.emulator_label is not 'Cabayol23':
+        if self.emulator_label != 'Cabayol23':
             for ii, p1d in enumerate(training_label):
                 fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,p1d,deg=self.ndeg)
                 training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc)  
