@@ -14,6 +14,7 @@ def emulators_supported():
         "Pedersen23_ext",
         "CH24",
         "Cabayol23",
+        "Cabayol23+",
         "Cabayol23_extended",
         "Pedersen21_ext8",
         "Pedersen23_ext8",
@@ -92,10 +93,18 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
                 emulator_label=emulator_label,
                 drop_sim=drop_sim,
             )
-    elif (emulator_label == "Cabayol23") | (
-        emulator_label == "Cabayol23_extended"
+    elif (
+        (emulator_label == "Cabayol23")
+        | (emulator_label == "Cabayol23+")
+        | (emulator_label == "Cabayol23_extended")
     ):
-        folder = "NNmodels/Cabayol23_Feb2024/"
+        if (emulator_label == "Cabayol23") | (
+            emulator_label == "Cabayol23_extended"
+        ):
+            folder = "NNmodels/Cabayol23_Feb2024/"
+        elif emulator_label == "Cabayol23+":
+            folder = "NNmodels/Cabayol23+/"
+
         if drop_sim is None:
             model_path = folder + emulator_label + ".pt"
         else:
