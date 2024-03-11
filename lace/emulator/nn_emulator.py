@@ -851,6 +851,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             
             
         if return_covar == True:
+            
             coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
             coeffserr = torch.exp(coeffs_logerr) ** 2
             powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(self.device)
@@ -875,12 +876,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                                    )
             
                 emu_p1derr_interp = f_interp(k_Mpc[ii])
-            
-                covar = np.zeros(
-                    (emu_p1derr_interp.shape[0], emu_p1derr_interp.shape[1], emu_p1derr_interp.shape[1])
-                )
-                for jj in range(emu_p1derr_interp.shape[0]):
-                    covars[ii,jj] = np.outer(emu_p1derr_interp[jj], emu_p1derr_interp[jj])
+                
+                covars[ii] = np.outer(emu_p1derr_interp, emu_p1derr_interp)
+                
             return emu_p1d_interp, covars
 
         else:
