@@ -540,6 +540,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                 
         if self.emulator_label != 'Cabayol23':
             self.yscalings = np.median(training_label, axis = 0)
+        else:
+            self.yscalings = np.median(training_label)
 
         return k_Mpc_train
 
