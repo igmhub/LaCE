@@ -264,7 +264,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.nhidden,
                 self.max_neurons,
                 self.lr0,
-            ) = (4, 6, 800, 700, 5, 150, 5e-5)
+                self.batch_size,
+                self.weight_decay,
+                self.amsgrad
+            ) = (4, 6, 800, 700, 5, 150, 6e-4,50, 5e-3,True)
 
         elif emulator_label == "Cabayol23_extended":
             self.print(
@@ -806,9 +809,9 @@ class NNEmulator(base_emulator.BaseEmulator):
             return emu_p1d_interp
 
     def emulate_arr_p1d_Mpc(
-        self, emu_calls, log_kMpc, return_covar=False, z=None
+        self, emu_calls, k_Mpc, return_covar=False, z=None
     ):
-        log_kMpc = torch.Tensor(log_kMpc).to(self.device)
+        #log_kMpc = torch.Tensor(log_kMpc).to(self.device)
 
         with torch.no_grad():
             emu_calls = (emu_calls - self.paramLims[None, :, 0]) / (
@@ -822,7 +825,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
             emu_p1d = torch.sum(
                 coeffsPred[:, :, None]
-                * (self.log_kMpc[:, None, :] ** powers[None, :, None]),
+                * (self.log_kMpc[None, None, :] ** powers[None, :, None]),
                 axis=1,
             )
 
@@ -846,7 +849,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             emu_p1derr = torch.sqrt(
                 torch.sum(
                     coeffserr[:, :, None]
-                    * (self.log_kMpc[:, None, :] ** powers_err[None, :, None]),
+                    * (self.log_kMpc[None, None, :] ** powers_err[None, :, None]),
                     axis=1,
                 )
             )
