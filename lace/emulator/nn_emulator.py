@@ -814,34 +814,40 @@ class NNEmulator(base_emulator.BaseEmulator):
         self, emu_calls, k_Mpc, return_covar=False, z=None
     ):
         #log_kMpc = torch.Tensor(log_kMpc).to(self.device)
+        emu_p1d_interp= np.zeros(shape=(len(emu_calls), k_Mpc.shape[1]))
+        covars= np.zeros(shape=(len(emu_calls), k_Mpc.shape[1], k_Mpc.shape[1]))
 
         with torch.no_grad():
             emu_calls = (emu_calls - self.paramLims[None, :, 0]) / (
                 self.paramLims[None, :, 1] - self.paramLims[None, :, 0]
             ) - 0.5
             emu_calls = torch.Tensor(emu_calls)
-
+            
+            
             # ask emulator to emulate P1D (and its uncertainty)
             coeffsPred, coeffs_logerr = self.nn(emu_calls.to(self.device))
 
             powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
-            emu_p1d = torch.sum(
+            emu_p1ds = torch.sum(
                 coeffsPred[:, :, None]
                 * (self.log_kMpc[None, None, :] ** powers[None, :, None]),
                 axis=1,
             )
 
-            emu_p1d = emu_p1d.detach().cpu().numpy()
+            emu_p1ds = emu_p1ds.detach().cpu().numpy()
 
-            emu_p1d = 10**emu_p1d * self.yscalings
-
-            f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
-                                emu_p1d,
-                                bounds_error=False,
-                                fill_value='extrapolate'
-                               )
+            emu_p1ds = 10**emu_p1ds * self.yscalings
             
-            emu_p1d_interp = f_interp(k_Mpc)
+            for ii, emu_p1d in enumerate(emu_p1ds):
+
+                f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
+                                    emu_p1d,
+                                    bounds_error=False,
+                                    fill_value='extrapolate'
+                                   )
+            
+            
+                emu_p1d_interp[ii] = f_interp(k_Mpc[ii])
             
             
         if return_covar == True:
@@ -855,25 +861,27 @@ class NNEmulator(base_emulator.BaseEmulator):
                     axis=1,
                 )
             )
-            emu_p1derr = emu_p1derr.detach().cpu().numpy()
-            emu_p1derr = (
-                10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
+            emu_p1derrs = emu_p1derr.detach().cpu().numpy()
+            emu_p1derrs = (
+                10 ** (emu_p1ds) * np.log(10) * emu_p1derrs * self.yscalings
             )
             
-            f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
-                                emu_p1derr,
-                                bounds_error=False,
-                                fill_value='extrapolate'
-                               )
+            for ii, emu_p1derr in enumerate(emu_p1derrs):
             
-            emu_p1derr_interp = f_interp(k_Mpc)
+                f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
+                                    emu_p1derr,
+                                    bounds_error=False,
+                                    fill_value='extrapolate'
+                                   )
             
-            covar = np.zeros(
-                (emu_p1derr_interp.shape[0], emu_p1derr_interp.shape[1], emu_p1derr_interp.shape[1])
-            )
-            for ii in range(emu_p1derr_interp.shape[0]):
-                covar[ii] = np.outer(emu_p1derr_interp[ii], emu_p1derr_interp[ii])
-            return emu_p1d_interp, covar
+                emu_p1derr_interp = f_interp(k_Mpc[ii])
+            
+                covar = np.zeros(
+                    (emu_p1derr_interp.shape[0], emu_p1derr_interp.shape[1], emu_p1derr_interp.shape[1])
+                )
+                for jj in range(emu_p1derr_interp.shape[0]):
+                    covars[ii,jj] = np.outer(emu_p1derr_interp[jj], emu_p1derr_interp[jj])
+            return emu_p1d_interp, covars
 
         else:
             return emu_p1d_interp
