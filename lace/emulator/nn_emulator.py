@@ -773,17 +773,12 @@ class NNEmulator(base_emulator.BaseEmulator):
             )
 
             emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
+            
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+                emu_p1d = 10 ** (emu_p1d) * self.yscalings
+            else:
+                emu_p1d = np.exp( emu_p1d * self.yscalings**2)
 
-            emu_p1d = np.exp( emu_p1d * self.yscalings**2)
-            
-            f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
-                                emu_p1d,
-                                bounds_error=False,
-                                fill_value='extrapolate'
-                               )
-            
-            emu_p1d_interp = f_interp(k_Mpc)
-            
 
         if return_covar == True:
             coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
@@ -797,23 +792,19 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
             )
             emu_p1derr = emu_p1derr.detach().cpu().numpy().flatten()
-            emu_p1derr = (
-                10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
-            )
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+                emu_p1derr = (
+                    10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
+                )
+            else:
+                emu_p1derr = np.exp(emu_p1d * self.yscalings**2) * self.yscalings**2 * emu_p1derr
+
             
-            f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
-                                emu_p1derr,
-                                bounds_error=False,
-                                fill_value='extrapolate'
-                               )
-            
-            emu_p1derr_interp = f_interp(k_Mpc)
-            
-            covar = np.outer(emu_p1derr_interp, emu_p1derr_interp)
+            covar = np.outer(emu_p1derr, emu_p1derr)
             return emu_p1d_interp, covar
 
         else:
-            return emu_p1d_interp
+            return emu_p1d
 
     def emulate_arr_p1d_Mpc(
         self, emu_calls, k_Mpc, return_covar=False, z=None
@@ -842,21 +833,11 @@ class NNEmulator(base_emulator.BaseEmulator):
             )
 
             emu_p1ds = emu_p1ds.detach().cpu().numpy()
-
-            emu_p1ds = np.exp(emu_p1ds * self.yscalings**2)
-            #emu_p1ds = np.exp(emu_p1ds * (1/mF[:,None])**2)
             
-            for ii, emu_p1d in enumerate(emu_p1ds):
-
-                f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
-                                    emu_p1d,
-                                    bounds_error=False,
-                                    fill_value='extrapolate'
-                                   )
-            
-            
-                emu_p1d_interp[ii] = f_interp(k_Mpc[ii])
-            
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+                emu_p1ds = 10 ** (emu_p1ds) * self.yscalings
+            else:
+                emu_p1ds = np.exp( emu_p1ds * self.yscalings**2)
             
         if return_covar == True:
             
@@ -871,26 +852,23 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
             )
             emu_p1derrs = emu_p1derr.detach().cpu().numpy()
-            emu_p1derrs = (
-                10 ** (emu_p1ds) * np.log(10) * emu_p1derrs * self.yscalings
-            )
+            
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+                emu_p1derrs = (
+                    10 ** (emu_p1ds) * np.log(10) * emu_p1derrs * self.yscalings
+                )
+            else:
+                emu_p1derrs = np.exp(emu_p1ds * self.yscalings**2) * self.yscalings**2 * emu_p1derrs
+
             
             for ii, emu_p1derr in enumerate(emu_p1derrs):
-            
-                f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
-                                    emu_p1derr,
-                                    bounds_error=False,
-                                    fill_value='extrapolate'
-                                   )
-            
-                emu_p1derr_interp = f_interp(k_Mpc[ii])
+                            
+                covars[ii] = np.outer(emu_p1derr, emu_p1derr)
                 
-                covars[ii] = np.outer(emu_p1derr_interp, emu_p1derr_interp)
-                
-            return emu_p1d_interp, covars, emu_p1derr, emu_p1derr_interp
+            return emu_p1ds, covars
 
         else:
-            return emu_p1d_interp
+            return emu_p1ds
 
     def check_hull(self):
         training_points = [
