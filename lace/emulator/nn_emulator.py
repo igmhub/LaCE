@@ -267,8 +267,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.batch_size,
                 self.weight_decay,
                 self.amsgrad
-            ) = (4, 6, 800, 700, 5, 150, 6e-4,50, 5e-3,True)
-
+            ) = (4, 6, 800, 400, 5, 300, 1e-4,100, 1e-4,True)
+            
         elif emulator_label == "Cabayol23_extended":
             self.print(
                 r"Neural network emulating the optimal P1D of Gadget simulations "
@@ -509,6 +509,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         )  # sort the data by emulator parameters
         data = [list(data[i].values()) for i in range(len(self.training_data))]
         data = np.array(data)
+        
+        mF = data[:,2]
 
         self.paramLims = np.concatenate(
             (
@@ -533,13 +535,13 @@ class NNEmulator(base_emulator.BaseEmulator):
         ]
         training_label = np.array(training_label)
         
-        if self.emulator_label != 'Cabayol23':
+        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
             for ii, p1d in enumerate(training_label):
                 fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,p1d,deg=self.ndeg)
                 training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc)  
                 
-        if self.emulator_label != 'Cabayol23':
-            self.yscalings = np.median(training_label, axis = 0)
+        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+            self.yscalings = np.median(np.log(training_label))
         else:
             self.yscalings = np.median(training_label)
 
@@ -575,6 +577,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_data = (training_data - self.paramLims[:, 0]) / (
             self.paramLims[:, 1] - self.paramLims[:, 0]
         ) - 0.5
+
         training_data = torch.Tensor(training_data)
 
         return training_data
@@ -600,12 +603,12 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         training_label = np.array(training_label)
         
-        if self.emulator_label != 'Cabayol23':
+        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
             for ii, p1d in enumerate(training_label):
                 fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,p1d,deg=self.ndeg)
                 training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc)  
         
-        training_label = np.log10(training_label / self.yscalings)
+        training_label = np.log(training_label) / self.yscalings**2
         training_label = torch.Tensor(training_label)
 
         return training_label 
@@ -755,6 +758,8 @@ class NNEmulator(base_emulator.BaseEmulator):
             emu_call = (emu_call - self.paramLims[:, 0]) / (
                 self.paramLims[:, 1] - self.paramLims[:, 0]
             ) - 0.5
+            
+            mF = emu_call[2]
             emu_call = torch.Tensor(emu_call).unsqueeze(0)
 
             # ask emulator to emulate P1D (and its uncertainty)
@@ -769,7 +774,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
 
-            emu_p1d = 10 ** (emu_p1d) * self.yscalings
+            emu_p1d = np.exp( emu_p1d * self.yscalings**2)
             
             f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
                                 emu_p1d,
@@ -821,6 +826,8 @@ class NNEmulator(base_emulator.BaseEmulator):
             emu_calls = (emu_calls - self.paramLims[None, :, 0]) / (
                 self.paramLims[None, :, 1] - self.paramLims[None, :, 0]
             ) - 0.5
+            
+            mF = emu_calls[:,2]
             emu_calls = torch.Tensor(emu_calls)
             
             
@@ -836,7 +843,8 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             emu_p1ds = emu_p1ds.detach().cpu().numpy()
 
-            emu_p1ds = 10**emu_p1ds * self.yscalings
+            emu_p1ds = np.exp(emu_p1ds * self.yscalings**2)
+            #emu_p1ds = np.exp(emu_p1ds * (1/mF[:,None])**2)
             
             for ii, emu_p1d in enumerate(emu_p1ds):
 
@@ -879,7 +887,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 
                 covars[ii] = np.outer(emu_p1derr_interp, emu_p1derr_interp)
                 
-            return emu_p1d_interp, covars
+            return emu_p1d_interp, covars, emu_p1derr, emu_p1derr_interp
 
         else:
             return emu_p1d_interp
