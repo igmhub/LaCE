@@ -734,6 +734,8 @@ class NNEmulator(base_emulator.BaseEmulator):
 
     def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
         """Emulates the p1d_Mpc at a given set of k_Mpc values"""
+        
+        logk_Mpc = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
 
         if np.max(k_Mpc) > self.kmax_Mpc:
             warn(
@@ -766,7 +768,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
             emu_p1d = torch.sum(
                 coeffsPred[:, powers, None]
-                * (self.log_kMpc[None, :] ** powers[None, :, None]),
+                * (logk_Mpc[None, :] ** powers[None, :, None]),
                 axis=1,
             )
 
@@ -777,17 +779,6 @@ class NNEmulator(base_emulator.BaseEmulator):
             else:
                 emu_p1d = np.exp( emu_p1d * self.yscalings**2)
                 
-            f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
-                                emu_p1d,
-                                bounds_error=False,
-                                fill_value='extrapolate',
-                                kind="cubic",
-                               )
-            
-            emu_p1d_interp = f_interp(k_Mpc)
-            
-    
-
 
 
         if return_covar == True:
@@ -808,27 +799,19 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
             else:
                 emu_p1derr = np.exp(emu_p1d * self.yscalings**2) * self.yscalings**2 * emu_p1derr
-
-            f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
-                                emu_p1derr,
-                                bounds_error=False,
-                                fill_value='extrapolate',
-                                kind="cubic",
-                               )
-            
-            emu_p1derr_interp = f_interp(k_Mpc)
-
                 
             
-            covar = np.outer(emu_p1derr_interp, emu_p1derr_interp)
-            return emu_p1d_interp, covar
+            covar = np.outer(emu_p1derr, emu_p1derr)
+            return emu_p1d, covar
 
         else:
-            return emu_p1d_interp
+            return emu_p1d
 
     def emulate_arr_p1d_Mpc(
         self, emu_calls, k_Mpc, return_covar=False, z=None
     ):
+        
+        logk_Mpc = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
         emu_p1ds= np.zeros(shape=(len(emu_calls), k_Mpc.shape[1]))
         emu_p1d_interp= np.zeros(shape=(len(emu_calls), k_Mpc.shape[1]))
         covars= np.zeros(shape=(len(emu_calls), k_Mpc.shape[1], k_Mpc.shape[1]))
@@ -845,45 +828,23 @@ class NNEmulator(base_emulator.BaseEmulator):
             coeffsPred, coeffs_logerr = self.nn(emu_calls.to(self.device))
 
             powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
+
             emu_p1ds = torch.sum(
                 coeffsPred[:, :, None]
-                * (self.log_kMpc[None, None, :] ** powers[None, :, None]),
+                * (logk_Mpc[:, None, :] ** powers[None, :, None]),
                 axis=1,
             )
+            
             emu_p1ds = emu_p1ds.detach().cpu().numpy()
             
-            """coeffsPred = coeffsPred.detach().cpu().numpy()
-            coeffsPred = np.flip(coeffsPred, axis=1)
-            
-            for i in range(len(coeffsPred)):
-                poly = np.poly1d(coeffsPred[i])
-                emu_p1ds[i] = poly(self.log_kMpc.detach().cpu().numpy())"""
             
             if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
                 emu_p1ds = 10 ** (emu_p1ds) * self.yscalings
             else:
                 emu_p1ds = np.exp( emu_p1ds * self.yscalings**2)
                 
-        self.emu_nosmoothing=emu_p1ds.copy()
-                
-        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
-            for ii, emu_p1d in enumerate(emu_p1ds):
-                fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,emu_p1d,deg=self.ndeg)
-                emu_p1ds[ii] = fit_p1d.P_Mpc(self.k_Mpc) 
-                
-        self.emu_smoothing=emu_p1ds
-        for ii, emu_p1d in enumerate(emu_p1ds):
+        
 
-            f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
-                                emu_p1d,
-                                bounds_error=False,
-                                kind="cubic",
-                                fill_value='extrapolate'
-                               )
-
-
-            emu_p1d_interp[ii] = f_interp(k_Mpc[ii])   
-                
         
 
             
@@ -892,10 +853,11 @@ class NNEmulator(base_emulator.BaseEmulator):
             coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
             coeffserr = torch.exp(coeffs_logerr) ** 2
             powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(self.device)
+            
             emu_p1derr = torch.sqrt(
                 torch.sum(
                     coeffserr[:, :, None]
-                    * (self.log_kMpc[None, None, :] ** powers_err[None, :, None]),
+                    * (logk_Mpc[:, None, :] ** powers_err[None, :, None]),
                     axis=1,
                 )
             )
@@ -909,23 +871,13 @@ class NNEmulator(base_emulator.BaseEmulator):
                 emu_p1derrs = np.exp(emu_p1ds * self.yscalings**2) * self.yscalings**2 * emu_p1derrs
 
             for ii, emu_p1derr in enumerate(emu_p1derrs):
-                
-                f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
-                                    emu_p1derr,
-                                    bounds_error=False,
-                                    fill_value='extrapolate',
-                                    kind="cubic",
-                                   )
-            
-            
-                emu_p1derr_interp = f_interp(k_Mpc[ii])  
                             
-                covars[ii] = np.outer(emu_p1derr_interp, emu_p1derr_interp)
+                covars[ii] = np.outer(emu_p1derr, emu_p1derr)
                 
-            return emu_p1d_interp, covars
+            return emu_p1ds, covars
 
         else:
-            return emu_p1d_interp
+            return emu_p1ds
 
     def check_hull(self):
         training_points = [
