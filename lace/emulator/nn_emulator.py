@@ -237,7 +237,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.weight_decay,
                 self.batch_size,
                 self.amsgrad
-            ) = (4, 5, 310, 300, 4, 150, 7e-4,9.6e-3,100,True)
+            ) = (4, 5, 510, 500, 5, 250, 7e-4,9.6e-3,100,True)
 
         elif emulator_label == "Nyx_v0":
             self.print(
@@ -510,8 +510,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         data = [list(data[i].values()) for i in range(len(self.training_data))]
         data = np.array(data)
         
-        mF = data[:,2]
-
         self.paramLims = np.concatenate(
             (
                 data.min(0).reshape(len(data.min(0)), 1),
@@ -535,10 +533,14 @@ class NNEmulator(base_emulator.BaseEmulator):
         ]
         training_label = np.array(training_label)
         
+        self.training_label_nosmooth=training_label.copy()
+        
         if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
             for ii, p1d in enumerate(training_label):
                 fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,p1d,deg=self.ndeg)
-                training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc)  
+                training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc)
+                
+        self.training_label_smooth=training_label
                 
         if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
             self.yscalings = np.median(np.log(training_label))
@@ -756,7 +758,6 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.paramLims[:, 1] - self.paramLims[:, 0]
             ) - 0.5
             
-            mF = emu_call[2]
             emu_call = torch.Tensor(emu_call).unsqueeze(0)
 
             # ask emulator to emulate P1D (and its uncertainty)
@@ -779,10 +780,13 @@ class NNEmulator(base_emulator.BaseEmulator):
             f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
                                 emu_p1d,
                                 bounds_error=False,
-                                fill_value='extrapolate'
+                                fill_value='extrapolate',
+                                kind="cubic",
                                )
             
             emu_p1d_interp = f_interp(k_Mpc)
+            
+    
 
 
 
@@ -808,7 +812,8 @@ class NNEmulator(base_emulator.BaseEmulator):
             f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
                                 emu_p1derr,
                                 bounds_error=False,
-                                fill_value='extrapolate'
+                                fill_value='extrapolate',
+                                kind="cubic",
                                )
             
             emu_p1derr_interp = f_interp(k_Mpc)
@@ -824,6 +829,7 @@ class NNEmulator(base_emulator.BaseEmulator):
     def emulate_arr_p1d_Mpc(
         self, emu_calls, k_Mpc, return_covar=False, z=None
     ):
+        emu_p1ds= np.zeros(shape=(len(emu_calls), k_Mpc.shape[1]))
         emu_p1d_interp= np.zeros(shape=(len(emu_calls), k_Mpc.shape[1]))
         covars= np.zeros(shape=(len(emu_calls), k_Mpc.shape[1], k_Mpc.shape[1]))
 
@@ -844,25 +850,41 @@ class NNEmulator(base_emulator.BaseEmulator):
                 * (self.log_kMpc[None, None, :] ** powers[None, :, None]),
                 axis=1,
             )
-
             emu_p1ds = emu_p1ds.detach().cpu().numpy()
+            
+            """coeffsPred = coeffsPred.detach().cpu().numpy()
+            coeffsPred = np.flip(coeffsPred, axis=1)
+            
+            for i in range(len(coeffsPred)):
+                poly = np.poly1d(coeffsPred[i])
+                emu_p1ds[i] = poly(self.log_kMpc.detach().cpu().numpy())"""
             
             if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
                 emu_p1ds = 10 ** (emu_p1ds) * self.yscalings
             else:
                 emu_p1ds = np.exp( emu_p1ds * self.yscalings**2)
                 
+        self.emu_nosmoothing=emu_p1ds.copy()
                 
+        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
             for ii, emu_p1d in enumerate(emu_p1ds):
+                fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,emu_p1d,deg=self.ndeg)
+                emu_p1ds[ii] = fit_p1d.P_Mpc(self.k_Mpc) 
+                
+        self.emu_smoothing=emu_p1ds
+        for ii, emu_p1d in enumerate(emu_p1ds):
 
-                f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
-                                    emu_p1d,
-                                    bounds_error=False,
-                                    fill_value='extrapolate'
-                                   )
-            
-            
-                emu_p1d_interp[ii] = f_interp(k_Mpc[ii])                
+            f_interp = interp1d(np.round(k_Mpc[ii],4),
+                                emu_p1d,
+                                bounds_error=False,
+                                kind="cubic",
+                                fill_value='extrapolate'
+                               )
+
+
+            emu_p1d_interp[ii] = f_interp(k_Mpc[ii])   
+                
+        
 
             
         if return_covar == True:
@@ -891,7 +913,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                 f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
                                     emu_p1derr,
                                     bounds_error=False,
-                                    fill_value='extrapolate'
+                                    fill_value='extrapolate',
+                                    kind="cubic",
                                    )
             
             
