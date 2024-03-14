@@ -874,7 +874,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.emu_smoothing=emu_p1ds
         for ii, emu_p1d in enumerate(emu_p1ds):
 
-            f_interp = interp1d(np.round(k_Mpc[ii],4),
+            f_interp = interp1d(np.round(self.k_Mpc.numpy(),4),
                                 emu_p1d,
                                 bounds_error=False,
                                 kind="cubic",
