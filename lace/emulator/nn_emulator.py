@@ -264,10 +264,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.nhidden,
                 self.max_neurons,
                 self.lr0,
-                self.batch_size,
                 self.weight_decay,
+                self.batch_size,
                 self.amsgrad
-            ) = (4, 6, 800, 400, 5, 300, 1e-4,100, 1e-4,True)
+            ) = (4, 6, 510, 500, 5, 250, 7e-4,9.6e-3,100,True)
             
         elif emulator_label == "Cabayol23_extended":
             self.print(
