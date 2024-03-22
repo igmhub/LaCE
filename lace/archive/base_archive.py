@@ -88,7 +88,6 @@ class BaseArchive(object):
 
         # set loop over simulations
         if average == "both":
-            tot_nsam = n_phases * n_axes
             loop = list(
                 product(
                     np.unique(self.sim_label),
@@ -97,7 +96,6 @@ class BaseArchive(object):
                 )
             )
         elif average == "phases":
-            tot_nsam = n_phases
             loop = list(
                 product(
                     np.unique(self.sim_label),
@@ -107,7 +105,6 @@ class BaseArchive(object):
                 )
             )
         elif average == "axes":
-            tot_nsam = n_axes
             loop = list(
                 product(
                     np.unique(self.sim_label),
@@ -158,7 +155,6 @@ class BaseArchive(object):
                 dict_av["ind_axis"] = "average"
                 dict_av["ind_phase"] = ind_phase
 
-            print(ind_merge, drop_axis, self.ind_axis[ind_merge])
             # if no simulations fulfilling this criteria
             if ind_merge.shape[0] == 0:
                 continue
@@ -179,7 +175,7 @@ class BaseArchive(object):
                 else:
                     mean = 0
 
-                for imerge in range(tot_nsam):
+                for imerge in range(len(ind_merge)):
                     if (key == "p1d_Mpc") | (key == "p3d_Mpc"):
                         mean += (
                             self.data[ind_merge[imerge]][key]
@@ -189,9 +185,9 @@ class BaseArchive(object):
                         mean += self.data[ind_merge[imerge]][key]
 
                 if (key == "p1d_Mpc") | (key == "p3d_Mpc"):
-                    dict_av[key] = mean / dict_av["mF"] ** 2 / tot_nsam
+                    dict_av[key] = mean / dict_av["mF"] ** 2 / len(ind_merge)
                 else:
-                    dict_av[key] = mean / tot_nsam
+                    dict_av[key] = mean / len(ind_merge)
 
             arch_av.append(dict_av)
 
@@ -360,6 +356,7 @@ class BaseArchive(object):
                     & (
                         (arch_av[ii]["sim_label"] not in drop_sim)
                         & (arch_av[ii]["z"] not in drop_z)
+                        & (arch_av[ii]["ind_axis"] not in drop_axis)
                     )
                     & (
                         (
