@@ -95,6 +95,14 @@ class GadgetArchive(BaseArchive):
         # list all redshifts
         self.list_sim_redshifts = np.arange(2, 4.6, 0.25)
 
+        # list all axes
+        if postproc == "Pedersen21":
+            self.list_sim_axes = [0]
+        elif postproc == "Cabayol23":
+            self.list_sim_axes = [0, 1, 2]
+        elif postproc == "768_768":
+            self.list_sim_axes = [0, 1, 2]
+
         # get relevant flags for post-processing
         self._set_info_postproc(postproc)
 

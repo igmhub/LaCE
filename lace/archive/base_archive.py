@@ -46,7 +46,7 @@ class BaseArchive(object):
 
             setattr(self, label, np.array(prop))
 
-    def _average_over_samples(self, average="both"):
+    def _average_over_samples(self, average="both", drop_axis=None):
         """
         Compute averages over either phases, axes, or both.
 
@@ -128,6 +128,7 @@ class BaseArchive(object):
                     (self.sim_label == sim_label)
                     & (self.ind_rescaling == ind_rescaling)
                     & (self.ind_snap == ind_snap)
+                    & (self.ind_axis not in drop_axis)
                 )[:, 0]
 
                 dict_av["ind_axis"] = "average"
@@ -139,6 +140,7 @@ class BaseArchive(object):
                     & (self.ind_rescaling == ind_rescaling)
                     & (self.ind_snap == ind_snap)
                     & (self.ind_axis == ind_axis)
+                    & (self.ind_axis not in drop_axis)
                 )[:, 0]
 
                 dict_av["ind_axis"] = ind_axis
@@ -150,6 +152,7 @@ class BaseArchive(object):
                     & (self.ind_rescaling == ind_rescaling)
                     & (self.ind_snap == ind_snap)
                     & (self.ind_phase == ind_phase)
+                    & (self.ind_axis not in drop_axis)
                 )[:, 0]
 
                 dict_av["ind_axis"] = "average"
@@ -201,6 +204,7 @@ class BaseArchive(object):
         drop_sim=None,
         drop_z=None,
         drop_snap=None,
+        drop_axis=None,
         z_min=None,
         z_max=None,
         verbose=False,
@@ -310,6 +314,18 @@ class BaseArchive(object):
                 msg = f"Invalid drop_z value(s). Available options:"
                 raise ExceptionList(msg, self.list_sim_redshifts.astype("str"))
 
+        if isinstance(drop_axis, (int, type(None), list)) == False:
+            raise TypeError("drop_sim must be a number, list or None")
+        if isinstance(drop_axis, list) == False:
+            drop_axis = [drop_axis]
+        if drop_axis[0] is not None:
+            invalid_axis = [
+                sim for sim in drop_axis if sim not in self.list_sim_axes
+            ]
+            if invalid_zs:
+                msg = f"Invalid drop_axis value(s). Available options:"
+                raise ExceptionList(msg, self.list_sim_axes.astype("str"))
+
         if isinstance(z_max, (int, float, type(None))) == False:
             raise TypeError("z_max must be a number or None")
         if z_max is None:
@@ -329,7 +345,9 @@ class BaseArchive(object):
             if operation == "individual":
                 arch_av = self.data
             else:
-                arch_av = self._average_over_samples(average=operation)
+                arch_av = self._average_over_samples(
+                    average=operation, drop_axis=drop_axis
+                )
 
             for ii in range(len(arch_av)):
                 list_keys = list(arch_av[ii].keys())
@@ -393,6 +411,7 @@ class BaseArchive(object):
         ind_rescaling=None,
         z_min=None,
         z_max=None,
+        drop_axis=None,
         emu_params=None,
         verbose=False,
     ):
@@ -437,6 +456,18 @@ class BaseArchive(object):
                 msg = "Invalid ind_rescaling value. Available options:"
                 raise ExceptionList(msg, self.scalings_avail)
 
+        if isinstance(drop_axis, (int, type(None), list)) == False:
+            raise TypeError("drop_sim must be a number, list or None")
+        if isinstance(drop_axis, list) == False:
+            drop_axis = [drop_axis]
+        if drop_axis[0] is not None:
+            invalid_axis = [
+                sim for sim in drop_axis if sim not in self.list_sim_axes
+            ]
+            if invalid_zs:
+                msg = f"Invalid drop_axis value(s). Available options:"
+                raise ExceptionList(msg, self.list_sim_axes.astype("str"))
+
         if isinstance(z_max, (int, float, type(None))) == False:
             raise TypeError("z_max must be a number or None")
         if z_max is None:
@@ -455,7 +486,9 @@ class BaseArchive(object):
         testing_data = []
         # we use the average of axes (and phases is available), but
         # could implement other options in the future
-        arch_av = self._average_over_samples(average="both")
+        arch_av = self._average_over_samples(
+            average="both", drop_axis=drop_axis
+        )
 
         key_power = ["k_Mpc", "p1d_Mpc"]
         for ii in range(len(arch_av)):
