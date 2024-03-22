@@ -128,7 +128,7 @@ class BaseArchive(object):
                     (self.sim_label == sim_label)
                     & (self.ind_rescaling == ind_rescaling)
                     & (self.ind_snap == ind_snap)
-                    & (self.ind_axis not in drop_axis)
+                    & ~np.isin(self.ind_axis, drop_axis)
                 )[:, 0]
 
                 dict_av["ind_axis"] = "average"
@@ -140,7 +140,7 @@ class BaseArchive(object):
                     & (self.ind_rescaling == ind_rescaling)
                     & (self.ind_snap == ind_snap)
                     & (self.ind_axis == ind_axis)
-                    & (self.ind_axis not in drop_axis)
+                    & ~np.isin(self.ind_axis, drop_axis)
                 )[:, 0]
 
                 dict_av["ind_axis"] = ind_axis
@@ -152,12 +152,13 @@ class BaseArchive(object):
                     & (self.ind_rescaling == ind_rescaling)
                     & (self.ind_snap == ind_snap)
                     & (self.ind_phase == ind_phase)
-                    & (self.ind_axis not in drop_axis)
+                    & ~np.isin(self.ind_axis, drop_axis)
                 )[:, 0]
 
                 dict_av["ind_axis"] = "average"
                 dict_av["ind_phase"] = ind_phase
 
+            print(ind_merge, drop_axis, self.ind_axis[ind_merge])
             # if no simulations fulfilling this criteria
             if ind_merge.shape[0] == 0:
                 continue
@@ -322,9 +323,11 @@ class BaseArchive(object):
             invalid_axis = [
                 sim for sim in drop_axis if sim not in self.list_sim_axes
             ]
-            if invalid_zs:
+            if invalid_axis:
                 msg = f"Invalid drop_axis value(s). Available options:"
-                raise ExceptionList(msg, self.list_sim_axes.astype("str"))
+                raise ExceptionList(
+                    msg, np.array(self.list_sim_axes).astype("str")
+                )
 
         if isinstance(z_max, (int, float, type(None))) == False:
             raise TypeError("z_max must be a number or None")
