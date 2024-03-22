@@ -6,6 +6,7 @@ import copy
 import random
 import time
 from warnings import warn
+import json
 
 # Torch related modules
 import torch
@@ -63,6 +64,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         batch_size=100,
         weight_decay=1e-4,
         amsgrad=True,
+        weighted_distances=False
     ):
         # store emulator settings
         self.emulator_label = emulator_label
@@ -86,6 +88,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.drop_sim = drop_sim
         self.drop_z = drop_z
         self.weighted_emulator = weighted_emulator
+        self.weighted_distances=weighted_distances
         self.nhidden = nhidden
         self.print = fprint
         self.lr0 = lr0
@@ -98,6 +101,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         torch.manual_seed(seed)
         np.random.seed(seed)
         random.seed(seed)
+        
+        path_to_distances = '/global/u1/l/lcabayol/P1D/LaCE/data/utils/distances_nyx.json'
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23", "Nyx23_Oct2023"]
@@ -267,7 +272,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.weight_decay,
                 self.batch_size,
                 self.amsgrad
-            ) = (4, 6, 510, 500, 5, 250, 7e-4,9.6e-3,100,True)
+            ) = (4, 6, 800, 700, 5, 150, 5e-5,1e-4,100,False)
             
         elif emulator_label == "Cabayol23_extended":
             self.print(
@@ -374,7 +379,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
 
         self.kmin_Mpc = self.training_data[0]["k_Mpc"][1]
-
+            
         # decide whether to train emulator or read from file
         if train == False:
             if self.model_path is None:
@@ -439,6 +444,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             self.log_kMpc = log_kMpc_train
 
         else:
+            self._add_distance2center_2archive(path_to_distances)
             self.train()
 
             if self.save_path is not None:
@@ -465,6 +471,24 @@ class NNEmulator(base_emulator.BaseEmulator):
                 sorted_d
             )  # update the original dictionary with the sorted dictionary
         return dct
+    
+    def _add_distance2center_2archive(self,path_to_distances):
+        # Open and read the JSON file
+        with open(path_to_distances, 'r') as f:
+            distances = json.load(f)
+        for snap in self.training_data:
+            sim_label = snap['sim_label']
+            d = distances[sim_label]
+            d = np.nan_to_num(x=d,nan=1)
+            if self.weighted_distances:
+                if d<0.5:
+                    snap['distance_to_center'] = 2
+                else:
+                    snap['distance_to_center'] = 1
+                    
+            else:
+                snap['distance_to_center'] = 1
+
 
     def _obtain_sim_params(self):
         """
@@ -532,17 +556,12 @@ class NNEmulator(base_emulator.BaseEmulator):
             for i in range(len(self.training_data))
         ]
         training_label = np.array(training_label)
-        
-        self.training_label_nosmooth=training_label.copy()
-        
-        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+                
+        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended', 'Nyx_v0']:
             for ii, p1d in enumerate(training_label):
                 fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,p1d,deg=self.ndeg)
                 training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc)
-                
-        self.training_label_smooth=training_label
-                
-        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+                                
             self.yscalings = np.median(np.log(training_label))
         else:
             self.yscalings = np.median(training_label)
@@ -605,12 +624,15 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         training_label = np.array(training_label)
         
-        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended', 'Nyx_v0']:
             for ii, p1d in enumerate(training_label):
                 fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,p1d,deg=self.ndeg)
                 training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc)  
+            training_label = np.log(training_label) / self.yscalings**2
+        else:    
+            training_label = np.log10(training_label / self.yscalings)
         
-        training_label = np.log(training_label) / self.yscalings**2
+        
         training_label = torch.Tensor(training_label)
 
         return training_label 
@@ -628,6 +650,11 @@ class NNEmulator(base_emulator.BaseEmulator):
             )
             w[self.k_Mpc > 4] = torch.exp(-exponential_values)
         return w
+    
+    def _set_distances(self):
+        w = [
+            d['distance_to_center'] for d in self.training_data]        
+        return w
 
     def train(self):
         """
@@ -642,6 +669,9 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         loss_function_weights = self._set_weights()
         loss_function_weights = loss_function_weights.to(self.device)
+        
+        distance_weights = self._set_distances()
+        distance_weights = torch.Tensor(distance_weights).to(self.device)
 
         log_kMpc_train = torch.log10(kMpc_train).to(self.device)
 
@@ -659,10 +689,10 @@ class NNEmulator(base_emulator.BaseEmulator):
         )  #
         scheduler = lr_scheduler.StepLR(optimizer, self.step_size, gamma=0.1)
 
-        training_data = self._get_training_data_nn()
+        training_data = self._get_training_data_nn()    
         training_label = self._get_training_pd1_nn()
 
-        trainig_dataset = TensorDataset(training_data, training_label)
+        trainig_dataset = TensorDataset(training_data, training_label, distance_weights)
         loader_train = DataLoader(trainig_dataset, batch_size=self.batch_size, shuffle=True)
 
         self.nn.to(self.device)
@@ -670,7 +700,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         t0 = time.time()
 
         for epoch in range(self.nepochs):
-            for datain, p1D_true in loader_train:
+            for datain, p1D_true, distance_weights in loader_train:
                 optimizer.zero_grad()
 
                 coeffsPred, coeffs_logerr = self.nn(datain.to(self.device))  #
@@ -704,6 +734,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                 log_prob = loss_function_weights[None, :] * log_prob
 
                 loss = torch.nansum(log_prob, 1)
+                
+                loss = 1 / distance_weights**2 * loss
+                
                 loss = torch.nanmean(loss, 0)
 
                 loss.backward()
@@ -774,7 +807,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
             
-            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended', 'Nyx_v0']:
                 emu_p1d = 10 ** (emu_p1d) * self.yscalings
             else:
                 emu_p1d = np.exp( emu_p1d * self.yscalings**2)
@@ -793,7 +826,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
             )
             emu_p1derr = emu_p1derr.detach().cpu().numpy().flatten()
-            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended','Nyx_v0']:
                 emu_p1derr = (
                     10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
                 )
@@ -838,7 +871,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             emu_p1ds = emu_p1ds.detach().cpu().numpy()
             
             
-            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended', 'Nyx_v0']:
                 emu_p1ds = 10 ** (emu_p1ds) * self.yscalings
             else:
                 emu_p1ds = np.exp( emu_p1ds * self.yscalings**2)
@@ -863,7 +896,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             )
             emu_p1derrs = emu_p1derr.detach().cpu().numpy()
             
-            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended', 'Nyx_v0']:
                 emu_p1derrs = (
                     10 ** (emu_p1ds) * np.log(10) * emu_p1derrs * self.yscalings
                 )
