@@ -54,6 +54,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         train=True,
         save_path=None,
         model_path=None,
+        nyx_file=None,
         weighted_emulator=True,
         nhidden=5,
         max_neurons=50,
@@ -119,7 +120,9 @@ class NNEmulator(base_emulator.BaseEmulator):
             if training_set in ["Pedersen21", "Cabayol23"]:
                 archive = gadget_archive.GadgetArchive(postproc=training_set)
             elif training_set[:5] in ["Nyx23"]:
-                archive = nyx_archive.NyxArchive(nyx_version=training_set[6:])
+                archive = nyx_archive.NyxArchive(
+                    nyx_version=training_set[6:], nyx_file=nyx_file
+                )
 
             self.training_data = archive.get_training_data(
                 emu_params=self.emu_params, drop_sim=self.drop_sim

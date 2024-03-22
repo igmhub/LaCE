@@ -19,6 +19,10 @@
 # In this notebook, we explain how to use the LaCE bookkeeping
 
 # %%
+# %load_ext autoreload
+# %autoreload 2
+
+
 from lace.archive.gadget_archive import GadgetArchive
 from lace.archive.nyx_archive import NyxArchive
 
@@ -91,6 +95,17 @@ n_av_phases = 30 * 1 * 3 * 5 * 11
 n_av_axes   = 30 * 2 * 1 * 5 * 11
 n_av_all    = 30 * 1 * 1 * 5 * 11
 print(len(archive_training), n_av_phases + n_av_axes + n_av_all)
+
+# %%
+import numpy as np
+
+# %%
+a = np.arange(10)
+b = [5]
+mask = ~np.isin(a, b)
+
+# %%
+mask
 
 # %% [markdown]
 # #### Nyx
@@ -192,6 +207,49 @@ for ii in range(3):
     archive_testing = archive.get_testing_data('mpg_'+str(ii))
     nelem = 1 * 1 * 1 * 1 * 11
     print(len(archive_testing), nelem)
+
+# %% [markdown]
+# #### Multiple sims
+
+# %%
+archive_training = archive.get_training_data(emu_params, drop_sim=['mpg_0', 'mpg_1'])
+# hypercube * nphases * naxes * nscalings * nsnaps
+nelem = (30-2) * 2 * 3 * 5 * 11
+print(len(archive_training), nelem)
+
+# %% [markdown]
+# #### Or redshifts
+
+# %%
+archive_training = archive.get_training_data(emu_params, drop_z=[2., 3.])
+# hypercube * nphases * naxes * nscalings * nsnaps
+nelem = (30) * 2 * 3 * 5 * (11-2)
+print(len(archive_training), nelem)
+
+# %% [markdown]
+# #### Or snapshots
+
+# %%
+archive_training = archive.get_training_data(
+    emu_params, 
+    drop_snap=["mpg_0_2.0", "mpg_1_2.25"]
+)
+# hypercube * nphases * naxes * nscalings * nsnaps - snaps
+nelem = 30 * 2 * 3 * 5 * 11 - 2 * 5 * 2 * 3
+print(len(archive_training), nelem)
+
+# %% [markdown]
+# #### Or axes
+
+# %%
+archive_training = archive.get_training_data(
+    emu_params, 
+    drop_axis=[0,1],
+    average="individual"
+)
+# hypercube * nphases * naxes * nscalings * nsnaps
+nelem = 30 * 2 * 1 * 5 * 11
+print(len(archive_training), nelem)
 
 # %% [markdown]
 # #### Nyx
