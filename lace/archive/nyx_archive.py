@@ -66,6 +66,8 @@ class NyxArchive(BaseArchive):
         self.list_sim = self.list_sim_cube + self.list_sim_test
         ## done set simulation list
 
+        self.list_sim_axes = [0, 1, 2]
+
         # get relevant flags for post-processing
         self._set_info_sim(nfiles)
 
