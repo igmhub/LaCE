@@ -64,7 +64,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         batch_size=100,
         weight_decay=1e-4,
         amsgrad=True,
-        weighted_distances=False
+        z_max=4.6
     ):
         # store emulator settings
         self.emulator_label = emulator_label
@@ -87,8 +87,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         # training data settings
         self.drop_sim = drop_sim
         self.drop_z = drop_z
+        self.z_max=z_max
         self.weighted_emulator = weighted_emulator
-        self.weighted_distances=weighted_distances
         self.nhidden = nhidden
         self.print = fprint
         self.lr0 = lr0
@@ -96,13 +96,13 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.batch_size=batch_size
         self.weight_decay=weight_decay
         self.amsgrad=True
+
         
 
         torch.manual_seed(seed)
         np.random.seed(seed)
         random.seed(seed)
         
-        path_to_distances = '/global/u1/l/lcabayol/P1D/LaCE/data/utils/distances_nyx.json'
 
         # check input #
         training_set_all = ["Pedersen21", "Cabayol23", "Nyx23_Oct2023"]
@@ -110,6 +110,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             "Cabayol23",
             "Cabayol23+",
             "Nyx_v0",
+            "Nyx_v1",
             "Cabayol23_extended",
             "Nyx_v0_extended",
             "Cabayol23+_extended"
@@ -136,9 +137,12 @@ class NNEmulator(base_emulator.BaseEmulator):
                 archive = nyx_archive.NyxArchive(nyx_version=training_set[6:])
 
             self.training_data = archive.get_training_data(
-                emu_params=self.emu_params, drop_sim=self.drop_sim
+                emu_params=self.emu_params, 
+                drop_sim=self.drop_sim,
+                z_max=self.z_max
             )
 
+            
         elif (training_set is None) & (archive is not None):
             self.print(
                 "Use custom archive provided by the user to train emulator"
@@ -147,7 +151,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                 emu_params=self.emu_params,
                 drop_sim=self.drop_sim,
                 drop_z=self.drop_z,
+                z_max=self.z_max
+
             )
+            
 
         elif (training_set is not None) & (archive is not None):
             if train:
@@ -162,8 +169,13 @@ class NNEmulator(base_emulator.BaseEmulator):
                     emu_params=self.emu_params,
                     drop_sim=self.drop_sim,
                     drop_z=self.drop_z,
+                    z_max=self.z_max
+
                 )
 
+        self.training_data_all =  archive.get_training_data(
+                emu_params=self.emu_params)
+        
         self.print(f"Samples in training_set: {len(self.training_data)}")
         self.kp_Mpc = archive.kp_Mpc
 
@@ -272,7 +284,40 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.weight_decay,
                 self.batch_size,
                 self.amsgrad
-            ) = (4, 6, 800, 700, 5, 150, 5e-5,1e-4,100,False)
+            ) = (4, 6, 800, 700, 5, 150, 5e-5,1e-4,100,True)
+            
+            
+        elif emulator_label == "Nyx_v1":
+            self.print(
+                r"Neural network emulating the optimal P1D of Nyx simulations "
+                + "fitting coefficients to a 6th degree polynomial. It "
+                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
+                + "passed to the emulator will be overwritten to match "
+                + "these ones"
+            )
+            self.emu_params = [
+                "Delta2_p",
+                "n_p",
+                "omega_m",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "kF_Mpc",
+            ]
+            self.emu_type = "polyfit"
+            (
+                self.kmax_Mpc,
+                self.ndeg,
+                self.nepochs,
+                self.step_size,
+                self.nhidden,
+                self.max_neurons,
+                self.lr0,
+                self.weight_decay,
+                self.batch_size,
+                self.amsgrad
+            ) = (4, 5, 600, 500, 6, 400, 2.5e-4,8e-3,100,True)
+            
             
         elif emulator_label == "Cabayol23_extended":
             self.print(
@@ -441,10 +486,10 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             kMpc_train = self._obtain_sim_params()
             log_kMpc_train = torch.log10(kMpc_train).to(self.device)
+
             self.log_kMpc = log_kMpc_train
 
         else:
-            self._add_distance2center_2archive(path_to_distances)
             self.train()
 
             if self.save_path is not None:
@@ -471,23 +516,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 sorted_d
             )  # update the original dictionary with the sorted dictionary
         return dct
-    
-    def _add_distance2center_2archive(self,path_to_distances):
-        # Open and read the JSON file
-        with open(path_to_distances, 'r') as f:
-            distances = json.load(f)
-        for snap in self.training_data:
-            sim_label = snap['sim_label']
-            d = distances[sim_label]
-            d = np.nan_to_num(x=d,nan=1)
-            if self.weighted_distances:
-                if d<0.5:
-                    snap['distance_to_center'] = 2
-                else:
-                    snap['distance_to_center'] = 1
-                    
-            else:
-                snap['distance_to_center'] = 1
+
 
 
     def _obtain_sim_params(self):
@@ -507,31 +536,48 @@ class NNEmulator(base_emulator.BaseEmulator):
             for i in range(len(self.training_data))
         ]
 
-        k_Mpc_train = self.training_data[0]["k_Mpc"][self.k_mask[0]]
+        k_Mpc_train = [
+            self.training_data[i]["k_Mpc"][self.k_mask[i]]
+                        for i in range(len(self.training_data))]
         k_Mpc_train = torch.Tensor(k_Mpc_train)
-        self.k_Mpc = np.round(k_Mpc_train,4) 
+        self.k_Mpc = k_Mpc_train
         
-        Nk = len(k_Mpc_train)
+        Nk = len(k_Mpc_train[0])
         self.Nk = Nk
+        
+        
+        data = []
+        for ii in range(len(self.training_data_all)):
+            data_dict = {} 
+            for jj, param in enumerate(self.emu_params):
+                try:
+                    value = self.training_data_all[ii]["cosmo_params"][param]
+                except:
+                    value = self.training_data_all[ii][param]
+                data_dict[param] = value
+            data.append(data_dict)
+            
+            
 
-        data = [
+        """data = [
             {
                 key: value
-                for key, value in self.training_data[i].items()
+                for key, value in self.training_data_all[i].items()
                 if key in self.emu_params
             }
-            for i in range(len(self.training_data))
+            for i in range(len(self.training_data_all))
         ]
 
         # Now, if 'A_UVB' is in emu_params, add it to each entry
         if "A_UVB" in self.emu_params:
             for i, d in enumerate(data):
-                d["A_UVB"] = self.training_data[i]["cosmo_params"]["A_UVB"]
+                d["A_UVB"] = self.training_data_all[i]["cosmo_params"]["A_UVB"]"""
+            
 
         data = self._sort_dict(
-            data, self.emu_params
-        )  # sort the data by emulator parameters
-        data = [list(data[i].values()) for i in range(len(self.training_data))]
+            data, self.emu_params)
+        # sort the data by emulator parameters
+        data = [list(data[i].values()) for i in range(len(self.training_data_all))]
         data = np.array(data)
         
         self.paramLims = np.concatenate(
@@ -557,11 +603,10 @@ class NNEmulator(base_emulator.BaseEmulator):
         ]
         training_label = np.array(training_label)
                 
-        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended', 'Nyx_v0']:
+        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
             for ii, p1d in enumerate(training_label):
-                fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,p1d,deg=self.ndeg)
-                training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc)
-                                
+                fit_p1d = poly_p1d.PolyP1D(self.k_Mpc[ii],p1d,deg=self.ndeg)
+                training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc[ii])               
             self.yscalings = np.median(np.log(training_label))
         else:
             self.yscalings = np.median(training_label)
@@ -574,7 +619,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         Sorts the training data according to self.emu_params and scales the data based on self.paramLims
         Finally, it returns the training data as a torch.Tensor object.
         """
-        training_data = [
+        """training_data = [
             {
                 key: value
                 for key, value in self.training_data[i].items()
@@ -586,7 +631,18 @@ class NNEmulator(base_emulator.BaseEmulator):
         # Now, if 'A_UVB' is in emu_params, add it to each entry
         if "A_UVB" in self.emu_params:
             for i, data in enumerate(training_data):
-                data["A_UVB"] = self.training_data[i]["cosmo_params"]["A_UVB"]
+                data["A_UVB"] = self.training_data[i]["cosmo_params"]["A_UVB"]"""
+        
+        training_data = []
+        for ii in range(len(self.training_data)):
+            data_dict = {} 
+            for jj, param in enumerate(self.emu_params):
+                try:
+                    value = self.training_data[ii]["cosmo_params"][param]
+                except:
+                    value = self.training_data[ii][param]
+                data_dict[param] = value
+            training_data.append(data_dict)
 
         training_data = self._sort_dict(training_data, self.emu_params)
         training_data = [
@@ -624,11 +680,12 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         training_label = np.array(training_label)
         
-        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended', 'Nyx_v0']:
+        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
             for ii, p1d in enumerate(training_label):
-                fit_p1d = poly_p1d.PolyP1D(self.k_Mpc,p1d,deg=self.ndeg)
-                training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc)  
+                fit_p1d = poly_p1d.PolyP1D(self.k_Mpc[ii],p1d,deg=self.ndeg)
+                training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc[ii])  
             training_label = np.log(training_label) / self.yscalings**2
+
         else:    
             training_label = np.log10(training_label / self.yscalings)
         
@@ -646,15 +703,11 @@ class NNEmulator(base_emulator.BaseEmulator):
         if (self.kmax_Mpc > 4) & (self.weighted_emulator == True):
             self.print("Exponential downweighting loss function at k>4")
             exponential_values = torch.linspace(
-                0, 1.4, len(self.k_Mpc[self.k_Mpc > 4])
+                0, 1.4, len(self.k_Mpc[0][self.k_Mpc[0] > 4])
             )
-            w[self.k_Mpc > 4] = torch.exp(-exponential_values)
+            w[self.k_Mpc[0] > 4] = torch.exp(-exponential_values)
         return w
     
-    def _set_distances(self):
-        w = [
-            d['distance_to_center'] for d in self.training_data]        
-        return w
 
     def train(self):
         """
@@ -670,12 +723,12 @@ class NNEmulator(base_emulator.BaseEmulator):
         loss_function_weights = self._set_weights()
         loss_function_weights = loss_function_weights.to(self.device)
         
-        distance_weights = self._set_distances()
-        distance_weights = torch.Tensor(distance_weights).to(self.device)
 
         log_kMpc_train = torch.log10(kMpc_train).to(self.device)
+        #log_kMpc_train = torch.log(kMpc_train).to(self.device)
 
-        self.log_kMpc = log_kMpc_train
+        self.log_kMpc = log_kMpc_train#[0]
+        
 
         self.nn = nn_architecture.MDNemulator_polyfit(
             nhidden=self.nhidden,
@@ -683,16 +736,30 @@ class NNEmulator(base_emulator.BaseEmulator):
             max_neurons=self.max_neurons,
             ninput=len(self.emu_params),
         )
+        
+        if self.model_path is not None:
 
-        optimizer = optim.Adam(
-            self.nn.parameters(), lr=self.lr0, weight_decay=self.weight_decay, amsgrad=self.amsgrad
-        )  #
+            pretrained_model = torch.load(
+                os.path.join(self.models_dir, self.model_path),
+                map_location="cpu",
+            )
+            self.nn.load_state_dict(pretrained_model["emulator"])
+            self.nn.to(self.device)
+            self.print("Loading pretrained initial state.")
+
+        optimizer = optim.AdamW(
+            self.nn.parameters(),
+            lr=self.lr0, 
+            weight_decay=self.weight_decay, 
+            amsgrad=self.amsgrad
+        )  
+        
         scheduler = lr_scheduler.StepLR(optimizer, self.step_size, gamma=0.1)
 
         training_data = self._get_training_data_nn()    
         training_label = self._get_training_pd1_nn()
 
-        trainig_dataset = TensorDataset(training_data, training_label, distance_weights)
+        trainig_dataset = TensorDataset(training_data, training_label, log_kMpc_train)
         loader_train = DataLoader(trainig_dataset, batch_size=self.batch_size, shuffle=True)
 
         self.nn.to(self.device)
@@ -700,17 +767,23 @@ class NNEmulator(base_emulator.BaseEmulator):
         t0 = time.time()
 
         for epoch in range(self.nepochs):
-            for datain, p1D_true, distance_weights in loader_train:
+            for datain, p1D_true, logkP1D in loader_train:
+                
+                kP1D = 10**logkP1D
+                
+                p1D_true_scaled = p1D_true.to(self.device) * kP1D.to(self.device) / torch.pi
+                
                 optimizer.zero_grad()
 
                 coeffsPred, coeffs_logerr = self.nn(datain.to(self.device))  #
                 coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
                 coeffserr = torch.exp(coeffs_logerr) ** 2
+                
 
                 powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
                 P1Dpred = torch.sum(
                     coeffsPred[:, powers, None]
-                    * (self.log_kMpc[None, :] ** powers[None, :, None]),
+                    * (logkP1D[:,None, :] ** powers[None, :, None]),
                     axis=1,
                 )
 
@@ -720,7 +793,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 P1Derr = torch.sqrt(
                     torch.sum(
                         coeffserr[:, powers, None]
-                        * (self.log_kMpc[None, :] ** powers_err[None, :, None]),
+                        * (logkP1D[:,None, :] ** powers_err[None, :, None]),
                         axis=1,
                     )
                 )
@@ -734,8 +807,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                 log_prob = loss_function_weights[None, :] * log_prob
 
                 loss = torch.nansum(log_prob, 1)
-                
-                loss = 1 / distance_weights**2 * loss
+                                
+
                 
                 loss = torch.nanmean(loss, 0)
 
@@ -807,7 +880,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
             
-            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended', 'Nyx_v0']:
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
                 emu_p1d = 10 ** (emu_p1d) * self.yscalings
             else:
                 emu_p1d = np.exp( emu_p1d * self.yscalings**2)
@@ -826,7 +899,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
             )
             emu_p1derr = emu_p1derr.detach().cpu().numpy().flatten()
-            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended','Nyx_v0']:
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
                 emu_p1derr = (
                     10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
                 )
@@ -843,8 +916,8 @@ class NNEmulator(base_emulator.BaseEmulator):
     def emulate_arr_p1d_Mpc(
         self, emu_calls, k_Mpc, return_covar=False, z=None
     ):
-        
         logk_Mpc = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
+        
         emu_p1ds= np.zeros(shape=(len(emu_calls), k_Mpc.shape[1]))
         emu_p1d_interp= np.zeros(shape=(len(emu_calls), k_Mpc.shape[1]))
         covars= np.zeros(shape=(len(emu_calls), k_Mpc.shape[1], k_Mpc.shape[1]))
@@ -871,16 +944,12 @@ class NNEmulator(base_emulator.BaseEmulator):
             emu_p1ds = emu_p1ds.detach().cpu().numpy()
             
             
-            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended', 'Nyx_v0']:
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
                 emu_p1ds = 10 ** (emu_p1ds) * self.yscalings
             else:
                 emu_p1ds = np.exp( emu_p1ds * self.yscalings**2)
-                
-        
+                    
 
-        
-
-            
         if return_covar == True:
             
             coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
@@ -896,7 +965,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             )
             emu_p1derrs = emu_p1derr.detach().cpu().numpy()
             
-            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended', 'Nyx_v0']:
+            if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
                 emu_p1derrs = (
                     10 ** (emu_p1ds) * np.log(10) * emu_p1derrs * self.yscalings
                 )
