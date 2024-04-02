@@ -539,6 +539,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         k_Mpc_train = [
             self.training_data[i]["k_Mpc"][self.k_mask[i]]
                         for i in range(len(self.training_data))]
+        k_Mpc_train = np.array(k_Mpc_train)
         k_Mpc_train = torch.Tensor(k_Mpc_train)
         self.k_Mpc = k_Mpc_train
         
