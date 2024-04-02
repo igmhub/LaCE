@@ -469,7 +469,9 @@ class BaseArchive(object):
             if mask:
                 if emu_params is None:
                     testing_data.append(arch_av[ii])
-                elif all(x in list_keys for x in emu_params):
+                #elif all(x in list_keys for x in emu_params):
+                elif all(x in list_keys or (isinstance(list_keys, dict) and x in list_keys.get('cosmo', [])) for x in emu_params.keys()):
+                    print('activated')
                     if any(np.isnan(arch_av[ii][x]) for x in emu_params) | any(
                         np.any(np.isnan(arch_av[ii][x])) for x in key_power
                     ):
