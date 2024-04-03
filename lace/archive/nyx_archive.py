@@ -22,7 +22,7 @@ class NyxArchive(BaseArchive):
     def __init__(
         self,
         nyx_version="Oct2023",
-        file_name=None,
+        nyx_file=None,
         kp_Mpc=None,
         force_recompute_linP_params=False,
         verbose=False,
@@ -33,8 +33,8 @@ class NyxArchive(BaseArchive):
             raise TypeError("nyx_version must be a string")
         self.nyx_version = nyx_version
 
-        if isinstance(file_name, (str, type(None))) == False:
-            raise TypeError("file_name must be a string or None")
+        if isinstance(nyx_file, (str, type(None))) == False:
+            raise TypeError("nyx_file must be a string or None")
 
         if isinstance(force_recompute_linP_params, bool) == False:
             raise TypeError("update_kp must be boolean")
@@ -66,11 +66,15 @@ class NyxArchive(BaseArchive):
         self.list_sim = self.list_sim_cube + self.list_sim_test
         ## done set simulation list
 
+        self.list_sim_axes = [0, 1, 2]
+
         # get relevant flags for post-processing
         self._set_info_sim(nfiles)
 
         # load power spectrum measurements
-        self._load_data(file_name, force_recompute_linP_params)
+        self._load_data(
+            nyx_file, force_recompute_linP_params, nyx_folder=nyx_folder
+        )
 
         # extract indexes from data
         self._set_labels()
@@ -270,17 +274,17 @@ class NyxArchive(BaseArchive):
 
         return cosmo_params, linP_params
 
-    def _load_data(self, file_name=None, force_recompute_linP_params=False):
-        # set file_name if not provided
-        if file_name is None:
+    def _load_data(self, nyx_file=None, force_recompute_linP_params=False):
+        # set nyx_file if not provided
+        if nyx_file is None:
             if "NYX_PATH" not in os.environ:
                 error_text = (
-                    "If file_name is not provided, you must define"
+                    "If nyx_file is not provided, you must define"
                     + "the environ variable NYX_PATH pointing to the folder containing"
                     + "the hdf5 file containing Nyx data"
                 )
                 raise ValueError(error_text)
-            file_name = (
+            nyx_file = (
                 os.environ["NYX_PATH"]
                 + "/models_Nyx_"
                 + self.nyx_version
@@ -288,13 +292,13 @@ class NyxArchive(BaseArchive):
             )
 
         try:
-            ff = h5py.File(file_name, "r")
+            ff = h5py.File(nyx_file, "r")
         except:
-            raise IOError("The file " + file_name + " does not exist")
+            raise IOError("The file " + nyx_file + " does not exist")
         else:
             # set self.file_cosmo
             if "NYX_PATH" not in os.environ:
-                folder = os.path.dirname(file_name)
+                folder = os.path.dirname(nyx_file)
             else:
                 folder = os.environ["NYX_PATH"]
             self.file_cosmo = (
