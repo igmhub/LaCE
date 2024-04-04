@@ -14,7 +14,7 @@ Please cite at least https://arxiv.org/abs/2305.19064 if you use this emulator i
 - Create a new conda environment. It is usually better to follow python version one or two behind. In January 2024, the latest is 3.12, so we recommend 3.11.
 
 ```
-conda create -n lace python=3.11 camb fdasrsf
+conda create -n lace -c conda-forge python=3.11 camb fdasrsf pip=24.0
 conda activate lace
 ```
 
@@ -23,12 +23,29 @@ conda activate lace
 ```
 git clone https://github.com/igmhub/LaCE.git
 cd LacE
-pip install -e .[jupyter]
+pip install -e .[explicit]
 ``` 
+
+- If you want to use the GP emulator please run:
+
+
+```
+pip install -e .[gpy]
+``` 
+
+- If you want to use other versions of the packages you can install LaCE using:
+
+```
+pip install -e .
+``` 
+
+but there may be some issues.
+
 
 - If you want to use notebooks via JupyterHub, you'll also need to download `ipykernel`:
 
 ```
+pip install -e .[jupyter]
 pip install ipykernel
 python -m ipykernel install --user --name lace --display-name lace
 ```
