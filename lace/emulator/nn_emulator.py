@@ -111,7 +111,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             "Cabayol23",
             "Cabayol23+",
             "Nyx_v0",
-            "Nyx_v1",
+            "Nyx_alphap",
             "Cabayol23_extended",
             "Nyx_v0_extended",
             "Cabayol23+_extended"
@@ -290,7 +290,8 @@ class NNEmulator(base_emulator.BaseEmulator):
             ) = (4, 6, 800, 700, 5, 150, 5e-5,1e-4,100,True)
             
             
-        elif emulator_label == "Nyx_v1":
+            
+        elif emulator_label == "Nyx_alphap":
             self.print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
                 + "fitting coefficients to a 6th degree polynomial. It "
@@ -301,7 +302,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             self.emu_params = [
                 "Delta2_p",
                 "n_p",
-                "omega_m",
+                "alpha_p",
                 "mF",
                 "sigT_Mpc",
                 "gamma",
@@ -319,7 +320,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.weight_decay,
                 self.batch_size,
                 self.amsgrad
-            ) = (4, 5, 600, 500, 6, 400, 2.5e-4,8e-3,100,True)
+            ) = (4, 6, 600, 500, 6, 400, 2.5e-4,8e-3,100,True)
             
             
         elif emulator_label == "Cabayol23_extended":
@@ -612,6 +613,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 fit_p1d = poly_p1d.PolyP1D(self.k_Mpc[ii],p1d,deg=self.ndeg)
                 training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc[ii])               
             self.yscalings = np.median(np.log(training_label))
+
         else:
             self.yscalings = np.median(training_label)
 
