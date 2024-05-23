@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.1
+#       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: emulators2
 #     language: python
-#     name: python3
+#     name: emulators2
 # ---
 
 # %% [markdown]
@@ -218,7 +218,8 @@ emulator = GPEmulator(training_set='Cabayol23', emulator_label='k_bin_sm')
 
 # %%
 # emulators will use different emulator parameters depending on the archive
-nyx_emu_params = ['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
+nyx_emu_params=['Delta2_p','n_p','alpha_p','mF','sigT_Mpc','gamma','kF_Mpc']
+
 
 # %%
 # you could specify here the path to the Nyx files, or set a NYX_PATH variable
@@ -226,7 +227,7 @@ archive = nyx_archive.NyxArchive(verbose=True)
 
 # %%
 if thorough:
-    emulator = NNEmulator(archive=archive, drop_sim = 'nyx_3', emulator_label='Nyx_v0')
+    emulator = NNEmulator(archive=archive, drop_sim = 'nyx_3', emulator_label='Nyx_alphap')
 
 # %% [markdown]
 # #### Pre-trained
@@ -237,16 +238,16 @@ if thorough:
 # %%
 emulator = NNEmulator(
     training_set='Nyx23_Oct2023',
-    emulator_label='Nyx_v0',
+    emulator_label='Nyx_alphap',
     emu_params=nyx_emu_params,
-    model_path='NNmodels/Nyx23_Oct2023/Nyx_v0_drop_sim_nyx_0.pt', 
+    model_path='NNmodels/Nyxap_Oct2023/Nyxap_drop_sim_nyx_0.pt', 
     drop_sim='nyx_0',
     train=False,
 )
 
 # %%
 # test emulator by making simple plot
-testing_data = archive.get_testing_data('nyx_1')
+testing_data = archive.get_testing_data('nyx_0')
 
 # %% [markdown]
 # #### Full emu
@@ -255,9 +256,9 @@ testing_data = archive.get_testing_data('nyx_1')
 # %%time
 emulator = NNEmulator(
     training_set='Nyx23_Oct2023',
-    emulator_label='Nyx_v0',
+    emulator_label='Nyx_alphap',
     emu_params=nyx_emu_params,
-    model_path='NNmodels/Nyx23_Oct2023/Nyx_v0.pt',
+    model_path='NNmodels/Nyxap_Oct2023/Nyx_alphap.pt',
     train=False,
 )
 
