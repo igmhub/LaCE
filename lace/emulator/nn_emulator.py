@@ -176,11 +176,11 @@ class NNEmulator(base_emulator.BaseEmulator):
 
                 )
 
-        self.training_data_all =  archive.get_training_data(
-                emu_params=self.emu_params)
+
         
         self.print(f"Samples in training_set: {len(self.training_data)}")
         self.kp_Mpc = archive.kp_Mpc
+        
 
         ## check emulator label
         if emulator_label is not None:
@@ -428,6 +428,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 )
 
         self.kmin_Mpc = self.training_data[0]["k_Mpc"][1]
+        self._calculate_normalization(archive)
             
         # decide whether to train emulator or read from file
         if train == False:
@@ -488,6 +489,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                     f"Model trained without redshift {emulator_settings['drop_z']}"
                 )
 
+            
             kMpc_train = self._obtain_sim_params()
             log_kMpc_train = torch.log10(kMpc_train).to(self.device)
 
@@ -522,7 +524,39 @@ class NNEmulator(base_emulator.BaseEmulator):
         return dct
 
 
+    def _calculate_normalization(self, archive):
+        
+        training_data_all =  archive.get_training_data(
+                emu_params=self.emu_params)
+        
+        data = []
+        for ii in range(len(training_data_all)):
+            data_dict = {} 
+            for jj, param in enumerate(self.emu_params):
+                try:
+                    value = training_data_all[ii]["cosmo_params"][param]
+                except:
+                    value = training_data_all[ii][param]
+                data_dict[param] = value
+            data.append(data_dict)
+            
+            
 
+        data = self._sort_dict(
+            data, self.emu_params)
+        # sort the data by emulator parameters
+        data = [list(data[i].values()) for i in range(len(training_data_all))]
+        data = np.array(data)
+        
+        self.paramLims = np.concatenate(
+            (
+                data.min(0).reshape(len(data.min(0)), 1),
+                data.max(0).reshape(len(data.max(0)), 1),
+            ),
+            1,
+        )
+        
+        
     def _obtain_sim_params(self):
         """
         Obtain simulation parameters.
@@ -550,48 +584,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         Nk = len(k_Mpc_train[0])
         self.Nk = Nk
         
-        
-        data = []
-        for ii in range(len(self.training_data_all)):
-            data_dict = {} 
-            for jj, param in enumerate(self.emu_params):
-                try:
-                    value = self.training_data_all[ii]["cosmo_params"][param]
-                except:
-                    value = self.training_data_all[ii][param]
-                data_dict[param] = value
-            data.append(data_dict)
-            
-            
 
-        """data = [
-            {
-                key: value
-                for key, value in self.training_data_all[i].items()
-                if key in self.emu_params
-            }
-            for i in range(len(self.training_data_all))
-        ]
-
-        # Now, if 'A_UVB' is in emu_params, add it to each entry
-        if "A_UVB" in self.emu_params:
-            for i, d in enumerate(data):
-                d["A_UVB"] = self.training_data_all[i]["cosmo_params"]["A_UVB"]"""
-            
-
-        data = self._sort_dict(
-            data, self.emu_params)
-        # sort the data by emulator parameters
-        data = [list(data[i].values()) for i in range(len(self.training_data_all))]
-        data = np.array(data)
-        
-        self.paramLims = np.concatenate(
-            (
-                data.min(0).reshape(len(data.min(0)), 1),
-                data.max(0).reshape(len(data.max(0)), 1),
-            ),
-            1,
-        )
 
         training_label = [
             {
@@ -625,19 +618,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         Sorts the training data according to self.emu_params and scales the data based on self.paramLims
         Finally, it returns the training data as a torch.Tensor object.
         """
-        """training_data = [
-            {
-                key: value
-                for key, value in self.training_data[i].items()
-                if key in self.emu_params
-            }
-            for i in range(len(self.training_data))
-        ]
-
-        # Now, if 'A_UVB' is in emu_params, add it to each entry
-        if "A_UVB" in self.emu_params:
-            for i, data in enumerate(training_data):
-                data["A_UVB"] = self.training_data[i]["cosmo_params"]["A_UVB"]"""
         
         training_data = []
         for ii in range(len(self.training_data)):
