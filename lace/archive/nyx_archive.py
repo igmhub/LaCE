@@ -73,8 +73,7 @@ class NyxArchive(BaseArchive):
 
         # load power spectrum measurements
         self._load_data(
-            nyx_file, force_recompute_linP_params, nyx_folder=nyx_folder
-        )
+            nyx_file, force_recompute_linP_params)
 
         # extract indexes from data
         self._set_labels()
