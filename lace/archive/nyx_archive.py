@@ -294,6 +294,7 @@ class NyxArchive(BaseArchive):
         try:
             ff = h5py.File(nyx_file, "r")
         except Exception as e:
+            ff.close()
             raise e
         else:
             # set self.file_cosmo
@@ -403,3 +404,4 @@ class NyxArchive(BaseArchive):
                                 self.kbins, self.mubins
                             )
                         self.data.append(_arch)
+        ff.close()
