@@ -732,13 +732,21 @@ class NNEmulator(base_emulator.BaseEmulator):
             self.nn.load_state_dict(pretrained_model["emulator"])
             self.nn.to(self.device)
             self.print("Loading pretrained initial state.")
+            
+        if not self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
 
-        optimizer = optim.AdamW(
-            self.nn.parameters(),
-            lr=self.lr0, 
-            weight_decay=self.weight_decay, 
-            amsgrad=self.amsgrad
-        )  
+            optimizer = optim.AdamW(
+                self.nn.parameters(),
+                lr=self.lr0, 
+                weight_decay=self.weight_decay, 
+                amsgrad=self.amsgrad
+            )  
+        else:
+            optimizer = optim.Adam(
+                self.nn.parameters(),
+                lr=self.lr0, 
+                weight_decay=self.weight_decay
+            )             
         
         scheduler = lr_scheduler.StepLR(optimizer, self.step_size, gamma=0.1)
 
