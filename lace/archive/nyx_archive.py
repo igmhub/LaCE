@@ -73,7 +73,7 @@ class NyxArchive(BaseArchive):
 
         # load power spectrum measurements
         self._load_data(
-            nyx_file, force_recompute_linP_params, nyx_folder=nyx_folder
+            nyx_file, force_recompute_linP_params
         )
 
         # extract indexes from data
@@ -203,8 +203,8 @@ class NyxArchive(BaseArchive):
             # open file with precomputed values to check kp_Mpc
             try:
                 file_cosmo = np.load(self.file_cosmo, allow_pickle=True)
-            except:
-                raise IOError("The file " + file_cosmo + " does not exist")
+            except Exception as e:
+                raise e
 
             sim_in_file = False
             for ii in range(len(file_cosmo)):
@@ -293,8 +293,9 @@ class NyxArchive(BaseArchive):
 
         try:
             ff = h5py.File(nyx_file, "r")
-        except:
-            raise IOError("The file " + nyx_file + " does not exist")
+        except Exception as e:
+            ff.close()
+            raise e
         else:
             # set self.file_cosmo
             if "NYX_PATH" not in os.environ:
@@ -403,3 +404,4 @@ class NyxArchive(BaseArchive):
                                 self.kbins, self.mubins
                             )
                         self.data.append(_arch)
+        ff.close()
