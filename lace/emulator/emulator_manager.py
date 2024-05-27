@@ -19,6 +19,7 @@ def emulators_supported():
         "Pedersen21_ext8",
         "Pedersen23_ext8",
         "Nyx_v0",
+        "Nyx_alphap",
     ]
     return emulators_supported
 
@@ -133,8 +134,14 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
                 drop_sim=drop_sim,
                 train=False,
             )
-    elif emulator_label == "Nyx_v0":
-        folder = "NNmodels/Nyx_Feb2024/"
+    elif ((emulator_label == "Nyx_v0")|
+        | (emulator_label == "Nyx_alphap")
+    ):
+        if emulator_label == "Nyx_v0":
+            folder = "NNmodels/Nyxv0_Oct2023/"
+        elif emulator_label == "Nyx_alphap":
+            folder = "NNmodels/Nyxap_Oct2023/"
+            
         if drop_sim is None:
             model_path = folder + emulator_label + ".pt"
         else:
