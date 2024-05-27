@@ -3,6 +3,7 @@ from lace.archive.nyx_archive import NyxArchive
 import numpy as np
 import os
 import json
+
 def calculate_distance_to_center(sim_test,
                            sim_suite='mpg',
                            archive=None,
@@ -27,12 +28,6 @@ def calculate_distance_to_center(sim_test,
             archive = NyxArchive(verbose=False)
         else:
             raise ValueError("Available sim suites are 'mpg' and 'nyx'") 
-<<<<<<< HEAD
-    
-    
-    
-    central = archive.get_testing_data(sim_label=sim_suite+'_central')
-=======
 
     if sim_suite == 'nyx':
         z_min = 2.19
@@ -42,7 +37,6 @@ def calculate_distance_to_center(sim_test,
         
     central = archive.get_testing_data(sim_label=sim_suite+'_central')
         
->>>>>>> main
     # Fetch all training data for the given emulator parameters            
     training_data_all=archive.get_training_data(emu_params)
     
@@ -57,22 +51,6 @@ def calculate_distance_to_center(sim_test,
     
     # Calculate the range (max - min) for each emulator parameter within the training data
     DeltaParams = training_data.max(0) - training_data.min(0) 
-    
-<<<<<<< HEAD
-    test_sim_data = archive.get_testing_data(sim_label=sim_test)
-    
-    test_sim_data = np.array([[value
-                for key, value in test_sim_data[i].items()
-                if key in emu_params] for i in range(len(test_sim_data))])   
-    
-    central_data = np.array([[value
-                for key, value in central[i].items()
-                if key in emu_params] for i in range(len(central))])   
-   # Calculate the normalized distance of the test simulation data from the central data    
-    distance = (np.abs(test_sim_data - central_data) / DeltaParams).sum(1)
-    
-    return distance.mean()
-=======
     
     
     test_sim_data = archive.get_testing_data(sim_label=sim_test,
@@ -100,8 +78,6 @@ def calculate_distance_to_center(sim_test,
     distance = np.nansum((np.abs(test_sim_data - central_data) / DeltaParams),1)
     
     return np.nanmean(distance)
->>>>>>> main
-            
             
 
 def distances_to_dict(sim_suite='mpg', save_path=None):
@@ -119,16 +95,12 @@ def distances_to_dict(sim_suite='mpg', save_path=None):
     distances={}
     sim_list = set([archive.data[i]['sim_label'] for i in range(len(archive.data))])
     for sim_id in sim_list:
-<<<<<<< HEAD
-        distance = calculate_distance_to_center(
-            sim_test=sim_id,
-=======
         print(sim_id)
         distance = calculate_distance_to_center(
             sim_test=sim_id,
             sim_suite=sim_suite,
->>>>>>> main
             archive=archive)
+        
         distances[sim_id] = distance    
      
     if save_path is not None:
