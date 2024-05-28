@@ -26,14 +26,17 @@ from lace.emulator.emulator_manager import set_emulator
 
 # %% [markdown]
 # We have developed emulators using different architectures and training sets. The preferred emulators are:
-# - Cabayol23 for mpg simulators (Cabayol-Garcia+23, https://ui.adsabs.harvard.edu/abs/2023MNRAS.525.3499C/abstract)
-# - Nyx_v0 for Nyx simulations (WIP)
+# - Cabayol23+ for mpg simulators (Cabayol-Garcia+23, https://ui.adsabs.harvard.edu/abs/2023MNRAS.525.3499C/abstract)
+# - Nyx_alphap for Nyx simulations
 #
 # Loading the emulators is fairly simple:
 
+# %% [markdown]
+# #### mpg simulations
+
 # %%
 # %%time
-emulator_C23 = set_emulator(emulator_label="Cabayol23")
+emulator_C23 = set_emulator(emulator_label="Cabayol23+")
 
 # %% [markdown]
 # To evaluate it, provide input cosmological and IGM parameters and a series of kpar values
@@ -56,10 +59,32 @@ plt.xlabel(r'$k_\parallel$ [1/Mpc]')
 plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
 plt.xscale('log')
 
+# %% [markdown]
+# #### nyx simulations
+
 # %%
 # %%time
 # You need to specify the path to the Nyx files by setting a NYX_PATH variable
-emulator_Nyx = set_emulator(emulator_label="Nyx_v0")
+emulator_Nyx = set_emulator(emulator_label="Nyx_alphap")
+
+# %%
+k_Mpc = np.geomspace(0.1, 3, 100)
+input_params = {
+    'Delta2_p': 0.35,
+    'n_p': -2.3,
+    "alpha_p":-0.22,
+    'mF': 0.66,
+    'gamma': 1.5,
+    'sigT_Mpc': 0.128,
+    'kF_Mpc': 10.5
+}
+p1d = emulator_Nyx.emulate_p1d_Mpc(input_params, k_Mpc)
+
+# %%
+plt.plot(k_Mpc, k_Mpc * p1d/ np.pi)
+plt.xlabel(r'$k_\parallel$ [1/Mpc]')
+plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
+plt.xscale('log')
 
 # %% [markdown]
 # ## For developers
@@ -92,7 +117,7 @@ emulators_supported()
 emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
 
 # %%
-archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
+archive = gadget_archive.GadgetArchive(postproc="Cabayol23+")
 training_data=archive.get_training_data(emu_params=emu_params)
 len(training_data)
 
@@ -126,7 +151,7 @@ emulator = NNEmulator(archive=archive, nepochs=1)
 # ### or a training_set label
 
 # %%
-emulator = NNEmulator(training_set='Cabayol23',nepochs=1)
+emulator = NNEmulator(training_set='Cabayol23+',nepochs=1)
 
 # %% [markdown]
 # #### If none or both are provided, the emulator fails. 
@@ -141,19 +166,19 @@ emulator = NNEmulator(nepochs=1)
 # #### A. with a training_set label
 
 # %%
-emulator = NNEmulator(training_set='Cabayol23', emulator_label='Cabayol23', nepochs=1)
+emulator = NNEmulator(training_set='Cabayol23', emulator_label='Cabayol23+', nepochs=1)
 
 # %% [markdown]
 # #### B. with an archive
 
 # %%
-emulator = NNEmulator(archive=archive, emulator_label='Cabayol23', nepochs=1)
+emulator = NNEmulator(archive=archive, emulator_label='Cabayol23+', nepochs=1)
 
 # %% [markdown]
 # #### If none are provided, the training fails
 
 # %%
-emulator = NNEmulator(emulator_label='Cabayol23', nepochs=1)
+emulator = NNEmulator(emulator_label='Cabayol23+', nepochs=1)
 
 # %% [markdown]
 # ### Example 3: Load a pre-trained emulator, providing the path of the saved network parameters
@@ -162,8 +187,8 @@ emulator = NNEmulator(emulator_label='Cabayol23', nepochs=1)
 # %%time
 emulator = NNEmulator(
     training_set='Cabayol23',
-    emulator_label='Cabayol23',
-    model_path='NNmodels/Cabayol23/Cabayol23.pt', 
+    emulator_label='Cabayol23+',
+    model_path='NNmodels/Cabayol23+/Cabayol23+.pt', 
     train=False
 )
 # test emulator by making simple plot
@@ -218,7 +243,8 @@ emulator = GPEmulator(training_set='Cabayol23', emulator_label='k_bin_sm')
 
 # %%
 # emulators will use different emulator parameters depending on the archive
-nyx_emu_params = ['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
+nyx_emu_params=['Delta2_p','n_p','alpha_p','mF','sigT_Mpc','gamma','kF_Mpc']
+
 
 # %%
 # you could specify here the path to the Nyx files, or set a NYX_PATH variable
@@ -226,7 +252,7 @@ archive = nyx_archive.NyxArchive(verbose=True)
 
 # %%
 if thorough:
-    emulator = NNEmulator(archive=archive, drop_sim = 'nyx_3', emulator_label='Nyx_v0')
+    emulator = NNEmulator(archive=archive, drop_sim = 'nyx_3', emulator_label='Nyx_alphap')
 
 # %% [markdown]
 # #### Pre-trained
@@ -237,16 +263,16 @@ if thorough:
 # %%
 emulator = NNEmulator(
     training_set='Nyx23_Oct2023',
-    emulator_label='Nyx_v0',
+    emulator_label='Nyx_alphap',
     emu_params=nyx_emu_params,
-    model_path='NNmodels/Nyx23_Oct2023/Nyx_v0_drop_sim_nyx_0.pt', 
+    model_path='NNmodels/Nyxap_Oct2023/Nyxap_drop_sim_nyx_0.pt', 
     drop_sim='nyx_0',
     train=False,
 )
 
 # %%
 # test emulator by making simple plot
-testing_data = archive.get_testing_data('nyx_1')
+testing_data = archive.get_testing_data('nyx_0')
 
 # %% [markdown]
 # #### Full emu
@@ -255,9 +281,9 @@ testing_data = archive.get_testing_data('nyx_1')
 # %%time
 emulator = NNEmulator(
     training_set='Nyx23_Oct2023',
-    emulator_label='Nyx_v0',
+    emulator_label='Nyx_alphap',
     emu_params=nyx_emu_params,
-    model_path='NNmodels/Nyx23_Oct2023/Nyx_v0.pt',
+    model_path='NNmodels/Nyxap_Oct2023/Nyx_alphap.pt',
     train=False,
 )
 

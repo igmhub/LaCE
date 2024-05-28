@@ -75,7 +75,6 @@ class NyxArchive(BaseArchive):
         self._load_data(
             nyx_file, force_recompute_linP_params
         )
-
         # extract indexes from data
         self._set_labels()
 
