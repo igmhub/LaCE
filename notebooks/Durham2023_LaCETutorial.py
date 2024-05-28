@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.1
+#       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: emulators2
 #     language: python
-#     name: python3
+#     name: emulators2
 # ---
 
 # %% [markdown]
@@ -94,21 +94,27 @@ gp_emu_P23 = GPEmulator(archive=mpg_arch_P21,emulator_label='Pedersen23')
 # %% [markdown]
 # This creates a NN emulator with the default configuration of Cabayol23
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 nn_emu_C23 = NNEmulator(archive=mpg_arch_C23, emulator_label='Cabayol23')
 
 # %% [markdown]
 # This creates a NN emulator with settings similar to those used in Cabayol23
 
 # %%
-fast_training=True
+nn_emu_C23plus = NNEmulator(archive=mpg_arch_C23, emulator_label='Cabayol23+')
+
+# %% [markdown]
+# This creates a NN emulator with few settings improved to those used in Cabayol23
+
+# %%
+fast_training=False
 if fast_training:
     print('Using a sub-optimal training for the Nyx emulator, the results will not be as good as possible!')
     # the emulator performance will not be super good here
     nn_emu_nyx = NNEmulator(archive=nyx_arch)
 else:
     # this might take a while to train...
-    nn_emu_nyx = NNEmulator(archive=nyx_arch, emulator_label='Nyx_v0')
+    nn_emu_nyx = NNEmulator(archive=nyx_arch, emulator_label='Nyx_v1')
 
 # %% [markdown]
 # ### C. POINTING ALSO TO A PRE-DEFINED TRAINING SET
@@ -136,6 +142,15 @@ if load_training:
     nn_emu_nyx = NNEmulator(training_set='Nyx23', emulator_label='Nyx_v0')
 
 # %% [markdown]
+# The latest Nyx emulator version is 'Nyx_v1', which produces much better results than the previous 'Nyx_v0'
+
+# %%
+if load_training:
+    nn_emu_nyx = NNEmulator(training_set='Nyx23', emulator_label='Nyx_v1')
+
+# %%
+
+# %% [markdown]
 # ### TESTING THE EMULATOR
 
 # %% [markdown]
@@ -148,7 +163,7 @@ mpg_test_P21 = mpg_arch_P21.get_testing_data(sim_label='mpg_seed')
 mpg_test_C23 = mpg_arch_C23.get_testing_data(sim_label='mpg_seed')
 
 # %%
-nyx_test = nyx_arch.get_testing_data(sim_label='nyx_3')
+nyx_test = nyx_arch.get_testing_data(sim_label='nyx_3')#, emu_params = nn_emu_nyx.emu_params)
 
 
 # %%
@@ -170,7 +185,10 @@ def emulator_vs_true(emulator, test_data, iz=0, plot_ratio=True, smooth_test=Tru
     # get emulator parameter values of the test data
     model={}
     for param in emulator.emu_params:
-        model[param]=test_data[iz][param]
+        try:
+            model[param]=test_data[iz][param]
+        except:
+            model[param]=test_data[iz]['cosmo_params'][param]
         print(param,model[param])
     
     # make emulator prediction
@@ -193,10 +211,10 @@ def emulator_vs_true(emulator, test_data, iz=0, plot_ratio=True, smooth_test=Tru
 emulator_vs_true(gp_emu_P23,mpg_test_P21,iz=5,plot_ratio=True)
 
 # %%
-emulator_vs_true(nn_emu_C23,mpg_test_C23,iz=5,plot_ratio=True)
+emulator_vs_true(nn_emu_C23plus,mpg_test_C23,iz=5,plot_ratio=True)
 
 # %%
-emulator_vs_true(nn_emu_nyx,nyx_test,iz=5,plot_ratio=True)
+emulator_vs_true(nn_emu_nyx,nyx_test,iz=3,plot_ratio=True)
 
 # %% [markdown]
 # ## D. EXTENDED EMULATOR

@@ -3,6 +3,7 @@ from lace.archive.nyx_archive import NyxArchive
 import numpy as np
 import os
 import json
+
 def calculate_distance_to_center(sim_test,
                            sim_suite='mpg',
                            archive=None,
@@ -52,7 +53,6 @@ def calculate_distance_to_center(sim_test,
     DeltaParams = training_data.max(0) - training_data.min(0) 
     
     
-    
     test_sim_data = archive.get_testing_data(sim_label=sim_test,
                                             z_min=z_min)
     
@@ -79,7 +79,6 @@ def calculate_distance_to_center(sim_test,
     
     return np.nanmean(distance)
             
-            
 
 def distances_to_dict(sim_suite='mpg', save_path=None):
     """- sim_suite (str, optional): Specifies the simulation suite ('mpg' or 'nyx') to use for fetching the data. Defaults to 'mpg'."""
@@ -101,6 +100,7 @@ def distances_to_dict(sim_suite='mpg', save_path=None):
             sim_test=sim_id,
             sim_suite=sim_suite,
             archive=archive)
+        
         distances[sim_id] = distance    
      
     if save_path is not None:
