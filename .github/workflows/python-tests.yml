@@ -28,6 +28,6 @@ jobs:
     - name: Run tests
       run: |
         pip install pytest
-        pip install GPy
+        pip install GPy==1.13.1
         pytest tests/test_lace.py
 
