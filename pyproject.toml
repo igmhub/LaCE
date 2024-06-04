@@ -71,10 +71,6 @@ explicit = [
     "GPy==1.13.1",
 ]
 
-[tool.setuptools.packages.find]
-include = ["lace"]
-namespaces = false
-
 [project.urls]
 Homepage="https://github.com/igmhub/LaCE"
 Repository="https://github.com/igmhub/LaCE.git"
