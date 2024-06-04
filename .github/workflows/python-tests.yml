@@ -27,5 +27,4 @@ jobs:
       run: |
         pip install pytest
         pip install GPy==1.13.1
-        pip install lace
         pytest tests/test_lace.py
