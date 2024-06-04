@@ -26,7 +26,6 @@ dependencies = [
     "numpy",
     "pandas",
     "scipy",
-    "pytest"
     "h5py",
     "scikit-learn",
     "matplotlib",
@@ -35,6 +34,7 @@ dependencies = [
     "torch",
     "scikit-fda",
 ]
+
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
@@ -50,6 +50,9 @@ classifiers = [
 jupyter = [
     "jupyter",
     "jupytext",
+]
+test = [
+  "pytest",
 ]
 gpy = [
     "GPy==1.13.1",
