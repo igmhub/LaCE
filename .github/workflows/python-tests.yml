@@ -19,7 +19,7 @@ jobs:
         python-version: '3.10'
 
     - name: Set PYTHONPATH
-      run: export PYTHONPATH="${PYTHONPATH}:${PWD}/lace"
+      run: export PYTHONPATH="${PYTHONPATH}:$'/home/runner/work/LaCE/LaCE'"
 
     - name: Install dependencies
       run: |
