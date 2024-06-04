@@ -23,6 +23,6 @@ jobs:
 
     - name: Run tests
       run: |
-        pip install .[test]
+        pip install pytest
         pytest tests/test_lace.py
 
