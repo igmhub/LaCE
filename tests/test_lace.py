@@ -25,7 +25,10 @@ def create_emulator():
     p1d_true = fit_p1d.P_Mpc(kMpc)
     
     # Set up the emulator
-    emulator_C23 = set_emulator(emulator_label="Cabayol23+")
+    emulator_C23 = NNEmulator(training_set='Cabayol23', 
+                              emulator_label='Cabayol23+'
+                              model_path='NNmodels/Cabayol23+/Cabayol23+.pt',
+                              train=False)
     
     # Emulate p1d_Mpc data using the emulator
     p1d = emulator_C23.emulate_p1d_Mpc(testing_data[4], kMpc)
