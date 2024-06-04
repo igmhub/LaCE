@@ -79,3 +79,6 @@ namespaces = false
 Homepage="https://github.com/igmhub/LaCE"
 Repository="https://github.com/igmhub/LaCE.git"
 Issues="https://github.com/igmhub/LaCE/issues"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
