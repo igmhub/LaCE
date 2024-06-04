@@ -50,6 +50,10 @@ jupyter = [
     "jupyter",
     "jupytext",
 ]
+test = [
+  "pytest",
+]
+
 gpy = [
     "GPy==1.13.1",
 ]
