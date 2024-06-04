@@ -26,7 +26,7 @@ def create_emulator():
     
     # Set up the emulator
     emulator_C23 = NNEmulator(training_set='Cabayol23', 
-                              emulator_label='Cabayol23+'
+                              emulator_label='Cabayol23+',
                               model_path='NNmodels/Cabayol23+/Cabayol23+.pt',
                               train=False)
     
