@@ -14,7 +14,7 @@ Please cite at least https://arxiv.org/abs/2305.19064 if you use this emulator i
 - Create a new conda environment. It is usually better to follow python version one or two behind. In January 2024, the latest is 3.12, so we recommend 3.11.
 
 ```
-conda create -n lace -c conda-forge python=3.11 camb fdasrsf pip=24.0
+conda create -n lace -c conda-forge python=3.11
 conda activate lace
 ```
 
@@ -23,9 +23,12 @@ conda activate lace
 ```
 git clone https://github.com/igmhub/LaCE.git
 cd LacE
-pip install -e .[explicit]
+pip install -e .
 ``` 
 
+- If you want to fixed versions for dependencies, run ``pip install -e .[explicit]`` instead.
+
+  
 - If you want to use the GP emulator please run:
 
 
