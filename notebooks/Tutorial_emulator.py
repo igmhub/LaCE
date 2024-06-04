@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.1
+#       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: emulators2
 #     language: python
-#     name: python3
+#     name: emulators2
 # ---
 
 # %% [markdown]
@@ -117,7 +117,7 @@ emulators_supported()
 emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
 
 # %%
-archive = gadget_archive.GadgetArchive(postproc="Cabayol23+")
+archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
 training_data=archive.get_training_data(emu_params=emu_params)
 len(training_data)
 
@@ -151,7 +151,7 @@ emulator = NNEmulator(archive=archive, nepochs=1)
 # ### or a training_set label
 
 # %%
-emulator = NNEmulator(training_set='Cabayol23+',nepochs=1)
+emulator = NNEmulator(training_set='Cabayol23',nepochs=1)
 
 # %% [markdown]
 # #### If none or both are provided, the emulator fails. 
