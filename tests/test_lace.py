@@ -1,6 +1,6 @@
 # Import necessary modules
 from lace.archive.gadget_archive import GadgetArchive
-from lace.emulator.emulator_manager import set_emulator
+from lace.emulator.nn_emulator import NNEmulator
 from lace.utils import poly_p1d
 import numpy as np
 
