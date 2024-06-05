@@ -72,7 +72,7 @@ explicit = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["lace"]
+include = ["lace","lace.*"]
 namespaces = false
 
 [project.urls]
