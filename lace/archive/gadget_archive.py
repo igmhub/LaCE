@@ -196,7 +196,7 @@ class GadgetArchive(BaseArchive):
             self.testing_z_max = 10
 
         ## get path of the repo
-        repo = os.path.dirname(lace.__path__[0]) #+ "/"
+        repo = os.path.dirname(lace.__path__[0]) + "/"
 
         self.fulldir = repo + self.basedir
         self.fulldir_param = repo + self.basedir_params
@@ -334,7 +334,7 @@ class GadgetArchive(BaseArchive):
             from lace.cosmo import camb_cosmo, fit_linP
 
             _, sim_name_param, tag_param = self._sim2file_name(sim_label)
-            pair_dir = self.fulldir_param  + sim_name_param#"/"
+            pair_dir = self.fulldir_param + "/" + sim_name_param
 
             # read gadget file
             gadget_fname = pair_dir + "/sim_plus/paramfile.gadget"
