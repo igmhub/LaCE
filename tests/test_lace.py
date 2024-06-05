@@ -1,6 +1,4 @@
 # Import necessary modules
-import sys
-sys.path.append("../")
 from lace.archive.gadget_archive import GadgetArchive
 from lace.emulator.nn_emulator import NNEmulator
 from lace.utils import poly_p1d
