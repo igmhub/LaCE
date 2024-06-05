@@ -79,7 +79,7 @@ include = ["lace","lace.*"]
 namespaces = false
 
 [tool.setuptools.package-data]
-lace = ["data/*"]
+lace = ["../data/*"]
 
 [project.urls]
 Homepage="https://github.com/igmhub/LaCE"
