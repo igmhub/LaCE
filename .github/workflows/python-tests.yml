@@ -27,5 +27,6 @@ jobs:
     - name: Run tests
       run: |
         pip install pytest
-        #pip install GPy==1.13.1 
-        pytest tests/test_lace.py
+        #pip install GPy==1.13.1
+        python -m pytest tests/test_lace.py
+        #pytest tests/test_lace.py
