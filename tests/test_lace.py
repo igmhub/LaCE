@@ -10,7 +10,8 @@ def create_emulator():
     
     # Initialize a GadgetArchive instance for postprocessing data
     archive = GadgetArchive(postproc="Cabayol23",
-                           force_recompute_linP_params=True)
+                           force_recompute_linP_params=True,
+                           kp_Mpc=0.7)
     
     # Retrieve testing data from the archive
     testing_data = archive.get_testing_data(sim_label='mpg_central')
