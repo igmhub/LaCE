@@ -9,7 +9,8 @@ def create_emulator():
     emu_params = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
     
     # Initialize a GadgetArchive instance for postprocessing data
-    archive = GadgetArchive(postproc="Cabayol23")
+    archive = GadgetArchive(postproc="Cabayol23",
+                           force_recompute_linP_params=True)
     
     # Retrieve testing data from the archive
     testing_data = archive.get_testing_data(sim_label='mpg_central')
