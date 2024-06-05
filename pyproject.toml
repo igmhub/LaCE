@@ -2,6 +2,8 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+include-package-data = true
 
 [project]
 name="lace"
@@ -73,11 +75,9 @@ explicit = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["lace","lace.*"]
+include = ["lace","lace.*", "../data.*"]
 namespaces = false
 
-[tool.setuptools.package-data]
-lace = ["../data/*"]
 
 [project.urls]
 Homepage="https://github.com/igmhub/LaCE"
