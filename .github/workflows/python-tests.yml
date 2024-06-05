@@ -23,7 +23,7 @@ jobs:
         python -m pip install --upgrade pip==24.0
         pip install fdasrsf
         pip install setuptools
-        pip install .
+        pip install -vvv .
 
     - name: Run tests
       run: |
