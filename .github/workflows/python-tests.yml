@@ -23,7 +23,7 @@ jobs:
         python -m pip install --upgrade pip==24.0
         pip install fdasrsf
         pip install setuptools
-        pip install wheel pytest-cov
+        pip install pytest wheel pytest-cov
     - name: Install lace
       run: pip install -e .
 
@@ -31,5 +31,4 @@ jobs:
     - name: Run tests
       timeout-minutes: 3
       run: |
-        pip install pytest 
-        tests/test_lace.py . 
+        pytest tests/test_lace.py  
