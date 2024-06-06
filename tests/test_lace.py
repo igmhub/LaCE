@@ -4,7 +4,7 @@ from lace.emulator.nn_emulator import NNEmulator
 from lace.utils import poly_p1d
 import numpy as np
 
-def create_emulator():
+def test():
     # Define the parameters for the emulator
     emu_params = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
     
@@ -46,4 +46,4 @@ def create_emulator():
     # Assert that the percentage error is less than 1%
     assert percent_error < 1
 # Call the function to execute the test
-create_emulator()
+test()
