@@ -29,7 +29,7 @@ jobs:
 
 
     - name: Run tests
+      timeout-minutes: 3
       run: |
-        pip install pytest
-        print('It should run the test') 
+        pip install pytest 
         tests/test_lace.py . 
