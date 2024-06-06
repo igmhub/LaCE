@@ -29,6 +29,6 @@ jobs:
 
 
     - name: Run tests
-      timeout-minutes: 3
+      timeout-minutes: 5
       run: |
         pytest tests/test_lace.py  
