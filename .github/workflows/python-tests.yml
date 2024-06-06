@@ -30,5 +30,6 @@ jobs:
 
     - name: Run tests
       run: |
-        pip install pytest 
-        pytest tests/test_lace.py
+        pip install pytest
+        print('It should run the test') 
+        tests/test_lace.py . 
