@@ -23,7 +23,12 @@ def create_emulator():
     kMpc = kMpc[(kMpc > 0) & (kMpc < 4)]
     
     # Fit a polynomial to the true p1d data
-    fit_p1d = poly_p1d.PolyP1D(kMpc, p1d_true, kmin_Mpc=1e-3, kmax_Mpc=4, deg=5)
+    fit_p1d = poly_p1d.PolyP1D(kMpc, 
+                               p1d_true, 
+                               kmin_Mpc=1e-3, 
+                               kmax_Mpc=4, 
+                               deg=5)
+    
     p1d_true = fit_p1d.P_Mpc(kMpc)
     
     # Set up the emulator
