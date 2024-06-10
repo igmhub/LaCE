@@ -50,6 +50,10 @@ jupyter = [
     "jupyter",
     "jupytext",
 ]
+test = [
+  "pytest",
+]
+
 gpy = [
     "GPy==1.13.1",
 ]
@@ -68,10 +72,12 @@ explicit = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["lace"]
+include = ["lace","lace.*"]
 namespaces = false
+
 
 [project.urls]
 Homepage="https://github.com/igmhub/LaCE"
 Repository="https://github.com/igmhub/LaCE.git"
 Issues="https://github.com/igmhub/LaCE/issues"
+
