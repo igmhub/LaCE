@@ -38,15 +38,15 @@ def emulators_supported():
     emulators_supported = [
         "Pedersen21",
         "Pedersen21_ext",
+        "Pedersen21_ext8",
         "Pedersen23",
         "Pedersen23_ext",
+        "Pedersen23_ext8",
         "CH24",
         "Cabayol23",
         "Cabayol23_extended",
         "Cabayol23+",
         "Cabayol23+_extended",
-        "Pedersen21_ext8",
-        "Pedersen23_ext8",
         "Nyx_v0",
         "Nyx_alphap",
     ]

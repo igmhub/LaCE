@@ -28,7 +28,6 @@ pip install -e .[explicit]
 
 - If you want to use the GP emulator please run:
 
-
 ```
 pip install -e .[gpy]
 ``` 
@@ -45,7 +44,6 @@ but there may be some issues.
 - If you want to use notebooks via JupyterHub, you'll also need to download `ipykernel`:
 
 ```
-pip install -e .[jupyter]
 pip install ipykernel
 python -m ipykernel install --user --name lace --display-name lace
 ```
