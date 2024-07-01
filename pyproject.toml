@@ -33,6 +33,8 @@ dependencies = [
     "camb",
     "torch",
     "scikit-fda",
+    "jupyterlab",
+    "jupytext"
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -46,10 +48,6 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-jupyter = [
-    "jupyter",
-    "jupytext",
-]
 test = [
   "pytest",
 ]
@@ -69,6 +67,7 @@ explicit = [
     "torch==2.1.2",
     "scikit-fda==0.9",
     "GPy==1.13.1",
+    "jupyterlab"    
 ]
 
 [tool.setuptools.packages.find]
