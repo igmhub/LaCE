@@ -26,8 +26,6 @@ def get_cosmology(
     pivot_scalar=0.05,
     w=-1,
 ):
-    
-    
     """Given set of cosmological parameters, return CAMB cosmology object."""
 
     pars = camb.CAMBparams()
@@ -419,7 +417,10 @@ def get_Nyx_cosmology(params):
     # collect primorial power parameters
     As = params["A_s"]
     ns = params["n_s"]
-    nrun = params["nrun"]
+    if "nrun" in params.keys():
+        nrun = params["nrun"]
+    else:
+        nrun = 0
     # update primordial power
     pars.InitPower.set_params(As=As, ns=ns, nrun=nrun)
 
