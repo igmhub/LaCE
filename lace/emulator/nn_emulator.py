@@ -867,10 +867,11 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
             emu_p1d = torch.sum(
-                coeffsPred[:, powers, None]
-                * (logk_Mpc[None, :] ** powers[None, :, None]),
+                coeffsPred[:, :, None]
+                * (logk_Mpc[None,None, :] ** powers[None, :, None]),
                 axis=1,
             )
+
 
             emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
             
@@ -887,11 +888,12 @@ class NNEmulator(base_emulator.BaseEmulator):
             powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(self.device)
             emu_p1derr = torch.sqrt(
                 torch.sum(
-                    coeffserr[:, powers, None]
-                    * (self.log_kMpc[None, :] ** powers_err[None, :, None]),
+                    coeffserr[:, :, None]
+                    * (self.log_kMpc[None,None, :] ** powers_err[None, :, None]),
                     axis=1,
                 )
             )
+
             emu_p1derr = emu_p1derr.detach().cpu().numpy().flatten()
             if self.emulator_label in ['Cabayol23', 'Cabayol23_extended']:
                 emu_p1derr = (
