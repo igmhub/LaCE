@@ -28,7 +28,6 @@ pip install -e .[explicit]
 
 - If you want to use the GP emulator please run:
 
-
 ```
 pip install -e .[gpy]
 ``` 
@@ -45,7 +44,6 @@ but there may be some issues.
 - If you want to use notebooks via JupyterHub, you'll also need to download `ipykernel`:
 
 ```
-pip install -e .[jupyter]
 pip install ipykernel
 python -m ipykernel install --user --name lace --display-name lace
 ```
@@ -60,7 +58,11 @@ python -m ipykernel install --user --name lace --display-name lace
  }
 ```
 
-For convenience, you could also add the Nyx path as an environment variable.
+For convenience, you could also add the Nyx path as an environment variable. The Nyx data is located at NERSC in 
+
+```
+NYX_PATH="/global/cfs/cdirs/desi/science/lya/y1-p1d/likelihood_files/nyx_files/"
+```
 
 - To improve the reading time, you can precompute all cosmological information needed using CAMB. This is done by running the script 
 

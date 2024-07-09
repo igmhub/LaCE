@@ -890,6 +890,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 torch.sum(
                     coeffserr[:, :, None]
                     * (logk_Mpc[None,None, :] ** powers_err[None, :, None]),
+
                     axis=1,
                 )
             )
