@@ -889,7 +889,8 @@ class NNEmulator(base_emulator.BaseEmulator):
             emu_p1derr = torch.sqrt(
                 torch.sum(
                     coeffserr[:, :, None]
-                    * (self.log_kMpc[None,None, :] ** powers_err[None, :, None]),
+                    * (logk_Mpc[None,None, :] ** powers_err[None, :, None]),
+
                     axis=1,
                 )
             )
