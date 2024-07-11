@@ -112,6 +112,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             "Cabayol23+",
             "Nyx_v0",
             "Nyx_alphap",
+            "Nyx_alphap_extended",
             "Cabayol23_extended",
             "Nyx_v0_extended",
             "Cabayol23+_extended"
@@ -321,6 +322,38 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.batch_size,
                 self.amsgrad
             ) = (4, 6, 600, 500, 6, 400, 2.5e-4,8e-3,100,True)
+            
+        elif emulator_label == "Nyx_alphap_extended":
+            self.print(
+                r"Neural network emulating the optimal P1D of Nyx simulations "
+                + "fitting coefficients to a 8th degree polynomial. It "
+                + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
+                + "passed to the emulator will be overwritten to match "
+                + "these ones"
+            )
+            self.emu_params = [
+                "Delta2_p",
+                "n_p",
+                "alpha_p",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "kF_Mpc",
+            ]
+            self.emu_type = "polyfit"
+            (
+                self.kmax_Mpc,
+                self.ndeg,
+                self.nepochs,
+                self.step_size,
+                self.nhidden,
+                self.max_neurons,
+                self.lr0,
+                self.weight_decay,
+                self.batch_size,
+                self.amsgrad
+            ) = (8, 8, 600, 500, 6, 400, 2.5e-4,8e-3,100,True)
+            
             
             
         elif emulator_label == "Cabayol23_extended":
