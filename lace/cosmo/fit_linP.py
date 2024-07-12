@@ -15,13 +15,14 @@ def get_linP_Mpc_zs(cosmo, zs, kp_Mpc):
     k_Mpc, zs_out, P_Mpc = camb_cosmo.get_linP_Mpc(cosmo, zs, camb_results)
 
     fp = np.empty(len(zs))
-    for iz,z in enumerate(zs):
+    for iz, z in enumerate(zs):
         # check that CAMB did not reverse the order of redshifts
-        assert z==zs_out[iz],'redshifts not sorted out correctly'
+        assert z == zs_out[iz], "redshifts not sorted out correctly"
         # compute logarithmic growth rate at each z (f = f sigma_8 / sigma_8)
-        fp[iz]=camb_cosmo.get_f_of_z(cosmo,camb_results,z)
+        fp[iz] = camb_cosmo.get_f_of_z(cosmo, camb_results, z)
 
     return fit_linP_Mpc_zs(k_Mpc, P_Mpc, fp, kp_Mpc, zs)
+
 
 def fit_linP_Mpc_zs(k_Mpc, P_Mpc, fp, kp_Mpc, zs):
     """For each redshift, only fit linear power parameters around kp_Mpc"""
@@ -34,7 +35,7 @@ def fit_linP_Mpc_zs(k_Mpc, P_Mpc, fp, kp_Mpc, zs):
 
     # loop over all redshifts, and collect linP parameters
     linP_zs = []
-    for iz,z in enumerate(zs):
+    for iz, z in enumerate(zs):
         # fit polynomial of log power over wavenumber range
         linP_Mpc = fit_polynomial(
             kmin_Mpc / kp_Mpc, kmax_Mpc / kp_Mpc, k_Mpc / kp_Mpc, P_Mpc[iz]
