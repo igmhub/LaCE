@@ -6,4 +6,4 @@ lace.egg-info/
 .github/workflows/.python-tests.yml.swn
 .github/workflows/.python-tests.yml.swo
 .github/workflows/.python-tests.yml.swp
-docs/build
+docs/build/
