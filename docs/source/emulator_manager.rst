@@ -6,7 +6,8 @@ This module provides functions to manage LaCE emulators.
 Functions
 ---------
 
-.. automodule:: lace.emulator_manager
+.. automodule:: lace.emulator.emulator_manager
    :members:
    :undoc-members:
    :show-inheritance:
+   
