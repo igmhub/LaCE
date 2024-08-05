@@ -1,5 +1,5 @@
 Neural network architecture Module
-=======================
+==================================
 
 This module provides functions that define the LaCE-NN emulator architecture
 
