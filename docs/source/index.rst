@@ -1,8 +1,5 @@
-.. Your Project documentation master file, created by
-   sphinx-quickstart on Wed Jul 28 2021.
-
-Welcome to Your Project's documentation!
-========================================
+Welcome to LaCE documentation!
+================================
 
 .. toctree::
    :maxdepth: 2
@@ -10,6 +7,7 @@ Welcome to Your Project's documentation!
 
    introduction
    installation
+   emulator_manager
 
 Indices and tables
 ==================
