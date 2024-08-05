@@ -8,9 +8,8 @@ Welcome to Your Project's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   Introduction
-   Installation
-   Modules
+   introduction
+   installation
 
 Indices and tables
 ==================
