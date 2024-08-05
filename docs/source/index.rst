@@ -8,9 +8,9 @@ Welcome to LaCE documentation!
    introduction
    installation
    emulator_manager
-   nn_emulator
    nn_architecture
    gp_emulator
+   nn_emulator
 
 Indices and tables
 ==================
