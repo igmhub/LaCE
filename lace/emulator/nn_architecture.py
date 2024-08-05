@@ -1,8 +1,6 @@
 import numpy as np
-
 import torch
 from torch import nn
-
 
 class MDNemulator_polyfit(torch.nn.Module):
     """
@@ -43,8 +41,8 @@ class MDNemulator_polyfit(torch.nn.Module):
 
         Returns:
             tuple: 
-                - p1d (torch.Tensor): Emulated P1D values.
-                - logerrp1d (torch.Tensor): Logarithm of the standard deviation of P1D values.
+                - torch.Tensor: Emulated P1D values.
+                - torch.Tensor: Logarithm of the standard deviation of P1D values.
         """
         x = self.inputlay(inp)
         x = self.hiddenlay(x)
