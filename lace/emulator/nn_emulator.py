@@ -998,8 +998,8 @@ class NNEmulator(base_emulator.BaseEmulator):
                     - numpy.ndarray: Covariance matrices for each parameter set.
 
         Warnings:
-            - If any `k_Mpc` values exceed the training range or are below the minimum training range, 
-              a warning will be issued.
+            If any `k_Mpc` values exceed the training range or are below the minimum training range, 
+            a warning will be issued.
         """
         logk_Mpc = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
 
