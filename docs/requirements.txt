@@ -8,3 +8,4 @@ configobj
 camb
 torch
 scikit-fda
+Gpy
