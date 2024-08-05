@@ -33,6 +33,12 @@ autodoc_default_options = {
     'show-inheritance': True,
 }
 
+# Ignore specific warnings
+suppress_warnings = [
+    'ref.ref',  # Ignores undefined references
+    'ref.python',  # Ignores Python cross-references
+]
+
 templates_path = ['_templates']
 exclude_patterns = ['.ipynb_checkpoints']
 
