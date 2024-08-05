@@ -11,6 +11,8 @@ Welcome to LaCE documentation!
    nn_architecture
    gp_emulator
    nn_emulator
+   gadget_archive
+   nyx_archive
 
 Indices and tables
 ==================
