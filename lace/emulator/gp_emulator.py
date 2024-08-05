@@ -17,21 +17,23 @@ from lace.utils.nonlinear_smoothing_p1d import Nonlinear_Smoothing
 
 class GPEmulator(base_emulator.BaseEmulator):
     """
-    Gaussian process emulator to emulate P1D from a simulation suite.
-    This will train on the data in an 'archive' object, and will return
-    a given P_1D(k) for the same k-bins used in training.
-    GPEmulator.predict takes models in a dictionary format currently.
+    Gaussian Process emulator for predicting P1D from a simulation suite.
 
     Args:
-        archive (class): Data archive used for training the emulator.
-            Required when using a custom emulator.
-        training_set: Specific training set.  Options are
-            'Perdersen21' and 'Cabayol23'.
-        emu_params (list): A list of emulator parameters.
-        emulator_label (str): Specific emulator label. Options are
-            'Pedersen21', 'Pedersen23' and 'Cabayol23'.
-        kmax_Mpc (float): The maximum k in Mpc^-1 to use for training. Default is 3.5.
-
+        archive (class, optional): Data archive used for training the emulator. Required if not using training_set.
+        training_set (str, optional): Specific training set. Options are 'Perdersen21' and 'Cabayol23'.
+        emulator_label (str, optional): Specific emulator label. Options are 'Pedersen21', 'Pedersen23', 'Cabayol23'.
+        emu_type (str, optional): Type of emulator. Defaults to 'polyfit'.
+        verbose (bool, optional): Whether to print verbose messages. Defaults to False.
+        kmax_Mpc (float, optional): Maximum k in Mpc^-1 for training. Defaults to 10.0.
+        emu_params (list, optional): List of emulator parameters.
+        drop_sim (optional): Specific simulations to drop.
+        set_noise_var (float, optional): Noise variance for emulator. Defaults to 1e-3.
+        check_hull (bool, optional): Whether to check if emulator calls are within the convex hull. Defaults to False.
+        emu_per_k (bool, optional): Whether to build a GP for each k-bin. Defaults to False.
+        ndeg (int, optional): Degree of polynomial for fitting. Defaults to 4.
+        smoothing_bn (list, optional): Bandwidths for smoothing.
+        smoothing_krange (list, optional): K-ranges for smoothing.
     """
 
     def __init__(
@@ -294,8 +296,12 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.hull = None
 
     def _training_points_k_bin(self):
-        """Method to get the Y training points in the form of the P1D
-        at different k values"""
+        """
+        Get the training points for k-bin emulation in the form of P1D values at different k values.
+
+        Returns:
+            numpy.ndarray: Array of P1D values for each training data set.
+        """
 
         P1D_k = np.empty([len(self.training_data), self.k_bin - 1])
         for aa in range(len(self.training_data)):
@@ -304,9 +310,12 @@ class GPEmulator(base_emulator.BaseEmulator):
         return P1D_k
 
     def _training_points_polyfit(self):
-        """Method to get the Y training points in the form of polyfit
-        coefficients"""
+        """
+        Get the training points for polynomial fitting in the form of polynomial coefficients.
 
+        Returns:
+            numpy.ndarray: Array of polynomial coefficients for each training data set.
+        """
         self._fit_p1d_in_archive(self.ndeg, self.kmax_Mpc)
         coeffs = np.empty([len(self.training_data), self.ndeg + 1])
         for aa in range(len(self.training_data)):
@@ -317,9 +326,12 @@ class GPEmulator(base_emulator.BaseEmulator):
         return coeffs
 
     def _training_points_k_bin_sm(self):
-        """Method to get the Y training points in the form of polyfit
-        coefficients"""
+        """
+        Get the training points for k-bin smoothing in the form of smoothed P1D values.
 
+        Returns:
+            numpy.ndarray: Array of smoothed P1D values for each training data set.
+        """
         self._k_bin_sm_p1d_in_archive(self.kmax_Mpc)
         coeffs = np.empty([len(self.training_data), self.k_bin - 1])
         for aa in range(len(self.training_data)):
@@ -328,8 +340,15 @@ class GPEmulator(base_emulator.BaseEmulator):
         return coeffs
 
     def _rescale_params(self, params):
-        """Rescale a set of parameters to have a unit volume"""
+        """
+        Rescale a set of parameters to a unit volume.
 
+        Args:
+            params (list or numpy.ndarray): Parameters to be rescaled.
+
+        Returns:
+            numpy.ndarray: Rescaled parameters.
+        """
         for aa in range(len(params)):
             params[aa] = (params[aa] - self.param_limits[aa, 0]) / (
                 self.param_limits[aa, 1] - self.param_limits[aa, 0]
@@ -338,12 +357,14 @@ class GPEmulator(base_emulator.BaseEmulator):
         return params
 
     def _buildTrainingSets(self):
-        """Build the grids that contain the training parameters
-        This is a nxm grid of X data (n for number of training points, m
-        for number of parameters), and a length nxk set of Y  data, k being
-        the number of k bins for the k bin emulator, or number of polynomial
-        coefficients for the polyfit emulator"""
+        """
+        Build training sets containing the parameter grid and corresponding training points.
 
+        Returns:
+            tuple:
+                - numpy.ndarray: Parameter grid for training.
+                - numpy.ndarray: Training points.
+        """
         ## Grid that will contain all training params
         params = np.empty([len(self.training_data), len(self.emu_params)])
 
@@ -366,8 +387,13 @@ class GPEmulator(base_emulator.BaseEmulator):
         return params, trainingPoints
 
     def _fit_p1d_in_archive(self, deg, kmax_Mpc):
-        """For each entry in archive, fit polynomial to log(p1d)"""
+        """
+        Fit polynomial to the logarithm of P1D for each entry in the archive.
 
+        Args:
+            deg (int): Degree of polynomial for fitting.
+            kmax_Mpc (float): Maximum k in Mpc^-1 for fitting.
+        """
         for entry in self.training_data:
             k_Mpc = entry["k_Mpc"]
             p1d_Mpc = entry["p1d_Mpc"]
@@ -379,8 +405,12 @@ class GPEmulator(base_emulator.BaseEmulator):
             ] = fit_p1d.lnP_fit  ## Add coeffs for each model to archive
 
     def _k_bin_sm_p1d_in_archive(self, kmax_Mpc):
-        """For each entry in archive, carry out smoothing"""
+        """
+        Apply smoothing to P1D data for each entry in the archive.
 
+        Args:
+            kmax_Mpc (float): Maximum k in Mpc^-1 for smoothing.
+        """
         # smoothing
         self.Kernel_Smoothing = Nonlinear_Smoothing(
             data_set_kernel=self.training_data,
@@ -397,10 +427,11 @@ class GPEmulator(base_emulator.BaseEmulator):
             entry["p1d_sm"] = data_smooth[isim]
 
     def _build_interp(self):
-        """Method to build an GP object from a spectra archive and list of parameters
-        Currently the parameter rescaling is done by taking the min and max
-        of the provided params, not by defining our own prior volume. Need to decide
-        whether or not this is what we want."""
+        """
+        Build Gaussian Process (GP) models from training data and parameter grid.
+
+        This includes rescaling parameters, normalizing training data, and constructing the GP models.
+        """
 
         self.X_param_grid, self.Ypoints = self._buildTrainingSets()
 
@@ -447,8 +478,15 @@ class GPEmulator(base_emulator.BaseEmulator):
         return
 
     def _get_param_limits(self, paramGrid):
-        """Get the min and max values for each parameter"""
+        """
+        Get the minimum and maximum values for each parameter.
 
+        Args:
+            paramGrid (numpy.ndarray): 2D array where each column represents a parameter and each row represents a different training point.
+
+        Returns:
+            numpy.ndarray: An array where each row contains the minimum and maximum values of a parameter.
+        """
         param_limits = np.empty((np.shape(paramGrid)[1], 2))
         for aa in range(len(param_limits)):
             param_limits[aa, 0] = min(paramGrid[:, aa])
@@ -457,8 +495,14 @@ class GPEmulator(base_emulator.BaseEmulator):
         return param_limits
 
     def train(self):
-        """Train the GP emulator"""
+        """
+        Train the Gaussian Process (GP) emulator.
 
+        For each GP model, initialize parameters and optimize. If `emu_per_k` is True, trains multiple GPs, one for each k-bin.
+
+        Returns:
+            None
+        """
         if self.emu_per_k:
             start = time.time()
             for gp in self.gp:
@@ -479,14 +523,26 @@ class GPEmulator(base_emulator.BaseEmulator):
         return
 
     def printPriorVolume(self):
-        """Print the limits for each parameter"""
+        """
+        Print the limits for each parameter.
 
+        This provides the minimum and maximum values for all parameters used in the emulator.
+
+        Returns:
+            None
+        """
         for aa in range(len(self.emu_params)):
             print(self.emu_params[aa], self.param_limits[aa])
 
     def return_unit_call(self, model):
-        """For a given model in dictionary format, return an
-        ordered parameter list with the values rescaled to unit volume
+        """
+        For a given model in dictionary format, return an ordered parameter list with the values rescaled to unit volume.
+
+        Args:
+            model (dict): Dictionary containing parameter values with keys as parameter names.
+
+        Returns:
+            list: List of rescaled parameter values.
         """
 
         param = []
@@ -499,6 +555,15 @@ class GPEmulator(base_emulator.BaseEmulator):
         return param
 
     def check_in_hull(self, model):
+        """
+        Check if a given model is within the convex hull of the training points.
+
+        Args:
+            model (dict): Dictionary containing parameter values with keys as parameter names.
+
+        Returns:
+            bool: True if the model is inside the convex hull, False otherwise.
+        """
         param = self.return_unit_call(model)
         outside_hull = (
             self.hull.find_simplex(np.array(param).reshape(1, -1)) < 0
@@ -506,9 +571,20 @@ class GPEmulator(base_emulator.BaseEmulator):
         return not outside_hull
 
     def predict(self, model, z=None):
-        """Return P1D or polyfit coeffs for a given parameter set
-        For the k bin emulator this will be in the training k bins
-        Option to pass 'z' for rescaling is not fully tested."""
+        """
+        Return P1D or polynomial fit coefficients for a given parameter set.
+
+        For the k-bin emulator, this will return predictions at the training k-bins. Optionally rescale with 'z'.
+
+        Args:
+            model (dict): Dictionary containing parameter values with keys as parameter names.
+            z (optional): Optional parameter for rescaling, not fully tested.
+
+        Returns:
+            tuple:
+                - numpy.ndarray: Predicted P1D values.
+                - numpy.ndarray: Error estimates for the predictions.
+        """
 
         param = []
         for aa, par in enumerate(self.emu_params):
@@ -538,9 +614,20 @@ class GPEmulator(base_emulator.BaseEmulator):
 
     def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
         """
-        Method to return the trained P(k) for an arbitrary set of k bins
-        by interpolating the trained data.
-        Option for reducing variance with z rescaling is not fully tested.
+        Return the trained P(k) for an arbitrary set of k bins by interpolating the trained data.
+
+        Optionally compute covariance if `return_covar` is True.
+
+        Args:
+            model (dict): Dictionary containing parameter values with keys as parameter names.
+            k_Mpc (numpy.ndarray): Array of k values in Mpc^-1 for which to predict P(k).
+            return_covar (bool, optional): Whether to return covariance matrix. Defaults to False.
+            z (optional): Optional parameter for rescaling, not fully tested.
+
+        Returns:
+            tuple:
+                - numpy.ndarray: Predicted P1D values.
+                - numpy.ndarray (optional): Covariance matrix if `return_covar` is True.
         """
         if np.max(k_Mpc) > self.kmax_Mpc:
             warn(
@@ -610,8 +697,16 @@ class GPEmulator(base_emulator.BaseEmulator):
             raise ValueError("wrong emulator type")
 
     def get_nearest_distance(self, model, z=None):
-        """For a given model, get the Euclidean distance to the nearest
-        training point (in the rescaled parameter space)"""
+        """
+        Get the Euclidean distance to the nearest training point in the rescaled parameter space.
+
+        Args:
+            model (dict): Dictionary containing parameter values with keys as parameter names.
+            z (optional): Optional parameter for rescaling, not fully tested.
+
+        Returns:
+            float: Euclidean distance to the nearest training point.
+        """
 
         param = []  ## List of input emulator parameter values
         ## First rescale the input model to unit volume
@@ -635,8 +730,15 @@ class GPEmulator(base_emulator.BaseEmulator):
         return shortest_distance
 
     def get_param_dict(self, point_number):
-        """Return a dictionary with the emulator parameters
-        for a given training point"""
+        """
+        Return a dictionary with the emulator parameters for a given training point.
+
+        Args:
+            point_number (int): Index of the training point.
+
+        Returns:
+            dict: Dictionary with parameter names as keys and their corresponding values.
+        """
 
         model_dict = {}
         for param in self.emu_params:
