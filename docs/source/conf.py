@@ -24,6 +24,15 @@ extensions = [
     'sphinx.ext.mathjax',
 ]
 
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    'private-members': True,
+    'special-members': '__init__',
+    'inherited-members': True,
+    'show-inheritance': True,
+}
+
 templates_path = ['_templates']
 exclude_patterns = ['.ipynb_checkpoints']
 
