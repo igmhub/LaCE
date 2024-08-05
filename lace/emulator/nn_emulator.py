@@ -893,23 +893,17 @@ class NNEmulator(base_emulator.BaseEmulator):
 
 
     def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
-        """Emulates the power spectrum P1D at a given set of k_Mpc values.
+        """
+        Emulate P1D values for a given set of k values in Mpc units.
 
         Args:
-            model (dict): A dictionary containing the model parameters required for emulation.
-            k_Mpc (array-like): The k values in Mpc^-1 at which to emulate the P1D.
-            return_covar (bool, optional): Whether to return the covariance matrix. Defaults to False.
-            z (float, optional): The redshift value. Currently not used. Defaults to None.
+            model (dict): Dictionary containing the model parameters.
+            k_Mpc (np.ndarray): Array of k values in Mpc units.
+            return_covar (bool, optional): Whether to return covariance. Defaults to False.
+            z (float, optional): Redshift value. Defaults to None.
 
         Returns:
-            numpy.ndarray: Emulated P1D values at the provided k_Mpc.
-            If `return_covar` is True:
-                tuple:
-                    - numpy.ndarray: Emulated P1D values.
-                    - numpy.ndarray: Covariance matrix of the emulated P1D.
-
-        Warnings:
-            - If any `k_Mpc` values exceed the training range or are below the minimum training range, a warning will be issued.
+            np.ndarray: Emulated P1D values.
         """
         
         logk_Mpc = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
@@ -987,7 +981,8 @@ class NNEmulator(base_emulator.BaseEmulator):
 
 
     def emulate_arr_p1d_Mpc(self, emu_calls, k_Mpc, return_covar=False, z=None):
-        """Emulates the power spectrum P1D for an array of emulator parameters.
+        """
+        Emulates the power spectrum P1D for an array of emulator parameters.
 
         Args:
             emu_calls (array-like): An array of emulator parameter sets.
@@ -1071,6 +1066,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         else:
             return emu_p1ds
+
 
 
     def check_hull(self):
