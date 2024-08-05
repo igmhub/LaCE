@@ -541,11 +541,11 @@ class NNEmulator(base_emulator.BaseEmulator):
 
     def _sort_dict(self, dct, keys):
         """
-        Sort a list of dictionaries based on specified keys.
+        Sorts a list of dictionaries based on specified keys.
 
         Args:
-            dct (list): List of dictionaries to be sorted.
-            keys (list): List of keys to sort the dictionaries by.
+            dct (list): A list of dictionaries to be sorted.
+            keys (list): A list of keys to sort the dictionaries by.
 
         Returns:
             list: The sorted list of dictionaries.
@@ -561,6 +561,15 @@ class NNEmulator(base_emulator.BaseEmulator):
         return dct
 
     def _calculate_normalization(self, archive):
+        """
+        Calculates normalization parameters based on the training data.
+
+        Args:
+            archive (Archive): The archive containing the training data.
+
+        Side Effects:
+            - Sets the `self.paramLims` attribute to the calculated parameter limits.
+        """
         training_data_all = archive.get_training_data(
             emu_params=self.emu_params
         )
@@ -591,15 +600,14 @@ class NNEmulator(base_emulator.BaseEmulator):
 
     def _obtain_sim_params(self):
         """
-        Obtain simulation parameters.
+        Obtains simulation parameters including k_Mpc and redshift values.
 
         Returns:
-            k_Mpc (np.ndarray): Simulation k values.
-            Nz (int): Number of redshift values.
-            Nk (int): Number of k values.
-            k_Mpc_train (tensor): k values in the k training range
-        """
+            k_Mpc (np.ndarray): The simulation k values.
 
+        Side Effects:
+            - Sets the `self.k_Mpc`, `self.Nk`, and `self.yscalings` attributes.
+        """
         self.k_mask = [
             (self.training_data[i]["k_Mpc"] < self.kmax_Mpc)
             & (self.training_data[i]["k_Mpc"] > 0)
@@ -645,9 +653,10 @@ class NNEmulator(base_emulator.BaseEmulator):
 
     def _get_training_data_nn(self):
         """
-        Given an archive and key_av, it obtains the training data based on self.emu_params
-        Sorts the training data according to self.emu_params and scales the data based on self.paramLims
-        Finally, it returns the training data as a torch.Tensor object.
+        Retrieves and normalizes training data for the neural network.
+
+        Returns:
+            torch.Tensor: The normalized training data as a tensor.
         """
 
         training_data = []
@@ -678,9 +687,10 @@ class NNEmulator(base_emulator.BaseEmulator):
 
     def _get_training_pd1_nn(self):
         """
-        Method to get the p1d_Mpc values from the training data in a format that the NN emulator can ingest
-        It gets the P1D from the archive and scales it.
-        Finally, it returns the scaled values as a torch.Tensor object along with the scaling factor.
+        Retrieves and scales p1d_Mpc values from the training data for the neural network.
+
+        Returns:
+            torch.Tensor: The scaled p1d_Mpc values as a tensor.
         """
         training_label = [
             {
@@ -712,8 +722,10 @@ class NNEmulator(base_emulator.BaseEmulator):
 
     def _set_weights(self):
         """
-        Method to set downscale the impact of small scales on the extended emulator setup.
-        Studied by Emma Clarassó.
+        Sets weights for downscaling the impact of small scales in the emulator.
+
+        Returns:
+            torch.Tensor: The weights for the loss function.
         """
         w = torch.ones(size=(self.Nk,))
         if (self.kmax_Mpc > 4) & (self.weighted_emulator == True):
@@ -726,11 +738,17 @@ class NNEmulator(base_emulator.BaseEmulator):
 
     def train(self):
         """
-        Trains the emulator with given key_list using the archive data.
-        Args:
-        key_list (list): List of keys to be used for training
+        Trains the emulator neural network with the given data and settings.
 
-        Returns:None
+        Args:
+            None
+
+        Returns:
+            None
+
+        Side Effects:
+            - Trains the neural network defined by `self.nn`.
+            - Saves the trained model if `self.model_path` is specified.
         """
 
         kMpc_train = self._obtain_sim_params()
@@ -841,6 +859,20 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.print(f"NN optimised in {time.time()-t0} seconds")
 
     def save_emulator(self):
+        """Saves the current state of the emulator to a file.
+
+        This method saves both the model state dictionary and metadata about the emulator 
+        to a file specified by `self.save_path`.
+
+        Metadata includes:
+            - `training_set`: The training set used.
+            - `emulator_label`: The label of the emulator.
+            - `drop_sim`: The simulation to drop from the training set.
+            - `drop_z`: The redshift value to drop from the training set.
+
+        Side Effects:
+            - Writes a file to `self.save_path` with the saved emulator state and metadata.
+        """
         model_state_dict = self.nn.state_dict()
 
         # Define your metadata
@@ -859,9 +891,27 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         torch.save(model_with_metadata, self.save_path)
 
-    def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
-        """Emulates the p1d_Mpc at a given set of k_Mpc values"""
 
+    def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
+        """Emulates the power spectrum P1D at a given set of k_Mpc values.
+
+        Args:
+            model (dict): A dictionary containing the model parameters required for emulation.
+            k_Mpc (array-like): The k values in Mpc^-1 at which to emulate the P1D.
+            return_covar (bool, optional): Whether to return the covariance matrix. Defaults to False.
+            z (float, optional): The redshift value. Currently not used. Defaults to None.
+
+        Returns:
+            numpy.ndarray: Emulated P1D values at the provided k_Mpc.
+            If `return_covar` is True:
+                tuple:
+                    - numpy.ndarray: Emulated P1D values.
+                    - numpy.ndarray: Covariance matrix of the emulated P1D.
+
+        Warnings:
+            - If any `k_Mpc` values exceed the training range or are below the minimum training range, a warning will be issued.
+        """
+        
         logk_Mpc = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
 
         if np.max(k_Mpc) > self.kmax_Mpc:
@@ -877,7 +927,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             emu_call = {}
             for param in self.emu_params:
                 if param not in model:
-                    raise (ValueError(param + " not in input model"))
+                    raise ValueError(f"{param} not in input model")
                 emu_call[param] = model[param]
 
             emu_call = [emu_call[param] for param in self.emu_params]
@@ -905,7 +955,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             else:
                 emu_p1d = np.exp(emu_p1d * self.yscalings**2)
 
-        if return_covar == True:
+        if return_covar:
             coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
             coeffserr = torch.exp(coeffs_logerr) ** 2
             powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(self.device)
@@ -935,7 +985,27 @@ class NNEmulator(base_emulator.BaseEmulator):
         else:
             return emu_p1d
 
+
     def emulate_arr_p1d_Mpc(self, emu_calls, k_Mpc, return_covar=False, z=None):
+        """Emulates the power spectrum P1D for an array of emulator parameters.
+
+        Args:
+            emu_calls (array-like): An array of emulator parameter sets.
+            k_Mpc (array-like): The k values in Mpc^-1 at which to emulate the P1D.
+            return_covar (bool, optional): Whether to return the covariance matrices. Defaults to False.
+            z (float, optional): The redshift value. Currently not used. Defaults to None.
+
+        Returns:
+            numpy.ndarray: Emulated P1D values for each set of parameters at the provided k_Mpc.
+            If `return_covar` is True:
+                tuple:
+                    - numpy.ndarray: Emulated P1D values for each parameter set.
+                    - numpy.ndarray: Covariance matrices for each parameter set.
+
+        Warnings:
+            - If any `k_Mpc` values exceed the training range or are below the minimum training range, 
+              a warning will be issued.
+        """
         logk_Mpc = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
 
         emu_p1ds = np.zeros(shape=(len(emu_calls), k_Mpc.shape[1]))
@@ -969,7 +1039,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             else:
                 emu_p1ds = np.exp(emu_p1ds * self.yscalings**2)
 
-        if return_covar == True:
+        if return_covar:
             coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
             coeffserr = torch.exp(coeffs_logerr) ** 2
             powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(self.device)
@@ -1002,7 +1072,17 @@ class NNEmulator(base_emulator.BaseEmulator):
         else:
             return emu_p1ds
 
+
     def check_hull(self):
+        """Checks and creates the convex hull of the training data in the emulator parameter space.
+
+        This method filters the training data to include only those with "average" values for 
+        both the axis and phase, sorts the data according to emulator parameters, and then computes 
+        the convex hull using the Delaunay triangulation.
+
+        Side Effects:
+            - Sets the `self.hull` attribute to the computed Delaunay triangulation of the training data.
+        """
         training_points = [
             d for d in self.training_data if d["ind_axis"] == "average"
         ]
@@ -1027,7 +1107,16 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         self.hull = Delaunay(training_points)
 
+
     def test_hull(self, model_test):
+        """Tests if a given parameter set is within the convex hull of the training data.
+
+        Args:
+            model_test (dict): A dictionary containing the parameter set to be tested.
+
+        Returns:
+            bool: True if the parameter set is inside or on the boundary of the convex hull, False otherwise.
+        """
         test_point = [model_test[param] for param in self.emu_params]
         test_point = np.array(test_point)
         return self.hull.find_simplex(test_point) >= 0
