@@ -28,17 +28,25 @@ class NNEmulator(base_emulator.BaseEmulator):
     """A class for training an emulator.
 
     Args:
-        archive (class): Data archive used for training the emulator.
-            Required when using a custom emulator.
-        training_set: Specific training set.  Options are
-            'Cabayol23'.
-        emu_params (lsit): A list of emulator parameters.
-        emulator_label (str): Specific emulator label. Options are
-            'Cabayol23' and 'Nyx_vo'.
-        kmax_Mpc (float): The maximum k in Mpc^-1 to use for training. Default is 3.5.
-        nepochs (int): The number of epochs to train for. Default is 200.
-        model_path (str): The path to a pretrained model. Default is None.
-        train (bool): Wheather to train the emulator or not. Default True. If False, a model path must is required.
+        archive (class, optional): 
+            Data archive used for training the emulator. Required when using a custom emulator. If not provided, defaults to None.
+        training_set (str): 
+            Specific training set. Options are 'Cabayol23'.
+        emu_params (list): 
+            A list of emulator parameters.
+        emulator_label (str): 
+            Specific emulator label. Options are 'Cabayol23' and 'Nyx_v0'.
+        kmax_Mpc (float, optional): 
+            The maximum k in Mpc^-1 to use for training. Defaults to 3.5.
+        nepochs (int, optional): 
+            The number of epochs to train for. Defaults to 200.
+        model_path (str, optional): 
+            The path to a pretrained model. Defaults to None.
+        train (bool, optional): 
+            Whether to train the emulator or not. Defaults to True. If False, a model path must be provided.
+
+    Attributes:
+        emulator: The trained emulator instance.
     """
 
     def __init__(
