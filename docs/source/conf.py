@@ -25,7 +25,7 @@ extensions = [
 ]
 
 templates_path = ['_templates']
-exclude_patterns = []
+exclude_patterns = ['.ipynb_checkpoints']
 
 language = 'En'
 master_doc = 'index'
