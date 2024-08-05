@@ -1,0 +1,10 @@
+numpy
+pandas
+scipy
+h5py
+scikit-learn
+matplotlib
+configobj
+camb
+torch
+scikit-fda
