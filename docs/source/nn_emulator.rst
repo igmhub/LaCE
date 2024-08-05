@@ -1,4 +1,4 @@
-Emulator Manager Module
+LaCE-NN Module
 =======================
 
 This module provides functions to run the LaCE-NN emulator

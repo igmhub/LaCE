@@ -1,4 +1,4 @@
-Emulator Manager Module
+LaCE-GP Module
 =======================
 
 This module provides functions to run the LaCE-GP emulator
