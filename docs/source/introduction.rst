@@ -11,11 +11,13 @@ Please cite at least `arxiv:2305.19064 <https://arxiv.org/abs/2305.19064>`_ if y
 
 The LaCE emulators comprise a set of emulators that parameterize cosmological effects using the linear matter power spectrum.
 LaCE supports two algorithm options:
-- Neural Networks (LaCE-NN) <link_to_nn_documentation>`
-- Gaussian Process (LaCE-GP) <link_to_gp_documentation>`
+- Neural Networks (LaCE-NN) :ref:`nn_emulator`
+- Gaussian Process (LaCE-GP) :ref:`gp_emulator`
 
 And two suites of hydrodynamical simulations:
+
 - **MP-Gadget simulations:** These were conducted using the `Gadget` code, a Smoothed Particle Hydrodynamics (SPH) simulation framework that employs a Lagrangian method to represent the simulation domain as a collection of particles. Each \texttt{MP-Gadget} simulation box has a size of :math:`L = 67.5` Mpc on each side. The simulations generate 11 output snapshots uniformly spaced in redshift between :math:`z = 4.5` and :math:`z = 2`. This makes a total of 330 training points. We have also calculated four additional mean-flux rescalings per snapshot, which enlarge the dataset to 1650 training points.
+
 - **Nyx simulations:** [lacking documentation here still, WiP]
 
 The LaCE emulators comprise a set of emulators that parameterize cosmological effects using the linear matter power spectrum. However, the Lyman-:math:`\alpha` forest is influenced by both cosmological parameters and the thermal state of the IGM. Consequently, the LaCE emulators incorporate four parameters describing IGM physics that characterize the :math:`P_{\rm 1D}`.
