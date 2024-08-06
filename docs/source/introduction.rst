@@ -11,8 +11,10 @@ Please cite at least `arxiv:2305.19064 <https://arxiv.org/abs/2305.19064>`_ if y
 
 The LaCE emulators comprise a set of emulators that parameterize cosmological effects using the linear matter power spectrum.
 LaCE supports two algorithm options:
-- Neural Networks (LaCE-NN) :ref:`nn_emulator`
-- Gaussian Process (LaCE-GP) :ref:`gp_emulator`
+
+- Neural Networks (LaCE-NN) :ref:`LaCE-NN <nn_emulator>`.
+
+- Gaussian Process (LaCE-GP)  :ref:`LaCE-GP <gp_emulator>`.
 
 And two suites of hydrodynamical simulations:
 
