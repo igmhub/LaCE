@@ -1,5 +1,6 @@
 LaCE-GP Module
 =======================
+.. _gp_emulator:
 
 This module provides functions to run the LaCE-GP emulator
 
