@@ -5,34 +5,34 @@ from lace.emulator.gp_emulator import GPEmulator
 
 
 def emulators_supported():
-    """List of emulators supported
+    """List of emulators supported.
+
     LaCE emulators:
-        Pedersen21: GPEmulator used in Pedersen21, k-bin emulator.
-            Superseed by Pedersen21_ext
-        Pedersen21_ext: GPEmulator like Pedersen21 but using Cabayol23 postprocessing.
-        Pedersen21_ext8: GPEmulator like Pedersen21_ext but accessing smaller scales.
-        Pedersen23: GPEmulator used in Pedersen23, polynomial emulator.
-            Superseed by Pedersen23_ext
-        Pedersen23_ext: GPEmulator like Pedersen23 but using Cabayol23 postprocessing.
-            Recommended GP emulator
-        Pedersen23_ext8: GPEmulator like Pedersen23_ext but accessing smaller scales
-            Recommended GP emulator for accessing small scales
-        CH24: GPEmulator based on non-linear smoothing
-        Cabayol23: NNEmulator used in Cabayol23, polynomial emulator.
-            Superseed by Cabayol23+
-        Cabayol23+: NNEmulator like Cabayol23 but using better architecture
-            Recommended NN emulator
-        Cabayol23_extended: NNEmulator used in Cabayol23 accessing smaller scales than Cabayol23
-            Superseed by Cabayol23_extended+
-        Cabayol23+_extended: NNEmulator like Cabayol23_extended but using better architecture
-            Recommended NN emulator for accessing small scales
+        - **Pedersen21**: GPEmulator used in Pedersen21, k-bin emulator.
+          Superseded by Pedersen21_ext.
+        - **Pedersen21_ext**: GPEmulator like Pedersen21 but using Cabayol23 postprocessing.
+        - **Pedersen21_ext8**: GPEmulator like Pedersen21_ext but accessing smaller scales.
+        - **Pedersen23**: GPEmulator used in Pedersen23, polynomial emulator.
+          Superseded by Pedersen23_ext.
+        - **Pedersen23_ext**: GPEmulator like Pedersen23 but using Cabayol23 postprocessing.
+          Recommended GP emulator.
+        - **Pedersen23_ext8**: GPEmulator like Pedersen23_ext but accessing smaller scales.
+          Recommended GP emulator for accessing small scales.
+        - **CH24**: GPEmulator based on non-linear smoothing.
+        - **Cabayol23**: NNEmulator used in Cabayol23, polynomial emulator.
+          Superseded by Cabayol23+.
+        - **Cabayol23+**: NNEmulator like Cabayol23 but using better architecture.
+          Recommended NN emulator.
+        - **Cabayol23_extended**: NNEmulator used in Cabayol23 accessing smaller scales than Cabayol23.
+          Superseded by Cabayol23_extended+.
+        - **Cabayol23+_extended**: NNEmulator like Cabayol23_extended but using better architecture.
+          Recommended NN emulator for accessing small scales.
 
     Nyx emulators:
-        Nyx_v0: NNEmulator using amplitude and slope, polynomial emulator.
-            Superseed by Nyx_alphap
-        Nyx_alphap: NNEmulator using amplitude, slope, and running, polynomial emulator.
-            Recommended emulator
-
+        - **Nyx_v0**: NNEmulator using amplitude and slope, polynomial emulator.
+          Superseded by Nyx_alphap.
+        - **Nyx_alphap**: NNEmulator using amplitude, slope, and running, polynomial emulator.
+          Recommended emulator.
     """
 
     emulators_supported = [
@@ -54,22 +54,22 @@ def emulators_supported():
 
 
 def set_emulator(emulator_label, archive=None, drop_sim=None):
-    """Loads emulator
+    """Loads emulator.
 
-    Parameters:
+    Parameters
     ----------
-    emulator_label: str
-        Name of the emulator
-    archive: object, optional
+    emulator_label : str
+        Name of the emulator.
+    archive : object, optional
         Archive with the emulator training data. If None, an archive
-        corresponding to the emulator_label will be loaded
-    drop_sim: str, optional
-        Drop a specific simulation from the training set
+        corresponding to the emulator_label will be loaded.
+    drop_sim : str, optional
+        Drop a specific simulation from the training set.
 
-    Returns:
+    Returns
     -------
-    emulator: object
-    Loaded emulator
+    object
+        Loaded emulator.
     """
 
     if emulator_label not in emulators_supported():
