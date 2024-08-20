@@ -7,13 +7,6 @@ from lace.archive.base_archive import BaseArchive
 from lace.utils.misc import split_string
 
 
-def get_attrs(h5py_data):
-    dict_params = {}
-    for ipar in h5py_data.attrs.keys():
-        dict_params[ipar] = h5py_data.attrs[ipar]
-    return dict_params
-
-
 class NyxArchive(BaseArchive):
     """
     Bookkeeping of Lya flux P1D & P3D measurements from a suite of Nyx simulations.
@@ -173,6 +166,11 @@ class NyxArchive(BaseArchive):
             "kF_Mpc",
         ]
 
+    def _get_attrs(self, h5py_data):
+        dict_params = {}
+        for ipar in h5py_data.attrs.keys():
+            dict_params[ipar] = h5py_data.attrs[ipar]
+        return dict_params
     def _get_emu_cosmo(
         self, nyx_data, sim_label, force_recompute_linP_params=False
     ):
@@ -242,7 +240,7 @@ class NyxArchive(BaseArchive):
                 print("We are using CAMB")
             from lace.cosmo import camb_cosmo, fit_linP
 
-            cosmo_params = get_attrs(nyx_data[sim_label])
+            cosmo_params = self._get_attrs(nyx_data[sim_label])
             if isim == "nyx_central":
                 cosmo_params["A_s"] = 2.10e-9
                 cosmo_params["n_s"] = 0.966
@@ -363,7 +361,7 @@ class NyxArchive(BaseArchive):
 
                         ## store IGM parameters
                         # store temperature parameters
-                        _igm = get_attrs(ff[isim][iz][iscaling])
+                        _igm = self._get_attrs(ff[isim][iz][iscaling])
                         for key in _igm.keys():
                             _arch[self.key_conv[key]] = _igm[key]
 
@@ -376,7 +374,7 @@ class NyxArchive(BaseArchive):
                         # store pressure parameters
                         # not available in bar_ic_grid_3 and wdm_3.5kev_grid_1
                         # should it be the same as nyx_3 and nyx_1?
-                        _pressure = get_attrs(ff[isim][iz])
+                        _pressure = self._get_attrs(ff[isim][iz])
                         key = "lambda_P"
                         if key in _pressure.keys():
                             _arch[self.key_conv[key]] = 1 / (
