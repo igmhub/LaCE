@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torch import nn
 
+
 class MDNemulator_polyfit(torch.nn.Module):
     """
     A neural network model for emulating power spectrum P1D using polynomial fitting.
@@ -12,6 +13,7 @@ class MDNemulator_polyfit(torch.nn.Module):
         max_neurons (int, optional): Maximum number of neurons in any layer. Defaults to 100.
         ninput (int, optional): Number of input features. Defaults to 6.
     """
+
     def __init__(self, nhidden, ndeg, max_neurons=100, ninput=6):
         super().__init__()
         self.inputlay = torch.nn.Sequential(
@@ -26,10 +28,14 @@ class MDNemulator_polyfit(torch.nn.Module):
         self.hiddenlay = nn.Sequential(*modules)
 
         self.means = torch.nn.Sequential(
-            nn.Linear(max_neurons, 50), nn.LeakyReLU(0.5), nn.Linear(50, ndeg + 1)
+            nn.Linear(max_neurons, 50),
+            nn.LeakyReLU(0.5),
+            nn.Linear(50, ndeg + 1),
         )
         self.stds = torch.nn.Sequential(
-            nn.Linear(max_neurons, 50), nn.LeakyReLU(0.5), nn.Linear(50, ndeg + 1)
+            nn.Linear(max_neurons, 50),
+            nn.LeakyReLU(0.5),
+            nn.Linear(50, ndeg + 1),
         )
 
     def forward(self, inp):
@@ -40,7 +46,7 @@ class MDNemulator_polyfit(torch.nn.Module):
             inp (torch.Tensor): Input tensor containing features.
 
         Returns:
-            tuple: 
+            tuple:
                 - torch.Tensor: Emulated P1D values.
                 - torch.Tensor: Logarithm of the standard deviation of P1D values.
         """

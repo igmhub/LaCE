@@ -403,8 +403,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Fit a polynomial to the logarithm of P1D for each entry in the archive.
 
-        This method fits a polynomial to the logarithm of the power spectrum data (`p1d_Mpc`) 
-        for each entry in the `training_data` using a polynomial of the specified degree (`deg`), 
+        This method fits a polynomial to the logarithm of the power spectrum data (`p1d_Mpc`)
+        for each entry in the `training_data` using a polynomial of the specified degree (`deg`),
         over the range of k values up to `kmax_Mpc`.
 
         :param deg: Degree of the polynomial for fitting.
@@ -426,7 +426,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Apply smoothing to P1D data for each entry in the archive.
 
-        This method performs kernel smoothing on the P1D data for each entry in the `training_data` 
+        This method performs kernel smoothing on the P1D data for each entry in the `training_data`
         using the specified maximum k value (`kmax_Mpc`), and updates each entry with the smoothed data.
 
         :param kmax_Mpc: Maximum k value in Mpc^-1 for smoothing.
@@ -451,9 +451,9 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Build Gaussian Process (GP) models from training data and parameter grid.
 
-        This method constructs Gaussian Process models based on the training data and parameter grid. 
+        This method constructs Gaussian Process models based on the training data and parameter grid.
         It involves rescaling parameters, normalizing training data, and initializing the GP models.
-        Depending on the `emu_per_k` flag, it either builds a separate GP model for each k-bin 
+        Depending on the `emu_per_k` flag, it either builds a separate GP model for each k-bin
         or a single GP model for all k-bins.
 
         :return: None
@@ -506,7 +506,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Get the minimum and maximum values for each parameter.
 
-        This method computes the minimum and maximum values for each parameter in the provided 
+        This method computes the minimum and maximum values for each parameter in the provided
         parameter grid (`paramGrid`), which is used for rescaling parameters to a unit volume.
 
         :param paramGrid: 2D array where each column represents a parameter and each row represents a training point.
@@ -525,8 +525,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Train the Gaussian Process (GP) emulator.
 
-        This method initializes and optimizes the Gaussian Process models. If `emu_per_k` is True, 
-        it trains multiple GP models, one for each k-bin. Otherwise, it trains a single GP model 
+        This method initializes and optimizes the Gaussian Process models. If `emu_per_k` is True,
+        it trains multiple GP models, one for each k-bin. Otherwise, it trains a single GP model
         for all k-bins.
 
         :return: None
@@ -554,7 +554,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Print the limits for each parameter.
 
-        This method prints the minimum and maximum values for all parameters used in the emulator. 
+        This method prints the minimum and maximum values for all parameters used in the emulator.
         This provides a way to inspect the parameter space covered by the emulator.
 
         :return: None
@@ -566,7 +566,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         For a given model in dictionary format, return an ordered parameter list with the values rescaled to unit volume.
 
-        This method takes a model dictionary, rescales the parameter values to a unit volume, 
+        This method takes a model dictionary, rescales the parameter values to a unit volume,
         and returns the list of rescaled parameter values.
 
         :param model: Dictionary containing parameter values with keys as parameter names.
@@ -587,7 +587,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Check if a given model is within the convex hull of the training points.
 
-        This method checks if the rescaled parameter values of a given model are within the 
+        This method checks if the rescaled parameter values of a given model are within the
         convex hull of the training points' parameter space.
 
         :param model: Dictionary containing parameter values with keys as parameter names.
@@ -605,7 +605,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Return P1D or polynomial fit coefficients for a given parameter set.
 
-        This method provides predictions of P1D values or polynomial coefficients based on 
+        This method provides predictions of P1D values or polynomial coefficients based on
         the provided model parameters. It can also return error estimates if required.
 
         :param model: Dictionary containing parameter values with keys as parameter names.
@@ -620,29 +620,32 @@ class GPEmulator(base_emulator.BaseEmulator):
             - numpy.ndarray: Error estimates for the predictions.
         """
 
-        param = []
-        for aa, par in enumerate(self.emu_params):
-            ## Rescale input parameters
-            param.append(model[par])
-            param[aa] = (param[aa] - self.param_limits[aa, 0]) / (
-                self.param_limits[aa, 1] - self.param_limits[aa, 0]
-            )
+        try:
+            length = len(model[self.emu_params[0]])
+        except:
+            length = 1
+
+        emu_call = np.zeros((length, len(self.emu_params)))
+        for ii, param in enumerate(self.emu_params):
+            emu_call[:, ii] = model[param]
+
+        emu_call = (emu_call - self.param_limits[:, 0]) / (
+            self.param_limits[:, 1] - self.param_limits[:, 0]
+        )
 
         # emu_per_k and reduce_var_* options only valid for k_bin emulator
         if self.emu_per_k:
-            pred = np.array([])
-            var = np.array([])
-            for gp in self.gp:
-                pred_single, var_single = gp.predict(
-                    np.array(param).reshape(1, -1)
-                )
-                pred = np.append(pred, pred_single)
-                var = np.append(var, var_single)
+            pred = np.zeros((length, len(self.gp)))
+            var = np.array((length, len(self.gp)))
+            for ii, gp in enumerate(self.gp):
+                pred_single, var_single = gp.predict(emu_call)
+                pred[:, ii] = pred_single
+                var[:, ii] = var_single
         else:
-            pred, var = self.gp.predict(np.array(param).reshape(1, -1))
+            pred, var = self.gp.predict(emu_call)
 
-        out_pred = np.ndarray.flatten((pred + 1) * self.scalefactors)
-        out_err = np.ndarray.flatten(np.sqrt(var) * self.scalefactors)
+        out_pred = (pred + 1) * self.scalefactors
+        out_err = np.sqrt(var) * self.scalefactors
 
         return out_pred, out_err
 
@@ -667,6 +670,11 @@ class GPEmulator(base_emulator.BaseEmulator):
             - numpy.ndarray: Predicted P1D values.
             - numpy.ndarray (optional): Covariance matrix if `return_covar` is True.
         """
+
+        for param in self.emu_params:
+            if param not in model:
+                raise ValueError(f"{param} not in input model")
+
         if np.max(k_Mpc) > self.kmax_Mpc:
             warn(
                 f"Some of the requested k's are higher than the maximum training value k={self.kmax_Mpc}",
@@ -676,10 +684,17 @@ class GPEmulator(base_emulator.BaseEmulator):
                 f"Some of the requested k's are lower than the minimum training value k={self.kmin_Mpc}"
             )
 
+        try:
+            length = len(model[self.emu_params[0]])
+        except:
+            length = 1
+
+        # only implemented for length == 1
         if self.hull:
-            # check if outside the convex hull
-            if not self.check_in_hull(model):
-                print(z, "outside hull", model)
+            if length == 1:
+                # check if outside the convex hull
+                if not self.check_in_hull(model):
+                    print(z, "outside hull", model)
 
         # get raw prediction from GPy object
         gp_pred, gp_err = self.predict(model, z)
@@ -713,22 +728,34 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         elif self.emu_type == "polyfit":
             # gp_pred here are just the coefficients of the polynomial
-            poly = np.poly1d(gp_pred)
-            p1d = np.exp(poly(np.log(k_Mpc)))
+            p1d = np.zeros((gp_pred.shape[0], k_Mpc.shape[0]))
+            for ii in range(gp_pred.shape[0]):
+                poly = np.poly1d(gp_pred[ii])
+                p1d[ii] = np.exp(poly(np.log(k_Mpc)))
+
             if not return_covar:
+                if length == 1:
+                    p1d = p1d[0]
                 return p1d
 
             lk = np.log(k_Mpc)
-            erry2 = (
-                (gp_err[0] * lk**4) ** 2
-                + (gp_err[1] * lk**3) ** 2
-                + (gp_err[2] * lk**2) ** 2
-                + (gp_err[3] * lk) ** 2
-                + gp_err[4] ** 2
-            )
-            # compute error on P
-            err = p1d * np.sqrt(erry2)
-            covar = np.outer(err, err)
+            covar = np.zeros((gp_pred.shape[0], k_Mpc.shape[0], k_Mpc.shape[0]))
+            for ii in range(gp_pred.shape[0]):
+                erry2 = (
+                    (gp_err[ii, 0] * lk**4) ** 2
+                    + (gp_err[ii, 1] * lk**3) ** 2
+                    + (gp_err[ii, 2] * lk**2) ** 2
+                    + (gp_err[ii, 3] * lk) ** 2
+                    + gp_err[ii, 4] ** 2
+                )
+                # compute error on P
+                err = p1d[ii] * np.sqrt(erry2)
+                covar[ii] = np.outer(err, err)
+
+            if length == 1:
+                p1d = p1d[0]
+                covar = covar[0]
+
             return p1d, covar
 
         else:
@@ -738,7 +765,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Get the Euclidean distance to the nearest training point in the rescaled parameter space.
 
-        This method computes the Euclidean distance from the given model parameters to the nearest 
+        This method computes the Euclidean distance from the given model parameters to the nearest
         training point in the rescaled parameter space.
 
         :param model: Dictionary containing parameter values with keys as parameter names.
