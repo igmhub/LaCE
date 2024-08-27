@@ -1,8 +1,8 @@
-notebooks/.ipynb_checkpoints/
-notebooks/*.ipynb
+.ipynb_checkpoints
+*.ipynb
+*.png
 lace.egg-info/
-*/__pycache__/
-*/*/__pycache__/
+__pycache__
 .github/workflows/.python-tests.yml.swn
 .github/workflows/.python-tests.yml.swo
 .github/workflows/.python-tests.yml.swp
