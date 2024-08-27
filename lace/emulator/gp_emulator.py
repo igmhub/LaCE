@@ -403,8 +403,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Fit a polynomial to the logarithm of P1D for each entry in the archive.
 
-        This method fits a polynomial to the logarithm of the power spectrum data (`p1d_Mpc`) 
-        for each entry in the `training_data` using a polynomial of the specified degree (`deg`), 
+        This method fits a polynomial to the logarithm of the power spectrum data (`p1d_Mpc`)
+        for each entry in the `training_data` using a polynomial of the specified degree (`deg`),
         over the range of k values up to `kmax_Mpc`.
 
         :param deg: Degree of the polynomial for fitting.
@@ -426,7 +426,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Apply smoothing to P1D data for each entry in the archive.
 
-        This method performs kernel smoothing on the P1D data for each entry in the `training_data` 
+        This method performs kernel smoothing on the P1D data for each entry in the `training_data`
         using the specified maximum k value (`kmax_Mpc`), and updates each entry with the smoothed data.
 
         :param kmax_Mpc: Maximum k value in Mpc^-1 for smoothing.
@@ -451,9 +451,9 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Build Gaussian Process (GP) models from training data and parameter grid.
 
-        This method constructs Gaussian Process models based on the training data and parameter grid. 
+        This method constructs Gaussian Process models based on the training data and parameter grid.
         It involves rescaling parameters, normalizing training data, and initializing the GP models.
-        Depending on the `emu_per_k` flag, it either builds a separate GP model for each k-bin 
+        Depending on the `emu_per_k` flag, it either builds a separate GP model for each k-bin
         or a single GP model for all k-bins.
 
         :return: None
@@ -506,7 +506,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Get the minimum and maximum values for each parameter.
 
-        This method computes the minimum and maximum values for each parameter in the provided 
+        This method computes the minimum and maximum values for each parameter in the provided
         parameter grid (`paramGrid`), which is used for rescaling parameters to a unit volume.
 
         :param paramGrid: 2D array where each column represents a parameter and each row represents a training point.
@@ -525,8 +525,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Train the Gaussian Process (GP) emulator.
 
-        This method initializes and optimizes the Gaussian Process models. If `emu_per_k` is True, 
-        it trains multiple GP models, one for each k-bin. Otherwise, it trains a single GP model 
+        This method initializes and optimizes the Gaussian Process models. If `emu_per_k` is True,
+        it trains multiple GP models, one for each k-bin. Otherwise, it trains a single GP model
         for all k-bins.
 
         :return: None
@@ -554,7 +554,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Print the limits for each parameter.
 
-        This method prints the minimum and maximum values for all parameters used in the emulator. 
+        This method prints the minimum and maximum values for all parameters used in the emulator.
         This provides a way to inspect the parameter space covered by the emulator.
 
         :return: None
@@ -566,7 +566,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         For a given model in dictionary format, return an ordered parameter list with the values rescaled to unit volume.
 
-        This method takes a model dictionary, rescales the parameter values to a unit volume, 
+        This method takes a model dictionary, rescales the parameter values to a unit volume,
         and returns the list of rescaled parameter values.
 
         :param model: Dictionary containing parameter values with keys as parameter names.
@@ -587,7 +587,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Check if a given model is within the convex hull of the training points.
 
-        This method checks if the rescaled parameter values of a given model are within the 
+        This method checks if the rescaled parameter values of a given model are within the
         convex hull of the training points' parameter space.
 
         :param model: Dictionary containing parameter values with keys as parameter names.
@@ -605,7 +605,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Return P1D or polynomial fit coefficients for a given parameter set.
 
-        This method provides predictions of P1D values or polynomial coefficients based on 
+        This method provides predictions of P1D values or polynomial coefficients based on
         the provided model parameters. It can also return error estimates if required.
 
         :param model: Dictionary containing parameter values with keys as parameter names.
@@ -738,7 +738,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Get the Euclidean distance to the nearest training point in the rescaled parameter space.
 
-        This method computes the Euclidean distance from the given model parameters to the nearest 
+        This method computes the Euclidean distance from the given model parameters to the nearest
         training point in the rescaled parameter space.
 
         :param model: Dictionary containing parameter values with keys as parameter names.
