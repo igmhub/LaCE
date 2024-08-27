@@ -37,6 +37,23 @@ from lace.archive.nyx_archive import NyxArchive
 pedersen21_archive = GadgetArchive(postproc='Pedersen21')
 
 # %%
+pedersen21_archive.data[0]["dkms_dMpc"]
+
+# %%
+cen = pedersen21_archive.get_testing_data("mpg_central")
+
+# %%
+import numpy as np
+
+# %%
+for ii in range(len(cen)):
+    # print(cen[ii]["z"], np.log10(4/cen[ii]["dkms_dMpc"]))
+    print(cen[ii]["z"], 4/cen[ii]["dkms_dMpc"])
+
+# %%
+10**-1.5
+
+# %%
 # %%time
 cabayol23_archive = GadgetArchive(postproc='Cabayol23')
 

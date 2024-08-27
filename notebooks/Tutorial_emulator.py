@@ -60,6 +60,49 @@ plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
 plt.xscale('log')
 
 # %% [markdown]
+# To get the amplitude and slope of the linear power spectrum from a target cosmology (input of emulator)
+
+# %%
+from lace.cosmo.camb_cosmo import get_cosmology
+from lace.cosmo.fit_linP import get_linP_Mpc_zs
+
+# %%
+h = 0.6778216034931903
+H0 = 100 * h
+omch2 = 0.11762521740991255
+ombh2 = 0.022239961079792658
+ns = 0.9628958142411611
+As = np.exp(3.0151299559643365)*1e-10
+
+cosmo = get_cosmology(H0=H0, omch2=omch2, ombh2=ombh2, ns=ns, As=As)
+
+zs = [3]
+kp_Mpc = 0.7
+get_linP_Mpc_zs(cosmo, zs, kp_Mpc)
+
+# %% [markdown]
+# To get the amplitude and slope of the linear power spectrum on kms units at z=3 for a target cosmology (output of cup1d)
+
+# %%
+from lace.cosmo.fit_linP import parameterize_cosmology_kms
+
+# %%
+h = 0.6778216034931903
+H0 = 100 * h
+omch2 = 0.11762521740991255
+ombh2 = 0.022239961079792658
+ns = 0.9628958142411611
+As = np.exp(3.0151299559643365)*1e-10
+
+cosmo = get_cosmology(H0=H0, omch2=omch2, ombh2=ombh2, ns=ns, As=As)
+
+zstar = 3
+kp_kms = 0.009
+camb_results = None
+parameterize_cosmology_kms(cosmo, camb_results, zstar, kp_kms)
+
+
+# %% [markdown]
 # #### nyx simulations
 
 # %%
@@ -87,7 +130,7 @@ plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
 plt.xscale('log')
 
 # %% [markdown]
-# ## For developers
+# ## A general user should stop here. For developers below
 
 # %%
 import os, sys
