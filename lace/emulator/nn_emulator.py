@@ -28,21 +28,21 @@ class NNEmulator(base_emulator.BaseEmulator):
     """A class for training an emulator.
 
     Args:
-        archive (class, optional): 
+        archive (class, optional):
             Data archive used for training the emulator. Required when using a custom emulator. If not provided, defaults to None.
-        training_set (str): 
+        training_set (str):
             Specific training set. Options are 'Cabayol23'.
-        emu_params (list): 
+        emu_params (list):
             A list of emulator parameters.
-        emulator_label (str): 
+        emulator_label (str):
             Specific emulator label. Options are 'Cabayol23' and 'Nyx_v0'.
-        kmax_Mpc (float, optional): 
+        kmax_Mpc (float, optional):
             The maximum k in Mpc^-1 to use for training. Defaults to 3.5.
-        nepochs (int, optional): 
+        nepochs (int, optional):
             The number of epochs to train for. Defaults to 200.
-        model_path (str, optional): 
+        model_path (str, optional):
             The path to a pretrained model. Defaults to None.
-        train (bool, optional): 
+        train (bool, optional):
             Whether to train the emulator or not. Defaults to True. If False, a model path must be provided.
 
     Attributes:
@@ -316,7 +316,6 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.amsgrad,
             ) = (4, 6, 600, 500, 6, 400, 2.5e-4, 8e-3, 100, True)
 
-            
         elif emulator_label == "Nyx_alphap_extended":
             self.print(
                 r"Neural network emulating the optimal P1D of Nyx simulations "
@@ -345,11 +344,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.lr0,
                 self.weight_decay,
                 self.batch_size,
-                self.amsgrad
-            ) = (8, 8, 600, 500, 6, 400, 2.5e-4,8e-3,100,True)
-            
-            
-        
+                self.amsgrad,
+            ) = (8, 8, 600, 500, 6, 400, 2.5e-4, 8e-3, 100, True)
+
         elif emulator_label == "Cabayol23_extended":
             self.print(
                 r"Neural network emulating the optimal P1D of Gadget simulations "
@@ -861,7 +858,7 @@ class NNEmulator(base_emulator.BaseEmulator):
     def save_emulator(self):
         """Saves the current state of the emulator to a file.
 
-        This method saves both the model state dictionary and metadata about the emulator 
+        This method saves both the model state dictionary and metadata about the emulator
         to a file specified by `self.save_path`.
 
         Metadata includes:
@@ -891,13 +888,12 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         torch.save(model_with_metadata, self.save_path)
 
-
     def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
         """
         Emulate P1D values for a given set of k values in Mpc units.
 
         Args:
-            model (dict): Dictionary containing the model parameters.
+            model (dictionary): Dictionary containing the model parameters.
             k_Mpc (np.ndarray): Array of k values in Mpc units.
             return_covar (bool, optional): Whether to return covariance. Defaults to False.
             z (float, optional): Redshift value. Defaults to None.
@@ -905,8 +901,15 @@ class NNEmulator(base_emulator.BaseEmulator):
         Returns:
             np.ndarray: Emulated P1D values.
         """
-        
-        logk_Mpc = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
+
+        for param in self.emu_params:
+            if param not in model:
+                raise ValueError(f"{param} not in input model")
+
+        try:
+            length = len(model[self.emu_params[0]])
+        except:
+            length = 1
 
         if np.max(k_Mpc) > self.kmax_Mpc:
             warn(
@@ -918,16 +921,12 @@ class NNEmulator(base_emulator.BaseEmulator):
             )
 
         with torch.no_grad():
-            emu_call = {}
-            for param in self.emu_params:
-                if param not in model:
-                    raise ValueError(f"{param} not in input model")
-                emu_call[param] = model[param]
+            emu_call = np.zeros((length, len(self.emu_params)))
+            for ii, param in enumerate(self.emu_params):
+                emu_call[:, ii] = model[param]
 
-            emu_call = [emu_call[param] for param in self.emu_params]
-
-            emu_call = (emu_call - self.paramLims[:, 0]) / (
-                self.paramLims[:, 1] - self.paramLims[:, 0]
+            emu_call = (emu_call - self.paramLims[None, :, 0]) / (
+                self.paramLims[None, :, 1] - self.paramLims[None, :, 0]
             ) - 0.5
 
             emu_call = torch.Tensor(emu_call).unsqueeze(0)
@@ -935,19 +934,23 @@ class NNEmulator(base_emulator.BaseEmulator):
             # ask emulator to emulate P1D (and its uncertainty)
             coeffsPred, coeffs_logerr = self.nn(emu_call.to(self.device))
 
+            logk_Mpc = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
             powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
             emu_p1d = torch.sum(
-                coeffsPred[:, :, None]
+                coeffsPred[0, :, :, None]
                 * (logk_Mpc[None, None, :] ** powers[None, :, None]),
                 axis=1,
             )
 
-            emu_p1d = emu_p1d.detach().cpu().numpy().flatten()
+            emu_p1d = emu_p1d.detach().cpu().numpy()
 
             if self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
                 emu_p1d = 10 ** (emu_p1d) * self.yscalings
             else:
                 emu_p1d = np.exp(emu_p1d * self.yscalings**2)
+
+            if emu_p1d.shape[0] == 1:
+                emu_p1d = emu_p1d[0, :]
 
         if return_covar:
             coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
@@ -955,13 +958,13 @@ class NNEmulator(base_emulator.BaseEmulator):
             powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(self.device)
             emu_p1derr = torch.sqrt(
                 torch.sum(
-                    coeffserr[:, :, None]
+                    coeffserr[0, :, :, None]
                     * (logk_Mpc[None, None, :] ** powers_err[None, :, None]),
                     axis=1,
                 )
             )
 
-            emu_p1derr = emu_p1derr.detach().cpu().numpy().flatten()
+            emu_p1derr = emu_p1derr.detach().cpu().numpy()
             if self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
                 emu_p1derr = (
                     10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
@@ -972,108 +975,23 @@ class NNEmulator(base_emulator.BaseEmulator):
                     * self.yscalings**2
                     * emu_p1derr
                 )
-
-            covar = np.outer(emu_p1derr, emu_p1derr)
+            if emu_p1derr.shape[0] == 1:
+                emu_p1derr = emu_p1derr[0, :]
+                covar = np.outer(emu_p1derr, emu_p1derr)
+            else:
+                covar = np.zeros((emu_p1derr.shape[0], len(k_Mpc), len(k_Mpc)))
+                for ii in range(emu_p1derr.shape[0]):
+                    covar[ii] = np.outer(emu_p1derr[ii], emu_p1derr[ii])
             return emu_p1d, covar
 
         else:
             return emu_p1d
 
-
-    def emulate_arr_p1d_Mpc(self, emu_calls, k_Mpc, return_covar=False, z=None):
-        """
-        Emulates the power spectrum P1D for an array of emulator parameters.
-
-        Args:
-            emu_calls (array-like): An array of emulator parameter sets.
-            k_Mpc (array-like): The k values in Mpc^-1 at which to emulate the P1D.
-            return_covar (bool, optional): Whether to return the covariance matrices. Defaults to False.
-            z (float, optional): The redshift value. Currently not used. Defaults to None.
-
-        Returns:
-            numpy.ndarray: Emulated P1D values for each set of parameters at the provided k_Mpc.
-            If `return_covar` is True:
-                tuple:
-                    - numpy.ndarray: Emulated P1D values for each parameter set.
-                    - numpy.ndarray: Covariance matrices for each parameter set.
-
-        Warnings:
-            If any `k_Mpc` values exceed the training range or are below the minimum training range, 
-            a warning will be issued.
-        """
-        logk_Mpc = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
-
-        emu_p1ds = np.zeros(shape=(len(emu_calls), k_Mpc.shape[1]))
-        emu_p1d_interp = np.zeros(shape=(len(emu_calls), k_Mpc.shape[1]))
-        covars = np.zeros(
-            shape=(len(emu_calls), k_Mpc.shape[1], k_Mpc.shape[1])
-        )
-
-        with torch.no_grad():
-            emu_calls = (emu_calls - self.paramLims[None, :, 0]) / (
-                self.paramLims[None, :, 1] - self.paramLims[None, :, 0]
-            ) - 0.5
-
-            emu_calls = torch.Tensor(emu_calls)
-
-            # ask emulator to emulate P1D (and its uncertainty)
-            coeffsPred, coeffs_logerr = self.nn(emu_calls.to(self.device))
-
-            powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
-
-            emu_p1ds = torch.sum(
-                coeffsPred[:, :, None]
-                * (logk_Mpc[:, None, :] ** powers[None, :, None]),
-                axis=1,
-            )
-
-            emu_p1ds = emu_p1ds.detach().cpu().numpy()
-
-            if self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
-                emu_p1ds = 10 ** (emu_p1ds) * self.yscalings
-            else:
-                emu_p1ds = np.exp(emu_p1ds * self.yscalings**2)
-
-        if return_covar:
-            coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
-            coeffserr = torch.exp(coeffs_logerr) ** 2
-            powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(self.device)
-
-            emu_p1derr = torch.sqrt(
-                torch.sum(
-                    coeffserr[:, :, None]
-                    * (logk_Mpc[:, None, :] ** powers_err[None, :, None]),
-                    axis=1,
-                )
-            )
-            emu_p1derrs = emu_p1derr.detach().cpu().numpy()
-
-            if self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
-                emu_p1derrs = (
-                    10 ** (emu_p1ds) * np.log(10) * emu_p1derrs * self.yscalings
-                )
-            else:
-                emu_p1derrs = (
-                    np.exp(emu_p1ds * self.yscalings**2)
-                    * self.yscalings**2
-                    * emu_p1derrs
-                )
-
-            for ii, emu_p1derr in enumerate(emu_p1derrs):
-                covars[ii] = np.outer(emu_p1derr, emu_p1derr)
-
-            return emu_p1ds, covars
-
-        else:
-            return emu_p1ds
-
-
-
     def check_hull(self):
         """Checks and creates the convex hull of the training data in the emulator parameter space.
 
-        This method filters the training data to include only those with "average" values for 
-        both the axis and phase, sorts the data according to emulator parameters, and then computes 
+        This method filters the training data to include only those with "average" values for
+        both the axis and phase, sorts the data according to emulator parameters, and then computes
         the convex hull using the Delaunay triangulation.
 
         Side Effects:
@@ -1102,7 +1020,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_points = np.array(training_points)
 
         self.hull = Delaunay(training_points)
-
 
     def test_hull(self, model_test):
         """Tests if a given parameter set is within the convex hull of the training data.
