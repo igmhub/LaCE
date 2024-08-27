@@ -41,6 +41,14 @@ pip install -e .
 but there may be some issues.
 
 
+#### Notebooks:
+
+- All notebooks in the repository are in .py format. To generate the .ipynb version, run:
+
+```
+jupytext --to ipynb notebooks/*.py
+```
+
 - If you want to use notebooks via JupyterHub, you'll also need to download `ipykernel`:
 
 ```
@@ -104,7 +112,7 @@ The current version of the emulator, relased in this repo, does not emulate `alp
 
 In the `Notebooks` folder, there are several tutorials one can run to learn how to use the archives and emulators.
 
-- Archive tutorial: notebooks/Tutorial_bookkeeping.ipynb
-- Emulator tutorial: notebooks/Tutorial_emulator.ipynb
+- Archive tutorial: notebooks/Tutorial_bookkeeping.py
+- Emulator tutorial: notebooks/Tutorial_emulator.py
 
-In the `tests` folder, there are four scripts that you can run to open a Gadget or Nyx archive and run the G^and NN emulators.
+In the `tests` folder, there is a script that you can run to check that the package is working properly.
