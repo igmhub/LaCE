@@ -911,6 +911,9 @@ class NNEmulator(base_emulator.BaseEmulator):
         except:
             length = 1
 
+        if k_Mpc.ndim == 1:
+            k_Mpc = np.repeat(k_Mpc[None, :], length, axis=0)
+
         if np.max(k_Mpc) > self.kmax_Mpc:
             warn(
                 f"Some of the requested k's are higher than the maximum training value k={self.kmax_Mpc}",
@@ -938,7 +941,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
             emu_p1d = torch.sum(
                 coeffsPred[0, :, :, None]
-                * (logk_Mpc[None, None, :] ** powers[None, :, None]),
+                * (logk_Mpc[:, None, :] ** powers[None, :, None]),
                 axis=1,
             )
 
