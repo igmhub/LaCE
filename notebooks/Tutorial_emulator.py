@@ -22,7 +22,6 @@
 # %%
 # %load_ext autoreload
 # %autoreload 2
-import torch
 
 # %%
 import numpy as np
@@ -58,12 +57,26 @@ input_params = {
 }
 p1d = emulator_C23.emulate_p1d_Mpc(input_params, k_Mpc)
 
-# %%
 for ii in range(p1d.shape[0]):
     plt.plot(k_Mpc, k_Mpc * p1d[ii]/np.pi)
 plt.xlabel(r'$k_\parallel$ [1/Mpc]')
 plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
 plt.xscale('log')
+
+# %% [markdown]
+# for a different k_Mpc for each call
+
+# %%
+k_Mpc = np.array([k_Mpc, k_Mpc])
+p1d = emulator_C23.emulate_p1d_Mpc(input_params, k_Mpc)
+
+for ii in range(p1d.shape[0]):
+    plt.plot(k_Mpc[ii], k_Mpc[ii] * p1d[ii]/np.pi)
+plt.xlabel(r'$k_\parallel$ [1/Mpc]')
+plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
+plt.xscale('log')
+
+# %%
 
 # %% [markdown]
 # To get the amplitude and slope of the linear power spectrum from a target cosmology (input of emulator)
