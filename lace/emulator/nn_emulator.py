@@ -104,11 +104,12 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.weight_decay = weight_decay
         self.amsgrad = True
 
+        # to ensure reproducibility
         torch.manual_seed(seed)
         np.random.seed(seed)
         random.seed(seed)
 
-        # check input #
+        # check input 
         training_set_all = ["Pedersen21", "Cabayol23", "Nyx23_Oct2023"]
         emulator_label_all = [
             "Cabayol23",
