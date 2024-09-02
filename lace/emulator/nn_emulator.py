@@ -121,8 +121,6 @@ class NNEmulator(base_emulator.BaseEmulator):
             "Cabayol23+_extended",
         ]
 
-        # check input
-
         ## set training_set
         if (archive is None) & (training_set is None):
             raise ValueError("Archive or training_set must be provided")
