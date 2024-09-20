@@ -15,18 +15,21 @@ camb_extra_kmax = 1.001
 
 
 def get_cosmology(
-    H0=67.0,
+    H0=67.66,
     mnu=0.0,
-    omch2=0.12,
-    ombh2=0.022,
+    omch2=0.119,
+    ombh2=0.0224,
     omk=0.0,
-    As=2.1e-09,
-    ns=0.965,
+    As=2.105e-09,
+    ns=0.9665,
     nrun=0.0,
     pivot_scalar=0.05,
     w=-1,
 ):
-    """Given set of cosmological parameters, return CAMB cosmology object."""
+    """Given set of cosmological parameters, return CAMB cosmology object.
+
+    Fiducial values for Planck 2018
+    """
 
     pars = camb.CAMBparams()
     # set background cosmology
