@@ -93,15 +93,17 @@ class GPEmulator(base_emulator.BaseEmulator):
                 )
 
             # read Gadget archive with the right postprocessing
-            self.archive = gadget_archive.GadgetArchive(postproc=training_set)
+            archive = gadget_archive.GadgetArchive(postproc=training_set)
 
-        elif archive != None and training_set == None:
+        elif (archive is not None) and (training_set is None):
             print("Use custom archive provided by the user")
-            self.archive = archive
+            pass
 
-        elif (archive == None) & (training_set == None):
+        elif (archive is None) & (training_set is None):
             raise (ValueError("Archive or training_set must be provided"))
-        self.kp_Mpc = self.archive.kp_Mpc
+
+        self.list_sim_cube = archive.list_sim_cube
+        self.kp_Mpc = archive.kp_Mpc
 
         emulator_label_all = [
             "Pedersen21",
@@ -277,13 +279,13 @@ class GPEmulator(base_emulator.BaseEmulator):
         # GPs should probably avoid rescalings (low performance with large N)
         average = "both"
         val_scaling = 1
-        if self.archive.training_average != "both":
+        if archive.training_average != "both":
             warn("Enforce average=both in training of GP emulator")
-        if self.archive.training_val_scaling != 1:
+        if archive.training_val_scaling != 1:
             warn("Enforce val_scalinge=1 in training of GP emulator")
 
         # keep track of training data to be used in emulator
-        self.training_data = self.archive.get_training_data(
+        self.training_data = archive.get_training_data(
             emu_params=self.emu_params,
             drop_sim=self.drop_sim,
             average=average,
