@@ -104,6 +104,7 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         self.list_sim_cube = archive.list_sim_cube
         self.kp_Mpc = archive.kp_Mpc
+        self.emulator_label = emulator_label
 
         emulator_label_all = [
             "Pedersen21",
