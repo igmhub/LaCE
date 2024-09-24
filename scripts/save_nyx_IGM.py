@@ -23,7 +23,7 @@ def main():
 
     ind_axis = "average"
     ind_phase = "average"
-    val_scaling = 1
+    ind_rescaling = 0
 
     list_snap = np.unique(nyx_archive.ind_snap)
     rsim_conv = {value: key for key, value in nyx_archive.sim_conv.items()}
@@ -33,44 +33,48 @@ def main():
     for sim_label in nyx_archive.list_sim_cube:
         if sim_label == "nyx_14":
             continue
+
         cosmo_params, linP_params = nyx_archive._get_emu_cosmo(
             None, rsim_conv[sim_label]
         )
-        dict_index[sim_label] = {}
-        dict_index[sim_label]["z"] = np.zeros(nz)
-        dict_index[sim_label]["tau_eff"] = np.zeros(nz)
-        dict_index[sim_label]["gamma"] = np.zeros(nz)
-        dict_index[sim_label]["sigT_kms"] = np.zeros(nz)
-        dict_index[sim_label]["kF_kms"] = np.zeros(nz)
-        for ind_snap in list_snap:
-            for ind_book in range(len(training)):
-                if (
-                    (training[ind_book]["ind_snap"] == ind_snap)
-                    & (training[ind_book]["ind_axis"] == ind_axis)
-                    & (training[ind_book]["ind_phase"] == ind_phase)
-                    & (training[ind_book]["sim_label"] == sim_label)
-                    & (training[ind_book]["val_scaling"] == val_scaling)
-                ):
-                    dict_index[sim_label]["z"][ind_snap] = training[ind_book][
-                        "z"
-                    ]
-                    dict_index[sim_label]["tau_eff"][ind_snap] = -np.log(
-                        training[ind_book]["mF"]
-                    )
-                    dict_index[sim_label]["gamma"][ind_snap] = training[
-                        ind_book
-                    ]["gamma"]
-                    _ = thermal_broadening_kms(training[ind_book]["T0"])
-                    dict_index[sim_label]["sigT_kms"][ind_snap] = _
 
-                    ind_z = np.argwhere(
-                        np.round(training[ind_book]["z"], 2) == linP_params["z"]
-                    )[0, 0]
-                    _ = (
-                        training[ind_book]["kF_Mpc"]
-                        / linP_params["dkms_dMpc"][ind_z]
-                    )
-                    dict_index[sim_label]["kF_kms"][ind_snap] = _
+        for ind_rescaling in range(21):
+            lab = sim_label + "_" + str(ind_rescaling)
+            dict_index[lab] = {}
+            dict_index[lab]["z"] = np.zeros(nz)
+            dict_index[lab]["tau_eff"] = np.zeros(nz)
+            dict_index[lab]["gamma"] = np.zeros(nz)
+            dict_index[lab]["sigT_kms"] = np.zeros(nz)
+            dict_index[lab]["kF_kms"] = np.zeros(nz)
+
+            for ind_snap in list_snap:
+                for ind_book in range(len(training)):
+                    if (
+                        (training[ind_book]["ind_snap"] == ind_snap)
+                        & (training[ind_book]["ind_axis"] == ind_axis)
+                        & (training[ind_book]["ind_phase"] == ind_phase)
+                        & (training[ind_book]["sim_label"] == sim_label)
+                        & (training[ind_book]["ind_rescaling"] == ind_rescaling)
+                    ):
+                        dict_index[lab]["z"][ind_snap] = training[ind_book]["z"]
+                        dict_index[lab]["tau_eff"][ind_snap] = -np.log(
+                            training[ind_book]["mF"]
+                        )
+                        dict_index[lab]["gamma"][ind_snap] = training[ind_book][
+                            "gamma"
+                        ]
+                        _ = thermal_broadening_kms(training[ind_book]["T0"])
+                        dict_index[lab]["sigT_kms"][ind_snap] = _
+
+                        ind_z = np.argwhere(
+                            np.round(training[ind_book]["z"], 2)
+                            == linP_params["z"]
+                        )[0, 0]
+                        _ = (
+                            training[ind_book]["kF_Mpc"]
+                            / linP_params["dkms_dMpc"][ind_z]
+                        )
+                        dict_index[lab]["kF_kms"][ind_snap] = _
 
     # testing
 

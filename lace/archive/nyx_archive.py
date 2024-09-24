@@ -65,9 +65,7 @@ class NyxArchive(BaseArchive):
         self._set_info_sim(nfiles)
 
         # load power spectrum measurements
-        self._load_data(
-            nyx_file, force_recompute_linP_params
-        )
+        self._load_data(nyx_file, force_recompute_linP_params)
         # extract indexes from data
         self._set_labels()
 
@@ -171,6 +169,7 @@ class NyxArchive(BaseArchive):
         for ipar in h5py_data.attrs.keys():
             dict_params[ipar] = h5py_data.attrs[ipar]
         return dict_params
+
     def _get_emu_cosmo(
         self, nyx_data, sim_label, force_recompute_linP_params=False
     ):
