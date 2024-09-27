@@ -59,7 +59,6 @@ def plot_emulated_p1d(archive_name='Nyx'):
     # Iterate over each simulation in the archive
     skip_sims = ['nyx_14', 'nyx_15', 'nyx_16', 'nyx_17', 'nyx_seed', 'nyx_wdm']
     for ii, sim in enumerate(archive.list_sim):
-        # Skip a specific simulation 'nyx_14'
         if sim in skip_sims:
             continue
 
@@ -68,15 +67,15 @@ def plot_emulated_p1d(archive_name='Nyx'):
         # Initialize the emulator with the given parameters and model path
         if (sim=='nyx_central')|(sim=='mpg_central'):
             if archive_name == 'Gadget':
-                model_path = model_path+'Cabayol23+.pt'
+                model_path = f'{repo}data/NNmodels/Cabayol23+/Cabayol23+.pt'
             elif archive_name == 'Nyx':
-                model_path = model_path+'Nyx_alphap.pt'
+                model_path = f'{repo}data/NNmodels/Nyxap_Oct2023/Nyx_alphap.pt'
                 
             emulator = NNEmulator(
                 training_set=training_set,
                 emulator_label=emulator_label,
                 emu_params=nyx_emu_params,
-                model_path=f'{repo}data/NNmodels/Nyxap_Oct2023/Nyx_alphap.pt',
+                model_path=model_path,
                 drop_sim=None,
                 train=False,
             )
