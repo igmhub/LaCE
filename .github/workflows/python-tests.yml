@@ -31,4 +31,5 @@ jobs:
     - name: Run tests
       timeout-minutes: 5
       run: |
-        pytest tests/test_lace.py  
+        pytest tests/test_lace.py 
+        pytest tests/plot_mpg.py 
