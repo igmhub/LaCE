@@ -70,7 +70,7 @@ def test():
             testing_data = [d for d in testing_data if d['val_scaling'] == 1]
             
         # Plot and save the emulated P1D
-        save_path = f'{save_dir}{sim}_v2.png'
+        save_path = f'{save_dir}{sim}_v3.png'
         plot_p1d_vs_emulator(testing_data, emulator, save_path=save_path)
     
     return  
