@@ -36,13 +36,13 @@ def test():
     
     for ii, sim in enumerate(archive.list_sim):
         if sim=='mpg_central':
-            model_path = f'{repo}data/NNmodels/Cabayol23+/Cabayol23+.pt'
+            model_path_central = f'{repo}data/NNmodels/Cabayol23+/Cabayol23+.pt'
 
             emulator = NNEmulator(
                 training_set=training_set,
                 emulator_label=emulator_label,
                 emu_params=emu_params,
-                model_path=model_path,
+                model_path=model_path_central,
                 drop_sim=None,
                 train=False,
             )
