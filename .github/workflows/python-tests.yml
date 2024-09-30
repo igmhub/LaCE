@@ -38,7 +38,7 @@ jobs:
       timeout-minutes: 30
       run: |
         pytest tests/test_lace.py
-        pytest tests/plot_mpg.py --output_dir=tmp/validation_figures/
+        pytest tests/plot_mpg.py
 
     # Archive the generated plots
     - name: Archive generated plots
