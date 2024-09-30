@@ -38,7 +38,7 @@ def test():
     
     # Directory for saving plots
     #save_dir = f'{repo}data/validation_figures/{archive_name}/'
-    save_dir = '{repo}tmp/validation_figures'
+    save_dir = '{repo}tmp/validation_figures/'
     # Create the directory if it does not exist
     os.makedirs(save_dir, exist_ok=True)
     
