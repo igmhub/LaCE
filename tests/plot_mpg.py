@@ -41,7 +41,7 @@ def test():
             emulator = NNEmulator(
                 training_set=training_set,
                 emulator_label=emulator_label,
-                emu_params=nyx_emu_params,
+                emu_params=nyx_params,
                 model_path=model_path,
                 drop_sim=None,
                 train=False,
@@ -50,7 +50,7 @@ def test():
             emulator = NNEmulator(
                 training_set=training_set,
                 emulator_label=emulator_label,
-                emu_params=nyx_emu_params,
+                emu_params=nyx_params,
                 model_path=model_path+f'_{sim}.pt',
                 drop_sim=sim,
                 train=False,
