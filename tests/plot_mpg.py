@@ -42,7 +42,7 @@ def test():
     os.makedirs(save_dir, exist_ok=True)
     
     #for ii, sim in enumerate(archive.list_sim):
-    for ii, sim in enumerate(['mpg_central']):
+    for ii, sim in enumerate(['mpg_1','mpg_central']):
 
         if sim == 'mpg_central':
             model_path_central = f'{repo}data/NNmodels/Cabayol23+/Cabayol23+.pt'
@@ -70,7 +70,7 @@ def test():
             testing_data = [d for d in testing_data if d['val_scaling'] == 1]
             
         # Plot and save the emulated P1D
-        save_path = f'{save_dir}{sim}_v3.png'
+        save_path = f'{save_dir}{sim}.png'
         plot_p1d_vs_emulator(testing_data, emulator, save_path=save_path)
     
     return  
