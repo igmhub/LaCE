@@ -34,8 +34,12 @@ jobs:
         pytest tests/test_lace.py 
         pytest tests/plot_mpg.py
 
-    - name: Archive code coverage results
+    - name: Archive generated plots
       uses: actions/upload-artifact@v4
       with:
-        name: code-coverage-report
-        path: data/validation_figures/Gadget/mpg_central.png 
+        name: validation-figures
+        path: data/validation_figures/Gadget/*.png
+    - name: List generated plots
+      run: |
+        echo "Files in the validation_figures directory:"
+        ls data/validation_figures/Gadget/ 
