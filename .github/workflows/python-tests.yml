@@ -32,4 +32,4 @@ jobs:
       timeout-minutes: 5
       run: |
         pytest tests/test_lace.py 
-        #pytest tests/plot_mpg.py 
+        pytest tests/plot_mpg.py 
