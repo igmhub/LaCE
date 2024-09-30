@@ -16,34 +16,29 @@ from lace.utils import poly_p1d
 from lace.utils.plotting_functions import plot_p1d_vs_emulator
 
 
-def test():
+def test(output_dir='data/validation_figures/Gadget/'):
     """
     Function to plot emulated P1D using specified archive (Nyx or Gadget).
     
     Parameters:
-    archive (str): Archive to use for data ('Nyx' or 'Gadget')
+    output_dir (str): Directory to save plots.
     """
     archive_name = 'Gadget'
-    # Get the base directory of the lace module
     repo = os.path.dirname(lace.__path__[0]) + "/"
     
     # Define the parameters for the emulator specific to Gadget
     emu_params = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
-    training_set='Cabayol23'
-    emulator_label='Cabayol23+'
+    training_set = 'Cabayol23'
+    emulator_label = 'Cabayol23+'
     model_path = f'{repo}data/NNmodels/Cabayol23+/Cabayol23+_drop_sim'
 
     # Initialize a GadgetArchive instance for postprocessing data
     archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
     
-    # Directory for saving plots
-    save_dir = f'{repo}data/validation_figures/{archive_name}/'
-    # Create the directory if it does not exist
-    os.makedirs(save_dir, exist_ok=True)
+    # Create the output directory if it does not exist
+    os.makedirs(output_dir, exist_ok=True)
     
-    #for ii, sim in enumerate(archive.list_sim):
-    for ii, sim in enumerate(['mpg_1','mpg_central']):
-
+    for ii, sim in enumerate(['mpg_1', 'mpg_central']):
         if sim == 'mpg_central':
             model_path_central = f'{repo}data/NNmodels/Cabayol23+/Cabayol23+.pt'
 
@@ -70,10 +65,7 @@ def test():
             testing_data = [d for d in testing_data if d['val_scaling'] == 1]
             
         # Plot and save the emulated P1D
-        save_path = f'{save_dir}{sim}.png'
+        save_path = f'{output_dir}{sim}.png'  # Save plots to the specified output directory
         plot_p1d_vs_emulator(testing_data, emulator, save_path=save_path)
     
     return  
-
-# Call the function to execute the test
-test()
