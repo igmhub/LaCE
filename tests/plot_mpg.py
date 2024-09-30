@@ -1,6 +1,8 @@
 # Import necessary modules
 ## General python modules
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use a non-interactive backend for rendering plots
 from matplotlib import pyplot as plt
 import matplotlib.cm as cm
 import os
@@ -34,8 +36,15 @@ def test():
     # Initialize a GadgetArchive instance for postprocessing data
     archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
     
-    for ii, sim in enumerate(archive.list_sim):
-        if sim=='mpg_central':
+    # Directory for saving plots
+    save_dir = f'{repo}data/validation_figures/{archive_name}/'
+    # Create the directory if it does not exist
+    os.makedirs(save_dir, exist_ok=True)
+    
+    #for ii, sim in enumerate(archive.list_sim):
+    for ii, sim in enumerate(['mpg_central']):
+
+        if sim == 'mpg_central':
             model_path_central = f'{repo}data/NNmodels/Cabayol23+/Cabayol23+.pt'
 
             emulator = NNEmulator(
@@ -43,7 +52,6 @@ def test():
                 emulator_label=emulator_label,
                 emu_params=emu_params,
                 model_path=model_path_central,
-                drop_sim=None,
                 train=False,
             )
         else:
@@ -51,22 +59,20 @@ def test():
                 training_set=training_set,
                 emulator_label=emulator_label,
                 emu_params=emu_params,
-                model_path=model_path+f'_{sim}.pt',
+                model_path=model_path + f'_{sim}.pt',
                 drop_sim=sim,
                 train=False,
             )
         
         # Get testing data for the current simulation
         testing_data = archive.get_testing_data(sim_label=f'{sim}')
-        if sim!='nyx_central':
-            testing_data = [d for d in testing_data if d['val_scaling']==1]
+        if sim != 'nyx_central':
+            testing_data = [d for d in testing_data if d['val_scaling'] == 1]
             
         # Plot and save the emulated P1D
-        plot_p1d_vs_emulator(
-            testing_data,
-            emulator,
-            save_path=f'{repo}data/validation_figures/{archive_name}/{sim}.png'
-        )
+        save_path = f'{save_dir}{sim}.png'
+        plot_p1d_vs_emulator(testing_data, emulator, save_path=save_path)
+    
     return
 
 # Call the function to execute the test
