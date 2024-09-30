@@ -32,4 +32,10 @@ jobs:
       timeout-minutes: 30
       run: |
         pytest tests/test_lace.py 
-        pytest tests/plot_mpg.py 
+        pytest tests/plot_mpg.py
+
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage-report
+        path: data/validation_figures/Gadget/mpg_central.png 
