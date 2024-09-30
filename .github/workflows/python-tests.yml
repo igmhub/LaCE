@@ -38,7 +38,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: validation-figures
-        path: data/validation_figures/Gadget/*.png
+        path: data/validation_figures/Gadget/mpg_central_v2.png
     - name: List generated plots
       run: |
         echo "Files in the validation_figures directory:"
