@@ -42,9 +42,7 @@ def test():
     # Create the directory if it does not exist
     os.makedirs(save_dir, exist_ok=True)
     
-    #for ii, sim in enumerate(archive.list_sim):
-    for ii, sim in enumerate(['mpg_1','mpg_central']):
-
+    for ii, sim in enumerate(archive.list_sim):
         if sim == 'mpg_central':
             model_path_central = f'{repo}data/NNmodels/Cabayol23+/Cabayol23+.pt'
 
