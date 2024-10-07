@@ -39,7 +39,7 @@ jobs:
     - name: List generated plots
       run: |
         echo "Files in the data/tmp_validation_figures directory:"
-        ls data/tmp_validation_figures/
+        ls data/tmp_validation_figures/Gadget
 
     # Archive the generated plots
     - name: Archive generated plots
