@@ -36,6 +36,10 @@ elif plot_archive=='Nyx':
     nyx_version = "Oct2023"
     archive = NyxArchive(nyx_version=nyx_version, verbose=True)
 
+for sim in archive.list_sim:
+    if sim in archive.list_sim_test:
+        print(sim)
+
 emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
 training_data=archive.get_training_data(emu_params=emu_params)
 

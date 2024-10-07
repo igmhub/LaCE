@@ -3,8 +3,9 @@ name: LaCE automated testing
 
 on:
   push:
-    branches: '*'
+    branches: 'main'
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,11 +25,26 @@ jobs:
         pip install fdasrsf
         pip install setuptools
         pip install pytest wheel pytest-cov
+
     - name: Install lace
-      run: pip install -e .
+      run: pip install -e .[explicit]
 
-
+    # Run the tests and specify the temporary directory as output_dir
     - name: Run tests
-      timeout-minutes: 5
+      timeout-minutes: 70
       run: |
-        pytest tests/test_lace.py  
+        pytest tests/test_lace.py
+        pytest tests/plot_mpg_gp.py
+        pytest tests/plot_mpg_nn.py
+
+    - name: List generated plots
+      run: |
+        echo "Files in the data/tmp_validation_figures directory:"
+        ls data/tmp_validation_figures/Gadget
+
+    # Archive the generated plots
+    - name: Archive generated plots
+      uses: actions/upload-artifact@v4
+      with:
+        name: validation-figures
+        path: data/tmp_validation_figures/Gadget/*.png    
