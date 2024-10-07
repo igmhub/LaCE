@@ -40,16 +40,14 @@ jobs:
         pytest tests/test_lace.py
         pytest tests/plot_mpg.py
 
+    - name: List generated plots
+      run: |
+        echo "Files in the tmp/validation_figures directory:"
+        ls tmp/validation_figures/
+
     # Archive the generated plots
     - name: Archive generated plots
       uses: actions/upload-artifact@v4
       with:
         name: validation-figures
-        path: tmp/validation_figures/*.png
-
-    # List the files in the temporary directory for debugging
-    - name: List generated plots
-      run: |
-        echo "Files in the tmp/validation_figures directory:"
-        ls tmp/validation_figures/
-    
+        path: tmp/validation_figures/*.png    
