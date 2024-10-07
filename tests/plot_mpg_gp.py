@@ -43,8 +43,7 @@ def test():
     os.makedirs(save_dir, exist_ok=True)
     
     for ii, sim in enumerate(archive.list_sim):
-        if sim == 'mpg_central':
-            if sim in archive.list_sim_test:
+        if sim in archive.list_sim_test:
             emulator = GPEmulator(
                 training_set=training_set,
                 emulator_label=emulator_label,
