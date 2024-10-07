@@ -29,9 +29,9 @@ def test():
     
     # Define the parameters for the emulator specific to Gadget
     emu_params = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
-    training_set='Cabayol23'
-    emulator_label='Cabayol23+'
-    model_path = f'{repo}data/NNmodels/Cabayol23+/Cabayol23+_drop_sim'
+    training_set='Pedersen21'
+    emulator_label='Pedersen23'
+    
 
     # Initialize a GadgetArchive instance for postprocessing data
     archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
@@ -45,23 +45,17 @@ def test():
     for ii, sim in enumerate(archive.list_sim):
         if sim == 'mpg_central':
             if sim in archive.list_sim_test:
-            model_path_central = f'{repo}data/NNmodels/Cabayol23+/Cabayol23+.pt'
-
-            emulator = NNEmulator(
+            emulator = GPEmulator(
                 training_set=training_set,
                 emulator_label=emulator_label,
                 emu_params=emu_params,
-                model_path=model_path_central,
-                train=False,
             )
         else:
-            emulator = NNEmulator(
+            emulator = GPEmulator(
                 training_set=training_set,
                 emulator_label=emulator_label,
                 emu_params=emu_params,
-                model_path=model_path + f'_{sim}.pt',
                 drop_sim=sim,
-                train=False,
             )
         
         # Get testing data for the current simulation
@@ -70,7 +64,7 @@ def test():
             testing_data = [d for d in testing_data if d['val_scaling'] == 1]
             
         # Plot and save the emulated P1D
-        save_path = f'{save_dir}{sim}.png'
+        save_path = f'{save_dir}{sim}{emulator_label}.png'
         plot_p1d_vs_emulator(testing_data, emulator, save_path=save_path)
     
     return  

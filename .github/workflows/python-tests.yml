@@ -31,10 +31,11 @@ jobs:
 
     # Run the tests and specify the temporary directory as output_dir
     - name: Run tests
-      timeout-minutes: 30
+      timeout-minutes: 45
       run: |
         pytest tests/test_lace.py
-        pytest tests/plot_mpg.py
+        pytest tests/plot_mpg_gp.py
+        pytest tests/plot_mpg_nn.py
 
     - name: List generated plots
       run: |
