@@ -8,9 +8,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: NERSC Python
+#     display_name: emulators2
 #     language: python
-#     name: python3
+#     name: emulators2
 # ---
 
 # %% [markdown]

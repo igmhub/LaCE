@@ -27,7 +27,7 @@ jobs:
         pip install pytest wheel pytest-cov
 
     - name: Install lace
-      run: pip install -e .[gpy]
+      run: pip install -e .[explicit]
 
     # Run the tests and specify the temporary directory as output_dir
     - name: Run tests
