@@ -23,7 +23,7 @@ class GPEmulator(base_emulator.BaseEmulator):
     :type archive: class, optional
     :param training_set: Specific training set. Options are 'Perdersen21' and 'Cabayol23'.
     :type training_set: str, optional
-    :param emulator_label: Specific emulator label. Options are 'Pedersen21', 'Pedersen23', 'Cabayol23'.
+    :param emulator_label: Specific emulator label. Options are 'Pedersen21', 'Pedersen23'.
     :type emulator_label: str, optional
     :param emu_type: Type of emulator. Defaults to 'polyfit'.
     :type emu_type: str, optional
@@ -105,6 +105,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.list_sim_cube = archive.list_sim_cube
         self.kp_Mpc = archive.kp_Mpc
         self.emulator_label = emulator_label
+        print(emulator_label)
 
         emulator_label_all = [
             "Pedersen21",
