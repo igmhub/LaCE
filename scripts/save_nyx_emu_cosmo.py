@@ -1,6 +1,6 @@
 import numpy as np
 import h5py
-from lace.archive.nyx_archive import NyxArchive, get_attrs
+from lace.archive.nyx_archive import NyxArchive
 from lace.cosmo import camb_cosmo, fit_linP
 import os
 
