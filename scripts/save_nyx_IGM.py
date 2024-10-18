@@ -43,9 +43,12 @@ def main():
             dict_index[lab] = {}
             dict_index[lab]["z"] = np.zeros(nz)
             dict_index[lab]["tau_eff"] = np.zeros(nz)
+            dict_index[lab]["mF"] = np.zeros(nz)
             dict_index[lab]["gamma"] = np.zeros(nz)
             dict_index[lab]["sigT_kms"] = np.zeros(nz)
+            dict_index[lab]["sigT_Mpc"] = np.zeros(nz)
             dict_index[lab]["kF_kms"] = np.zeros(nz)
+            dict_index[lab]["kF_Mpc"] = np.zeros(nz)
 
             for ind_snap in list_snap:
                 for ind_book in range(len(training)):
@@ -57,12 +60,22 @@ def main():
                         & (training[ind_book]["ind_rescaling"] == ind_rescaling)
                     ):
                         dict_index[lab]["z"][ind_snap] = training[ind_book]["z"]
-                        dict_index[lab]["tau_eff"][ind_snap] = -np.log(
-                            training[ind_book]["mF"]
-                        )
+                        dict_index[lab]["mF"][ind_snap] = training[ind_book][
+                            "mF"
+                        ]
                         dict_index[lab]["gamma"][ind_snap] = training[ind_book][
                             "gamma"
                         ]
+                        dict_index[lab]["kF_Mpc"][ind_snap] = training[
+                            ind_book
+                        ]["kF_Mpc"]
+                        dict_index[lab]["sigT_Mpc"][ind_snap] = training[
+                            ind_book
+                        ]["sigT_Mpc"]
+
+                        dict_index[lab]["tau_eff"][ind_snap] = -np.log(
+                            training[ind_book]["mF"]
+                        )
                         _ = thermal_broadening_kms(training[ind_book]["T0"])
                         dict_index[lab]["sigT_kms"][ind_snap] = _
 
@@ -82,12 +95,6 @@ def main():
         cosmo_params, linP_params = nyx_archive._get_emu_cosmo(
             None, rsim_conv[sim_label]
         )
-        dict_index[sim_label] = {}
-        dict_index[sim_label]["z"] = np.zeros(nz)
-        dict_index[sim_label]["tau_eff"] = np.zeros(nz)
-        dict_index[sim_label]["gamma"] = np.zeros(nz)
-        dict_index[sim_label]["sigT_kms"] = np.zeros(nz)
-        dict_index[sim_label]["kF_kms"] = np.zeros(nz)
         if sim_label == "nyx_central":
             ind_rescaling = 1
         else:
@@ -95,6 +102,18 @@ def main():
         testing = nyx_archive.get_testing_data(
             sim_label, ind_rescaling=ind_rescaling
         )
+
+        lab = sim_label
+        dict_index[lab] = {}
+        dict_index[lab]["z"] = np.zeros(nz)
+        dict_index[lab]["tau_eff"] = np.zeros(nz)
+        dict_index[lab]["mF"] = np.zeros(nz)
+        dict_index[lab]["gamma"] = np.zeros(nz)
+        dict_index[lab]["sigT_kms"] = np.zeros(nz)
+        dict_index[lab]["sigT_Mpc"] = np.zeros(nz)
+        dict_index[lab]["kF_kms"] = np.zeros(nz)
+        dict_index[lab]["kF_Mpc"] = np.zeros(nz)
+
         for ind_snap in list_snap:
             for ind_book in range(len(testing)):
                 if (
@@ -103,17 +122,20 @@ def main():
                     & (testing[ind_book]["ind_phase"] == ind_phase)
                     & (testing[ind_book]["sim_label"] == sim_label)
                 ):
-                    dict_index[sim_label]["z"][ind_snap] = testing[ind_book][
-                        "z"
+                    dict_index[lab]["z"][ind_snap] = testing[ind_book]["z"]
+                    dict_index[lab]["mF"][ind_snap] = testing[ind_book]["mF"]
+                    dict_index[lab]["gamma"][ind_snap] = testing[ind_book][
+                        "gamma"
                     ]
-                    dict_index[sim_label]["tau_eff"][ind_snap] = -np.log(
+                    dict_index[lab]["sigT_Mpc"][ind_snap] = testing[ind_book][
+                        "sigT_Mpc"
+                    ]
+
+                    dict_index[lab]["tau_eff"][ind_snap] = -np.log(
                         testing[ind_book]["mF"]
                     )
-                    dict_index[sim_label]["gamma"][ind_snap] = testing[
-                        ind_book
-                    ]["gamma"]
                     _ = thermal_broadening_kms(testing[ind_book]["T0"])
-                    dict_index[sim_label]["sigT_kms"][ind_snap] = _
+                    dict_index[lab]["sigT_kms"][ind_snap] = _
 
                     ind_z = np.argwhere(
                         np.round(testing[ind_book]["z"], 2) == linP_params["z"]
@@ -123,7 +145,14 @@ def main():
                             testing[ind_book]["kF_Mpc"]
                             / linP_params["dkms_dMpc"][ind_z]
                         )
-                        dict_index[sim_label]["kF_kms"][ind_snap] = _
+                        dict_index[lab]["kF_kms"][ind_snap] = _
+                        dict_index[lab]["kF_Mpc"][ind_snap] = testing[ind_book][
+                            "kF_Mpc"
+                        ]
+                    else:
+                        print(
+                            "no kF_Mpc in ", sim_label, testing[ind_book]["z"]
+                        )
 
     folder = os.environ["NYX_PATH"]
     np.save(folder + "/IGM_histories.npy", dict_index)
@@ -131,3 +160,13 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def metric_par(p0, p1, max_dist):
+    dist = (
+        ((p0["mF"] - p1["mF"]) / max_dist["mF"]) ** 2
+        + ((p0["sigT_Mpc"] - p1["sigT_Mpc"]) / max_dist["sigT_Mpc"]) ** 2
+        + ((p0["gamma"] - p1["gamma"]) / max_dist["gamma"]) ** 2
+        + ((p0["kF_Mpc"] - p1["kF_Mpc"]) / max_dist["kF_Mpc"]) ** 2
+    )
+    return np.sqrt(dist)
