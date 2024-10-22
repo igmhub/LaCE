@@ -1,6 +1,6 @@
 import numpy as np
 import h5py
-from lace.archive.nyx_archive import NyxArchive, get_attrs
+from lace.archive.nyx_archive import NyxArchive
 from lace.cosmo import camb_cosmo, fit_linP
 import os
 
@@ -13,6 +13,7 @@ def main():
 
     # file containing Nyx data
     nyx_version = "Oct2023"
+    nyx_version = "Jul2024"
     nyx_fname = os.environ["NYX_PATH"] + "/models_Nyx_" + nyx_version + ".hdf5"
     # file that will be written containing cosmo data for Nyx file
     cosmo_fname = (
@@ -31,6 +32,13 @@ def main():
     all_dict = []
     # iterate over simulations
     for sim_label in sim_avail:
+        # this simulation seems to have issues
+        if sim_label == "cosmo_grid_14":
+            continue
+        # contained in CGAN_4096_base
+        elif sim_label == "CGAN_4096_val":
+            continue
+
         isim = nyx_archive.sim_conv[sim_label]
         sim_dict = {}
         sim_dict["sim_label"] = isim
@@ -50,6 +58,7 @@ def main():
 
             if first:
                 sim_dict["cosmo_params"] = nyx_archive.data[ind]["cosmo_params"]
+                sim_dict["star_params"] = nyx_archive.data[ind]["star_params"]
                 sim_dict["linP_params"] = {}
                 sim_dict["linP_params"]["kp_Mpc"] = nyx_archive.data[ind][
                     "kp_Mpc"
