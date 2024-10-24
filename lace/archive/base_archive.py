@@ -74,6 +74,7 @@ class BaseArchive(object):
             "ind_axis",
             "ind_rescaling",
             "cosmo_params",
+            "star_params",
         ]
 
         keys_spe = ["p1d_Mpc"]
@@ -163,6 +164,7 @@ class BaseArchive(object):
             dict_av["ind_rescaling"] = ind_rescaling
             dict_av["ind_snap"] = ind_snap
             dict_av["cosmo_params"] = self.data[ind_merge[0]]["cosmo_params"]
+            dict_av["star_params"] = self.data[ind_merge[0]]["star_params"]
 
             # list of available keys to merger
             key_list = self.data[ind_merge[0]].keys()
@@ -377,13 +379,17 @@ class BaseArchive(object):
                 if mask:
                     if all(
                         x in list_keys
-                        or (x in ["A_lya","n_lya","omega_m","H_0","A_UVB"] and "cosmo_params" in list_keys)
+                        or (
+                            x in ["A_lya", "n_lya", "omega_m", "H_0", "A_UVB"]
+                            and "cosmo_params" in list_keys
+                        )
                         for x in emu_params
                     ):
                         if any(
                             np.isnan(arch_av[ii][x])
                             for x in emu_params
-                            if x not in ["A_lya","n_lya","omega_m","H_0","A_UVB"] 
+                            if x
+                            not in ["A_lya", "n_lya", "omega_m", "H_0", "A_UVB"]
                         ) | any(
                             np.any(np.isnan(arch_av[ii][x])) for x in key_power
                         ):
@@ -502,9 +508,16 @@ class BaseArchive(object):
             if mask:
                 if emu_params is None:
                     testing_data.append(arch_av[ii])
-                #elif all(x in list_keys for x in emu_params):
-                elif all(x in list_keys or (isinstance(list_keys, dict) and x in list_keys.get('cosmo', [])) for x in emu_params.keys()):
-                    print('activated')
+                # elif all(x in list_keys for x in emu_params):
+                elif all(
+                    x in list_keys
+                    or (
+                        isinstance(list_keys, dict)
+                        and x in list_keys.get("cosmo", [])
+                    )
+                    for x in emu_params.keys()
+                ):
+                    print("activated")
                     if any(np.isnan(arch_av[ii][x]) for x in emu_params) | any(
                         np.any(np.isnan(arch_av[ii][x])) for x in key_power
                     ):

@@ -21,7 +21,6 @@ def plot_emulated_p1d(archive_name='Nyx'):
     Parameters:
     archive (str): Archive to use for data ('Nyx' or 'Gadget')
     """
-    
     # Print the type of archive selected for debugging
     print(f"Selected archive: {archive_name}")
 
