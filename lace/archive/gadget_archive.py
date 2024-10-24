@@ -30,6 +30,8 @@ class GadgetArchive(BaseArchive):
         kp_Mpc=None,
         force_recompute_linP_params=False,
         verbose=False,
+        z_star=3,
+        kp_kms=0.009,
     ):
         """
         Initialize the archive object.
@@ -67,6 +69,8 @@ class GadgetArchive(BaseArchive):
             if isinstance(kp_Mpc, (int, float, type(None))) == False:
                 raise TypeError("kp_Mpc must be a number or None")
         self.kp_Mpc = kp_Mpc
+        self.z_star = z_star
+        self.kp_kms = kp_kms
 
         if isinstance(verbose, bool) == False:
             raise TypeError("verbose must be boolean")
@@ -327,6 +331,7 @@ class GadgetArchive(BaseArchive):
                     else:
                         cosmo_params = file_cosmo[ii]["cosmo_params"]
                         linP_params = file_cosmo[ii]["linP_params"]
+                        star_params = file_cosmo[ii]["star_params"]
                     break
 
         if compute_linP_params == True:
@@ -350,6 +355,11 @@ class GadgetArchive(BaseArchive):
 
             # compute linear power parameters at each z (in Mpc units)
             linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
+
+            # compute linear power parameters (in kms units)
+            star_params = fit_linP.parameterize_cosmology_kms(
+                sim_cosmo, None, self.z_star, self.kp_kms
+            )
             # compute conversion from Mpc to km/s using cosmology
             dkms_dMpc_zs = camb_cosmo.dkms_dMpc(sim_cosmo, z=np.array(zs))
 
@@ -366,7 +376,7 @@ class GadgetArchive(BaseArchive):
                     else:
                         linP_params[lab][ii] = linP_zs[ii][lab]
 
-        return cosmo_params, linP_params
+        return cosmo_params, linP_params, star_params
 
     def _get_file_names(self, sim_label, ind_phase, ind_z, ind_axis):
         """
@@ -539,7 +549,7 @@ class GadgetArchive(BaseArchive):
         ## read info from all sims, all snapshots, all rescalings
         # iterate over simulations
         for sim_label in self.list_sim:
-            cosmo_params, linP_params = self._get_emu_cosmo(
+            cosmo_params, linP_params, star_params = self._get_emu_cosmo(
                 sim_label, force_recompute_linP_params
             )
 
@@ -548,6 +558,7 @@ class GadgetArchive(BaseArchive):
                 # set linear power parameters describing snapshot
                 snap_data = {}
                 snap_data["cosmo_params"] = cosmo_params
+                snap_data["star_params"] = star_params
                 for lab in linP_params.keys():
                     if lab == "kp_Mpc":
                         snap_data[lab] = linP_params[lab]
