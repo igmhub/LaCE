@@ -20,6 +20,8 @@ class NyxArchive(BaseArchive):
         force_recompute_linP_params=False,
         verbose=False,
         nfiles=18,
+        z_star=3,
+        kp_kms=0.009,
     ):
         ## check input
         if isinstance(nyx_version, str) == False:
@@ -41,6 +43,8 @@ class NyxArchive(BaseArchive):
             if isinstance(kp_Mpc, (int, float, type(None))) == False:
                 raise TypeError("kp_Mpc must be a number or None")
         self.kp_Mpc = kp_Mpc
+        self.z_star = z_star
+        self.kp_kms = kp_kms
 
         if isinstance(verbose, bool) == False:
             raise TypeError("verbose must be boolean")
@@ -49,7 +53,7 @@ class NyxArchive(BaseArchive):
 
         ## sets list simulations available for this suite
         # list of especial simulations
-        self.list_sim_test = ["nyx_central", "nyx_seed", "nyx_wdm"]
+        self.list_sim_test = ["nyx_central", "nyx_seed", "nyx_3_ic", "nyx_wdm"]
         # list of hypercube simulations
         self.list_sim_cube = []
         # simulation 14 was identified as problematic by the Nyx team
@@ -103,7 +107,8 @@ class NyxArchive(BaseArchive):
         # file and lace bookkeeping
         self.sim_conv = {
             "fiducial": "nyx_central",
-            "bar_ic_grid_3": "nyx_seed",
+            "bar_ic_grid_3": "nyx_3_ic",
+            "CGAN_4096_base": "nyx_seed",
             "wdm_3.5kev_grid_1": "nyx_wdm",
         }
         for ii in range(nfiles):
@@ -218,11 +223,12 @@ class NyxArchive(BaseArchive):
                     else:
                         cosmo_params = file_cosmo[ii]["cosmo_params"]
                         linP_params = file_cosmo[ii]["linP_params"]
+                        star_params = file_cosmo[ii]["star_params"]
                     break
             if sim_in_file == False:
                 file_error = (
                     "The file "
-                    + file_cosmo
+                    + self.file_cosmo
                     + " does not contain "
                     + isim
                     + ". To speed up calculations, "
@@ -244,12 +250,19 @@ class NyxArchive(BaseArchive):
                 cosmo_params["A_s"] = 2.10e-9
                 cosmo_params["n_s"] = 0.966
                 cosmo_params["h"] = cosmo_params["H_0"] / 100
+            elif isim == "nyx_seed":
+                cosmo_params["A_s"] = 2.15865e-9
+                cosmo_params["n_s"] = 0.96
+                cosmo_params["h"] = cosmo_params["H_0"] / 100
             # setup CAMB object
             sim_cosmo = camb_cosmo.get_Nyx_cosmology(cosmo_params)
 
             # compute linear power parameters at each z (in Mpc units)
             linP_zs = fit_linP.get_linP_Mpc_zs(
                 sim_cosmo, self.list_sim_redshifts, self.kp_Mpc
+            )
+            star_params = fit_linP.parameterize_cosmology_kms(
+                sim_cosmo, None, self.z_star, self.kp_kms
             )
             zs = np.array(self.list_sim_redshifts)
             # compute conversion from Mpc to km/s using cosmology
@@ -268,7 +281,7 @@ class NyxArchive(BaseArchive):
                     else:
                         linP_params[lab][ii] = linP_zs[ii][lab]
 
-        return cosmo_params, linP_params
+        return cosmo_params, linP_params, star_params
 
     def _load_data(self, nyx_file=None, force_recompute_linP_params=False):
         # set nyx_file if not provided
@@ -312,13 +325,16 @@ class NyxArchive(BaseArchive):
             # this simulation seems to have issues
             if isim == "cosmo_grid_14":
                 continue
+            # contained in CGAN_4096_base
+            elif isim == "CGAN_4096_val":
+                continue
 
             if self.verbose:
                 print("read Nyx sim", isim)
 
             # read cosmo information and linear power parameters
             # (will only need CAMB if pivot point kp_Mpc is changed)
-            cosmo_params, linP_params = self._get_emu_cosmo(
+            cosmo_params, linP_params, star_params = self._get_emu_cosmo(
                 ff, isim, force_recompute_linP_params
             )
 
@@ -328,9 +344,13 @@ class NyxArchive(BaseArchive):
                 zval = float(split_string(iz)[1])
 
                 # find redshift index to read linear power parameters
-                ind_z = np.where(
-                    np.isclose(self.list_sim_redshifts, zval, 1e-10)
-                )[0][0]
+                try:
+                    ind_z = np.where(
+                        np.isclose(self.list_sim_redshifts, zval, 1e-10)
+                    )[0][0]
+                except IndexError:
+                    print("Could not find redshift", zval, "in ", isim)
+                    continue
 
                 scalings_avail = list(ff[isim][iz].keys())
                 # loop over scalings
@@ -345,6 +365,7 @@ class NyxArchive(BaseArchive):
                         # dictionary containing measurements and relevant info
                         _arch = {}
                         _arch["cosmo_params"] = cosmo_params
+                        _arch["star_params"] = star_params
                         for lab in linP_params.keys():
                             if lab == "kp_Mpc":
                                 _arch[lab] = linP_params[lab]
@@ -387,17 +408,18 @@ class NyxArchive(BaseArchive):
                         _arch["k_Mpc"] = p1d["k"]
                         _arch["p1d_Mpc"] = p1d["Pk1d"]
                         if "3d power kmu" in _data:
-                            p3d = np.array(
-                                _data["3d power kmu"]["fine binning"]
-                            )
-                            _arch["k3d_Mpc"] = p3d["k"].reshape(
-                                self.kbins, self.mubins
-                            )
-                            _arch["mu3d"] = p3d["mu"].reshape(
-                                self.kbins, self.mubins
-                            )
-                            _arch["p3d_Mpc"] = p3d["Pkmu"].reshape(
-                                self.kbins, self.mubins
-                            )
+                            if "fine binning" in _data["3d power kmu"]:
+                                p3d = np.array(
+                                    _data["3d power kmu"]["fine binning"]
+                                )
+                                _arch["k3d_Mpc"] = p3d["k"].reshape(
+                                    self.kbins, self.mubins
+                                )
+                                _arch["mu3d"] = p3d["mu"].reshape(
+                                    self.kbins, self.mubins
+                                )
+                                _arch["p3d_Mpc"] = p3d["Pkmu"].reshape(
+                                    self.kbins, self.mubins
+                                )
                         self.data.append(_arch)
         ff.close()

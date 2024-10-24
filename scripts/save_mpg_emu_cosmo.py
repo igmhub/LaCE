@@ -25,6 +25,7 @@ def main():
             )[0, 0]
             if archive.data[ind]["ind_snap"] == list_snap[0]:
                 sim_dict["cosmo_params"] = archive.data[ind]["cosmo_params"]
+                sim_dict["star_params"] = archive.data[ind]["star_params"]
                 sim_dict["linP_params"] = {}
                 sim_dict["linP_params"]["kp_Mpc"] = archive.data[ind]["kp_Mpc"]
             for lab in labels:
