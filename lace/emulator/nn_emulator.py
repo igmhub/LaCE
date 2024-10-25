@@ -19,6 +19,10 @@ import lace
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator import nn_architecture, base_emulator
 from lace.utils import poly_p1d
+from lace.emulator.constants import TrainingSet, EmulatorLabel, EMULATOR_PARAMS, EMULATOR_DESCRIPTIONS
+from lace.emulator.select_training import select_training
+
+
 
 from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
@@ -80,7 +84,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         # store emulator settings
         self.emulator_label = emulator_label
         self.training_set = training_set
-
         self.emu_params = emu_params
         self.kmax_Mpc = kmax_Mpc
         self.ndeg = ndeg
@@ -108,434 +111,97 @@ class NNEmulator(base_emulator.BaseEmulator):
         np.random.seed(seed)
         random.seed(seed)
 
-        # check input #
-        training_set_all = ["Pedersen21", "Cabayol23", "Nyx23_Oct2023"]
-        emulator_label_all = [
-            "Cabayol23",
-            "Cabayol23+",
-            "Nyx_v0",
-            "Nyx_alphap",
-            "Nyx_alphap_extended",
-            "Cabayol23_extended",
-            "Nyx_v0_extended",
-            "Cabayol23+_extended",
-        ]
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        training_set_all = list(TrainingSet)
+        emulator_label_all = list(EmulatorLabel)
 
-        # check input
 
-        ## set training_set
-        if (archive is None) & (training_set is None):
-            raise ValueError("Archive or training_set must be provided")
-
-        elif (training_set is not None) & (archive is None):
-            if training_set not in training_set_all:
-                raise ValueError(
-                    f"Invalid training_set value {training_set}. Available options:",
-                    training_set_all,
-                )
-
-            self.print(f"Selected training set {training_set}")
-
-            if training_set in ["Pedersen21", "Cabayol23"]:
-                archive = gadget_archive.GadgetArchive(postproc=training_set)
-            elif training_set[:5] in ["Nyx23"]:
-                archive = nyx_archive.NyxArchive(
-                    nyx_version=training_set[6:], nyx_file=nyx_file
-                )
-
-            self.training_data = archive.get_training_data(
-                emu_params=self.emu_params,
-                drop_sim=self.drop_sim,
-                z_max=self.z_max,
-            )
-
-        elif (training_set is None) & (archive is not None):
-            self.print(
-                "Use custom archive provided by the user to train emulator"
-            )
-            self.training_data = archive.get_training_data(
-                emu_params=self.emu_params,
-                drop_sim=self.drop_sim,
-                drop_z=self.drop_z,
-                z_max=self.z_max,
-            )
-
-        elif (training_set is not None) & (archive is not None):
-            if train:
-                raise ValueError(
-                    "Provide either archive or training set for training"
-                )
-            else:
-                self.print(
-                    "Using custom archive provided by the user to load emulator"
-                )
-                self.training_data = archive.get_training_data(
-                    emu_params=self.emu_params,
-                    drop_sim=self.drop_sim,
-                    drop_z=self.drop_z,
-                    z_max=self.z_max,
-                )
+        self.archive, self.training_data = select_training(
+            archive=archive,
+            training_set=training_set,
+            emu_params=self.emu_params,
+            drop_sim=self.drop_sim,
+            drop_z=self.drop_z,
+            z_max=self.z_max,
+            nyx_file=nyx_file,
+            train=train,
+            print_func=self.print
+        )
 
         self.print(f"Samples in training_set: {len(self.training_data)}")
         self.kp_Mpc = archive.kp_Mpc
 
-        ## check emulator label
-        if emulator_label is not None:
-            if emulator_label in emulator_label_all:
-                self.print(f"Selected emulator {emulator_label}")
-            else:
-                raise ValueError(
-                    f"Invalid emulator_label value {emulator_label}. Available options:",
-                    emulator_label_all,
-                )
-        else:
-            if train:
-                self.print("Selected custom emulator")
-            else:
-                raise ValueError("Provide emulator_label when loading emulator")
+        if emulator_label in EMULATOR_PARAMS:
+            self.print(EMULATOR_DESCRIPTIONS.get(emulator_label, "No description available."))
+            
+            params = EMULATOR_PARAMS[emulator_label]
+            for key, value in params.items():
+                setattr(self, key, value)
 
-        # define emulator settings
-        if emulator_label == "Cabayol23":
-            self.print(
-                r"Neural network emulating the optimal P1D of Gadget simulations "
-                + "fitting coefficients to a 5th degree polynomial. It "
-                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
-                + "passed to the emulator will be overwritten to match "
-                + "these ones"
-            )
-            self.emu_params = [
-                "Delta2_p",
-                "n_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-            ]
-            self.emu_type = "polyfit"
-            (
-                self.kmax_Mpc,
-                self.ndeg,
-                self.nepochs,
-                self.step_size,
-                self.nhidden,
-                self.max_neurons,
-                self.lr0,
-                self.weight_decay,
-                self.batch_size,
-                self.amsgrad,
-            ) = (4, 5, 100, 75, 5, 100, 1e-3, 1e-4, 100, False)
+        self.GADGET_LABELS = {EmulatorLabel.CABAYOL23, EmulatorLabel.CABAYOL23_EXTENDED}
+        self.NYX_LABELS = {EmulatorLabel.NYX_V0, EmulatorLabel.NYX_V0_EXTENDED}
 
-        if emulator_label == "Cabayol23+":
-            self.print(
-                r"Neural network emulating the optimal P1D of Gadget simulations "
-                + "fitting coefficients to a 5th degree polynomial. It "
-                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
-                + "passed to the emulator will be overwritten to match "
-                + "these ones. This option is an updated on wrt to the one in the Cabayol+23 paper."
-            )
-            self.emu_params = [
-                "Delta2_p",
-                "n_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-            ]
-            self.emu_type = "polyfit"
-            (
-                self.kmax_Mpc,
-                self.ndeg,
-                self.nepochs,
-                self.step_size,
-                self.nhidden,
-                self.max_neurons,
-                self.lr0,
-                self.weight_decay,
-                self.batch_size,
-                self.amsgrad,
-            ) = (4, 5, 510, 500, 5, 250, 7e-4, 9.6e-3, 100, True)
-
-        elif emulator_label == "Nyx_v0":
-            self.print(
-                r"Neural network emulating the optimal P1D of Nyx simulations "
-                + "fitting coefficients to a 6th degree polynomial. It "
-                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
-                + "passed to the emulator will be overwritten to match "
-                + "these ones"
-            )
-            self.emu_params = [
-                "Delta2_p",
-                "n_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-            ]
-            self.emu_type = "polyfit"
-            (
-                self.kmax_Mpc,
-                self.ndeg,
-                self.nepochs,
-                self.step_size,
-                self.nhidden,
-                self.max_neurons,
-                self.lr0,
-                self.weight_decay,
-                self.batch_size,
-                self.amsgrad,
-            ) = (4, 6, 800, 700, 5, 150, 5e-5, 1e-4, 100, True)
-
-        elif emulator_label == "Nyx_alphap":
-            self.print(
-                r"Neural network emulating the optimal P1D of Nyx simulations "
-                + "fitting coefficients to a 6th degree polynomial. It "
-                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
-                + "passed to the emulator will be overwritten to match "
-                + "these ones"
-            )
-            self.emu_params = [
-                "Delta2_p",
-                "n_p",
-                "alpha_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-            ]
-            self.emu_type = "polyfit"
-            (
-                self.kmax_Mpc,
-                self.ndeg,
-                self.nepochs,
-                self.step_size,
-                self.nhidden,
-                self.max_neurons,
-                self.lr0,
-                self.weight_decay,
-                self.batch_size,
-                self.amsgrad,
-            ) = (4, 6, 600, 500, 6, 400, 2.5e-4, 8e-3, 100, True)
-
-        elif emulator_label == "Nyx_alphap_extended":
-            self.print(
-                r"Neural network emulating the optimal P1D of Nyx simulations "
-                + "fitting coefficients to a 8th degree polynomial. It "
-                + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
-                + "passed to the emulator will be overwritten to match "
-                + "these ones"
-            )
-            self.emu_params = [
-                "Delta2_p",
-                "n_p",
-                "alpha_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-            ]
-            self.emu_type = "polyfit"
-            (
-                self.kmax_Mpc,
-                self.ndeg,
-                self.nepochs,
-                self.step_size,
-                self.nhidden,
-                self.max_neurons,
-                self.lr0,
-                self.weight_decay,
-                self.batch_size,
-                self.amsgrad,
-            ) = (8, 8, 600, 500, 6, 400, 2.5e-4, 8e-3, 100, True)
-
-        elif emulator_label == "Cabayol23_extended":
-            self.print(
-                r"Neural network emulating the optimal P1D of Gadget simulations "
-                + "fitting coefficients to a 7th degree polynomial. It "
-                + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
-                + "passed to the emulator will be overwritten to match "
-                + "these ones. This configuration does not downweight the "
-                + "contribution of small scales."
-            )
-            self.emu_params = [
-                "Delta2_p",
-                "n_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-            ]
-            self.emu_type = "polyfit"
-            (
-                self.kmax_Mpc,
-                self.ndeg,
-                self.nepochs,
-                self.step_size,
-                self.nhidden,
-                self.max_neurons,
-                self.weighted_emulator,
-                self.lr0,
-            ) = (8, 7, 100, 75, 5, 100, False, 1e-3)
-
-        if emulator_label == "Cabayol23+_extended":
-            self.print(
-                r"Neural network emulating the optimal P1D of Gadget simulations "
-                + "fitting coefficients to a 5th degree polynomial. It "
-                + "goes to scales of 4Mpc^{-1} and z<=4.5. The parameters "
-                + "passed to the emulator will be overwritten to match "
-                + "these ones. This option is an updated on wrt to the one in the Cabayol+23 paper."
-            )
-            self.emu_params = [
-                "Delta2_p",
-                "n_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-            ]
-            self.emu_type = "polyfit"
-            (
-                self.kmax_Mpc,
-                self.ndeg,
-                self.nepochs,
-                self.step_size,
-                self.nhidden,
-                self.max_neurons,
-                self.lr0,
-                self.weight_decay,
-                self.batch_size,
-                self.amsgrad,
-                self.weighted_emulator,
-            ) = (8, 7, 250, 200, 4, 250, 7.1e-4, 4.1e-3, 100, True, True)
-
-        elif emulator_label == "Nyx_v0_extended":
-            self.print(
-                r"Neural network emulating the optimal P1D of Nyx simulations "
-                + "fitting coefficients to a 7th degree polynomial. It "
-                + "goes to scales of 8Mpc^{-1} and z<=4.5. The parameters "
-                + "passed to the emulator will be overwritten to match "
-                + "these ones"
-            )
-            self.emu_params = [
-                "Delta2_p",
-                "n_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-            ]
-            self.emu_type = "polyfit"
-            (
-                self.kmax_Mpc,
-                self.ndeg,
-                self.nepochs,
-                self.step_size,
-                self.nhidden,
-                self.weighted_emulator,
-            ) = (8, 7, 1000, 750, 5, True)
-
-        # check consistency between training data an emulator label
-        if (emulator_label == "Cabayol23") | (
-            emulator_label == "Cabayol23_extended"
-        ):
-            # make sure that input archive / training data are Gadget sims
-            if self.training_data[0]["sim_label"][:3] != "mpg":
-                raise ValueError(
-                    f"Training data for {emulator_label} are not Gadget sims"
-                )
-        elif (emulator_label == "Nyx_v0") | (
-            emulator_label == "Nyx_v0_extended"
-        ):
-            # make sure that input archive / training data are Nyx sims
-            if self.training_data[0]["sim_label"][:3] != "nyx":
-                raise ValueError(
-                    f"Training data for {emulator_label} are not Nyx sims"
-                )
+        self._check_consistency()
 
         _ = self.training_data[0]["k_Mpc"] > 0
         self.kmin_Mpc = np.min(self.training_data[0]["k_Mpc"][_])
         self._calculate_normalization(archive)
 
-        # decide whether to train emulator or read from file
-        if train == False:
-            if self.model_path is None:
-                raise ValueError("If train==False, model path is required.")
-
-            pretrained_model = torch.load(
-                os.path.join(self.models_dir, self.model_path),
-                map_location="cpu",
-            )
-            self.nn = nn_architecture.MDNemulator_polyfit(
-                nhidden=self.nhidden,
-                ndeg=self.ndeg,
-                max_neurons=self.max_neurons,
-                ninput=len(self.emu_params),
-            )
-            self.nn.load_state_dict(pretrained_model["emulator"])
-            # CPU vs GPU
-            if use_gpu_for_evaluation:
-                self.device = torch.device(
-                    "cuda" if torch.cuda.is_available() else "cpu"
-                )
-            else:
-                self.device = torch.device("cpu")
-            self.nn.to(self.device)
-            self.print("Model loaded. No training needed")
-
-            model_metadata = pretrained_model["metadata"]
-
-            # check consistency between required settings and read ones
-            training_set_loaded = model_metadata["training_set"]
-            emulator_label_loaded = model_metadata["emulator_label"]
-            drop_sim_loaded = model_metadata["drop_sim"]
-            drop_z_loaded = model_metadata["drop_z"]
-            if drop_z_loaded is not None:
-                drop_z_loaded = float(drop_z_loaded)
-
-            if emulator_label_loaded != emulator_label:
-                raise ValueError(
-                    f"Emulator label mismatch: Expected '{emulator_label}' but loaded '{emulator_label_loaded}'"
-                )
-
-            if training_set_loaded != training_set:
-                raise ValueError(
-                    f"Training set mismatch: Expected '{training_set}' but loaded '{training_set_loaded}'"
-                )
-
-            if drop_sim_loaded != self.drop_sim:
-                raise ValueError(
-                    f"drop_sim mismatch: Expected '{self.drop_sim}' but loaded '{drop_sim_loaded}'"
-                )
-
-            if drop_z_loaded != self.drop_z:
-                raise ValueError(
-                    f"drop_z mismatch: Expected '{self.drop_z}' but loaded '{drop_z_loaded}'"
-                )
-
-            if model_metadata["drop_sim"] is not None and self.drop_sim is None:
-                warn(
-                    f"Model trained without simulation {emulator_settings['drop_sim']}"
-                )
-
-            if model_metadata["drop_z"] is not None and self.drop_z is None:
-                warn(
-                    f"Model trained without redshift {emulator_settings['drop_z']}"
-                )
-
-            kMpc_train = self._obtain_sim_params()
-            log_kMpc_train = torch.log10(kMpc_train).to(self.device)
-
-            self.log_kMpc = log_kMpc_train
-
+        if not train:
+            self._load_pretrained_model()
         else:
-            self.device = torch.device(
-                "cuda" if torch.cuda.is_available() else "cpu"
-            )
             self.train()
-
             if self.save_path is not None:
-                # saves the model in the predefined path after training
                 self.save_emulator()
 
+    def _load_pretrained_model(self):
+        if self.model_path is None:
+            raise ValueError("If train==False, model path is required.")
+
+        pretrained_model = torch.load(
+            os.path.join(self.models_dir, self.model_path),
+            map_location="cpu",
+        )
+        self._setup_nn(pretrained_model["emulator"])
+        self.print("Model loaded. No training needed")
+
+        self._check_model_consistency(pretrained_model["metadata"])
+
+    def _setup_nn(self, state_dict):
+        self.nn = nn_architecture.MDNemulator_polyfit(
+            nhidden=self.nhidden,
+            ndeg=self.ndeg,
+            max_neurons=self.max_neurons,
+            ninput=len(self.emu_params),
+        )
+        self.nn.load_state_dict(state_dict)
+        self.nn.to(self.device)
+
+    def _check_model_consistency(self, metadata):
+        expected_values = {
+            "emulator_label": self.emulator_label,
+            "training_set": self.training_set,
+            "drop_sim": self.drop_sim,
+            "drop_z": self.drop_z,
+        }
+
+        for key, expected in expected_values.items():
+            loaded = metadata[key]
+            if key == "drop_z" and loaded is not None:
+                loaded = float(loaded)
+            
+            if loaded != expected:
+                raise ValueError(f"{key} mismatch: Expected '{expected}' but loaded '{loaded}'")
+
+
+    def _check_consistency(self):
+        """Check consistency between training data and emulator label."""
+        if self.emulator_label in self.GADGET_LABELS:
+            if self.training_data[0]["sim_label"][:3] != "mpg":
+                raise ValueError(f"Training data for {self.emulator_label} are not Gadget sims")
+        elif self.emulator_label in self.NYX_LABELS:
+            if self.training_data[0]["sim_label"][:3] != "nyx":
+                raise ValueError(f"Training data for {self.emulator_label} are not Nyx sims")
     def _sort_dict(self, dct, keys):
         """
         Sorts a list of dictionaries based on specified keys.
@@ -655,7 +321,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         Returns:
             torch.Tensor: The normalized training data as a tensor.
         """
-
         training_data = []
         for ii in range(len(self.training_data)):
             data_dict = {}
@@ -1036,3 +701,4 @@ class NNEmulator(base_emulator.BaseEmulator):
         test_point = [model_test[param] for param in self.emu_params]
         test_point = np.array(test_point)
         return self.hull.find_simplex(test_point) >= 0
+
