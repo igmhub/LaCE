@@ -33,19 +33,12 @@ pip install -e .
 pip install -e .[explicit]
 ```
 
-#### Notebooks:
+#### Tests
 
-- All notebooks in the repository are in .py format. To generate the .ipynb version, run:
-
-```
-jupytext --to ipynb notebooks/*.py
-```
-
-- If you want to use notebooks via JupyterHub, you'll also need to download `ipykernel`:
+Please run the following script to check that the package is working properly.
 
 ```
-pip install ipykernel
-python -m ipykernel install --user --name lace --display-name lace
+python test_lace.py
 ```
 
 #### Nyx users:
@@ -99,11 +92,22 @@ The current version of the emulator, relased in this repo, does not emulate `alp
 `kF_Mpc` is the filtering length (or pressure smoothing scale) in inverse comoving units
 
 
-#### Tutorials:
+### Notebooks / tutorials
 
+
+- All notebooks in the repository are in .py format. To generate the .ipynb version, run:
+
+```
+jupytext --to ipynb notebooks/*.py
+```
+
+- If you want to use notebooks via JupyterHub, you'll also need to download `ipykernel`:
+
+```
+pip install ipykernel
+python -m ipykernel install --user --name cup1d --display-name lace
+```
 In the `Notebooks` folder, there are several tutorials one can run to learn how to use the archives and emulators.
 
 - Archive tutorial: notebooks/Tutorial_bookkeeping.py
 - Emulator tutorial: notebooks/Tutorial_emulator.py
-
-In the `tests` folder, there is a script that you can run to check that the package is working properly.
