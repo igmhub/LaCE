@@ -5,16 +5,24 @@ def select_training(archive, training_set, emu_params, drop_sim, drop_z, z_max, 
     if (archive is None) and (training_set is None):
         raise ValueError("Archive or training_set must be provided")
 
+
     if (training_set is not None) and (archive is None):
-        if training_set not in TrainingSet:
-            raise ValueError(f"Invalid training_set value {training_set}. Available options: {', '.join(TrainingSet)}")
+        if isinstance(training_set, str):
+            try:
+                training_set = TrainingSet(training_set)
+            except ValueError:
+                raise ValueError(f"Invalid training_set value '{training_set}'. Available options: {', '.join(t.value for t in TrainingSet)}")
+        elif not isinstance(training_set, TrainingSet):
+            raise ValueError(f"Invalid training_set type. Expected str or TrainingSet, got {type(training_set)}")
 
         print_func(f"Selected training set {training_set}")
 
         if training_set in [TrainingSet.PEDERSEN21, TrainingSet.CABAYOL23]:
             archive = gadget_archive.GadgetArchive(postproc=training_set)
         elif training_set.startswith("Nyx23"):
-            archive = nyx_archive.NyxArchive(nyx_version=training_set[6:], nyx_file=nyx_file)
+            archive = nyx_archive.NyxArchive(nyx_version=training_set[6:], 
+                                             nyx_file=nyx_file,
+                                             kp_Mpc=0.7)
 
         training_data = archive.get_training_data(
             emu_params=emu_params,
