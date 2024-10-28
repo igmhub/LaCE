@@ -111,23 +111,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         emulator_label_all = list(EmulatorLabel)
         self.GADGET_LABELS = GADGET_LABELS
         self.NYX_LABELS = NYX_LABELS
-
-
-        self.archive, self.training_data = select_training(
-            archive=archive,
-            training_set=training_set,
-            emu_params=self.emu_params,
-            drop_sim=self.drop_sim,
-            drop_z=self.drop_z,
-            z_max=self.z_max,
-            nyx_file=nyx_file,
-            train=train,
-            print_func=self.print
-        )
-
-        self.print(f"Samples in training_set: {len(self.training_data)}")
-        self.kp_Mpc = self.archive.kp_Mpc
-
+        
         if isinstance(emulator_label, str):
             try:
                 self.emulator_label = EmulatorLabel(emulator_label)
@@ -144,6 +128,23 @@ class NNEmulator(base_emulator.BaseEmulator):
                 setattr(self, key, value)
 
         self._check_consistency()
+
+        self.archive, self.training_data = select_training(
+            archive=archive,
+            training_set=training_set,
+            emu_params=self.emu_params,
+            drop_sim=self.drop_sim,
+            drop_z=self.drop_z,
+            z_max=self.z_max,
+            nyx_file=nyx_file,
+            train=train,
+            print_func=self.print
+        )
+
+        self.print(f"Samples in training_set: {len(self.training_data)}")
+        self.kp_Mpc = self.archive.kp_Mpc
+
+
 
         _ = self.training_data[0]["k_Mpc"] > 0
         self.kmin_Mpc = np.min(self.training_data[0]["k_Mpc"][_])
