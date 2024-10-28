@@ -1,12 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import sys
-import copy
+import json
 import random
 import time
 from warnings import warn
-import json
+from tqdm import tqdm
 
 # Torch related modules
 import torch
@@ -19,7 +18,7 @@ import lace
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator import nn_architecture, base_emulator
 from lace.utils import poly_p1d
-from lace.emulator.constants import TrainingSet, EmulatorLabel, EMULATOR_PARAMS, EMULATOR_DESCRIPTIONS
+from lace.emulator.constants import TrainingSet, EmulatorLabel, EMULATOR_PARAMS, EMULATOR_DESCRIPTIONS, PROJ_ROOT, GADGET_LABELS, NYX_LABELS
 from lace.emulator.select_training import select_training
 
 
@@ -77,9 +76,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         lr0=1e-3,
         batch_size=100,
         weight_decay=1e-4,
-        amsgrad=True,
         z_max=10,
-        use_gpu_for_evaluation=False,
     ):
         # store emulator settings
         self.emulator_label = emulator_label
@@ -92,9 +89,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         # paths to save/load models
         self.save_path = save_path
         self.model_path = model_path
-        repo = os.path.dirname(lace.__path__[0]) + "/"
-        self.models_dir = os.path.join(repo, "data/")
-        # training data settings
+        self.models_dir = PROJ_ROOT/ "data/"        # training data settings
         self.drop_sim = drop_sim
         self.drop_z = drop_z
         self.z_max = z_max
@@ -114,6 +109,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         training_set_all = list(TrainingSet)
         emulator_label_all = list(EmulatorLabel)
+        self.GADGET_LABELS = GADGET_LABELS
+        self.NYX_LABELS = NYX_LABELS
 
 
         self.archive, self.training_data = select_training(
@@ -129,7 +126,15 @@ class NNEmulator(base_emulator.BaseEmulator):
         )
 
         self.print(f"Samples in training_set: {len(self.training_data)}")
-        self.kp_Mpc = archive.kp_Mpc
+        self.kp_Mpc = self.archive.kp_Mpc
+
+        if isinstance(emulator_label, str):
+            try:
+                self.emulator_label = EmulatorLabel(emulator_label)
+            except ValueError:
+                valid_labels = ', '.join(label.value for label in EmulatorLabel)
+                raise ValueError(f"Invalid emulator_label: '{emulator_label}'. "
+                                 f"Available options are: {valid_labels}")
 
         if emulator_label in EMULATOR_PARAMS:
             self.print(EMULATOR_DESCRIPTIONS.get(emulator_label, "No description available."))
@@ -138,14 +143,11 @@ class NNEmulator(base_emulator.BaseEmulator):
             for key, value in params.items():
                 setattr(self, key, value)
 
-        self.GADGET_LABELS = {EmulatorLabel.CABAYOL23, EmulatorLabel.CABAYOL23_EXTENDED}
-        self.NYX_LABELS = {EmulatorLabel.NYX_V0, EmulatorLabel.NYX_V0_EXTENDED}
-
         self._check_consistency()
 
         _ = self.training_data[0]["k_Mpc"] > 0
         self.kmin_Mpc = np.min(self.training_data[0]["k_Mpc"][_])
-        self._calculate_normalization(archive)
+        self._calculate_normalization(self.archive)
 
         if not train:
             self._load_pretrained_model()
@@ -159,7 +161,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             raise ValueError("If train==False, model path is required.")
 
         pretrained_model = torch.load(
-            os.path.join(self.models_dir, self.model_path),
+            self.models_dir / self.model_path,
             map_location="cpu",
         )
         self._setup_nn(pretrained_model["emulator"])
@@ -176,6 +178,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         )
         self.nn.load_state_dict(state_dict)
         self.nn.to(self.device)
+        kMpc_train = self._obtain_sim_params()
 
     def _check_model_consistency(self, metadata):
         expected_values = {
@@ -202,7 +205,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         elif self.emulator_label in self.NYX_LABELS:
             if self.training_data[0]["sim_label"][:3] != "nyx":
                 raise ValueError(f"Training data for {self.emulator_label} are not Nyx sims")
-    def _sort_dict(self, dct, keys):
+    @staticmethod
+    def _sort_dict(dct, keys):
         """
         Sorts a list of dictionaries based on specified keys.
 
@@ -248,7 +252,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 data_dict[param] = value
             data.append(data_dict)
 
-        data = self._sort_dict(data, self.emu_params)
+        data = NNEmulator._sort_dict(data, self.emu_params)
         # sort the data by emulator parameters
         data = [list(data[i].values()) for i in range(len(training_data_all))]
         data = np.array(data)
@@ -331,8 +335,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                     value = self.training_data[ii][param]
                 data_dict[param] = value
             training_data.append(data_dict)
+            z = self.training_data[ii]["z"]
 
-        training_data = self._sort_dict(training_data, self.emu_params)
+        training_data = NNEmulator._sort_dict(training_data, self.emu_params)
         training_data = [
             list(training_data[i].values())
             for i in range(len(self.training_data))
@@ -346,6 +351,26 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_data = torch.Tensor(training_data)
 
         return training_data
+    
+    def _get_training_cov(self):
+        if self.emulator_label == 'Nyx_alphap_cov':
+            training_cov = []
+            self.Y1_relerr = self._laod_DESIY1_err()
+            for ii in range(len(self.training_data)):
+                training_cov.append(self.Y1_relerr[np.round(self.training_data[ii]['z'], 1)])
+            training_cov = np.array(training_cov)
+            training_cov = torch.Tensor(training_cov)
+        else:
+            training_cov = np.zeros(shape=(len(self.training_data),len(self.k_Mpc[0])))
+            training_cov = torch.Tensor(training_cov)
+        return training_cov
+
+    def _laod_DESIY1_err(self):
+        with open(self.models_dir / "DESI_cov/rerr_DESI_Y1.json", "r") as json_file:
+            z_to_rel = json.load(json_file)
+        z_to_rel = {float(z): rel_error for z, rel_error in z_to_rel.items()}
+
+        return z_to_rel
 
     def _get_training_pd1_nn(self):
         """
@@ -427,18 +452,9 @@ class NNEmulator(base_emulator.BaseEmulator):
             nhidden=self.nhidden,
             ndeg=self.ndeg,
             max_neurons=self.max_neurons,
-            ninput=len(self.emu_params),
+            ninput=len(self.emu_params)
         )
-
-        if self.model_path is not None:
-            pretrained_model = torch.load(
-                os.path.join(self.models_dir, self.model_path),
-                map_location="cpu",
-            )
-            self.nn.load_state_dict(pretrained_model["emulator"])
-            self.nn.to(self.device)
-            self.print("Loading pretrained initial state.")
-
+    
         if not self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
             optimizer = optim.AdamW(
                 self.nn.parameters(),
@@ -457,9 +473,10 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         training_data = self._get_training_data_nn()
         training_label = self._get_training_pd1_nn()
+        training_cov = self._get_training_cov()
 
         trainig_dataset = TensorDataset(
-            training_data, training_label, log_kMpc_train
+            training_data, training_label, training_cov, log_kMpc_train
         )
         loader_train = DataLoader(
             trainig_dataset, batch_size=self.batch_size, shuffle=True
@@ -469,13 +486,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.print(f"Training NN on {len(training_data)} points")
         t0 = time.time()
 
-        for epoch in range(self.nepochs):
-            for datain, p1D_true, logkP1D in loader_train:
-                kP1D = 10**logkP1D
-
-                p1D_true_scaled = (
-                    p1D_true.to(self.device) * kP1D.to(self.device) / torch.pi
-                )
+        for epoch in tqdm(range(self.nepochs), desc="Training epochs"):
+            for datain, p1D_true, P1D_desi_err, logkP1D in loader_train:
 
                 optimizer.zero_grad()
 
@@ -489,7 +501,6 @@ class NNEmulator(base_emulator.BaseEmulator):
                     * (logkP1D[:, None, :] ** powers[None, :, None]),
                     axis=1,
                 )
-
                 powers_err = torch.arange(0, self.ndeg * 2 + 1, 2).to(
                     self.device
                 )
@@ -500,12 +511,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                         axis=1,
                     )
                 )
+                P1Dlogerr = torch.log(P1Derr+ P1D_desi_err)
 
-                P1Dlogerr = torch.log(P1Derr)
-
-                log_prob = ((P1Dpred - p1D_true.to(self.device)) / P1Derr).pow(
-                    2
-                ) + 2 * P1Dlogerr  #
+                log_prob = (P1Dpred - p1D_true.to(self.device)).pow(2) / (P1Derr+P1D_desi_err).pow(2) + 2 * P1Dlogerr  
 
                 log_prob = loss_function_weights[None, :] * log_prob
 
@@ -569,8 +577,9 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         for param in self.emu_params:
             if param not in model:
+                continue
                 raise ValueError(f"{param} not in input model")
-
+    
         try:
             length = len(model[self.emu_params[0]])
         except:
@@ -680,7 +689,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(training_points))
         ]
-        training_points = self._sort_dict(training_points, self.emu_params)
+        training_points = NNEmulator._sort_dict(training_points, self.emu_params)
         training_points = [
             list(training_points[i].values())
             for i in range(len(training_points))
