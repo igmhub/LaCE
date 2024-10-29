@@ -6,6 +6,7 @@ import matplotlib.cm as cm
 import os
 import argparse  
 from loguru import logger
+import json
 
 ## LaCE specific modules
 import lace
@@ -93,14 +94,15 @@ def plot_emulated_p1d(archive_name='Nyx'):
     sims_to_process = [sim for sim in archive.list_sim if sim not in skip_sims]
     testing_data_central = archive.get_testing_data(sim_label=f"nyx_central")
 
-    z = [d['z'] for d in testing_data_central if d['z'] < 4.8]
-    Nz = len(z)
+    zs = [d['z'] for d in testing_data_central if d['z'] < 4.8]
+    Nz = len(zs)
     Nk = len(testing_data_central[0]['p1d_Mpc'][(testing_data_central[0]['k_Mpc'] > 0) & (testing_data_central[0]['k_Mpc'] < 4)])+1
 
     Nsim = len(sims_to_process)
     p1ds_err = np.zeros((Nsim, Nz, Nk))
-
+    dict_p1d_err = {}
     for ii, sim in enumerate(sims_to_process):
+        dict_p1d_err[sim] = {}
         if sim in skip_sims:
             continue
 
@@ -142,7 +144,7 @@ def plot_emulated_p1d(archive_name='Nyx'):
         logger.info(f"Retrieved testing data for simulation {sim}")
 
         z = [d['z'] for d in testing_data if d['z'] < 4.8]
-        for m in range(Nz):
+        for m, z in enumerate(zs):
             kMpc_test = testing_data[m]['k_Mpc']
             p1d_true = testing_data[m]['p1d_Mpc']
             p1d_true = p1d_true[(kMpc_test > 0) & (kMpc_test < 4)]
@@ -157,9 +159,12 @@ def plot_emulated_p1d(archive_name='Nyx'):
                 logger.warning(f"Emulation failed for m={m}: {str(e)}. Skipping this iteration.")
                 p1ds_err[ii,m, :] = np.nan
                 continue
-        
-        
-    np.savetxt(f'p1d_errors_all.txt', p1ds_err.reshape(-1, Nk))
+
+            dict_p1d_err[sim][f'z_{z}'] = p1ds_err[ii,m, :].tolist()        
+    # Save the z_to_rel_error dictionary to a JSON file
+    with open("p1d_errors_all.json", "w") as json_file:
+        json.dump(dict_p1d_err, json_file, indent=4)
+
     make_p1d_err_plot(p1ds_err, kMpc_test)
 
 
