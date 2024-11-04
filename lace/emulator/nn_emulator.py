@@ -512,9 +512,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                         axis=1,
                     )
                 )
-                P1Dlogerr = torch.log(P1Derr+ P1D_desi_err)
+                P1Dlogerr = torch.log(torch.sqrt(P1Derr**2 + P1D_desi_err**2 * p1D_true**2))
 
-                log_prob = (P1Dpred - p1D_true.to(self.device)).pow(2) / (P1Derr+P1D_desi_err).pow(2) + 2 * P1Dlogerr  
+                log_prob = (P1Dpred - p1D_true.to(self.device)).pow(2) / (P1Derr**2 + P1D_desi_err**2 * p1D_true**2) + 2 * P1Dlogerr  
 
                 log_prob = loss_function_weights[None, :] * log_prob
 
