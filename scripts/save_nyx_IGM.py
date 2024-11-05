@@ -34,7 +34,7 @@ def main():
         if sim_label == "nyx_14":
             continue
 
-        cosmo_params, linP_params = nyx_archive._get_emu_cosmo(
+        cosmo_params, linP_params, star_params = nyx_archive._get_emu_cosmo(
             None, rsim_conv[sim_label]
         )
 
@@ -92,7 +92,7 @@ def main():
     # testing
 
     for sim_label in nyx_archive.list_sim_test:
-        cosmo_params, linP_params = nyx_archive._get_emu_cosmo(
+        cosmo_params, linP_params, star_params = nyx_archive._get_emu_cosmo(
             None, rsim_conv[sim_label]
         )
         if sim_label == "nyx_central":
@@ -160,13 +160,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-def metric_par(p0, p1, max_dist):
-    dist = (
-        ((p0["mF"] - p1["mF"]) / max_dist["mF"]) ** 2
-        + ((p0["sigT_Mpc"] - p1["sigT_Mpc"]) / max_dist["sigT_Mpc"]) ** 2
-        + ((p0["gamma"] - p1["gamma"]) / max_dist["gamma"]) ** 2
-        + ((p0["kF_Mpc"] - p1["kF_Mpc"]) / max_dist["kF_Mpc"]) ** 2
-    )
-    return np.sqrt(dist)
