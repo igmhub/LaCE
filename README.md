@@ -9,13 +9,14 @@ LaCE contains a set of emulators for the one-dimensional flux power spectrum of 
 Please cite at least https://arxiv.org/abs/2305.19064 if you use this emulator in your research.
 
 ## Installation
-(Last update Jan 19 2024)
+(Last updated: Jan 19 2024)
 
 - Create a new conda environment. It is usually better to follow python version one or two behind. In January 2024, the latest is 3.12, so we recommend 3.11.
 
 ```
-conda create -n lace -c conda-forge python=3.11 camb fdasrsf pip=24.0
+conda create -n lace -c conda-forge python=3.11 camb fdasrsf
 conda activate lace
+pip install --upgrade pip
 ```
 
 - Clone the repo into your machine and perform an *editable* installation:
@@ -23,42 +24,26 @@ conda activate lace
 ```
 git clone https://github.com/igmhub/LaCE.git
 cd LacE
-pip install -e .[explicit]
-``` 
-
-- If you want to use the GP emulator please run:
-
-```
-pip install -e .[gpy]
-``` 
-
-- If you want to use other versions of the packages you can install LaCE using:
-
-```
 pip install -e .
 ``` 
 
-but there may be some issues.
-
-
-#### Notebooks:
-
-- All notebooks in the repository are in .py format. To generate the .ipynb version, run:
+- If you find problems, please install LaCE as follows:
 
 ```
-jupytext --to ipynb notebooks/*.py
+pip install -e .[explicit]
 ```
 
-- If you want to use notebooks via JupyterHub, you'll also need to download `ipykernel`:
+#### Tests
+
+Please run the following script to check that the package is working properly.
 
 ```
-pip install ipykernel
-python -m ipykernel install --user --name lace --display-name lace
+python test_lace.py
 ```
 
 #### Nyx users:
 
-- You may need to add the Nyx path as an enviroment variable in your notebook kernel. The first is done writting in the kernel.json file:
+- You may need to add the Nyx path as an environment variable in your notebook kernel. The first is done by writing in the kernel.json file:
 
 ```
  "env": {
@@ -66,19 +51,18 @@ python -m ipykernel install --user --name lace --display-name lace
  }
 ```
 
-For convenience, you could also add the Nyx path as an environment variable. The Nyx data is located at NERSC in 
+You also need to add the Nyx path as an environment variable. The Nyx data is located at NERSC in 
 
 ```
 NYX_PATH="/global/cfs/cdirs/desi/science/lya/y1-p1d/likelihood_files/nyx_files/"
 ```
 
-- To improve the reading time, you can precompute all cosmological information needed using CAMB. This is done by running the script 
+- Before running LaCE, please precompute all cosmological information needed using CAMB and save IGM histories. This is done by running the following scripts. You do not need to do it if you are in NERSC.
 
 ```
-python scripts/compute_nyx_emu_cosmo.py
+python scripts/save_nyx_emu_cosmo.py
+python scripts/save_nyx_IGM.py
 ```
-
-Note that you may need to update it as explained inside the file.
 
 
 ## Emulator parameters:
@@ -108,11 +92,22 @@ The current version of the emulator, relased in this repo, does not emulate `alp
 `kF_Mpc` is the filtering length (or pressure smoothing scale) in inverse comoving units
 
 
-#### Tutorials:
+### Notebooks / tutorials
 
+
+- All notebooks in the repository are in .py format. To generate the .ipynb version, run:
+
+```
+jupytext --to ipynb notebooks/*.py
+```
+
+- If you want to use notebooks via JupyterHub, you'll also need to download `ipykernel`:
+
+```
+pip install ipykernel
+python -m ipykernel install --user --name cup1d --display-name lace
+```
 In the `Notebooks` folder, there are several tutorials one can run to learn how to use the archives and emulators.
 
 - Archive tutorial: notebooks/Tutorial_bookkeeping.py
 - Emulator tutorial: notebooks/Tutorial_emulator.py
-
-In the `tests` folder, there is a script that you can run to check that the package is working properly.
