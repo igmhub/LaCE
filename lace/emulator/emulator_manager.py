@@ -49,6 +49,7 @@ def emulators_supported():
         "Cabayol23+_extended",
         "Nyx_v0",
         "Nyx_alphap",
+        "Nyx_alphap_cov",
     ]
     return emulators_supported
 
@@ -166,11 +167,17 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
                 drop_sim=drop_sim,
                 train=False,
             )
-    elif (emulator_label == "Nyx_v0") | (emulator_label == "Nyx_alphap"):
+    elif (
+        (emulator_label == "Nyx_v0")
+        | (emulator_label == "Nyx_alphap")
+        | (emulator_label == "Nyx_alphap_cov")
+    ):
         if emulator_label == "Nyx_v0":
             folder = "NNmodels/Nyxv0_Oct2023/"
         elif emulator_label == "Nyx_alphap":
             folder = "NNmodels/Nyxap_Oct2023/"
+        elif emulator_label == "Nyx_alphap_cov":
+            folder = "NNmodels/testing_models/"
 
         if drop_sim is None:
             model_path = folder + emulator_label + ".pt"

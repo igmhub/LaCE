@@ -18,9 +18,16 @@ import lace
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator import nn_architecture, base_emulator
 from lace.utils import poly_p1d
-from lace.emulator.constants import TrainingSet, EmulatorLabel, EMULATOR_PARAMS, EMULATOR_DESCRIPTIONS, PROJ_ROOT, GADGET_LABELS, NYX_LABELS
+from lace.emulator.constants import (
+    TrainingSet,
+    EmulatorLabel,
+    EMULATOR_PARAMS,
+    EMULATOR_DESCRIPTIONS,
+    PROJ_ROOT,
+    GADGET_LABELS,
+    NYX_LABELS,
+)
 from lace.emulator.select_training import select_training
-
 
 
 from scipy.spatial import Delaunay
@@ -89,7 +96,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         # paths to save/load models
         self.save_path = save_path
         self.model_path = model_path
-        self.models_dir = PROJ_ROOT/ "data/"        # training data settings
+        self.models_dir = PROJ_ROOT / "data/"  # training data settings
         self.drop_sim = drop_sim
         self.drop_z = drop_z
         self.z_max = z_max
@@ -106,23 +113,31 @@ class NNEmulator(base_emulator.BaseEmulator):
         np.random.seed(seed)
         random.seed(seed)
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
         training_set_all = list(TrainingSet)
         emulator_label_all = list(EmulatorLabel)
         self.GADGET_LABELS = GADGET_LABELS
         self.NYX_LABELS = NYX_LABELS
-        
+
         if isinstance(emulator_label, str):
             try:
                 self.emulator_label = EmulatorLabel(emulator_label)
             except ValueError:
-                valid_labels = ', '.join(label.value for label in EmulatorLabel)
-                raise ValueError(f"Invalid emulator_label: '{emulator_label}'. "
-                                 f"Available options are: {valid_labels}")
+                valid_labels = ", ".join(label.value for label in EmulatorLabel)
+                raise ValueError(
+                    f"Invalid emulator_label: '{emulator_label}'. "
+                    f"Available options are: {valid_labels}"
+                )
 
         if emulator_label in EMULATOR_PARAMS:
-            self.print(EMULATOR_DESCRIPTIONS.get(emulator_label, "No description available."))
-            
+            self.print(
+                EMULATOR_DESCRIPTIONS.get(
+                    emulator_label, "No description available."
+                )
+            )
+
             params = EMULATOR_PARAMS[emulator_label]
             for key, value in params.items():
                 setattr(self, key, value)
@@ -138,13 +153,11 @@ class NNEmulator(base_emulator.BaseEmulator):
             z_max=self.z_max,
             nyx_file=nyx_file,
             train=train,
-            print_func=self.print
+            print_func=self.print,
         )
 
         self.print(f"Samples in training_set: {len(self.training_data)}")
         self.kp_Mpc = self.archive.kp_Mpc
-
-
 
         _ = self.training_data[0]["k_Mpc"] > 0
         self.kmin_Mpc = np.min(self.training_data[0]["k_Mpc"][_])
@@ -193,19 +206,25 @@ class NNEmulator(base_emulator.BaseEmulator):
             loaded = metadata[key]
             if key == "drop_z" and loaded is not None:
                 loaded = float(loaded)
-            
-            if loaded != expected:
-                raise ValueError(f"{key} mismatch: Expected '{expected}' but loaded '{loaded}'")
 
+            if loaded != expected:
+                raise ValueError(
+                    f"{key} mismatch: Expected '{expected}' but loaded '{loaded}'"
+                )
 
     def _check_consistency(self):
         """Check consistency between training data and emulator label."""
         if self.emulator_label in self.GADGET_LABELS:
             if self.training_data[0]["sim_label"][:3] != "mpg":
-                raise ValueError(f"Training data for {self.emulator_label} are not Gadget sims")
+                raise ValueError(
+                    f"Training data for {self.emulator_label} are not Gadget sims"
+                )
         elif self.emulator_label in self.NYX_LABELS:
             if self.training_data[0]["sim_label"][:3] != "nyx":
-                raise ValueError(f"Training data for {self.emulator_label} are not Nyx sims")
+                raise ValueError(
+                    f"Training data for {self.emulator_label} are not Nyx sims"
+                )
+
     @staticmethod
     def _sort_dict(dct, keys):
         """
@@ -352,22 +371,28 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_data = torch.Tensor(training_data)
 
         return training_data
-    
+
     def _get_training_cov(self):
-        if self.emulator_label == 'Nyx_alphap_cov':
+        if self.emulator_label == "Nyx_alphap_cov":
             training_cov = []
             self.Y1_relerr = self._laod_DESIY1_err()
             for ii in range(len(self.training_data)):
-                training_cov.append(self.Y1_relerr[np.round(self.training_data[ii]['z'], 1)])
+                training_cov.append(
+                    self.Y1_relerr[np.round(self.training_data[ii]["z"], 1)]
+                )
             training_cov = np.array(training_cov)
             training_cov = torch.Tensor(training_cov)
         else:
-            training_cov = np.zeros(shape=(len(self.training_data),len(self.k_Mpc[0])))
+            training_cov = np.zeros(
+                shape=(len(self.training_data), len(self.k_Mpc[0]))
+            )
             training_cov = torch.Tensor(training_cov)
         return training_cov
 
     def _laod_DESIY1_err(self):
-        with open(self.models_dir / "DESI_cov/rerr_DESI_Y1.json", "r") as json_file:
+        with open(
+            self.models_dir / "DESI_cov/rerr_DESI_Y1.json", "r"
+        ) as json_file:
             z_to_rel = json.load(json_file)
         z_to_rel = {float(z): rel_error for z, rel_error in z_to_rel.items()}
 
@@ -453,9 +478,9 @@ class NNEmulator(base_emulator.BaseEmulator):
             nhidden=self.nhidden,
             ndeg=self.ndeg,
             max_neurons=self.max_neurons,
-            ninput=len(self.emu_params)
+            ninput=len(self.emu_params),
         )
-    
+
         if not self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
             optimizer = optim.AdamW(
                 self.nn.parameters(),
@@ -489,7 +514,6 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         for epoch in tqdm(range(self.nepochs), desc="Training epochs"):
             for datain, p1D_true, P1D_desi_err, logkP1D in loader_train:
-
                 optimizer.zero_grad()
 
                 coeffsPred, coeffs_logerr = self.nn(datain.to(self.device))  #
@@ -512,9 +536,13 @@ class NNEmulator(base_emulator.BaseEmulator):
                         axis=1,
                     )
                 )
-                P1Dlogerr = torch.log(torch.sqrt(P1Derr**2 + P1D_desi_err**2 * p1D_true**2))
+                P1Dlogerr = torch.log(
+                    torch.sqrt(P1Derr**2 + P1D_desi_err**2 * p1D_true**2)
+                )
 
-                log_prob = (P1Dpred - p1D_true.to(self.device)).pow(2) / (P1Derr**2 + P1D_desi_err**2 * p1D_true**2) + 2 * P1Dlogerr  
+                log_prob = (P1Dpred - p1D_true.to(self.device)).pow(2) / (
+                    P1Derr**2 + P1D_desi_err**2 * p1D_true**2
+                ) + 2 * P1Dlogerr
 
                 log_prob = loss_function_weights[None, :] * log_prob
 
@@ -580,7 +608,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             if param not in model:
                 continue
                 raise ValueError(f"{param} not in input model")
-    
+
         try:
             length = len(model[self.emu_params[0]])
         except:
@@ -690,7 +718,9 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(training_points))
         ]
-        training_points = NNEmulator._sort_dict(training_points, self.emu_params)
+        training_points = NNEmulator._sort_dict(
+            training_points, self.emu_params
+        )
         training_points = [
             list(training_points[i].values())
             for i in range(len(training_points))
@@ -711,4 +741,3 @@ class NNEmulator(base_emulator.BaseEmulator):
         test_point = [model_test[param] for param in self.emu_params]
         test_point = np.array(test_point)
         return self.hull.find_simplex(test_point) >= 0
-
