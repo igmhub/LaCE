@@ -5,6 +5,8 @@ from tqdm import tqdm
 from typing import List
 from cosmopower import cosmopower_NN
 import tensorflow as tf
+import pandas as pd
+
 
 
 from lace.cosmo import camb_cosmo
