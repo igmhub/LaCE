@@ -12,6 +12,14 @@ class TrainingSet(StrEnum):
 
 
 class EmulatorLabel(StrEnum):
+    """List of emulators supported."""
+    PEDERSEN21 = "Pedersen21"
+    PEDERSEN23 = "Pedersen23"
+    PEDERSEN21_EXT = "Pedersen21_ext"
+    PEDERSEN21_EXT8 = "Pedersen21_ext8"
+    PEDERSEN23_EXT = "Pedersen23_ext"
+    PEDERSEN23_EXT8 = "Pedersen23_ext8"
+    CH24 = "CH24"
     CABAYOL23 = "Cabayol23"
     CABAYOL23_PLUS = "Cabayol23+"
     NYX_V0 = "Nyx_v0"
@@ -23,13 +31,13 @@ class EmulatorLabel(StrEnum):
     CABAYOL23_PLUS_EXTENDED = "Cabayol23+_extended"
 
 
-GADGET_LABELS = {EmulatorLabel.CABAYOL23, EmulatorLabel.CABAYOL23_EXTENDED}
+GADGET_LABELS = {EmulatorLabel.CABAYOL23, EmulatorLabel.CABAYOL23_PLUS, EmulatorLabel.CABAYOL23_EXTENDED}
 NYX_LABELS = {
     EmulatorLabel.NYX_V0,
     EmulatorLabel.NYX_V0_EXTENDED,
-    # EmulatorLabel.NYX_ALPHAP,
-    # EmulatorLabel.NYX_ALPHAP_COV,
-    # EmulatorLabel.NYX_ALPHAP_EXTENDED,
+    EmulatorLabel.NYX_ALPHAP,
+    EmulatorLabel.NYX_ALPHAP_COV,
+    EmulatorLabel.NYX_ALPHAP_EXTENDED,
 }
 
 EMULATOR_PARAMS = {  # Model parameters for different emulators
