@@ -35,6 +35,8 @@ testing_data_central = archive.get_testing_data('nyx_central')
 
 # ## Extract parameters
 
+z_test=3.4
+
 take_pars = ['Delta2_p', 'n_p','alpha_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
 nelem = len(training_data)
 pars_all_nyx = np.array([[training_data[ii][param] for param in take_pars] for ii in range(nelem)])
@@ -46,12 +48,12 @@ pars_all_nyx_central = np.array([
     if all(param in testing_data_central[ii] for param in take_pars)
 ])
 
-testing_data_central_z3 = [d for d in testing_data_central if d['z']==3]
-nelem = len(testing_data_central_z3)
-pars_all_nyx_central_z3 = np.array([
-    [testing_data_central_z3[ii][param] for param in take_pars]
-    for ii in range(len(testing_data_central_z3))
-    if all(param in testing_data_central_z3[ii] for param in take_pars)
+testing_data_central_snapshot  = [d for d in testing_data_central if d['z']==z_test]
+nelem = len(testing_data_central_snapshot)
+pars_all_nyx_central_snapshot = np.array([
+    [testing_data_central_snapshot[ii][param] for param in take_pars]
+    for ii in range(len(testing_data_central_snapshot))
+    if all(param in testing_data_central_snapshot[ii] for param in take_pars)
 ])
 
 # ## PARAMETER SPACE
@@ -73,7 +75,7 @@ if num_rows > 1:
 for i in range(num_dimensions-1):
     axs[i].scatter(data_nyx[:, i], data_nyx[:, i+1],  s=1,color='goldenrod', alpha=0.3)
     axs[i].scatter(pars_all_nyx_central[:, i], pars_all_nyx_central[:, i+1],  s=10, color='crimson')
-    axs[i].scatter(pars_all_nyx_central_z3[:, i], pars_all_nyx_central_z3[:, i+1],  s=10, color='navy')
+    axs[i].scatter(pars_all_nyx_central_snapshot[:, i], pars_all_nyx_central_snapshot[:, i+1],  s=10, color='navy')
 
 
     axs[i].set_xlabel(take_pars[i])
@@ -125,11 +127,11 @@ k_Mpc = testing_data_central[0]["k_Mpc"]
 mask_kMpc = (k_Mpc>0)&(k_Mpc<4)
 p1d_all_nyx_central = np.array([testing_data_central[ii]["p1d_Mpc"][mask_kMpc] for ii in range(nelem)])
 
-testing_data_central_z3 = [d for d in testing_data_central if d['z']==3]
-nelem = len(testing_data_central_z3)
-k_Mpc_central = testing_data_central_z3[0]["k_Mpc"]
+testing_data_central_snapshot  = [d for d in testing_data_central if d['z']==z_test]
+nelem = len(testing_data_central_snapshot)
+k_Mpc_central = testing_data_central_snapshot[0]["k_Mpc"]
 mask_kMpc = (k_Mpc_central>0)&(k_Mpc_central<4)
-p1d_all_nyx_central_z3 = np.array([testing_data_central_z3[ii]["p1d_Mpc"][mask_kMpc] for ii in range(nelem)])
+p1d_all_nyx_central_snapshot = np.array([testing_data_central_snapshot[ii]["p1d_Mpc"][mask_kMpc] for ii in range(nelem)])
 k_Mpc_central = k_Mpc_central[mask_kMpc]
 
 # +
@@ -138,7 +140,7 @@ fig, ax = plt.subplots(figsize=(6, 4))
 
 ax.loglog(k_Mpc_LH, p1d_all_nyx.T, color='goldenrod', alpha=0.3)
 ax.loglog(k_Mpc_central, p1d_all_nyx_central.T, color='crimson', alpha=0.3)
-ax.loglog(k_Mpc_central, p1d_all_nyx_central_z3.T, color='navy', alpha=0.3)
+ax.loglog(k_Mpc_central, p1d_all_nyx_central_snapshot.T, color='navy', alpha=0.3)
 
 
 ax.set_xlabel(r"$k$ [1/Mpc]")
@@ -159,22 +161,23 @@ pars_max = pars_all_nyx.max(axis=0)
 pars_range = pars_max - pars_min
 
 pars_nyx_norm = (pars_all_nyx - pars_min) / pars_range
-central_z3_norm = (pars_all_nyx_central_z3 - pars_min) / pars_range
+central_z3_norm = (pars_all_nyx_central_snapshot - pars_min) / pars_range
 
 central_z3_norm[:,3] = central_z3_norm[:,3] * 2
 pars_nyx_norm[:,3] = pars_nyx_norm[:,3] * 2
 
 # Initialize and fit the NearestNeighbors model
-n_neighbors = 50
+n_neighbors = 20
 nn = NearestNeighbors(n_neighbors=n_neighbors)
 nn.fit(pars_nyx_norm)
 
 # Find nearest neighbors for all central points
 distances, indices = nn.kneighbors(central_z3_norm)
+unique_nn_indices = np.unique(indices)
 
 logger.info(f"Indices of all unique nearest neighbors: {unique_nn_indices}")
 
-for i, (central_params, idx, dist) in enumerate(zip(pars_all_nyx_central_z3, indices, distances)):
+for i, (central_params, idx, dist) in enumerate(zip(pars_all_nyx_central_snapshot, indices, distances)):
     logger.info(f"\nCentral point {i}:")
     logger.info(f"Parameters: {dict(zip(take_pars, central_params))}")
     logger.info("\nNearest neighbors:")
@@ -211,7 +214,7 @@ plt.tight_layout()
 fig, ax = plt.subplots(figsize=(6, 4))
 
 ax.loglog(k_Mpc_LH, p1d_all_nyx[unique_nn_indices].T, color='goldenrod', alpha=0.3)
-ax.loglog(k_Mpc_central, p1d_all_nyx_central_z3.T, color='navy', alpha=0.3)
+ax.loglog(k_Mpc_central, p1d_all_nyx_central_snapshot.T, color='navy', alpha=0.3)
 
 
 ax.set_xlabel(r"$k$ [1/Mpc]")
@@ -219,6 +222,3 @@ ax.set_ylabel("P1D [Mpc]")
 
 plt.tight_layout()
 plt.show
-# -
-
-
