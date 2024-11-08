@@ -142,8 +142,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             for key, value in params.items():
                 setattr(self, key, value)
 
-        self._check_consistency()
-
+    
         self.archive, self.training_data = select_training(
             archive=archive,
             training_set=training_set,
@@ -155,6 +154,8 @@ class NNEmulator(base_emulator.BaseEmulator):
             train=train,
             print_func=self.print,
         )
+        
+        self._check_consistency()
 
         self.print(f"Samples in training_set: {len(self.training_data)}")
         self.kp_Mpc = self.archive.kp_Mpc
