@@ -8,7 +8,6 @@ from lace.emulator.constants import PROJ_ROOT
 
 @dataclass
 class linP_cosmology_cosmopower:
-    chains_df : pd.DataFrame
     kp_kms : float = 0.01
     z_star : float = 0.0
     fit_min_Mpc : float = 0.1
@@ -16,12 +15,11 @@ class linP_cosmology_cosmopower:
 
     def __post_init__(self):
         self.cp_emulator = cp.cosmopower_NN(restore=True, 
-                         restore_filename=PROJ_ROOT/"data/cosmopower_models/PKLIN_NN")
+                         restore_filename=(PROJ_ROOT/"data/cosmopower_models/PKLIN_NN").as_posix())
         
         self.kmin_kms = self.fit_min_Mpc * self.kp_kms
         self.kmax_kms = self.fit_max_Mpc * self.kp_kms
 
-        self.chains_df = chains_df
         
     @staticmethod
     def fit_polynomial(xmin, xmax, x, y, deg=2):
@@ -53,14 +51,30 @@ class linP_cosmology_cosmopower:
         Pk_kms = Pk_hMpc * dvdX[:,None]**3
         return k_kms, Pk_kms
     
-    def fit_linP_cosmology(self):        
+    @staticmethod
+    def get_star_params(linP, kp):
+        # translate the polynomial to our parameters
+        ln_A_star = linP[0]
+        Delta2_star = np.exp(ln_A_star) * kp**3 / (2 * np.pi**2)
+        n_star = linP[1]
+        # note that the curvature is alpha/2
+        alpha_star = 2.0 * linP[2]
+
+        results = {
+            "Delta2_star": Delta2_star,
+            "n_star": n_star,
+            "alpha_star": alpha_star,
+        }
+        return results
+    
+    def fit_linP_cosmology(self, chains_df):        
         linP_cosmology_results = []
         # Calculate number of chunks needed
         chunk_size = 100_000
-        n_chunks = len(self.chains_df) // chunk_size + (1 if len(self.chains_df) % chunk_size != 0 else 0)
+        n_chunks = len(chains_df) // chunk_size + (1 if len(chains_df) % chunk_size != 0 else 0)
         
         # Split DataFrame into chunks
-        chunks = [self.chains_df.iloc[i*chunk_size:(i+1)*chunk_size] for i in range(n_chunks)]
+        chunks = [chains_df.iloc[i*chunk_size:(i+1)*chunk_size] for i in range(n_chunks)]
         
         for chunk in chunks:    # # create a dict of cosmological parameters
             params = {'omega_b': [chunk.Omega_m.values[ii]  - chunk.omega_cdm.values[ii]/chunk.h.values[ii] ** 2 for ii in range(len(chunk))],
