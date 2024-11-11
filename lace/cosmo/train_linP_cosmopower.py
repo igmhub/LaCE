@@ -28,10 +28,9 @@ def create_LH_sample(dict_params_ranges: dict,
     ns =        np.linspace(dict_params_ranges['ns'][0], dict_params_ranges['ns'][1], nsamples)
     As =      np.linspace(dict_params_ranges['As'][0], dict_params_ranges['As'][1], nsamples)
     mnu =       np.linspace(dict_params_ranges['mnu'][0], dict_params_ranges['mnu'][1], nsamples)
-    nrun =      np.linspace(dict_params_ranges['nrun'][0], dict_params_ranges['nrun'][1], nsamples)
     
 
-    AllParams = np.vstack([ombh2, omch2, H0, ns, As, mnu, nrun])
+    AllParams = np.vstack([ombh2, omch2, H0, ns, As, mnu])
     n_params = len(AllParams)
 
     lhd = pyDOE.lhs(n_params, samples=nsamples, criterion=None)
@@ -47,7 +46,6 @@ def create_LH_sample(dict_params_ranges: dict,
             'ns': AllCombinations[:, 3],
             'As': AllCombinations[:, 4],
             'mnu': AllCombinations[:, 5],
-            'nrun': AllCombinations[:, 6],
             }
     
     np.savez(PROJ_ROOT / 'data' / 'cosmopower_models' / 'LHS_params.npz', **params)
@@ -65,9 +63,8 @@ def generate_training_spectra(input_LH: Path):
             ombh2=LH_params["omega_b"][ii],
             omk=0,
             As=LH_params["As"][ii],
-            ns=LH_params["ns"][ii],
-            nrun=LH_params["nrun"][ii]
-        )
+            ns=LH_params["ns"][ii]  
+                        )
 
         fun_cosmo = CAMB_model.CAMBModel(
             zs=[3],
@@ -79,7 +76,7 @@ def generate_training_spectra(input_LH: Path):
         k_Mpc, _, linP_Mpc = fun_cosmo.get_linP_Mpc()
 
         params_lhs = np.array([
-            LH_params[param][ii] for param in ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns", "nrun"] ])
+            LH_params[param][ii] for param in ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"] ])
         #params_lhs = np.insert(params_lhs, 4, 0)  # Insert omk=0 at index 4
 
         cosmo_array = np.hstack((params_lhs, linP_Mpc.flatten()))
@@ -91,10 +88,9 @@ def generate_training_spectra(input_LH: Path):
 
     return
 
-def cosmopower_prepare_training(params : List = ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns", "nrun"]):
+def cosmopower_prepare_training(params : List = ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"]):
     k_modes = np.loadtxt(PROJ_ROOT / "data" / "cosmopower_models" / "k_modes.txt")
     linear_spectra_and_params = np.loadtxt(PROJ_ROOT / "data" / "cosmopower_models" / "linear.dat")
-
 
     n_params = len(params)
 
@@ -123,7 +119,7 @@ def cosmopower_prepare_training(params : List = ["H0", "mnu", "omega_cdm", "omeg
     np.savez(PROJ_ROOT / "data" / "cosmopower_models" / "camb_linear_logpower.npz", **linear_log_spectra_dict)
 
 
-def cosmopower_train_model(model_params: List = ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns", "nrun"]):
+def cosmopower_train_model(model_params: List = ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"]):
     training_parameters = np.load(PROJ_ROOT / "data" / "cosmopower_models" / "camb_linear_params.npz")
     training_features = np.load(PROJ_ROOT / "data" / "cosmopower_models" / "camb_linear_logpower.npz")
     training_parameters = {model_params[i]: training_parameters[model_params[i]] for i in range(len(model_params))}
@@ -147,6 +143,5 @@ def cosmopower_train_model(model_params: List = ["H0", "mnu", "omega_cdm", "omeg
                 gradient_accumulation_steps = [1, 1, 1, 1, 1],
                 # early stopping set up
                 patience_values = [100,100,100,100,100],
-                #max_epochs = [1000,1000,1000,1000,1000],
                 max_epochs = [1000,1000,1000,1000,1000]
                 )
