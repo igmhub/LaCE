@@ -2,6 +2,7 @@ import cosmopower as cp
 import numpy as np
 from dataclasses import dataclass
 from pathlib import Path
+import pandas as pd
 from lace.emulator.constants import PROJ_ROOT
 
 
