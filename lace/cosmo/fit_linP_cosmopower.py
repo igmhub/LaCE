@@ -13,10 +13,11 @@ class linPCosmologyCosmopower:
     z_star : float = 3
     fit_min_Mpc : float = 0.5
     fit_max_Mpc : float = 2
+    cosmopower_model : str = "Pk_cp_NN"
 
     def __post_init__(self):
         self.cp_emulator = cp.cosmopower_NN(restore=True, 
-                         restore_filename=PROJ_ROOT.as_posix()+"/data/cosmopower_models/Pk_cp_NN")
+                         restore_filename=PROJ_ROOT.as_posix()+f"/data/cosmopower_models/{self.cosmopower_model}")
         
         
     @staticmethod
