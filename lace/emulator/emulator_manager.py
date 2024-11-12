@@ -66,6 +66,8 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
         training_set = TrainingSet.PEDERSEN21
     elif emulator_label in {EmulatorLabel.PEDERSEN21_EXT, EmulatorLabel.PEDERSEN23_EXT, EmulatorLabel.CH24, EmulatorLabel.PEDERSEN23_EXT8}:
         training_set = TrainingSet.CABAYOL23
+    elif emulator_label in {EmulatorLabel.NYX_ALPHAP_COV}:
+        training_set = TrainingSet.NYX23_JUL2024
     else:
         training_set = TrainingSet.CABAYOL23 if emulator_label in GADGET_LABELS else TrainingSet.NYX23_OCT2023
 
