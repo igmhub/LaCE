@@ -193,7 +193,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "weight_decay": 8e-3,
         "batch_size": 100,
         "amsgrad": True,
-        "z_max": 4.6,
+        "z_max": 5,
     },
 }
 
