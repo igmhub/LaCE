@@ -377,10 +377,14 @@ class NNEmulator(base_emulator.BaseEmulator):
         if self.emulator_label == "Nyx_alphap_cov":
             training_cov = []
             self.Y1_relerr = self._laod_DESIY1_err()
+            z_values = np.array(list(self.Y1_relerr.keys()))
             for ii in range(len(self.training_data)):
-                training_cov.append(
-                    self.Y1_relerr[np.round(self.training_data[ii]["z"], 1)]
-                )
+                z = np.round(self.training_data[ii]["z"], 1)
+                # Find closest z value if exact match not found
+                if z not in self.Y1_relerr:
+                    closest_z = z_values[np.abs(z_values - z).argmin()]
+                    z = closest_z
+                training_cov.append(self.Y1_relerr[z])
             training_cov = np.array(training_cov)
             training_cov = torch.Tensor(training_cov)
         else:
@@ -604,6 +608,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         Returns:
             np.ndarray: Emulated P1D values.
         """
+
+        self.nn = self.nn.eval()
 
         for param in self.emu_params:
             if param not in model:
