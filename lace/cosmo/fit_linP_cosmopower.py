@@ -17,7 +17,7 @@ class linPCosmologyCosmopower:
 
     def __post_init__(self):
         self.cp_emulator = cp.cosmopower_NN(restore=True, 
-                         restore_filename=PROJ_ROOT.as_posix()+f"/data/cosmopower_models/{cosmopower_model}")
+                         restore_filename=PROJ_ROOT.as_posix()+f"/data/cosmopower_models/{self.cosmopower_model}")
         
         
     @staticmethod
