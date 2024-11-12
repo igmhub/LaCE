@@ -6,6 +6,7 @@ from typing import List
 from cosmopower import cosmopower_NN
 import tensorflow as tf
 import pandas as pd
+import os
 
 
 
@@ -20,7 +21,8 @@ logger = logging.getLogger()
 logger = logging.getLogger(__name__)
 
 def create_LH_sample(dict_params_ranges: dict,
-                     nsamples: int=400000):
+                     nsamples: int=400000,
+                     filename: str="LHS_params.npz"):
     
     ombh2 =      np.linspace(dict_params_ranges['ombh2'][0], dict_params_ranges['ombh2'][1], nsamples)
     omch2 =     np.linspace(dict_params_ranges['omch2'][0], dict_params_ranges['omch2'][1], nsamples)
@@ -48,12 +50,17 @@ def create_LH_sample(dict_params_ranges: dict,
             'mnu': AllCombinations[:, 5],
             }
     
-    np.savez(PROJ_ROOT / 'data' / 'cosmopower_models' / 'LHS_params.npz', **params)
+    np.savez(PROJ_ROOT / 'data' / 'cosmopower_models' / filename, **params)
         
-def generate_training_spectra(input_LH: Path):
-    logger.info(f"Opening {input_LH}")
-    LH_params = np.load(input_LH)
+def generate_training_spectra(input_LH_filename: str,
+                              output_filename: str = "linear.dat"):
+    logger.info(f"Opening {PROJ_ROOT / 'data' / 'cosmopower_models' / input_LH_filename}")
+    LH_params = np.load(PROJ_ROOT / 'data' / 'cosmopower_models' / input_LH_filename)
     logger.info(f"Generating {len(LH_params['H0'])} training spectra")
+
+    ## Remove the existing linear.dat file if it exists
+    if os.path.exists(PROJ_ROOT / 'data' / 'cosmopower_models' / output_filename):
+        os.remove(PROJ_ROOT / 'data' / 'cosmopower_models' / output_filename)
 
     for ii in tqdm(range(len(LH_params["H0"]))):
         cosmo = camb_cosmo.get_cosmology(
@@ -77,20 +84,20 @@ def generate_training_spectra(input_LH: Path):
 
         params_lhs = np.array([
             LH_params[param][ii] for param in ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"] ])
-        #params_lhs = np.insert(params_lhs, 4, 0)  # Insert omk=0 at index 4
-
+        
         cosmo_array = np.hstack((params_lhs, linP_Mpc.flatten()))
 
-        f=open(PROJ_ROOT / 'data' / 'cosmopower_models' / 'linear.dat','ab')
+        f=open(PROJ_ROOT / 'data' / 'cosmopower_models' / output_filename,'ab')
         np.savetxt(f, [cosmo_array])
         f.close()
     np.savetxt(PROJ_ROOT / "data" / "cosmopower_models" / "k_modes.txt", k_Mpc)
 
     return
 
-def cosmopower_prepare_training(params : List = ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"]):
+def cosmopower_prepare_training(params : List = ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"],
+                                Pk_filename: str = "linear.dat"):
     k_modes = np.loadtxt(PROJ_ROOT / "data" / "cosmopower_models" / "k_modes.txt")
-    linear_spectra_and_params = np.loadtxt(PROJ_ROOT / "data" / "cosmopower_models" / "linear.dat")
+    linear_spectra_and_params = np.loadtxt(PROJ_ROOT / "data" / "cosmopower_models" / Pk_filename)
 
     n_params = len(params)
 
@@ -119,7 +126,9 @@ def cosmopower_prepare_training(params : List = ["H0", "mnu", "omega_cdm", "omeg
     np.savez(PROJ_ROOT / "data" / "cosmopower_models" / "camb_linear_logpower.npz", **linear_log_spectra_dict)
 
 
-def cosmopower_train_model(model_params: List = ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"]):
+def cosmopower_train_model(model_params: List = ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"],
+                            model_save_filename: str = "Pk_cp_NN"):
+    
     training_parameters = np.load(PROJ_ROOT / "data" / "cosmopower_models" / "camb_linear_params.npz")
     training_features = np.load(PROJ_ROOT / "data" / "cosmopower_models" / "camb_linear_logpower.npz")
     training_parameters = {model_params[i]: training_parameters[model_params[i]] for i in range(len(model_params))}
@@ -135,7 +144,7 @@ def cosmopower_train_model(model_params: List = ["H0", "mnu", "omega_cdm", "omeg
     with tf.device(device):
         cp_nn.train(training_parameters=training_parameters,
                 training_features=np.array(training_log_spectra),
-                filename_saved_model=(PROJ_ROOT / 'data' / 'cosmopower_models' / 'Pk_cp_NN').as_posix(),
+                filename_saved_model=(PROJ_ROOT / 'data' / 'cosmopower_models' / model_save_filename).as_posix(),
                 # cooling schedule
                 validation_split=0.1,
                 learning_rates=[1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
@@ -145,3 +154,4 @@ def cosmopower_train_model(model_params: List = ["H0", "mnu", "omega_cdm", "omeg
                 patience_values = [100,100,100,100,100],
                 max_epochs = [1000,1000,1000,1000,1000]
                 )
+
