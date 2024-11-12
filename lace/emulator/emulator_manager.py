@@ -2,7 +2,12 @@
 
 from lace.emulator.nn_emulator import NNEmulator
 from lace.emulator.gp_emulator import GPEmulator
-from lace.emulator.constants import EmulatorLabel, TrainingSet, GADGET_LABELS, NYX_LABELS
+from lace.emulator.constants import (
+    EmulatorLabel,
+    TrainingSet,
+    GADGET_LABELS,
+    NYX_LABELS,
+)
 
 
 def emulators_supported():
@@ -64,19 +69,38 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
 
     if emulator_label in {EmulatorLabel.PEDERSEN21, EmulatorLabel.PEDERSEN23}:
         training_set = TrainingSet.PEDERSEN21
-    elif emulator_label in {EmulatorLabel.PEDERSEN21_EXT, EmulatorLabel.PEDERSEN23_EXT, EmulatorLabel.CH24, EmulatorLabel.PEDERSEN23_EXT8}:
+    elif emulator_label in {
+        EmulatorLabel.PEDERSEN21_EXT,
+        EmulatorLabel.PEDERSEN23_EXT,
+        EmulatorLabel.CH24,
+        EmulatorLabel.PEDERSEN23_EXT8,
+    }:
         training_set = TrainingSet.CABAYOL23
     elif emulator_label in {EmulatorLabel.NYX_ALPHAP_COV}:
         training_set = TrainingSet.NYX23_JUL2024
     else:
-        training_set = TrainingSet.CABAYOL23 if emulator_label in GADGET_LABELS else TrainingSet.NYX23_OCT2023
+        training_set = (
+            TrainingSet.CABAYOL23
+            if emulator_label in GADGET_LABELS
+            else TrainingSet.NYX23_OCT2023
+        )
 
     if archive is not None:
         expected_prefix = "mpg" if emulator_label in GADGET_LABELS else "nyx"
         if archive.data[0]["sim_label"][:3] != expected_prefix:
-            raise ValueError(f"WARNING: training data in archive are not {expected_prefix} sims")
+            raise ValueError(
+                f"WARNING: training data in archive are not {expected_prefix} sims"
+            )
+        training_set = None
 
-    if emulator_label in {EmulatorLabel.PEDERSEN21, EmulatorLabel.PEDERSEN23, EmulatorLabel.PEDERSEN21_EXT, EmulatorLabel.PEDERSEN23_EXT, EmulatorLabel.CH24, EmulatorLabel.PEDERSEN23_EXT8}:
+    if emulator_label in {
+        EmulatorLabel.PEDERSEN21,
+        EmulatorLabel.PEDERSEN23,
+        EmulatorLabel.PEDERSEN21_EXT,
+        EmulatorLabel.PEDERSEN23_EXT,
+        EmulatorLabel.CH24,
+        EmulatorLabel.PEDERSEN23_EXT8,
+    }:
         emulator = GPEmulator(
             archive=archive,
             training_set=training_set,

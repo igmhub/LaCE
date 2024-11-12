@@ -13,6 +13,7 @@ class TrainingSet(StrEnum):
 
 class EmulatorLabel(StrEnum):
     """List of emulators supported."""
+
     PEDERSEN21 = "Pedersen21"
     PEDERSEN23 = "Pedersen23"
     PEDERSEN21_EXT = "Pedersen21_ext"
@@ -31,7 +32,12 @@ class EmulatorLabel(StrEnum):
     CABAYOL23_PLUS_EXTENDED = "Cabayol23+_extended"
 
 
-GADGET_LABELS = {EmulatorLabel.CABAYOL23, EmulatorLabel.CABAYOL23_PLUS, EmulatorLabel.CABAYOL23_EXTENDED}
+GADGET_LABELS = {
+    EmulatorLabel.PEDERSEN23_EXT,
+    EmulatorLabel.CABAYOL23,
+    EmulatorLabel.CABAYOL23_PLUS,
+    EmulatorLabel.CABAYOL23_EXTENDED,
+}
 NYX_LABELS = {
     EmulatorLabel.NYX_V0,
     EmulatorLabel.NYX_V0_EXTENDED,
