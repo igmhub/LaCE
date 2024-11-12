@@ -22,6 +22,7 @@
 # +
 import numpy as np
 import cosmopower as cp
+import pandas as pd
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -139,4 +140,12 @@ cosmopower_prepare_training(params = ["H0", "mnu", "omega_cdm", "omega_b", "As",
 
 cosmopower_train_model(model_save_filename = "Pk_cp_NN_test")
 
+# ## 3. MEASURING COMPRESSED PARAMETERS FROM COSMOLOGICAL CHAINS
 
+df = pd.read_csv(PROJ_ROOT / "data/utils" / "mini_chain_test.csv")
+
+fitter_compressed_params = linPCosmologyCosmopower()
+
+linP_cosmology_results = fitter_compressed_params.fit_linP_cosmology(chains_df = df)
+
+linP_cosmology_results
