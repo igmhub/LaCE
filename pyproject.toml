@@ -34,7 +34,9 @@ dependencies = [
     "torch",
     "scikit-fda",
     "jupyterlab",
-    "jupytext"
+    "jupytext",
+    "strenum",
+    "pathlib"
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",

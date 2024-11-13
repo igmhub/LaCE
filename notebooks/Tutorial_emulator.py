@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.15.2
+#       jupytext_version: 1.16.4
 #   kernelspec:
-#     display_name: emulators2
+#     display_name: lace
 #     language: python
-#     name: emulators2
+#     name: python3
 # ---
 
 # %% [markdown]
@@ -75,8 +75,6 @@ for ii in range(p1d.shape[0]):
 plt.xlabel(r'$k_\parallel$ [1/Mpc]')
 plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
 plt.xscale('log')
-
-# %%
 
 # %% [markdown]
 # To get the amplitude and slope of the linear power spectrum from a target cosmology (input of emulator)
@@ -179,7 +177,7 @@ emulators_supported()
 emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
 
 # %%
-archive = gadget_archive.GadgetArchive(postproc="Cabayol23+")
+archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
 training_data=archive.get_training_data(emu_params=emu_params)
 len(training_data)
 
@@ -213,7 +211,7 @@ emulator = NNEmulator(archive=archive, nepochs=1)
 # ### or a training_set label
 
 # %%
-emulator = NNEmulator(training_set='Cabayol23+',nepochs=1)
+emulator = NNEmulator(training_set='Cabayol23',nepochs=1)
 
 # %% [markdown]
 # #### If none or both are provided, the emulator fails. 
@@ -228,7 +226,7 @@ emulator = NNEmulator(nepochs=1)
 # #### A. with a training_set label
 
 # %%
-emulator = NNEmulator(training_set='Cabayol23', emulator_label='Cabayol23+', nepochs=1)
+emulator = NNEmulator(training_set='Cabayol23', emulator_label='Cabayol23+')
 
 # %% [markdown]
 # #### B. with an archive
@@ -258,10 +256,10 @@ p1d = emulator.emulate_p1d_Mpc(testing_data[0], kMpc)
 plt.loglog(kMpc,p1d)
 
 # %% [markdown]
-# ## GAUSSIAN PROCESS EMULATOR
+# ##  GAUSSIAN PROCESS EMULATOR
 
 # %% [markdown]
-# ## The Gaussian process emulator uses the following default parameters:
+# #### The Gaussian process emulator uses the following default parameters:
 
 # %% [markdown]
 # - paramList=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
