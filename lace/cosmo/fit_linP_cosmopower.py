@@ -6,6 +6,9 @@ from pathlib import Path
 from lace.emulator.constants import PROJ_ROOT
 from tqdm import tqdm
 
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @dataclass
 class linPCosmologyCosmopower:
@@ -21,14 +24,19 @@ class linPCosmologyCosmopower:
         
         
     @staticmethod
-    def fit_polynomial(xmin, xmax, x, y, deg=2):
+    def fit_polynomial(xmin: float, 
+                       xmax: float, 
+                       x: np.ndarray, 
+                       y: np.ndarray, 
+                       deg: int = 2):
         """Fit a polynomial on the log of the function, within range"""
         x_fit = (x > xmin) & (x < xmax)
         poly = np.polyfit(np.log(x[x_fit]), np.log(y[x_fit]), deg=deg)
         return np.poly1d(poly)
     
     @staticmethod
-    def measure_Hz(params, zstar):
+    def measure_Hz(params: dict, 
+                   zstar: float):
         Omega_bc = np.array(params["Omega_m"])
         Omega_lambda = np.array(params["Omega_Lambda"])
         #Omega_nu = 3*np.array(params["omega_ncdm"])
@@ -38,13 +46,18 @@ class linPCosmologyCosmopower:
         return Hz
     
     @staticmethod
-    def convert_to_hMpc(Pk_Mpc, k_Mpc, h):
+    def convert_to_hMpc(Pk_Mpc: np.ndarray, 
+                         k_Mpc: np.ndarray, 
+                         h: np.ndarray):
         Pk_hMpc = Pk_Mpc / h[:,None]**3
         k_hMpc = k_Mpc * h[:,None]
         return Pk_hMpc, k_hMpc
     
     @staticmethod
-    def convert_to_kms(params, k_hMpc, Pk_hMpc, z_star):
+    def convert_to_kms(params: dict, 
+                        k_hMpc: np.ndarray, 
+                        Pk_hMpc: np.ndarray, 
+                        z_star: float):
         H_z = linPCosmologyCosmopower.measure_Hz(params, zstar = z_star)
         dvdX = H_z / (1 + z_star) / np.array(params['h'])
         k_kms = k_hMpc / dvdX[:,None]
@@ -52,7 +65,8 @@ class linPCosmologyCosmopower:
         return k_kms, Pk_kms
     
     @staticmethod
-    def get_star_params(linP,kp):
+    def get_star_params(linP: np.poly1d, 
+                        kp: float):
         # translate the polynomial to our parameters
         ln_A_star = linP[0]
         Delta2_star = np.exp(ln_A_star) * kp**3 / (2 * np.pi**2)
@@ -67,7 +81,8 @@ class linPCosmologyCosmopower:
         }
         return results
     
-    def fit_linP_cosmology(self,chains_df):        
+    def fit_linP_cosmology(self, chains_df: pd.DataFrame, 
+                           param_mapping: dict):   
         linP_cosmology_results = []
         # Calculate number of chunks needed
         chunk_size = 100_000
@@ -75,15 +90,28 @@ class linPCosmologyCosmopower:
         
         # Split DataFrame into chunks
         chunks = [chains_df.iloc[i*chunk_size:(i+1)*chunk_size] for i in range(n_chunks)]
+        logger.info(f"Fitting linear power to cosmology in {n_chunks} chunks")
+        param_descriptions = {
+            'h': 'Reduced Hubble parameter',
+            'm_ncdm': 'Sum of neutrino masses',
+            'omega_cdm': 'Total CDM density / h^2',
+            'Omega_m': 'Total matter density',
+            'ln_A_s_1e10': 'log(As/1e10)',
+            'n_s': 'spectral index'
+        }
         
-        for chunk in chunks:    # # create a dict of cosmological parameters
-            params = {'H0': [chunk.h.values[ii]*100 for ii in range(len(chunk))],
-                      'mnu': [3*chunk.m_ncdm.values[ii] for ii in range(len(chunk))],
-                      'omega_cdm' : [chunk.omega_cdm.values[ii] for ii in range(len(chunk))],
-                      'omega_b': [(chunk.Omega_m.values[ii]  - chunk.omega_cdm.values[ii]/chunk.h.values[ii] ** 2) * chunk.h.values[ii] ** 2  for ii in range(len(chunk))],
-                      'As': [np.exp(chunk.ln_A_s_1e10.values[ii])/1e10 for ii in range(len(chunk))],
-                      'ns': [chunk.n_s.values[ii] for ii in range(len(chunk))]}            
-            
+        param_info = [f"{value}: ({param_descriptions.get(key, 'The emulator does not use this parameter.')})" for key, value in param_mapping.items()]
+        logger.info(f"Using parameter mapping: {param_mapping}\n    " + "\n    ".join(param_info))
+
+        for chunk in chunks:    # create a dict of cosmological parameters
+            params = {
+                'H0': [chunk[param_mapping['h']].values[ii]*100 for ii in range(len(chunk))],
+                'mnu': [3*chunk[param_mapping['m_ncdm']].values[ii] for ii in range(len(chunk))],
+                'omega_cdm': [chunk[param_mapping['omega_cdm']].values[ii] for ii in range(len(chunk))],
+                'omega_b': [(chunk[param_mapping['Omega_m']].values[ii] - chunk[param_mapping['omega_cdm']].values[ii]/chunk[param_mapping['h']].values[ii]**2) * chunk[param_mapping['h']].values[ii]**2 for ii in range(len(chunk))],
+                'As': [np.exp(chunk[param_mapping['ln_A_s_1e10']].values[ii])/1e10 for ii in range(len(chunk))],
+                'ns': [chunk[param_mapping['n_s']].values[ii] for ii in range(len(chunk))]
+            }            
             Pk_Mpc = self.cp_emulator.ten_to_predictions_np(params)
             k_Mpc = self.cp_emulator.modes
             
