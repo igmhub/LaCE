@@ -376,7 +376,7 @@ class NNEmulator(base_emulator.BaseEmulator):
     def _get_training_cov(self):
         if self.emulator_label == "Nyx_alphap_cov":
             training_cov = []
-            self.Y1_relerr = self._laod_DESIY1_err()
+            self.Y1_relerr = self._load_DESIY1_err()
             z_values = np.array(list(self.Y1_relerr.keys()))
             for ii in range(len(self.training_data)):
                 z = np.round(self.training_data[ii]["z"], 1)
@@ -394,7 +394,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             training_cov = torch.Tensor(training_cov)
         return training_cov
 
-    def _laod_DESIY1_err(self):
+    def _load_DESIY1_err(self):
         with open(
             self.models_dir / "DESI_cov/rerr_DESI_Y1.json", "r"
         ) as json_file:
