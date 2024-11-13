@@ -143,7 +143,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 setattr(self, key, value)
 
     
-        self.archive, self.training_data = select_training(
+        archive, self.training_data = select_training(
             archive=archive,
             training_set=training_set,
             emu_params=self.emu_params,
@@ -158,11 +158,11 @@ class NNEmulator(base_emulator.BaseEmulator):
         self._check_consistency()
 
         self.print(f"Samples in training_set: {len(self.training_data)}")
-        self.kp_Mpc = self.archive.kp_Mpc
+        self.kp_Mpc = archive.kp_Mpc
 
         _ = self.training_data[0]["k_Mpc"] > 0
         self.kmin_Mpc = np.min(self.training_data[0]["k_Mpc"][_])
-        self._calculate_normalization(self.archive)
+        self._calculate_normalization(archive)
 
         if not train:
             self._load_pretrained_model()
