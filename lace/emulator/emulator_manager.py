@@ -2,11 +2,16 @@
 
 from lace.emulator.nn_emulator import NNEmulator
 from lace.emulator.gp_emulator import GPEmulator
+from lace.emulator.constants import (
+    EmulatorLabel,
+    TrainingSet,
+    GADGET_LABELS,
+    NYX_LABELS,
+)
 
 
 def emulators_supported():
     """List of emulators supported.
-
     LaCE emulators:
         - **Pedersen21**: GPEmulator used in Pedersen21, k-bin emulator.
           Superseded by Pedersen21_ext.
@@ -34,23 +39,7 @@ def emulators_supported():
         - **Nyx_alphap**: NNEmulator using amplitude, slope, and running, polynomial emulator.
           Recommended emulator.
     """
-
-    emulators_supported = [
-        "Pedersen21",
-        "Pedersen21_ext",
-        "Pedersen21_ext8",
-        "Pedersen23",
-        "Pedersen23_ext",
-        "Pedersen23_ext8",
-        "CH24",
-        "Cabayol23",
-        "Cabayol23_extended",
-        "Cabayol23+",
-        "Cabayol23+_extended",
-        "Nyx_v0",
-        "Nyx_alphap",
-    ]
-    return emulators_supported
+    return [label.value for label in EmulatorLabel]
 
 
 def set_emulator(emulator_label, archive=None, drop_sim=None):
@@ -73,134 +62,71 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
     """
 
     if emulator_label not in emulators_supported():
-        msg = (
-            "Emulator "
-            + emulator_label
-            + " not supported. Supported emulators are "
-            + emulators_supported
-        )
+        msg = f"Emulator {emulator_label} not supported. Supported emulators are {emulators_supported()}"
         raise ValueError(msg)
 
-    if (emulator_label == "Pedersen21") | (emulator_label == "Pedersen23"):
-        if archive is None:
-            emulator = GPEmulator(
-                training_set="Pedersen21",
-                emulator_label=emulator_label,
-                drop_sim=drop_sim,
-            )
-        else:
-            if archive.data[0]["sim_label"][:3] != "mpg":
-                raise ValueError(
-                    "WARNING: training data in archive are not mpg sims"
-                )
+    emulator_label = EmulatorLabel(emulator_label)
 
-            emulator = GPEmulator(
-                archive=archive,
-                emulator_label=emulator_label,
-                drop_sim=drop_sim,
-            )
-    elif (
-        (emulator_label == "Pedersen21_ext")
-        | (emulator_label == "Pedersen23_ext")
-        | (emulator_label == "CH24")
-        | (emulator_label == "Pedersen23_ext8")
-        | (emulator_label == "Pedersen23_ext8")
-    ):
-        if archive is None:
-            emulator = GPEmulator(
-                training_set="Cabayol23",
-                emulator_label=emulator_label,
-                drop_sim=drop_sim,
-            )
-        else:
-            if archive.data[0]["sim_label"][:3] != "mpg":
-                raise ValueError(
-                    "WARNING: training data in archive are not mpg sims"
-                )
-
-            emulator = GPEmulator(
-                archive=archive,
-                emulator_label=emulator_label,
-                drop_sim=drop_sim,
-            )
-    elif (
-        (emulator_label == "Cabayol23")
-        | (emulator_label == "Cabayol23+")
-        | (emulator_label == "Cabayol23_extended")
-        | (emulator_label == "Cabayol23+_extended")
-    ):
-        if (emulator_label == "Cabayol23") | (
-            emulator_label == "Cabayol23_extended"
-        ):
-            folder = "NNmodels/Cabayol23_Feb2024/"
-        elif emulator_label == "Cabayol23+":
-            folder = "NNmodels/Cabayol23+/"
-        elif emulator_label == "Cabayol23+_extended":
-            folder = "NNmodels/Cabayol23+_extended/"
-
-        if drop_sim is None:
-            model_path = folder + emulator_label + ".pt"
-        else:
-            model_path = (
-                folder + emulator_label + "_drop_sim_" + drop_sim + ".pt"
-            )
-        if archive is None:
-            emulator = NNEmulator(
-                training_set="Cabayol23",
-                emulator_label=emulator_label,
-                model_path=model_path,
-                drop_sim=drop_sim,
-                train=False,
-            )
-        else:
-            if archive.data[0]["sim_label"][:3] != "mpg":
-                raise ValueError(
-                    "WARNING: training data in archive are not mpg sims"
-                )
-
-            emulator = NNEmulator(
-                archive=archive,
-                training_set="Cabayol23",
-                emulator_label=emulator_label,
-                model_path=model_path,
-                drop_sim=drop_sim,
-                train=False,
-            )
-    elif (emulator_label == "Nyx_v0") | (emulator_label == "Nyx_alphap"):
-        if emulator_label == "Nyx_v0":
-            folder = "NNmodels/Nyxv0_Oct2023/"
-        elif emulator_label == "Nyx_alphap":
-            folder = "NNmodels/Nyxap_Oct2023/"
-
-        if drop_sim is None:
-            model_path = folder + emulator_label + ".pt"
-        else:
-            model_path = (
-                folder + emulator_label + "_drop_sim_" + drop_sim + ".pt"
-            )
-        if archive is None:
-            emulator = NNEmulator(
-                training_set="Nyx23_Oct2023",
-                emulator_label=emulator_label,
-                model_path=model_path,
-                drop_sim=drop_sim,
-                train=False,
-            )
-        else:
-            if archive.data[0]["sim_label"][:3] != "nyx":
-                raise ValueError(
-                    "WARNING: training data in archive are not nyx sims"
-                )
-
-            emulator = NNEmulator(
-                archive=archive,
-                training_set="Nyx23_Oct2023",
-                emulator_label=emulator_label,
-                model_path=model_path,
-                drop_sim=drop_sim,
-                train=False,
-            )
+    if emulator_label in {EmulatorLabel.PEDERSEN21, EmulatorLabel.PEDERSEN23}:
+        training_set = TrainingSet.PEDERSEN21
+    elif emulator_label in {
+        EmulatorLabel.PEDERSEN21_EXT,
+        EmulatorLabel.PEDERSEN23_EXT,
+        EmulatorLabel.CH24,
+        EmulatorLabel.PEDERSEN23_EXT8,
+    }:
+        training_set = TrainingSet.CABAYOL23
+    elif emulator_label in {EmulatorLabel.NYX_ALPHAP_COV}:
+        training_set = TrainingSet.NYX23_JUL2024
     else:
-        raise ValueError(emulator_label + " not supported")
+        training_set = (
+            TrainingSet.CABAYOL23
+            if emulator_label in GADGET_LABELS
+            else TrainingSet.NYX23_OCT2023
+        )
+
+    if archive is not None:
+        expected_prefix = "mpg" if emulator_label in GADGET_LABELS else "nyx"
+        if archive.data[0]["sim_label"][:3] != expected_prefix:
+            raise ValueError(
+                f"WARNING: training data in archive are not {expected_prefix} sims"
+            )
+        training_set = None
+
+    if emulator_label in {
+        EmulatorLabel.PEDERSEN21,
+        EmulatorLabel.PEDERSEN23,
+        EmulatorLabel.PEDERSEN21_EXT,
+        EmulatorLabel.PEDERSEN23_EXT,
+        EmulatorLabel.CH24,
+        EmulatorLabel.PEDERSEN23_EXT8,
+    }:
+        emulator = GPEmulator(
+            archive=archive,
+            training_set=training_set,
+            emulator_label=emulator_label,
+            drop_sim=drop_sim,
+        )
+    else:
+        folder = {
+            EmulatorLabel.CABAYOL23: "NNmodels/Cabayol23_Feb2024/",
+            EmulatorLabel.CABAYOL23_EXTENDED: "NNmodels/Cabayol23_Feb2024/",
+            EmulatorLabel.CABAYOL23_PLUS: "NNmodels/Cabayol23+/",
+            EmulatorLabel.CABAYOL23_PLUS_EXTENDED: "NNmodels/Cabayol23+_extended/",
+            EmulatorLabel.NYX_V0: "NNmodels/Nyxv0_Oct2023/",
+            EmulatorLabel.NYX_ALPHAP: "NNmodels/Nyxap_Oct2023/",
+            EmulatorLabel.NYX_ALPHAP_COV: "NNmodels/testing_models/",
+        }.get(emulator_label, "")
+
+        model_path = f"{folder}{emulator_label.value}{'_drop_sim' + drop_sim if drop_sim else ''}.pt"
+
+        emulator = NNEmulator(
+            archive=archive,
+            training_set=training_set,
+            emulator_label=emulator_label,
+            model_path=model_path,
+            drop_sim=drop_sim,
+            train=False,
+        )
 
     return emulator
