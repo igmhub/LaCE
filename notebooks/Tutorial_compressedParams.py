@@ -67,7 +67,7 @@ kmin_Mpc = fit_min * kp_Mpc
 kmax_Mpc = fit_max * kp_Mpc
 # -
 
-emu_path = (PROJ_ROOT / "data" / "cosmopower_models" / "Pk_cp_NN").as_posix()
+emu_path = (PROJ_ROOT / "data" / "cosmopower_models" / "Pk_cp_NN_sumnu").as_posix()
 cp_nn = cp.cosmopower_NN(restore=True, 
                          restore_filename=emu_path)
 
@@ -119,33 +119,54 @@ dict_params_ranges = {
     'H0': [60, 80],
     'ns': [0.8, 1.2],
     'As': [5e-10, 4e-9],
-    'mnu': [0, 0.5],}
+    'mnu': [0, 2],}
 
 create_LH_sample(dict_params_ranges = dict_params_ranges,
-                     nsamples = 100,
-                     filename = "LHS_params_test.npz")
+                     nsamples = 10_000,
+                     filename = "LHS_params_sumnu.npz")
 
 # ### 2.2 GENERATE THE TRAINING SPECTRA
 
-generate_training_spectra(input_LH_filename = 'LHS_params_test.npz',
-                          output_filename = "linear_test.dat")
+generate_training_spectra(input_LH_filename = 'LHS_params_sumnu.npz',
+                          output_filename = "linear_sumnu.dat")
 
 # ### 2.3 PREPARE THE TRAINING FILES FOR COSMOPOWER
 
 cosmopower_prepare_training(params = ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"],
-    Pk_filename = "linear_test.dat")
+    Pk_filename = "linear_sumnu.dat")
 
 # ### 2.4 TRAIN THE COSMOPOWER MODEL
 #
 
-cosmopower_train_model(model_save_filename = "Pk_cp_NN_test")
+cosmopower_train_model(model_save_filename = "Pk_cp_NN_sumnu")
 
 # ## 3. MEASURING COMPRESSED PARAMETERS FROM COSMOLOGICAL CHAINS
 
 df = pd.read_csv(PROJ_ROOT / "data/utils" / "mini_chain_test.csv")
 
+df.rename(columns = {'omega_cdm': 'omega_c'}, inplace = True)
+
 fitter_compressed_params = linPCosmologyCosmopower()
 
-linP_cosmology_results = fitter_compressed_params.fit_linP_cosmology(chains_df = df)
+# +
+# We need to provide a dictionary that maps the parameter names expected by the emulator to the column names of the dataframe.
+
+#parameter expected:parameter name in the dataframe   
+param_mapping = {
+    'h': 'h',
+    'm_ncdm': 'm_ncdm',
+    'omega_cdm': 'omega_cdm',
+    'Omega_m': 'Omega_m',
+    'ln_A_s_1e10': 'ln_A_s_1e10',
+    'n_s': 'n_s'
+}
+# -
+
+linP_cosmology_results = fitter_compressed_params.fit_linP_cosmology(chains_df = df, 
+                                                                     param_mapping = param_mapping)
+
+#
 
 linP_cosmology_results
+
+
