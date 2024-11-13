@@ -11,7 +11,7 @@ Please cite at least https://arxiv.org/abs/2305.19064 if you use this emulator i
 ## Installation
 (Last updated: Jan 19 2024)
 
-- Create a new conda environment. It is usually better to follow python version one or two behind. In January 2024, the latest is 3.12, so we recommend 3.11. If you want to use LaCE with cosmopower, as of November 2025 you need to install python 3.10.
+- Create a new conda environment. It is usually better to follow python version one or two behind. In January 2024, the latest is 3.12, so we recommend 3.11. If you want to use LaCE with cosmopower, as of November 2025 you need to install python 3.10. Please look at the cosmopower installation before proceeding with the LaCE installation.
 
 ```
 conda create -n lace -c conda-forge python=3.11 camb fdasrsf
@@ -32,10 +32,17 @@ pip install -e .
 ```
 pip install -e .[explicit]
 ```
-- If you want to use cosmopower, you need to install the cosmopower package. You can do this by running:
+
+- If you want to use cosmopower, you need to use python 3.10 and install the cosmopower package. You must install cosmopower before installing LaCE. You can do this by running:
 
 ```
 pip install cosmopower
+```
+and install:
+```
+pip install -e .
+pip install pyDOE2
+pip install git+https://github.com/igmhub/cup1d.git
 ```
 
 #### Tests
