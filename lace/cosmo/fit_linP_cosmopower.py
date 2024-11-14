@@ -3,12 +3,13 @@ import numpy as np
 import pandas as pd
 from dataclasses import dataclass
 from pathlib import Path
-from lace.emulator.constants import PROJ_ROOT
 from tqdm import tqdm
 
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+PROJ_ROOT = Path(__file__).resolve().parents[2]
 
 @dataclass
 class linPCosmologyCosmopower:
