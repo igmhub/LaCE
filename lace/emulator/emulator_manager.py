@@ -91,7 +91,6 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
             raise ValueError(
                 f"WARNING: training data in archive are not {expected_prefix} sims"
             )
-        training_set = None
 
     if emulator_label in {
         EmulatorLabel.PEDERSEN21,
