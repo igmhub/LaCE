@@ -1,0 +1,36 @@
+# Configuration file for the emulator
+
+## Emulator type: you can choose between a NN emulator or a GP emulator.
+emulator_type: "NN"
+
+## Emulator label: if you want to train a predefined model, you can use the emulator_label. Other possible labels are in the README.md file.
+emulator_label: "Cabayol23+"
+
+## For the data, you can choose between loading and archive or a training set. You can only provide one of them.
+### If you choose to load an archive, you can choose between Nyx or Gadget and a version.
+archive:
+  file: Gadget  # Can be either "Nyx" or "Gadget"
+  version: "Cabayol23" #nyx version or Gadget postprocessing version
+
+training_set: null  #Predefined training sets. You can find the options in the README.md file.
+
+## If no emulator_label is provided, you need to provide the hyperparameters for training a new model and the emulator parameters
+emulator_params: ["Delta2_p", "n_p", "alpha_p", "sigT_Mpc", "gamma", "kF_Mpc"]
+hyperparameters:
+  kmax_Mpc: 4
+  ndeg: 5
+  nepochs: 100
+  step_size: 75
+  drop_sim: null
+  drop_z: null
+  weighted_emulator: true
+  nhidden: 5
+  max_neurons: 50
+  seed: 32
+  lr0: 1e-3
+  batch_size: 100
+  weight_decay: 1e-4
+  z_max: 10
+
+# Where to save the trained model from the project root directory
+save_path: "data/NNmodels/testing_models/test.pt" 
