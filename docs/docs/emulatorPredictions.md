@@ -48,3 +48,21 @@ emulator = NNEmulator(training_set='Cabayol23',
 ```
 where `model_path` is the path to the `.pt` file containing the trained model and `train=False` indicates that the model is not being trained. In the model you are loading has been trained by dropping simulations, you should specify which simulations to drop using the `drop_sim` argument.
 
+## Making predictions 
+One can make predictions with the emulator by using the `predict.py` script in the `bin` folder. This script allows to make predictions on a test set, plot the P1D errors and save the predictions. An example of how to use this script is:
+
+```bash
+python bin/predict.py --config config_files/config_predict.yaml
+```
+
+The fields to specify in the config file are:
+- emulator_type: Choose between "NN" (neural network) or "GP" (Gaussian process) emulator
+- emulator_label: Label of the predefined model to use (see list of supported emulators above)
+- drop_sim: Simulation to exclude from training (optional)
+- archive: Configuration for loading simulation archive
+  - file: "Nyx" or "Gadget" 
+  - version: Version of the simulation archive
+- sim_test: Label of the test simulation to use for predictions
+- emulator_params: List of parameters used by the emulator
+- average_over_z: Whether to average P1D errors over redshift (true/false)
+- save_path: Path where to save the validation plot
