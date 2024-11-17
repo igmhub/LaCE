@@ -209,9 +209,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                 loaded = float(loaded)
 
             if loaded != expected:
-                raise ValueError(
-                    f"{key} mismatch: Expected '{expected}' but loaded '{loaded}'"
-                )
+                if key == "training_set":
+                    warn(f"Training set mismatch: Expected '{expected}' but loaded '{loaded}'")
+                else:
+                    raise ValueError(f"{key} mismatch: Expected '{expected}' but loaded '{loaded}'")
 
     def _check_consistency(self):
         """Check consistency between training data and emulator label."""
