@@ -90,7 +90,7 @@ def make_p1d_err_plot(p1ds_err: np.ndarray, kMpc_test: np.ndarray, zs_test: np.n
         num_redshifts = p1ds_err.shape[0]
         colors = plt.cm.rainbow(np.linspace(0, 1, num_redshifts))
         for i, color in enumerate(colors):
-            ax.plot(kMpc_test, p1ds_err[i], color=color, label=f'z={zs_test[i]}')
+            ax.plot(kMpc_test, p1ds_err[i], color=color, label=f'z={np.round(zs_test[i], 2)}')
 
     ax.axhline(y=0, color='black', linestyle='--', alpha=0.5)
     ax.set_xlabel('k (Mpc$^{-1}$)')
@@ -125,7 +125,7 @@ def main():
     logger.info("Predicting P1D")
     p1ds_err, zs, kMpc_test = predict_p1d(emulator, test_data)
 
-    make_p1d_err_plot(p1ds_err, zs, kMpc_test, config)
+    make_p1d_err_plot(p1ds_err, kMpc_test, zs, config)
 
     logger.info("Main function completed")
 
