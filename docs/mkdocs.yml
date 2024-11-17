@@ -1,0 +1,16 @@
+
+site_name: LaCE Documentation
+theme:
+  name: material
+
+# Define the navigation structure for the docs
+nav:
+  - Home: index.md
+
+# Define the URL where the site will be deployed
+site_url: https://github.com/igmhub/LaCE
+
+markdown_extensions:
+  - codehilite
+  - toc
+  - admonition
