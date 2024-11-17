@@ -6,14 +6,13 @@ from pathlib import Path
 from lace.archive import (gadget_archive, 
                           nyx_archive)
 from lace.emulator.nn_emulator import NNEmulator
+from lace.emulator.gp_emulator import GPEmulator
 from lace.emulator.constants import PROJ_ROOT
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train emulators from config')
     parser.add_argument('--config', type=str, required=True,
                       help='Path to config YAML file')
-    parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu',
-                      help='Device to train on (cuda/cpu)')
     return parser.parse_args()
 
 def load_config(config_path: Path) -> dict:
@@ -35,7 +34,7 @@ def main():
         else:
             raise ValueError(f"Archive {archive_config['file']} not supported")
 
-    def create_emulator_with_label(config):
+    def create_nn_emulator_with_label(config):
         if config.get("training_set"):
             return NNEmulator(training_set=config["training_set"], 
                               emulator_label=config["emulator_label"],
@@ -48,7 +47,19 @@ def main():
         else:
             raise ValueError("Either training_set or archive must be provided")
 
-    def create_emulator_without_label(config):
+    def create_gp_emulator_with_label(config):
+        if config.get("training_set"):
+            return GPEmulator(training_set=config["training_set"],
+                              emulator_label=config["emulator_label"])
+        elif config.get("archive"):
+            archive = create_archive(config["archive"])
+            return GPEmulator(archive=archive,
+                              emulator_label=config["emulator_label"],
+                              )
+        else:
+            raise ValueError("Either training_set or archive must be provided")
+
+    def create_nn_emulator_without_label(config):
         hyperparameters = config["hyperparameters"]
         if config.get("archive"):
             archive = create_archive(config["archive"])
@@ -62,10 +73,28 @@ def main():
         else:
             raise ValueError("Either archive or training_set must be provided")
 
-    if config.get("emulator_label"):
-        emulator = create_emulator_with_label(config)
+    def create_gp_emulator_without_label(config):
+        hyperparameters = config["hyperparameters"]
+        if config.get("archive"):
+            archive = create_archive(config["archive"])
+            return GPEmulator(archive=archive)
+        elif config.get("training_set"):
+            return GPEmulator(training_set=config["training_set"])
+        else:
+            raise ValueError("Either archive or training_set must be provided")
+
+    if config["emulator_type"] == "NN":
+        if config.get("emulator_label"):
+            emulator = create_nn_emulator_with_label(config)
+        else:
+            emulator = create_nn_emulator_without_label(config)
+    elif config["emulator_type"] == "GP":
+        if config.get("emulator_label"):
+            emulator = create_gp_emulator_with_label(config)
+        else:
+            emulator = create_gp_emulator_without_label(config)
     else:
-        emulator = create_emulator_without_label(config)
+        raise ValueError("emulator_type must be either 'NN' or 'GP'")
 
 
 if __name__ == "__main__":
