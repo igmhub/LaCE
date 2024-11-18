@@ -65,6 +65,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_set=None,
         emu_params=["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
         emulator_label=None,
+        include_central=False,
         kmax_Mpc=4,
         ndeg=5,
         nepochs=100,
@@ -99,6 +100,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.models_dir = PROJ_ROOT / "data/"  # training data settings
         self.drop_sim = drop_sim
         self.drop_z = drop_z
+        self.include_central = include_central
         self.z_max = z_max
         self.weighted_emulator = weighted_emulator
         self.nhidden = nhidden
@@ -149,6 +151,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             drop_sim=self.drop_sim,
             drop_z=self.drop_z,
             z_max=self.z_max,
+            include_central=self.include_central,
             nyx_file=nyx_file,
             train=train,
             print_func=self.print,
@@ -208,9 +211,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                 loaded = float(loaded)
 
             if loaded != expected:
-                self.print(
-                  f"Warning: {key} mismatch: Expected '{expected}' but loaded '{loaded}'"
-                 )
+                if key == "training_set":
+                    warn(f"Training set mismatch: Expected '{expected}' but loaded '{loaded}'")
+                else:
+                    raise ValueError(f"{key} mismatch: Expected '{expected}' but loaded '{loaded}'")
     def _check_consistency(self):
         """Check consistency between training data and emulator label."""
         if self.emulator_label in self.GADGET_LABELS:

@@ -3,12 +3,13 @@ import numpy as np
 import pandas as pd
 from dataclasses import dataclass
 from pathlib import Path
-from lace.emulator.constants import PROJ_ROOT
 from tqdm import tqdm
 
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+PROJ_ROOT = Path(__file__).resolve().parents[2]
 
 @dataclass
 class linPCosmologyCosmopower:
@@ -16,7 +17,7 @@ class linPCosmologyCosmopower:
     z_star : float = 3
     fit_min_Mpc : float = 0.5
     fit_max_Mpc : float = 2
-    cosmopower_model : str = "Pk_cp_NN"
+    cosmopower_model : str = "Pk_cp_NN_sumnu"
 
     def __post_init__(self):
         self.cp_emulator = cp.cosmopower_NN(restore=True, 
