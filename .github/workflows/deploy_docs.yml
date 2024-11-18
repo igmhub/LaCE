@@ -2,7 +2,7 @@ name: deploy_docs
 on:
   push:
     branches:
-      - make_docs
+      - main
 permissions:
   contents: write
 jobs:
