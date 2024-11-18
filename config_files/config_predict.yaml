@@ -23,5 +23,5 @@ emulator_params: ["Delta2_p", "n_p", "alpha_p", "sigT_Mpc", "gamma", "kF_Mpc"]
 ## Plot error avearge over all redshift or by redshift 
 average_over_z: false
 ## Where to save the trained model from the project root directory
-save_plot_path: "../data/validation_figures/tests/test_p1d_err.png" 
+save_plot_path: "data/validation_figures/tests/test_p1d_err.png" 
 save_predictions_path: null
