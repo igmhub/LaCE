@@ -16,6 +16,7 @@ class NyxArchive(BaseArchive):
         self,
         nyx_version="Oct2023",
         nyx_file=None,
+        include_central=False,
         kp_Mpc=None,
         force_recompute_linP_params=False,
         verbose=False,
@@ -59,6 +60,11 @@ class NyxArchive(BaseArchive):
         # simulation 14 was identified as problematic by the Nyx team
         for ii in range(nfiles):
             self.list_sim_cube.append("nyx_" + str(ii))
+        # add central simulation to cube if requested
+        if include_central:
+            self.list_sim_cube.append("nyx_central")
+            # remove from test list since it's now in cube
+            self.list_sim_test.remove("nyx_central")
         # list all simulations
         self.list_sim = self.list_sim_cube + self.list_sim_test
         ## done set simulation list
