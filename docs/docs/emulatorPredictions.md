@@ -50,7 +50,13 @@ emulator = NNEmulator(training_set='Cabayol23',
 where `model_path` is the path to the `.pt` file containing the trained model and `train=False` indicates that the model is not being trained. In the model you are loading has been trained by dropping simulations, you should specify which simulations to drop using the `drop_sim` argument.
 
 ## Making predictions 
-One can make predictions with the emulator by using the `predict.py` script in the `bin` folder. This script allows to make predictions on a test set, plot the P1D errors and save the predictions. An example of how to use this script is:
+To emulate the P1D of a simulation, you can use the `emulate_p1d_Mpc` method. This method requires a dictionary containing the simulation parameters.
+
+```python
+p1d = emulator.emulate_p1d_Mpc(sim_params, k_Mpc)
+```
+
+One can also make predictions and plot them by using the `predict.py` script in the `bin` folder. This script allows to make predictions on a test set, plot the P1D errors and save the predictions. An example of how to use this script is:
 
 ```bash
 python bin/predict.py --config config_files/config_predict.yaml
@@ -66,4 +72,5 @@ The config file accepts the following fields:
   - `sim_test`: Label of the test simulation to use for predictions
 - `emulator_params`: List of parameters used by the emulator
 - `average_over_z`: Whether to average P1D errors over redshift (true/false)
-- `save_path`: Path where to save the validation plot
+- `save_plot_path`: Path where to save the validation plot. If None, the plot is not saved.
+- `save_predictions_path`: Path where to save the predictions. If None, the predictions are not saved.
