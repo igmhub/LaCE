@@ -211,10 +211,20 @@ class NNEmulator(base_emulator.BaseEmulator):
                 loaded = float(loaded)
 
             if loaded != expected:
+                # temporal hack
+                if (expected == "Nyx_alphap_cov_central") and (
+                    loaded == "Nyx_alphap_cov"
+                ):
+                    continue
                 if key == "training_set":
-                    warn(f"Training set mismatch: Expected '{expected}' but loaded '{loaded}'")
+                    warn(
+                        f"Training set mismatch: Expected '{expected}' but loaded '{loaded}'"
+                    )
                 else:
-                    raise ValueError(f"{key} mismatch: Expected '{expected}' but loaded '{loaded}'")
+                    raise ValueError(
+                        f"{key} mismatch: Expected '{expected}' but loaded '{loaded}'"
+                    )
+
     def _check_consistency(self):
         """Check consistency between training data and emulator label."""
         if self.emulator_label in self.GADGET_LABELS:
