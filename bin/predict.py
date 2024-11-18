@@ -103,7 +103,7 @@ def make_p1d_err_plot(p1ds_err: np.ndarray, kMpc_test: np.ndarray, zs_test: np.n
 
     plt.tight_layout()
     if config["save_plot_path"] is not None:
-    plt.savefig(config["save_plot_path"], bbox_inches='tight')
+        plt.savefig(config["save_plot_path"], bbox_inches='tight')
     plt.close()
     logger.info(f"P1D error plot saved to {config['save_plot_path']}")
 
