@@ -7,6 +7,7 @@ from lace.emulator.constants import (
     TrainingSet,
     GADGET_LABELS,
     NYX_LABELS,
+    EMULATOR_PARAMS,
 )
 
 
@@ -116,6 +117,7 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
             EmulatorLabel.NYX_V0: "NNmodels/Nyxv0_Oct2023/",
             EmulatorLabel.NYX_ALPHAP: "NNmodels/Nyxap_Oct2023/",
             EmulatorLabel.NYX_ALPHAP_COV: "NNmodels/Nyxap_Jul2024_cov/",
+            EmulatorLabel.NYX_ALPHAP_COV_CENTRAL: "NNmodels/Nyxap_Jul2024_cov/",
         }.get(emulator_label, "")
 
         model_path = f"{folder}{emulator_label.value}{'_drop_sim' + drop_sim if drop_sim else ''}.pt"
@@ -127,6 +129,7 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
             model_path=model_path,
             drop_sim=drop_sim,
             train=False,
+            include_central=EMULATOR_PARAMS[emulator_label]["include_central"],
         )
 
     return emulator
