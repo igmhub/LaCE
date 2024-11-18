@@ -26,6 +26,7 @@ class EmulatorLabel(StrEnum):
     NYX_V0 = "Nyx_v0"
     NYX_ALPHAP = "Nyx_alphap"
     NYX_ALPHAP_COV = "Nyx_alphap_cov"
+    NYX_ALPHAP_COV_CENTRAL = "Nyx_alphap_cov_central"
     NYX_ALPHAP_EXTENDED = "Nyx_alphap_extended"
     CABAYOL23_EXTENDED = "Cabayol23_extended"
     NYX_V0_EXTENDED = "Nyx_v0_extended"
@@ -43,6 +44,7 @@ NYX_LABELS = {
     EmulatorLabel.NYX_V0_EXTENDED,
     EmulatorLabel.NYX_ALPHAP,
     EmulatorLabel.NYX_ALPHAP_COV,
+    EmulatorLabel.NYX_ALPHAP_COV_CENTRAL,
     EmulatorLabel.NYX_ALPHAP_EXTENDED,
 }
 
@@ -60,6 +62,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "weight_decay": 1e-4,
         "batch_size": 100,
         "amsgrad": False,
+        "include_central": False,
     },
     "Cabayol23+": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
@@ -74,6 +77,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "weight_decay": 9.6e-3,
         "batch_size": 100,
         "amsgrad": True,
+        "include_central": False,
     },
     "Nyx_v0": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
@@ -88,6 +92,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "weight_decay": 1e-4,
         "batch_size": 100,
         "amsgrad": True,
+        "include_central": False,
     },
     "Nyx_alphap": {
         "emu_params": [
@@ -110,6 +115,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "weight_decay": 8e-3,
         "batch_size": 100,
         "amsgrad": True,
+        "include_central": False,
     },
     "Nyx_alphap_extended": {
         "emu_params": [
@@ -132,6 +138,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "weight_decay": 8e-3,
         "batch_size": 100,
         "amsgrad": True,
+        "include_central": False,
     },
     "Cabayol23_extended": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
@@ -146,6 +153,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "batch_size": 100,
         "amsgrad": True,
         "weighted_emulator": False,
+        "include_central": False,
     },
     "Cabayol23+_extended": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
@@ -161,6 +169,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "batch_size": 100,
         "amsgrad": True,
         "weighted_emulator": True,
+        "include_central": False,
     },
     "Nyx_v0_extended": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
@@ -171,6 +180,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "step_size": 750,
         "nhidden": 5,
         "weighted_emulator": True,
+        "include_central": False,
     },
     "Nyx_alphap_cov": {
         "emu_params": [
@@ -195,7 +205,31 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "amsgrad": True,
         "z_max": 5,
         "include_central": False,
-    }
+    },
+    "Nyx_alphap_cov_central": {
+        "emu_params": [
+            "Delta2_p",
+            "n_p",
+            "alpha_p",
+            "mF",
+            "sigT_Mpc",
+            "gamma",
+            "kF_Mpc",
+        ],
+        "emu_type": "polyfit",
+        "kmax_Mpc": 4,
+        "ndeg": 6,
+        "nepochs": 600,
+        "step_size": 500,
+        "nhidden": 6,
+        "max_neurons": 400,
+        "lr0": 2.5e-4,
+        "weight_decay": 8e-3,
+        "batch_size": 100,
+        "amsgrad": True,
+        "z_max": 5,
+        "include_central": True,
+    },
 }
 
 EMULATOR_DESCRIPTIONS = {
@@ -240,6 +274,9 @@ EMULATOR_DESCRIPTIONS = {
     ),
     EmulatorLabel.NYX_ALPHAP_COV: (
         r"Neural network under testing for the Nyx_alphap emulator."
+    ),
+    EmulatorLabel.NYX_ALPHAP_COV_CENTRAL: (
+        r"Neural network under testing for the Nyx_alphap emulator. Includes central simulation"
     ),
     EmulatorLabel.CABAYOL23: (
         r"Neural network emulating the optimal P1D of Gadget simulations "
