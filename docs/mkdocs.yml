@@ -5,6 +5,13 @@ theme:
 # Define the navigation structure for the docs
 nav:
   - Home: index.md
+  - Installation: installation.md
+  - Emulator:
+    - Training: emulatorTraining.md
+    - Predictions: emulatorPredictions.md
+  - Advanced:
+    - Compressed Parameters: compressedParameters.md
+  - Archive: archive.md
 
 # Define the URL where the site will be deployed
 site_url: https://github.com/igmhub/LaCE
