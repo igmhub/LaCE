@@ -1,4 +1,3 @@
-
 site_name: LaCE Documentation
 theme:
   name: material
@@ -8,7 +7,7 @@ nav:
   - Home: index.md
 
 # Define the URL where the site will be deployed
-site_url: https://github.com/igmhub/LaCE
+site_url: https://igmhub.github.io/LaCE
 
 markdown_extensions:
   - codehilite
