@@ -115,7 +115,7 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
             EmulatorLabel.CABAYOL23_PLUS_EXTENDED: "NNmodels/Cabayol23+_extended/",
             EmulatorLabel.NYX_V0: "NNmodels/Nyxv0_Oct2023/",
             EmulatorLabel.NYX_ALPHAP: "NNmodels/Nyxap_Oct2023/",
-            EmulatorLabel.NYX_ALPHAP_COV: "NNmodels/testing_models/",
+            EmulatorLabel.NYX_ALPHAP_COV: "NNmodels/Nyxap_Jul2024_cov/",
         }.get(emulator_label, "")
 
         model_path = f"{folder}{emulator_label.value}{'_drop_sim' + drop_sim if drop_sim else ''}.pt"
