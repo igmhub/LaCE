@@ -194,6 +194,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "batch_size": 100,
         "amsgrad": True,
         "z_max": 5,
+        "include_central": True,
     },
 }
 
