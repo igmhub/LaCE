@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 import logging
 from typing import Dict, List, Tuple, Union
 from tqdm import tqdm
+import json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -19,9 +20,6 @@ from lace.emulator.gp_emulator import GPEmulator
 from lace.emulator.emulator_manager import set_emulator    
 from lace.utils import poly_p1d
 from lace.emulator.constants import PROJ_ROOT
-
-import os
-os.environ["NYX_PATH"] = "/Users/lauracabayol/Documents/DESI/nyx"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Train emulators from config')
