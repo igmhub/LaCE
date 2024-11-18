@@ -48,6 +48,7 @@ def predict_p1d(emulator: Union[NNEmulator, GPEmulator], test_data: List[Dict]) 
     Nz = len(zs)
     Nk = len(test_data[0]['p1d_Mpc'][(test_data[0]['k_Mpc'] > 0) & (test_data[0]['k_Mpc'] < 4)])
     p1ds_err = np.zeros((Nz, Nk))
+    preds = {}
 
     logger.info("Predicting P1D for each redshift")
     for m, z in enumerate(tqdm(zs)):
@@ -63,11 +64,12 @@ def predict_p1d(emulator: Union[NNEmulator, GPEmulator], test_data: List[Dict]) 
         try:
             p1d_emu = emulator.emulate_p1d_Mpc(test_data[m], kMpc_test)
             p1ds_err[m, :] = (p1d_emu / p1d_true - 1) * 100
+            preds[f"{z}"] = p1d_emu
         except Exception as e:
             logger.warning(f"Emulation failed for z={z}: {str(e)}. Skipping this redshift.")
             p1ds_err[m, :] = np.nan
 
-    return p1ds_err, zs, kMpc_test
+    return p1ds_err, zs, kMpc_test, preds
 
 def make_p1d_err_plot(p1ds_err: np.ndarray, kMpc_test: np.ndarray, zs_test: np.ndarray, config: dict):
     """
@@ -100,9 +102,10 @@ def make_p1d_err_plot(p1ds_err: np.ndarray, kMpc_test: np.ndarray, zs_test: np.n
     ax.set_ylim(-5, 5)
 
     plt.tight_layout()
-    plt.savefig(config["save_path"], bbox_inches='tight')
+    plt.savefig(config["save_plot_path"], bbox_inches='tight')
     plt.close()
-    logger.info(f"P1D error plot saved to {config['save_path']}")
+    logger.info(f"P1D error plot saved to {config['save_plot_path']}")
+
 
 def main():
     args = parse_args()
@@ -123,9 +126,11 @@ def main():
     test_data = archive.get_testing_data(sim_label=config["sim_test"])
 
     logger.info("Predicting P1D")
-    p1ds_err, zs, kMpc_test = predict_p1d(emulator, test_data)
-
+    p1ds_err, zs, kMpc_test, predict_p1d = predict_p1d(emulator, test_data)
     make_p1d_err_plot(p1ds_err, kMpc_test, zs, config)
+    
+    if config["save_predictions_path"] is not None:
+        json.dump(predict_p1d, open(config["save_predictions_path"], "w"))
 
     logger.info("Main function completed")
 
