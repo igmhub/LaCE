@@ -1,12 +1,12 @@
 # NN - Emulator Training
-The training of the emulators is done with the code `train.py`. which is in the `bin` folder. This code is used to train the emulators with the data available in the repository. 
+The training of the emulators is done with the code `train.py`. which is in the `scripts` folder. This code is used to train the emulators with the data available in the repository. 
 
-In order to train the emulator, one needs to specify the training configuration file. This file is a .yaml file that contains the parameters for the training. An example of this file is `config.yaml` in the `bin` folder. 
+In order to train the emulator, one needs to specify the training configuration file. This file is a .yaml file that contains the parameters for the training. An example of this file is `config.yaml` in the `scripts` folder. 
 
 To run the training, one needs to run the following command:
 
 ```
-python bin/train.py --config=path/to/config.yaml
+python scripts/train.py --config=path/to/config.yaml
 ```
 
 The configuratoin file contains the following parameters:
