@@ -18,15 +18,14 @@ jobs:
         with:
           python-version: 3.x
       - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      - name: Install mkdocs-material
+        run: pip install mkdocs-material
       - uses: actions/cache@v4
         with:
           key: mkdocs-material-${{ env.cache_id }}
           path: .cache
           restore-keys: |
             mkdocs-material-
-      - name: Install dependencies
-        run: |
-          pip install mkdocs-material
       - name: Build and Deploy Documentation
-        working-directory: docs
+        working-directory: docs/
         run: mkdocs gh-deploy --force
