@@ -142,7 +142,6 @@ class NNEmulator(base_emulator.BaseEmulator):
             for key, value in params.items():
                 setattr(self, key, value)
 
-    
         archive, self.training_data = select_training(
             archive=archive,
             training_set=training_set,
@@ -154,7 +153,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             train=train,
             print_func=self.print,
         )
-        
+
         self._check_consistency()
 
         self.print(f"Samples in training_set: {len(self.training_data)}")
@@ -213,7 +212,6 @@ class NNEmulator(base_emulator.BaseEmulator):
                     warn(f"Training set mismatch: Expected '{expected}' but loaded '{loaded}'")
                 else:
                     raise ValueError(f"{key} mismatch: Expected '{expected}' but loaded '{loaded}'")
-
     def _check_consistency(self):
         """Check consistency between training data and emulator label."""
         if self.emulator_label in self.GADGET_LABELS:
@@ -609,6 +607,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         Returns:
             np.ndarray: Emulated P1D values.
         """
+
+        import sys
 
         self.nn = self.nn.eval()
 
