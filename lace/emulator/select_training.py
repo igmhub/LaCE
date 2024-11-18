@@ -3,7 +3,7 @@ from lace.archive import gadget_archive, nyx_archive
 from scipy.interpolate import interp1d
 
 
-def interp_k_Mpc_central(sim, k_Mpc):
+def interp_k_Mpc_central(sim: list[dict], k_Mpc: list[float]) -> None:
     for sim_dict in sim:
         # Create interpolation function for this simulation's P1D
         p1d_interp = interp1d(
@@ -16,7 +16,18 @@ def interp_k_Mpc_central(sim, k_Mpc):
         # Update k grid
         sim_dict["k_Mpc"] = k_Mpc
 
-def select_training(archive, training_set, emu_params, drop_sim, drop_z, include_central, z_max, nyx_file=None, train=True, print_func=print):
+def select_training(
+    archive: gadget_archive.GadgetArchive | nyx_archive.NyxArchive | None,
+    training_set: str | TrainingSet | None,
+    emu_params: list[str],
+    drop_sim: list[str] | None,
+    drop_z: list[float] | None,
+    include_central: bool,
+    z_max: float,
+    nyx_file: str | None = None,
+    train: bool = True,
+    print_func: callable = print,
+) -> tuple[gadget_archive.GadgetArchive | nyx_archive.NyxArchive, list[dict]]:
 
     if (archive is None) and (training_set is None):
         raise ValueError("Archive or training_set must be provided")
