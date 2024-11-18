@@ -7,7 +7,7 @@ nav:
   - Home: index.md
 
 # Define the URL where the site will be deployed
-site_url: https://igmhub.github.io/LaCE
+site_url: https://github.com/igmhub/LaCE
 
 markdown_extensions:
   - codehilite
