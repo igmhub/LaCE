@@ -127,11 +127,11 @@ def main():
     test_data = archive.get_testing_data(sim_label=config["sim_test"])
 
     logger.info("Predicting P1D")
-    p1ds_err, zs, kMpc_test, predict_p1d = predict_p1d(emulator, test_data)
+    p1ds_err, zs, kMpc_test, predicted_p1d = predict_p1d(emulator, test_data)
     make_p1d_err_plot(p1ds_err, kMpc_test, zs, config)
 
     if config["save_predictions_path"] is not None:
-        json.dump(predict_p1d, open(config["save_predictions_path"], "w"))
+        json.dump(predicted_p1d, open(config["save_predictions_path"], "w"))
 
     logger.info("Main function completed")
 
