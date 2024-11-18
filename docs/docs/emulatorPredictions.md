@@ -56,7 +56,7 @@ To emulate the P1D of a simulation, you can use the `emulate_p1d_Mpc` method. Th
 p1d = emulator.emulate_p1d_Mpc(sim_params, k_Mpc)
 ```
 
-One can also make predictions and plot them by using the `predict.py` script in the `bin` folder. This script allows to make predictions on a test set, plot the P1D errors and save the predictions. An example of how to use this script is:
+One can also make predictions and plot them by using the `predict.py` script in the `scripts` folder. This script allows to make predictions on a test set, plot the P1D errors and save the predictions. An example of how to use this script is:
 
 ```bash
 python bin/predict.py --config config_files/config_predict.yaml
