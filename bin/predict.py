@@ -102,6 +102,7 @@ def make_p1d_err_plot(p1ds_err: np.ndarray, kMpc_test: np.ndarray, zs_test: np.n
     ax.set_ylim(-5, 5)
 
     plt.tight_layout()
+    if config["save_plot_path"] is not None:
     plt.savefig(config["save_plot_path"], bbox_inches='tight')
     plt.close()
     logger.info(f"P1D error plot saved to {config['save_plot_path']}")
@@ -128,7 +129,7 @@ def main():
     logger.info("Predicting P1D")
     p1ds_err, zs, kMpc_test, predict_p1d = predict_p1d(emulator, test_data)
     make_p1d_err_plot(p1ds_err, kMpc_test, zs, config)
-    
+
     if config["save_predictions_path"] is not None:
         json.dump(predict_p1d, open(config["save_predictions_path"], "w"))
 
