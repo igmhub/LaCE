@@ -123,22 +123,22 @@ dict_params_ranges = {
 
 create_LH_sample(dict_params_ranges = dict_params_ranges,
                      nsamples = 10_000,
-                     filename = "LHS_params_sumnu.npz")
+                     filename = "LHS_params_test.npz")
 
 # ### 2.2 GENERATE THE TRAINING SPECTRA
 
-generate_training_spectra(input_LH_filename = 'LHS_params_sumnu.npz',
-                          output_filename = "linear_sumnu.dat")
+generate_training_spectra(input_LH_filename = 'LHS_params_test.npz',
+                          output_filename = "linear_test.dat")
 
 # ### 2.3 PREPARE THE TRAINING FILES FOR COSMOPOWER
 
 cosmopower_prepare_training(params = ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"],
-    Pk_filename = "linear_sumnu.dat")
+    Pk_filename = "linear_test.dat")
 
 # ### 2.4 TRAIN THE COSMOPOWER MODEL
 #
 
-cosmopower_train_model(model_save_filename = "Pk_cp_NN_sumnu")
+cosmopower_train_model(model_save_filename = "Pk_cp_NN_test")
 
 # ## 3. MEASURING COMPRESSED PARAMETERS FROM COSMOLOGICAL CHAINS
 
