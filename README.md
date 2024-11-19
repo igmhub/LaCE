@@ -102,7 +102,6 @@ python scripts/save_nyx_emu_cosmo.py
 python scripts/save_nyx_IGM.py
 ```
 
-
 ## Emulator parameters:
 
 These are the parameters that describe each individual P1D(k) power spectrum. We have detached these from redshift and traditional cosmology parameters.
