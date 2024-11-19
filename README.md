@@ -15,7 +15,7 @@ There is a documentation website with installation instructions and relevant des
 
 LaCE contains a submodule to estimate compressed parameters from the power spectrum that uses cosmopower. The LaCE installation is slightly different depending on whether you want to use cosmopower or not.
 
-### LaCE without cosmopower
+#### LaCE without cosmopower
 
 - Create a new conda environment. It is usually better to follow python version one or two behind. In January 2024, the latest is 3.12, so we recommend 3.11. If you want to use LaCE with cosmopower, as of November 2025 you need to install python 3.10. Please look at the cosmopower installation before proceeding with the LaCE installation.
 
@@ -39,7 +39,7 @@ pip install -e .
 pip install -e ".[explicit]"
 ```
 
-### LaCE with cosmopower
+#### LaCE with cosmopower
 
 - Create a new conda environment. 
 
@@ -65,7 +65,7 @@ cd LacE
 pip install -e ".[explicit]"
 ```
 
-#### Tests
+## Tests
 
 Please run the following script to check that the package is working properly.
 
@@ -130,7 +130,7 @@ The current version of the emulator, relased in this repo, does not emulate `alp
 `kF_Mpc` is the filtering length (or pressure smoothing scale) in inverse comoving units
 
 
-### Notebooks / tutorials
+## Notebooks / tutorials
 
 
 - All notebooks in the repository are in .py format. To generate the .ipynb version, run:
