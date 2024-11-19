@@ -70,12 +70,6 @@ pip install -e ".[explicit]"
 Please run the following script to check that the package is working properly.
 
 ```
-=======
-#### Tests
-
-Please run the following script to check that the package is working properly.
-
-```
 python test_lace.py
 ```
 
