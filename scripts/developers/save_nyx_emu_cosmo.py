@@ -29,7 +29,7 @@ def main():
     sim_avail = np.array(list(ff.keys()))
     list_snap = np.array(list(nyx_archive.z_conv.keys()))
 
-    all_dict = []
+    all_dict = {}
     # iterate over simulations
     for sim_label in sim_avail:
         # this simulation seems to have issues
@@ -72,7 +72,7 @@ def main():
 
             if first:
                 first = False
-        all_dict.append(sim_dict)
+        all_dict[isim] = sim_dict
 
     np.save(cosmo_fname, all_dict)
 
