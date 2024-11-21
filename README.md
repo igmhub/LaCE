@@ -44,7 +44,7 @@ pip install -e ".[explicit]"
 - Create a new conda environment. 
 
 ```
-conda create -n lace -c conda-forge python=3.11 pip 
+conda create -n lace python=3.11 pip 
 conda activate lace
 pip install --upgrade pip
 ```
