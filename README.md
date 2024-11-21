@@ -136,7 +136,7 @@ jupytext --to ipynb notebooks/*.py
 
 ```
 pip install ipykernel
-python -m ipykernel install --user --name cup1d --display-name lace
+python -m ipykernel install --user --name lace --display-name lace
 ```
 In the `Notebooks` folder, there are several tutorials one can run to learn how to use the archives and emulators.
 
