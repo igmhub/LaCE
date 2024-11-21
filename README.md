@@ -11,7 +11,7 @@ Please cite at least https://arxiv.org/abs/2305.19064 if you use this emulator i
 ## Installation
 (Last updated: Jan 19 2024)
 
-- Create a new conda environment. It is usually better to follow python version one or two behind. In January 2024, the latest is 3.12, so we recommend 3.11. If you want to use LaCE with cosmopower, as of November 2025 you need to install python 3.10. Please look at the cosmopower installation before proceeding with the LaCE installation.
+- Create a new conda environment. It is usually better to follow python version one or two behind. In January 2024, the latest is 3.12, so we recommend 3.11. If you want to use LaCE with cosmopower, as of November 2024 you need to install python 3.10. Please look at the cosmopower installation before proceeding with the LaCE installation.
 
 ```
 conda create -n lace -c conda-forge python=3.11 camb fdasrsf
