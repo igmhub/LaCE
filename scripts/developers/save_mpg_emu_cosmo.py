@@ -12,7 +12,7 @@ def main():
 
     list_snap = np.unique(archive.ind_snap)
 
-    all_dict = []
+    all_dict = {}
     # iterate over simulations
     for sim_label in archive.list_sim:
         sim_dict = {}
@@ -32,7 +32,8 @@ def main():
                 if archive.data[ind]["ind_snap"] == list_snap[0]:
                     sim_dict["linP_params"][lab] = np.zeros(list_snap.shape[0])
                 sim_dict["linP_params"][lab][ind_snap] = archive.data[ind][lab]
-        all_dict.append(sim_dict)
+
+        all_dict[sim_label] = sim_dict
 
     fout = archive.fulldir + "mpg_emu_cosmo.npy"
     print(fout)

@@ -209,29 +209,11 @@ class NyxArchive(BaseArchive):
         else:
             # open file with precomputed values to check kp_Mpc
             try:
-                file_cosmo = np.load(self.file_cosmo, allow_pickle=True)
+                file_cosmo = np.load(self.file_cosmo, allow_pickle=True).item()
             except Exception as e:
                 raise e
 
-            sim_in_file = False
-            for ii in range(len(file_cosmo)):
-                if file_cosmo[ii]["sim_label"] == isim:
-                    sim_in_file = True
-                    # if kp_Mpc not defined, use precomputed value
-                    if self.kp_Mpc is None:
-                        self.kp_Mpc = file_cosmo[ii]["linP_params"]["kp_Mpc"]
-
-                    # if kp_Mpc different from precomputed value, compute
-                    if self.kp_Mpc != file_cosmo[ii]["linP_params"]["kp_Mpc"]:
-                        if self.verbose:
-                            print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
-                        compute_linP_params = True
-                    else:
-                        cosmo_params = file_cosmo[ii]["cosmo_params"]
-                        linP_params = file_cosmo[ii]["linP_params"]
-                        star_params = file_cosmo[ii]["star_params"]
-                    break
-            if sim_in_file == False:
+            if isim not in file_cosmo:
                 file_error = (
                     "The file "
                     + self.file_cosmo
@@ -239,11 +221,25 @@ class NyxArchive(BaseArchive):
                     + isim
                     + ". To speed up calculations, "
                     + " you can recompute the file by running "
-                    + "lace/scripts/compute_nyx_emu_cosmo.py"
+                    + "lace/scripts/developers/compute_nyx_emu_cosmo.py"
                 )
                 if self.verbose:
                     print(file_error)
                 compute_linP_params = True
+            else:
+                # if kp_Mpc not defined, use precomputed value
+                if self.kp_Mpc is None:
+                    self.kp_Mpc = file_cosmo[isim]["linP_params"]["kp_Mpc"]
+
+                # if kp_Mpc different from precomputed value, compute
+                if self.kp_Mpc != file_cosmo[isim]["linP_params"]["kp_Mpc"]:
+                    if self.verbose:
+                        print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
+                    compute_linP_params = True
+                else:
+                    cosmo_params = file_cosmo[isim]["cosmo_params"]
+                    linP_params = file_cosmo[isim]["linP_params"]
+                    star_params = file_cosmo[isim]["star_params"]
 
         if compute_linP_params == True:
             # this is the only place where you need CAMB
