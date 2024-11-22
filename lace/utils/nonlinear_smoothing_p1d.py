@@ -1,11 +1,9 @@
+import skfda
+import numpy as np
+
+
 class Nonlinear_Smoothing(object):
     """Smooth P1D using a nonlinear approach"""
-
-    import numpy as np
-    import skfda
-    from skfda.misc.hat_matrix import NadarayaWatsonHatMatrix
-    from skfda.misc.kernels import epanechnikov
-    from skfda.preprocessing.smoothing import KernelSmoother
 
     def __init__(
         self,
@@ -45,6 +43,9 @@ class Nonlinear_Smoothing(object):
 
     def _set_kernel_smoothing(self, log_data):
         """Set kernel for smoothing"""
+        from skfda.preprocessing.smoothing import KernelSmoother
+        from skfda.misc.hat_matrix import NadarayaWatsonHatMatrix
+        from skfda.misc.kernels import epanechnikov
 
         dat = skfda.FDataGrid(log_data, grid_points=self.interp_logk_Mpc)
         self.kernel = []
