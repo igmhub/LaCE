@@ -1,12 +1,11 @@
-import numpy as np
-import skfda
-from skfda.misc.hat_matrix import NadarayaWatsonHatMatrix
-from skfda.misc.kernels import epanechnikov
-from skfda.preprocessing.smoothing import KernelSmoother
-
-
 class Nonlinear_Smoothing(object):
     """Smooth P1D using a nonlinear approach"""
+
+    import numpy as np
+    import skfda
+    from skfda.misc.hat_matrix import NadarayaWatsonHatMatrix
+    from skfda.misc.kernels import epanechnikov
+    from skfda.preprocessing.smoothing import KernelSmoother
 
     def __init__(
         self,
