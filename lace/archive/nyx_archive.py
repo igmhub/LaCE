@@ -210,8 +210,8 @@ class NyxArchive(BaseArchive):
             # open file with precomputed values to check kp_Mpc
             try:
                 file_cosmo = np.load(self.file_cosmo, allow_pickle=True).item()
-            except Exception as e:
-                raise e
+            except:
+                raise IOError("The file " + file_cosmo + " does not exist")
 
             if isim not in file_cosmo:
                 file_error = (

@@ -310,29 +310,42 @@ class GadgetArchive(BaseArchive):
             compute_linP_params = True
         else:
             # open file with precomputed values to check kp_Mpc
+            fname = self.fulldir + "mpg_emu_cosmo.npy"
             try:
-                file_cosmo = np.load(
-                    self.fulldir + "mpg_emu_cosmo.npy", allow_pickle=True
-                )
+                file_cosmo = np.load(fname, allow_pickle=True).item()
             except:
-                raise IOError("The file " + file_cosmo + " does not exist")
+                raise IOError("The file " + fname + " does not exist")
 
-            for ii in range(len(file_cosmo)):
-                if file_cosmo[ii]["sim_label"] == sim_label:
-                    # if kp_Mpc not defined, use precomputed value
-                    if self.kp_Mpc is None:
-                        self.kp_Mpc = file_cosmo[ii]["linP_params"]["kp_Mpc"]
+            if sim_label not in file_cosmo:
+                file_error = (
+                    "The file "
+                    + fname
+                    + " does not contain "
+                    + sim_label
+                    + ". To speed up calculations, "
+                    + " you can recompute the file by running "
+                    + "lace/scripts/developers/compute_nyx_emu_cosmo.py"
+                )
+                if self.verbose:
+                    print(file_error)
+                compute_linP_params = True
+            else:
+                # if kp_Mpc not defined, use precomputed value
+                if self.kp_Mpc is None:
+                    self.kp_Mpc = file_cosmo[sim_label]["linP_params"]["kp_Mpc"]
 
-                    # if kp_Mpc different from precomputed value, compute
-                    if self.kp_Mpc != file_cosmo[ii]["linP_params"]["kp_Mpc"]:
-                        if self.verbose:
-                            print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
-                        compute_linP_params = True
-                    else:
-                        cosmo_params = file_cosmo[ii]["cosmo_params"]
-                        linP_params = file_cosmo[ii]["linP_params"]
-                        star_params = file_cosmo[ii]["star_params"]
-                    break
+                # if kp_Mpc different from precomputed value, compute
+                if (
+                    self.kp_Mpc
+                    != file_cosmo[sim_label]["linP_params"]["kp_Mpc"]
+                ):
+                    if self.verbose:
+                        print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
+                    compute_linP_params = True
+                else:
+                    cosmo_params = file_cosmo[sim_label]["cosmo_params"]
+                    linP_params = file_cosmo[sim_label]["linP_params"]
+                    star_params = file_cosmo[sim_label]["star_params"]
 
         if compute_linP_params == True:
             # this is the only place you actually need CAMB
