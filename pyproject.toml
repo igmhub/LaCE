@@ -31,10 +31,9 @@ dependencies = [
     "matplotlib",
     "configobj",
     "camb",
-    "torch",
-    "scikit-fda",
-    "jupyterlab",
-    "jupytext",
+    "torch==2.0",
+    "scikit-fda==0.4",
+    "fdasrsf==2.3.10",
     "strenum",
     "pathlib"
 ]
@@ -58,19 +57,19 @@ gpy = [
     "GPy==1.13.1",
 ]
 explicit = [
-    "numpy==1.24.4",
-    "pandas==2.1.4",
-    "scipy==1.11.4",
-    "h5py==3.10.0",
-    "scikit-learn==1.3.2",
-    "matplotlib==3.8.2",
-    "configobj==5.0.8",
-    "camb==1.5.4",
-    "torch==2.1.2",
-    "scikit-fda==0.9",
-    "GPy==1.13.1",
-    "jupyterlab"    
-]
+    "numpy==1.24.3",
+    "pandas==2.2.3",
+    "scipy==1.12",
+    "h5py==3.12.1",
+    "scikit-learn==1.5.2",
+    "matplotlib==3.9.2",
+    "configobj==5.0.9",
+    "camb==1.5.8",
+    "torch==2.0",
+    "scikit-fda==0.4",
+    "fdasrsf==2.3.10",
+    "GPy==1.13.2"
+    ]
 
 [tool.setuptools.packages.find]
 include = ["lace","lace.*"]

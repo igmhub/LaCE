@@ -19,6 +19,8 @@
 # ##### DESCLAIMER: Cosmopower is not installed by default in the LaCE package. You can install it as pip install cosmopower. 
 #
 
+# Additional documentation on how to use cosmopower can be found [here](https://igmhub.github.io/LaCE/compressedParameters/)
+
 # +
 import numpy as np
 import cosmopower as cp
@@ -36,9 +38,6 @@ from lace.cosmo.train_linP_cosmopower import (create_LH_sample,
                                               cosmopower_train_model)
 
 # -
-
-# ## TRAIN COSMOPOWER
-#
 
 # ## 1. ESTIMATE THE COMPRESSED PARAMETERS OF THE GADGET TEST SIMULATIONS
 
@@ -122,7 +121,7 @@ dict_params_ranges = {
     'mnu': [0, 2],}
 
 create_LH_sample(dict_params_ranges = dict_params_ranges,
-                     nsamples = 10_000,
+                     nsamples = 10,
                      filename = "LHS_params_test.npz")
 
 # ### 2.2 GENERATE THE TRAINING SPECTRA
@@ -155,7 +154,7 @@ fitter_compressed_params = linPCosmologyCosmopower()
 param_mapping = {
     'h': 'h',
     'm_ncdm': 'm_ncdm',
-    'omega_cdm': 'omega_cdm',
+    'omega_cdm': 'omega_c',
     'Omega_m': 'Omega_m',
     'ln_A_s_1e10': 'ln_A_s_1e10',
     'n_s': 'n_s'
@@ -164,8 +163,6 @@ param_mapping = {
 
 linP_cosmology_results = fitter_compressed_params.fit_linP_cosmology(chains_df = df, 
                                                                      param_mapping = param_mapping)
-
-#
 
 linP_cosmology_results
 
