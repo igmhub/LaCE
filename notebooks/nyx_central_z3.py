@@ -35,7 +35,7 @@ testing_data_central = archive.get_testing_data('nyx_central')
 
 # ## Extract parameters
 
-z_test=3.4
+z_test=3
 
 take_pars = ['Delta2_p', 'n_p','alpha_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
 nelem = len(training_data)
@@ -152,6 +152,8 @@ plt.show
 
 # ## FIND NEAREST NEIGHBOURS TO CENTRAL AT z=3
 
+# The nearest neighbours are calculated using the minkowsky distance.
+
 # +
 from sklearn.neighbors import NearestNeighbors
 
@@ -182,7 +184,10 @@ for i, (central_params, idx, dist) in enumerate(zip(pars_all_nyx_central_snapsho
     logger.info(f"Parameters: {dict(zip(take_pars, central_params))}")
     logger.info("\nNearest neighbors:")
     for neighbor_idx, neighbor_dist in zip(idx, dist):
-        logger.info(f"Simulation: {training_data[neighbor_idx]['sim_label']} at z={np.round(training_data[neighbor_idx]['z'],2)}, Distance: {neighbor_dist:.3f}, Parameters: {dict(zip(take_pars, pars_all_nyx[neighbor_idx]))}")
+        logger.info(f"Simulation: {training_data[neighbor_idx]['sim_label']} at z={np.round(training_data[neighbor_idx]['z'],2)}, Distance: {neighbor_dist:.3f}, Scalings: {training_data[neighbor_idx]['val_scaling']}")
+
+# -
+
 
 
 # +
