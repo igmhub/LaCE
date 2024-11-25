@@ -118,8 +118,8 @@ class linPCosmologyCosmopower:
             
             for ii in tqdm(range(len(chunk)), desc="Processing samples"):
                 poly_linP = linPCosmologyCosmopower.fit_polynomial(
-                                    xmin = self.fit_min_Mpc * self.kp_Mpc , 
-                                    xmax= self.fit_max_Mpc * self.kp_Mpc , 
+                                    xmin = self.fit_min_Mpc, 
+                                    xmax= self.fit_max_Mpc, 
                                     x = k_Mpc / self.kp_Mpc, 
                                     y = Pk_Mpc[ii], 
                                     deg=2
