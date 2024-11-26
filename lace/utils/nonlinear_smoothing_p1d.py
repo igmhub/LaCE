@@ -1,4 +1,3 @@
-import skfda
 import numpy as np
 
 
@@ -43,6 +42,7 @@ class Nonlinear_Smoothing(object):
 
     def _set_kernel_smoothing(self, log_data):
         """Set kernel for smoothing"""
+        import skfda
         from skfda.preprocessing.smoothing import KernelSmoother
         from skfda.misc.hat_matrix import NadarayaWatsonHatMatrix
         from skfda.misc.kernels import epanechnikov
