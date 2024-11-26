@@ -29,7 +29,7 @@ pip install --upgrade pip
 
 ```
 git clone https://github.com/igmhub/LaCE.git
-cd LacE
+cd LaCE
 pip install -e .
 ``` 
 
