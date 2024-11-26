@@ -410,7 +410,7 @@ class NNEmulator(base_emulator.BaseEmulator):
     def _get_rescalings_weights(self):
         weights_rescalings = np.ones(len(self.training_data))
         if self.emulator_label == "Nyx_alphap_cov": 
-            weights_rescalings[np.where([(d['val_scaling'] not in [0,1] and d['z'] in [2.8, 3,3.2,3.4]) for d in self.training_data])] = 1
+            weights_rescalings[np.where([(d['ind_rescaling'] not in [0,1] and d['z'] in [3,3.2]) for d in self.training_data])] = 1
         else:
             pass
         return torch.Tensor(weights_rescalings)
