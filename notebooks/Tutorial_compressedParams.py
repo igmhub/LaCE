@@ -7,18 +7,23 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.16.4
 #   kernelspec:
-#     display_name: lace
+#     display_name: cosmopower
 #     language: python
 #     name: python3
 # ---
+
+# %load_ext autoreload
+# %autoreload 2
 
 # # TUTORIAL ON HOW TO ESTIMATE THE COMPRESSED PARAMETERS WITH COSMOPOWER
 #
 #
 
+# + [markdown] vscode={"languageId": "plaintext"}
 # ##### DESCLAIMER: Cosmopower is not installed by default in the LaCE package. You can install it as pip install cosmopower. 
 #
 
+# + [markdown] vscode={"languageId": "plaintext"}
 # Additional documentation on how to use cosmopower can be found [here](https://igmhub.github.io/LaCE/compressedParameters/)
 
 # +
@@ -53,17 +58,19 @@ testing_data = archive.get_testing_data(sim_label=test_sim)
 cosmo_params = testing_data[0]['cosmo_params']
 star_params = testing_data[0]['star_params']
 
+star_params
+
 # ### 1.2. FIT THE COMPRESSED PARAMETERS WITH COSMOPOWER
 #
 
 # +
-kp_Mpc = 0.7
+kp_kms = 0.009
 z_star = 3
 fit_min=0.5
 fit_max=2
 
-kmin_Mpc = fit_min * kp_Mpc
-kmax_Mpc = fit_max * kp_Mpc
+kmin_kms = fit_min * kp_kms
+kmax_kms = fit_max * kp_kms
 # -
 
 emu_path = (PROJ_ROOT / "data" / "cosmopower_models" / "Pk_cp_NN_sumnu").as_posix()
@@ -75,7 +82,10 @@ logger.info(f"Emulator parameters: {cp_nn.parameters}")
 
 # Define the cosmology dictionary
 cosmo = {'H0': [cosmo_params["H0"]],
+         'h': [cosmo_params["H0"]/100],
          'mnu': [cosmo_params["mnu"]],
+         'Omega_m': [(cosmo_params["omch2"] + cosmo_params["ombh2"]) / (cosmo_params["H0"]/100)**2],
+         'Omega_Lambda': [1- (cosmo_params["omch2"] + cosmo_params["ombh2"]) / (cosmo_params["H0"]/100)**2],
          'omega_cdm': [cosmo_params["omch2"]],
          'omega_b': [cosmo_params["ombh2"]],
          'As': [cosmo_params["As"]],
@@ -89,24 +99,54 @@ k_Mpc = cp_nn.modes.reshape(1,len(cp_nn.modes))
 linP_Cosmology_Cosmopower = linPCosmologyCosmopower()
 
 
-# Fit the power spectrum with a polynomial
-linP_Mpc = linP_Cosmology_Cosmopower.fit_polynomial(
-    xmin = kmin_Mpc / kp_Mpc, 
-    xmax= kmax_Mpc / kp_Mpc, 
-    x = k_Mpc / kp_Mpc, 
-    y = Pk_Mpc, 
+k_kms, Pk_kms = linPCosmologyCosmopower.convert_to_kms(cosmo, k_Mpc, Pk_Mpc, z_star = z_star)
+
+linP_kms = linP_Cosmology_Cosmopower.fit_polynomial(
+    xmin = kmin_kms / kp_kms, 
+    xmax= kmax_kms / kp_kms, 
+    x = k_kms / kp_kms, 
+    y = Pk_kms, 
     deg=2
 )
 
-starparams_CP = linP_Cosmology_Cosmopower.get_star_params(linP = linP_Mpc, 
-                                       kp = kp_Mpc)
+starparams_CP = linP_Cosmology_Cosmopower.get_star_params(linP_kms = linP_kms, 
+                                                          kp_kms = kp_kms)
 
 logger.info(f"Star parameters of: {test_sim} with CP emulator with neutrino masses {emulator_mnu}")
 logger.info(f"Percent relative error [%] on Delta2_star: {(starparams_CP['Delta2_star'] / star_params['Delta2_star'] - 1)*100:.2f}%")
 logger.info(f"Percent relative error [%] on n_star: {(starparams_CP['n_star'] / star_params['n_star'] - 1)*100:.2f}%") 
 logger.info(f"Percent relative error [%] on alpha_star: {(starparams_CP['alpha_star'] / star_params['alpha_star'] - 1)*100:.2f}%")
 
-# ## 2. TRAIN COSMOPOWER MODELS
+# ## 2. MEASURING COMPRESSED PARAMETERS FROM COSMOLOGICAL CHAINS
+
+df = pd.read_csv(PROJ_ROOT / "data/utils" / "mini_chain_test.csv")
+
+df
+
+df.rename(columns = {'omega_cdm': 'omega_c'}, inplace = True)
+
+# +
+# We need to provide a dictionary that maps the parameter names expected by the emulator to the column names of the dataframe.
+
+#parameter expected:parameter name in the dataframe   
+param_mapping = {
+    'h': 'h',
+    'm_ncdm': 'm_ncdm',
+    'omega_cdm': 'omega_c',
+    'Omega_m': 'Omega_m',
+    'Omega_Lambda': 'Omega_Lambda',
+    'ln_A_s_1e10': 'ln_A_s_1e10',
+    'n_s': 'n_s'
+}
+# -
+
+fitter_compressed_params = linPCosmologyCosmopower()
+linP_cosmology_results = fitter_compressed_params.fit_linP_cosmology(chains_df = df, 
+                                                                     param_mapping = param_mapping)
+
+linP_cosmology_results
+
+# ## 3. TRAIN COSMOPOWER MODELS
 
 # ### 2.1. CREATE THE LATIN HYPERCUBE OF PARAMETERS
 #
@@ -139,31 +179,4 @@ cosmopower_prepare_training(params = ["H0", "mnu", "omega_cdm", "omega_b", "As",
 
 cosmopower_train_model(model_save_filename = "Pk_cp_NN_test")
 
-# ## 3. MEASURING COMPRESSED PARAMETERS FROM COSMOLOGICAL CHAINS
-
-df = pd.read_csv(PROJ_ROOT / "data/utils" / "mini_chain_test.csv")
-
-df.rename(columns = {'omega_cdm': 'omega_c'}, inplace = True)
-
-fitter_compressed_params = linPCosmologyCosmopower()
-
-# +
-# We need to provide a dictionary that maps the parameter names expected by the emulator to the column names of the dataframe.
-
-#parameter expected:parameter name in the dataframe   
-param_mapping = {
-    'h': 'h',
-    'm_ncdm': 'm_ncdm',
-    'omega_cdm': 'omega_c',
-    'Omega_m': 'Omega_m',
-    'ln_A_s_1e10': 'ln_A_s_1e10',
-    'n_s': 'n_s'
-}
-# -
-
-linP_cosmology_results = fitter_compressed_params.fit_linP_cosmology(chains_df = df, 
-                                                                     param_mapping = param_mapping)
-
-linP_cosmology_results
-
-
+#
