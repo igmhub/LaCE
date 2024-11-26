@@ -121,12 +121,11 @@ logger.info(f"Percent relative error [%] on alpha_star: {(starparams_CP['alpha_s
 
 df = pd.read_csv(PROJ_ROOT / "data/utils" / "mini_chain_test.csv")
 
-df
-
 df.rename(columns = {'omega_cdm': 'omega_c'}, inplace = True)
 
-# +
-# We need to provide a dictionary that maps the parameter names expected by the emulator to the column names of the dataframe.
+# ##### We need to provide a dictionary that maps the parameter names expected by the emulator to the column names of the dataframe.
+# ##### These parameters must be in the dataframe. They are used either to emulate P(k) or to convert to s/km.
+#
 
 #parameter expected:parameter name in the dataframe   
 param_mapping = {
@@ -138,13 +137,10 @@ param_mapping = {
     'ln_A_s_1e10': 'ln_A_s_1e10',
     'n_s': 'n_s'
 }
-# -
 
 fitter_compressed_params = linPCosmologyCosmopower()
 linP_cosmology_results = fitter_compressed_params.fit_linP_cosmology(chains_df = df, 
                                                                      param_mapping = param_mapping)
-
-linP_cosmology_results
 
 # ## 3. TRAIN COSMOPOWER MODELS
 
@@ -154,7 +150,7 @@ linP_cosmology_results
 
 dict_params_ranges = {
     'ombh2': [0.015, 0.03],
-    'omch2': [0.05, 0.3],
+    'omch2': [0.05, 0.16],
     'H0': [60, 80],
     'ns': [0.8, 1.2],
     'As': [5e-10, 4e-9],
