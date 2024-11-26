@@ -1,4 +1,4 @@
-# Installation
+# INSTALLATION
 (Last updated: Nov 19 2024)
 
 LaCE contains a submodule to estimate compressed parameters from the power spectrum that uses cosmopower. The LaCE installation is slightly different depending on whether you want to use cosmopower or not.

@@ -1,4 +1,4 @@
-# Making predictions with LaCE
+# MAKING PREDICTIONS WITH LAKE
 
 ## Loading an emulator 
 The easiest way to load an emulator is to use the `set_emulator` class. This can be done with an [archive](archive.md) or a training set. This will load a trained emulator with the specifications of the emulator label.

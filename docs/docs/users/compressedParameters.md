@@ -1,5 +1,6 @@
-# Estimating compressed parameters with cosmopower
-To estimate the compressed parameters with cosmopower, one needs to follow the [installation instructions](installation.md) of LaCE with cosmopower.
+# ESTIMATING COMPRESSED PARAMETERS WITH COSMOPOWER
+
+To estimate the compressed parameters with cosmopower, one needs to follow the [installation instructions](../installation.md) of LaCE with cosmopower.
 
 1. [Making predictions with cosmopower](#making-predictions-with-cosmopower)
 2. [Estimating compressed parameters](#estimating-compressed-parameters)
@@ -32,8 +33,12 @@ print(cp_nn.parameters())
 And then to make predictions, you need to provide a dictionary with the parameters that the emulator uses.
 
 ```python
+# Define the cosmology dictionary
 cosmo = {'H0': [cosmo_params["H0"]],
+         'h': [cosmo_params["H0"]/100],
          'mnu': [cosmo_params["mnu"]],
+         'Omega_m': [(cosmo_params["omch2"] + cosmo_params["ombh2"]) / (cosmo_params["H0"]/100)**2],
+         'Omega_Lambda': [1- (cosmo_params["omch2"] + cosmo_params["ombh2"]) / (cosmo_params["H0"]/100)**2],
          'omega_cdm': [cosmo_params["omch2"]],
          'omega_b': [cosmo_params["ombh2"]],
          'As': [cosmo_params["As"]],
@@ -49,6 +54,14 @@ To access the __k__ values, you can do:
 ```python
 k_Mpc = cp_nn.modes
 ```
+Then to convert to km/s, you can do:
+
+```python
+k_kms, Pk_kms = linPCosmologyCosmopower.convert_to_kms(cosmo, 
+                                                       k_Mpc, 
+                                                       Pk_Mpc, 
+                                                       z_star = z_star)
+```
 
 ## Estimating compressed parameters 
 
@@ -56,25 +69,27 @@ k_Mpc = cp_nn.modes
 Once you have the predictions, you can estimate the compressed parameters with:
 ```python
 # call the class.
-linP_Mpc = cp_nlinP_Cosmology_Cosmopower = linPCosmologyCosmopower()n.ten_to_predictions_np(cosmo)
+linP_Cosmology_Cosmopower = linPCosmologyCosmopower()
 ```
+Fit the polynomial to the power spectrum:
+```python
+linP_kms = linP_Cosmology_Cosmopower.fit_polynomial(
+    xmin = kmin_kms / kp_kms, 
+    xmax= kmax_kms / kp_kms, 
+    x = k_kms / kp_kms, 
+    y = Pk_kms, 
+    deg=2
+)
+```
+
+And then estimate the star parameters:
 
 ```python
-starparams_CP = linP_Cosmology_Cosmopower.get_star_params(linP = linP_Mpc, 
-                                       kp = kp_Mpc)
+starparams_CP = linP_Cosmology_Cosmopower.get_star_params(linP_kms = linP_kms, 
+                                                          kp_kms = kp_kms)
 ```
-where `linP_Mpc` are the linear matter power spectrum predictions and `kp_Mpc` is the pivot point in Mpc. 
 
-To run this function, you need to first smooth the linear matter power spectrum with a polynomial defining the minimum and maximum __k__ values that you want to fit.
-
-```python
-linP_Mpc = linP_Cosmology_Cosmopower.fit_polynomial(
-    xmin = kmin_Mpc / kp_Mpc, 
-    xmax= kmax_Mpc / kp_Mpc, 
-    x = k_Mpc / kp_Mpc, 
-    y = Pk_Mpc, 
-    deg=2)
-```
+where `linP_kms` are the linear matter power spectrum predictions in km/s and `kp_kms` is the pivot point in s/km. 
 
 ### For a cosmology chain
 To estimate the parameters for a cosmology chain, you first need to call the class:
@@ -87,7 +102,7 @@ Then check the expected parameters of the cosmopower model:
 print(fitter_compressed_params.cp_emulator.cp_emulator.parameters())
 ```
 
-And create a dictionary with the naming convertion between the parameters in your chain and the parameters used by the cosmopower model.
+And create a dictionary with the naming convertion between the parameters in your chain and the parameters used by the cosmopower model. We need additional parameters to convert to km/s.
 
 ```python
 param_mapping = {
@@ -95,6 +110,7 @@ param_mapping = {
     'm_ncdm': 'm_ncdm',
     'omega_cdm': 'omega_cdm',
     'Omega_m': 'Omega_m',
+    'Omega_Lambda': 'Omega_Lambda',
     'ln_A_s_1e10': 'ln_A_s_1e10',
     'n_s': 'n_s'
 }
