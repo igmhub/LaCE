@@ -8,10 +8,13 @@ nav:
   - Installation: installation.md
   - User Guide:
     - Overview: users/index.md
+    - Available Simulations: users/Simulations_list.md
+    - Emulators and Training Sets: users/Emulators_trainingSets.md
     - Archive: users/archive.md
-    - Emulator Predictions: users/emulatorPredictions.md 
     - Emulator Training: users/emulatorTraining.md
+    - Emulator Predictions: users/emulatorPredictions.md 
     - Compressed Parameters: users/compressedParameters.md
+    
   - Developer Guide:
     - Overview: developers/index.md
     - Creating New Emulators: developers/CreateNewEmulator.md
