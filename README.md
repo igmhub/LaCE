@@ -92,8 +92,8 @@ NYX_PATH="/global/cfs/cdirs/desi/science/lya/y1-p1d/likelihood_files/nyx_files/"
 - Before running LaCE, please precompute all cosmological information needed using CAMB and save IGM histories. This is done by running the following scripts. You do not need to do it if you are in NERSC.
 
 ```
-python scripts/save_nyx_emu_cosmo.py
-python scripts/save_nyx_IGM.py
+python scripts/developers/save_nyx_emu_cosmo.py
+python scripts/developers/save_nyx_IGM.py
 ```
 
 ## Emulator parameters:

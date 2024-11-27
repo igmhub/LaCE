@@ -6,3 +6,4 @@ __pycache__
 .github/workflows/.python-tests.yml.swo
 .github/workflows/.python-tests.yml.swp
 docs/build/
+docs/site/

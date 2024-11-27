@@ -13,10 +13,10 @@ PROJ_ROOT = Path(__file__).resolve().parents[2]
 
 @dataclass
 class linPCosmologyCosmopower:
-    kp_Mpc : float = 0.7
+    kp_kms : float = 0.009
     z_star : float = 3
-    fit_min_Mpc : float = 0.5
-    fit_max_Mpc : float = 2
+    fit_min_kms : float = 0.5
+    fit_max_kms : float = 2
     cosmopower_model : str = "Pk_cp_NN_sumnu"
 
     def __post_init__(self):
@@ -43,7 +43,7 @@ class linPCosmologyCosmopower:
         #Omega_nu = 3*np.array(params["omega_ncdm"])
         H0 = np.array(params["h"])*100
         Omega_r = 1 - Omega_bc - Omega_lambda
-        Hz = np.sqrt(H0**2 * (Omega_bc*(1+zstar)**3 + Omega_r*(1+zstar)**4 + params["Omega_Lambda"]))
+        Hz = H0 * np.sqrt((Omega_bc*(1+zstar)**3 + Omega_r*(1+zstar)**4 + Omega_lambda))
         return Hz
     
     @staticmethod
@@ -56,24 +56,24 @@ class linPCosmologyCosmopower:
     
     @staticmethod
     def convert_to_kms(params: dict, 
-                        k_hMpc: np.ndarray, 
-                        Pk_hMpc: np.ndarray, 
+                        k_Mpc: np.ndarray, 
+                        Pk_Mpc: np.ndarray, 
                         z_star: float):
         H_z = linPCosmologyCosmopower.measure_Hz(params, zstar = z_star)
-        dvdX = H_z / (1 + z_star) / np.array(params['h'])
-        k_kms = k_hMpc / dvdX[:,None]
-        Pk_kms = Pk_hMpc * dvdX[:,None]**3
+        dvdX = H_z / (1 + z_star) 
+        k_kms = k_Mpc / dvdX[:,None]
+        Pk_kms = Pk_Mpc * (dvdX[:,None]**3)
         return k_kms, Pk_kms
     
     @staticmethod
-    def get_star_params(linP: np.poly1d, 
-                        kp: float):
+    def get_star_params(linP_kms: np.poly1d, 
+                        kp_kms: float):
         # translate the polynomial to our parameters
-        ln_A_star = linP[0]
-        Delta2_star = np.exp(ln_A_star) * kp**3 / (2 * np.pi**2)
-        n_star = linP[1]
+        ln_A_star = linP_kms[0]
+        Delta2_star = np.exp(ln_A_star) * kp_kms**3 / (2 * np.pi**2)
+        n_star = linP_kms[1]
         # note that the curvature is alpha/2
-        alpha_star = 2.0 * linP[2]
+        alpha_star = 2.0 * linP_kms[2]
 
         results = {
             "Delta2_star": Delta2_star,
@@ -107,26 +107,34 @@ class linPCosmologyCosmopower:
         for chunk in chunks:    # create a dict of cosmological parameters
             params = {
                 'H0': [chunk[param_mapping['h']].values[ii]*100 for ii in range(len(chunk))],
+                'h': [chunk[param_mapping['h']].values[ii] for ii in range(len(chunk))],
                 'mnu': [3*chunk[param_mapping['m_ncdm']].values[ii] for ii in range(len(chunk))],
                 'omega_cdm': [chunk[param_mapping['omega_cdm']].values[ii] for ii in range(len(chunk))],
                 'omega_b': [(chunk[param_mapping['Omega_m']].values[ii] - chunk[param_mapping['omega_cdm']].values[ii]/chunk[param_mapping['h']].values[ii]**2) * chunk[param_mapping['h']].values[ii]**2 for ii in range(len(chunk))],
+                'Omega_m': [chunk[param_mapping['Omega_m']].values[ii] for ii in range(len(chunk))],
+                'Omega_Lambda': [chunk[param_mapping['Omega_Lambda']].values[ii] for ii in range(len(chunk))],
                 'As': [np.exp(chunk[param_mapping['ln_A_s_1e10']].values[ii])/1e10 for ii in range(len(chunk))],
                 'ns': [chunk[param_mapping['n_s']].values[ii] for ii in range(len(chunk))]
             }            
             Pk_Mpc = self.cp_emulator.ten_to_predictions_np(params)
             k_Mpc = self.cp_emulator.modes
-            
+
+            k_kms, Pk_kms = linPCosmologyCosmopower.convert_to_kms(params, k_Mpc, Pk_Mpc, z_star = self.z_star)
+
+            kmin_kms = self.fit_min_kms * self.kp_kms
+            kmax_kms = self.fit_max_kms * self.kp_kms  
+
             for ii in tqdm(range(len(chunk)), desc="Processing samples"):
                 poly_linP = linPCosmologyCosmopower.fit_polynomial(
-                                    xmin = self.fit_min_Mpc * self.kp_Mpc , 
-                                    xmax= self.fit_max_Mpc * self.kp_Mpc , 
-                                    x = k_Mpc / self.kp_Mpc, 
-                                    y = Pk_Mpc[ii], 
+                                    xmin = kmin_kms / self.kp_kms, 
+                                    xmax= kmax_kms / self.kp_kms, 
+                                    x = k_kms[ii] / self.kp_kms, 
+                                    y = Pk_kms[ii], 
                                     deg=2
                                     )
                 
-                results = linPCosmologyCosmopower.get_star_params(linP = poly_linP, 
-                                                                  kp = self.kp_Mpc)
+                results = linPCosmologyCosmopower.get_star_params(linP_kms = poly_linP, 
+                                                                  kp_kms = self.kp_kms)
 
                 linP_cosmology_results.append(results)
 
