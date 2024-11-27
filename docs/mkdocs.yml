@@ -6,12 +6,18 @@ theme:
 nav:
   - Home: index.md
   - Installation: installation.md
-  - Emulator:
-    - Training: emulatorTraining.md
-    - Predictions: emulatorPredictions.md
-  - Advanced:
-    - Compressed Parameters: compressedParameters.md
-  - Archive: archive.md
+  - User Guide:
+    - Overview: users/index.md
+    - Archive: users/archive.md
+    - Emulator Predictions: users/emulatorPredictions.md 
+    - Emulator Training: users/emulatorTraining.md
+    - Compressed Parameters: users/compressedParameters.md
+  - Developer Guide:
+    - Overview: developers/index.md
+    - Creating New Emulators: developers/CreateNewEmulator.md
+    - Training Options: developers/trainingOptions.md
+    - Testing: developers/advancedTesting.md
+    - Documentation: developers/documentation.md
 
 # Define the URL where the site will be deployed
 site_url: https://github.com/igmhub/LaCE

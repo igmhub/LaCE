@@ -1,4 +1,4 @@
-# LaCE documentation!
+# LaCE DOCUMENTATION
 
 Welcome to the documentation for LaCE!
 LaCE contains a set of emulators for the one-dimensional flux power spectrum of the Lyman-alpha forest. It has been used in the papers:
@@ -9,14 +9,6 @@ LaCE contains a set of emulators for the one-dimensional flux power spectrum of 
 
 Please cite at least https://arxiv.org/abs/2305.19064 if you use this emulator in your research.
 
-
-## Table of Contents
-
-- [Installation](installation.md)
-- [Archive](archive.md)
-- [Emulator Predictions](emulatorPredictions.md)
-- [Emulators Training](emulatorTraining.md)
-- [Compressed Parameters](compressedParameters.md)
 
 ## Prerequisites
 
