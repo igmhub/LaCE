@@ -1,4 +1,4 @@
-# Archive
+# ARCHIVE
 
 The LaCE emulators support two types of archives:
 - Gadget archive: Contains the P1D of Gadget simulations described in [Pedersen+21](https://arxiv.org/abs/2011.15127).  

@@ -406,6 +406,15 @@ class NNEmulator(base_emulator.BaseEmulator):
             training_cov = torch.Tensor(training_cov)
         return training_cov
 
+
+    def _get_rescalings_weights(self):
+        weights_rescalings = np.ones(len(self.training_data))
+        if self.emulator_label == "Nyx_alphap_cov": 
+            weights_rescalings[np.where([(d['ind_rescaling'] not in [0,1] and d['z'] in [3,3.2]) for d in self.training_data])] = 1
+        else:
+            pass
+        return torch.Tensor(weights_rescalings)
+
     def _load_DESIY1_err(self):
         with open(
             self.models_dir / "DESI_cov/rerr_DESI_Y1.json", "r"
@@ -517,9 +526,10 @@ class NNEmulator(base_emulator.BaseEmulator):
         training_data = self._get_training_data_nn()
         training_label = self._get_training_pd1_nn()
         training_cov = self._get_training_cov()
+        weights_rescalings = self._get_rescalings_weights()
 
         trainig_dataset = TensorDataset(
-            training_data, training_label, training_cov, log_kMpc_train
+            training_data, training_label, training_cov, weights_rescalings, log_kMpc_train
         )
         loader_train = DataLoader(
             trainig_dataset, batch_size=self.batch_size, shuffle=True
@@ -530,7 +540,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         t0 = time.time()
 
         for epoch in tqdm(range(self.nepochs), desc="Training epochs"):
-            for datain, p1D_true, P1D_desi_err, logkP1D in loader_train:
+            for datain, p1D_true, P1D_desi_err, weights_rescalings, logkP1D in loader_train:
                 optimizer.zero_grad()
 
                 coeffsPred, coeffs_logerr = self.nn(datain.to(self.device))  #
@@ -554,15 +564,20 @@ class NNEmulator(base_emulator.BaseEmulator):
                     )
                 )
                 P1Dlogerr = torch.log(
-                    torch.sqrt(P1Derr**2 + P1D_desi_err**2 * p1D_true**2)
+                    torch.sqrt(P1Derr**2 + P1D_desi_err.to(self.device)**2 * p1D_true**2)
                 )
 
                 log_prob = (P1Dpred - p1D_true.to(self.device)).pow(2) / (
-                    P1Derr**2 + P1D_desi_err**2 * p1D_true**2
+                    P1Derr**2 + P1D_desi_err.to(self.device)**2 * p1D_true**2
                 ) + 2 * P1Dlogerr
 
-                log_prob = loss_function_weights[None, :] * log_prob
 
+
+                if self.emulator_label == "Nyx_alphap_cov":
+                    log_prob = weights_rescalings.to(self.device)[:,None] * log_prob 
+                else:
+                    log_prob = loss_function_weights[None, :] * log_prob
+                
                 loss = torch.nansum(log_prob, 1)
 
                 loss = torch.nanmean(loss, 0)
