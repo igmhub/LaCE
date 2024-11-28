@@ -171,16 +171,11 @@ def create_LH_sample(dict_params_ranges: dict,
                      nsamples: int=400000,
                      filename: str="LHS_params.npz"):
     
-    ombh2 =      np.linspace(dict_params_ranges['ombh2'][0], dict_params_ranges['ombh2'][1], nsamples)
-    omch2 =     np.linspace(dict_params_ranges['omch2'][0], dict_params_ranges['omch2'][1], nsamples)
-    H0 =         np.linspace(dict_params_ranges['H0'][0], dict_params_ranges['H0'][1], nsamples)
-    ns =        np.linspace(dict_params_ranges['ns'][0], dict_params_ranges['ns'][1], nsamples)
-    As =      np.linspace(dict_params_ranges['As'][0], dict_params_ranges['As'][1], nsamples)
-    mnu =       np.linspace(dict_params_ranges['mnu'][0], dict_params_ranges['mnu'][1], nsamples)
-    nrun =     np.linspace(dict_params_ranges['nrun'][0], dict_params_ranges['nrun'][1], nsamples)
-    
+    params = {}
+    for param, range_values in dict_params_ranges.items():
+        params[param] = np.linspace(range_values[0], range_values[1], nsamples)
 
-    AllParams = np.vstack([ombh2, omch2, H0, ns, As, mnu, nrun])
+    AllParams = np.vstack(list(params.values()))
     n_params = len(AllParams)
 
     lhd = pyDOE.lhs(n_params, samples=nsamples, criterion=None)
@@ -196,7 +191,7 @@ def create_LH_sample(dict_params_ranges: dict,
             'ns': AllCombinations[:, 3],
             'As': AllCombinations[:, 4],
             'mnu': AllCombinations[:, 5],
-            'nrun': AllCombinations[:, 6],
+            #'nrun': AllCombinations[:, 6],
             }
     
     np.savez(PROJ_ROOT / 'data' / 'cosmopower_models' / filename, **params)
@@ -220,7 +215,7 @@ def generate_training_spectra(input_LH_filename: str,
             omk=0,
             As=LH_params["As"][ii],
             ns=LH_params["ns"][ii],
-            nrun=LH_params["nrun"][ii]
+            #nrun=LH_params["nrun"][ii]
                         )
 
         camb_results = get_camb_results(cosmo, 
