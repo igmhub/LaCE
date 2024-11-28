@@ -17,7 +17,7 @@ class linPCosmologyCosmopower:
     z_star : float = 3
     fit_min_kms : float = 0.5
     fit_max_kms : float = 2
-    cosmopower_model : str = "Pk_cp_NN_sumnu"
+    cosmopower_model : str = "Pk_cp_NN_nrun"
 
     def __post_init__(self):
         self.cp_emulator = cp.cosmopower_NN(restore=True, 
@@ -82,7 +82,8 @@ class linPCosmologyCosmopower:
         }
         return results
     
-    def fit_linP_cosmology(self, chains_df: pd.DataFrame, 
+    def fit_linP_cosmology(self, 
+                           chains_df: pd.DataFrame, 
                            param_mapping: dict):   
         linP_cosmology_results = []
         # Calculate number of chunks needed
@@ -95,27 +96,33 @@ class linPCosmologyCosmopower:
         param_descriptions = {
             'h': 'Reduced Hubble parameter',
             'm_ncdm': 'Sum of neutrino masses',
-            'omega_cdm': 'Total CDM density / h^2',
+            'ombh2': 'Total CDM density / h^2',
             'Omega_m': 'Total matter density',
             'ln_A_s_1e10': 'log(As/1e10)',
-            'n_s': 'spectral index'
+            'n_s': 'spectral index',
+            'nrun': 'running of the spectral index'
         }
         
         param_info = [f"{value}: ({param_descriptions.get(key, 'The emulator does not use this parameter.')})" for key, value in param_mapping.items()]
         logger.info(f"Using parameter mapping: {param_mapping}\n    " + "\n    ".join(param_info))
 
         for chunk in chunks:    # create a dict of cosmological parameters
-            params = {
-                'H0': [chunk[param_mapping['h']].values[ii]*100 for ii in range(len(chunk))],
-                'h': [chunk[param_mapping['h']].values[ii] for ii in range(len(chunk))],
-                'mnu': [3*chunk[param_mapping['m_ncdm']].values[ii] for ii in range(len(chunk))],
-                'omega_cdm': [chunk[param_mapping['omega_cdm']].values[ii] for ii in range(len(chunk))],
-                'omega_b': [(chunk[param_mapping['Omega_m']].values[ii] - chunk[param_mapping['omega_cdm']].values[ii]/chunk[param_mapping['h']].values[ii]**2) * chunk[param_mapping['h']].values[ii]**2 for ii in range(len(chunk))],
-                'Omega_m': [chunk[param_mapping['Omega_m']].values[ii] for ii in range(len(chunk))],
-                'Omega_Lambda': [chunk[param_mapping['Omega_Lambda']].values[ii] for ii in range(len(chunk))],
-                'As': [np.exp(chunk[param_mapping['ln_A_s_1e10']].values[ii])/1e10 for ii in range(len(chunk))],
-                'ns': [chunk[param_mapping['n_s']].values[ii] for ii in range(len(chunk))]
-            }            
+            params = {}
+            for param, mapping in param_mapping.items():
+                if param == 'h':
+                    params['H0'] = (chunk[mapping] * 100).tolist()
+                    params['h'] = chunk[mapping].tolist()
+                elif param == 'm_ncdm':
+                    params['mnu'] = (3 * chunk[mapping]).tolist()
+                elif param == 'ln_A_s_1e10':
+                    params['As'] = (np.exp(chunk[mapping]) / 1e10).tolist()
+                elif param == 'omch2' and 'Omega_m' in param_mapping and 'h' in param_mapping:
+                    h = chunk[param_mapping['h']]
+                    params['ombh2'] = ((chunk[param_mapping['Omega_m']] - chunk[mapping] / h**2) * h**2).tolist()
+                    params['omch2'] = chunk[mapping].tolist()
+                else:
+                    params[param] = chunk[mapping].tolist()
+
             Pk_Mpc = self.cp_emulator.ten_to_predictions_np(params)
             k_Mpc = self.cp_emulator.modes
 
