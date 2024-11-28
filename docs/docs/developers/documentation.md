@@ -17,9 +17,9 @@ The `gh-pages` branch is automatically updated when a PR is merged into `main`.
 In order to write documentation, you can use the following structure:
 
 - `docs/docs/developers`: Documentation for developers
-- `docs/docs/`: Documentation for users
+- `docs/docs/users`: Documentation for users
 
-You can add new pages by adding a new `.md` file to the `docs/docs/` folder. Remember to add the new page to the `mkdocs.yml` file so that it is included in the documentation. The new page will automatically be added to the navigation menu. 
-
-To have a cleaner structure, add the new page to the corresponding `index.md` file.
+To add a new page, you should create a new `.md` file to the `docs/docs/` folder. 
+To define where this document should be included and the structure of the documentation, add the new page to the `mkdocs.yml`. The new page will automatically be added to the navigation menu. 
+To have a cleaner structure, add the new page to the corresponding `index.md` file. The documentation is structured with an index file for each section.
 
