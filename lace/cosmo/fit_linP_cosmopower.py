@@ -84,10 +84,10 @@ class linPCosmologyCosmopower:
     
     def fit_linP_cosmology(self, 
                            chains_df: pd.DataFrame, 
-                           param_mapping: dict):   
+                           param_mapping: dict,
+                           chunksize: int = 100_000):   
         linP_cosmology_results = []
         # Calculate number of chunks needed
-        chunk_size = 100_000
         n_chunks = len(chains_df) // chunk_size + (1 if len(chains_df) % chunk_size != 0 else 0)
         
         # Split DataFrame into chunks
@@ -97,9 +97,9 @@ class linPCosmologyCosmopower:
             'h': 'Reduced Hubble parameter',
             'm_ncdm': 'Sum of neutrino masses',
             'ombh2': 'Total CDM density / h^2',
-            'Omega_m': 'Total matter density',
+            'omch2': 'Total matter density',
             'ln_A_s_1e10': 'log(As/1e10)',
-            'n_s': 'spectral index',
+            'ns': 'spectral index',
             'nrun': 'running of the spectral index'
         }
         
