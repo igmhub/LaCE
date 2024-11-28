@@ -85,7 +85,7 @@ class linPCosmologyCosmopower:
     def fit_linP_cosmology(self, 
                            chains_df: pd.DataFrame, 
                            param_mapping: dict,
-                           chunksize: int = 100_000):   
+                           chunk_size: int = 100_000):   
         linP_cosmology_results = []
         # Calculate number of chunks needed
         n_chunks = len(chains_df) // chunk_size + (1 if len(chains_df) % chunk_size != 0 else 0)
