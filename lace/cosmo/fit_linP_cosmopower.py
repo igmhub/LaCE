@@ -76,9 +76,9 @@ class linPCosmologyCosmopower:
         alpha_star = 2.0 * linP_kms[2]
 
         results = {
-            "Delta2_star": Delta2_star,
-            "n_star": n_star,
-            "alpha_star": alpha_star,
+            "Delta2_star_cp": Delta2_star,
+            "n_star_cp": n_star,
+            "alpha_star_cp": alpha_star,
         }
         return results
     
