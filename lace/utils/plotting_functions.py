@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from lace.utils import poly_p1d
 import matplotlib.cm as cm
-import corner
 
 def plot_p1d_vs_emulator(testing_data, emulator, save_path=None):
     """
@@ -87,11 +86,11 @@ def plot_p1d_vs_emulator(testing_data, emulator, save_path=None):
     plt.close()
 
 def create_corner_plot(
-    main_data_dict, 
+    list_of_dfs,
+    params_to_plot,
     labels=None, 
     figsize=(8, 8), 
-    additional_data_dicts=None, 
-    additional_colors=None, 
+    colors=None, 
     legend_labels=None, 
     truth_values=None,  # Add truth values as a parameter
     save_path=None
@@ -112,13 +111,26 @@ def create_corner_plot(
     Returns:
         matplotlib.figure.Figure: The generated corner plot figure.
     """    
+    import corner
+    
+    #create a list of dictionaries
+    dirs_list = []
+    for df in list_of_dfs:
+        dict_ = {}
+        for param in params_to_plot:
+            dict_[f"{param}"] = df.loc[:,f'{param}'].values
+        dirs_list.append(dict_)    
+
+    if colors is None:
+        # Generate random colors if not specified
+        colors = [f"C{i}" for i in range(len(dirs_list[1:]))]
 
     # Convert the main dictionary to a 2D array
-    main_data = np.array(list(main_data_dict.values())).T  # Shape (N_samples, N_parameters)
+    main_data = np.array(list(dirs_list[0].values())).T  # Shape (N_samples, N_parameters)
     
     # Default labels to dictionary keys if not provided
     if labels is None:
-        labels = list(main_data_dict.keys())
+        labels = list(dirs_list[0].keys())
     
     # Generate the base corner plot with the main data
     figure = corner.corner(
@@ -128,7 +140,7 @@ def create_corner_plot(
         show_titles=False,
         plot_density=False,
         plot_datapoints=False,
-        color="steelblue",
+        color=colors[0],
         fill_contours=False,
         levels=(0.68, 0.95),  # 1-sigma and 2-sigma contours
         smooth=1.0,  # Smoothing for the KDE
@@ -145,34 +157,17 @@ def create_corner_plot(
             ax = axes[i, i]
             ax.axvline(truth_values[i], color="black")
 
-        """# Loop over the histograms
-        for yi in range(ndim):
-            for xi in range(yi):
-                ax = axes[yi, xi]
-                ax.axvline(truth_values[xi], color="black")
-                ax.axvline(truth_values[xi], color="black")
-                ax.axhline(truth_values[yi], color="black")
-                ax.axhline(truth_values[yi], color="black")
-                ax.plot(truth_values[xi], truth_values[yi], "black")
-                ax.plot(truth_values[xi], truth_values[yi], "black")"""
-
     # Overlay contours for additional datasets if provided
     legend_handles = []
-    if additional_data_dicts:
-        if additional_colors is None:
-            # Generate random colors if not specified
-            additional_colors = [f"C{i}" for i in range(len(additional_data_dicts))]
-            
-        
-        
+    if len(dirs_list)>1:   
         if legend_labels is None:
             # Generate default labels if not specified
-            legend_labels = [f"Dataset {i+1}" for i in range(len(additional_data_dicts))]
+            legend_labels = [f"Dataset {i+1}" for i in range(len(dirs_list[1:]))]
         
-        for idx, additional_data_dict in enumerate(additional_data_dicts):
+        for idx, additional_data_dict in enumerate(dirs_list[1:]):
             # Convert the additional dictionary to a 2D array
             additional_data = np.array(list(additional_data_dict.values())).T  # Shape (N_samples, N_parameters)
-            color = additional_colors[idx % len(additional_colors)]
+            color = colors[idx+1]
             
             # Overlay contours on existing axes
             figure = corner.corner(
