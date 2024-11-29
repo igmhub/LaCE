@@ -7,3 +7,11 @@ __pycache__
 .github/workflows/.python-tests.yml.swp
 docs/build/
 docs/site/
+data/validation_figures/tests/
+data/cosmopower_models/*.dat
+data/cosmopower_models/*.txt
+data/cosmopower_models/*.npz
+
+*.DS_Store
+build/
+data/NNmodels/testing_models/
