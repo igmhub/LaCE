@@ -18,7 +18,7 @@ nav:
   - Developer Guide:
     - Overview: developers/index.md
     - Creating New Emulators: developers/CreateNewEmulator.md
-    - Training Options: developers/trainingOptions.md
+    - Under development solutions: developers/UnderDevelopment.md
     - Testing: developers/advancedTesting.md
     - Documentation: developers/documentation.md
 
