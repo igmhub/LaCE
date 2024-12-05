@@ -620,7 +620,23 @@ class NNEmulator(base_emulator.BaseEmulator):
             "metadata": metadata,
         }
 
-        torch.save(model_with_metadata, self.save_path)
+        if not self.emulator_label:
+            save_path = self.save_path
+        else:
+            # Create model directory under data/NNmodels/{emulator_label}
+            dir_path = PROJ_ROOT / "data" / "NNmodels" / self.emulator_label
+            dir_path.mkdir(parents=True, exist_ok=True)
+            self.print(f"Creating and using model directory: {dir_path}")
+            
+            # Build filename based on whether we're dropping simulations
+            filename = f"{self.emulator_label}"
+            if self.drop_sim is not None:
+                filename += f"_drop_sim_{self.drop_sim}_{self.drop_z}"
+            filename += ".pt"
+            
+            save_path = dir_path / filename
+
+        torch.save(model_with_metadata, save_path)
 
     def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
         """

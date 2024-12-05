@@ -3,8 +3,9 @@
 ## Emulator type: you can choose between a NN emulator or a GP emulator.
 emulator_type: "NN"
 
-## Emulator label: if you want to train a predefined model, you can use the emulator_label. Other possible labels are in the README.md file.
-emulator_label: "Nyx_alphap_cov"
+## Emulator label: if you want to train a predefined model, you can use the emulator_label. Other possible labels are in the docs.
+emulator_label: "Cabayol23+"
+training_set: null
 
 ## If the emulator needs to be trained without a specific simulation.
 drop_sim: null
@@ -25,3 +26,18 @@ average_over_z: false
 ## Where to save the trained model from the project root directory
 save_plot_path: "data/validation_figures/tests/test_p1d_err.png" 
 save_predictions_path: null
+
+hyperparameters:
+  kmax_Mpc: 4
+  ndeg: 5
+  nepochs: 100
+  step_size: 75
+  drop_z: null
+  weighted_emulator: true
+  nhidden: 5
+  max_neurons: 50
+  seed: 32
+  lr0: 1e-3
+  batch_size: 100
+  weight_decay: 1e-4
+  z_max: 10
