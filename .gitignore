@@ -11,6 +11,7 @@ data/validation_figures/tests/
 data/cosmopower_models/*.dat
 data/cosmopower_models/*.txt
 data/cosmopower_models/*.npz
+data/DESI_cov/
 
 *.DS_Store
 build/
