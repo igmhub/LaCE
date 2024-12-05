@@ -40,11 +40,17 @@ class linPCosmologyCosmopower:
                    zstar: float):
         Omega_bc = np.array(params["Omega_m"])
         Omega_lambda = np.array(params["Omega_Lambda"])
-        #Omega_nu = 3*np.array(params["omega_ncdm"])
         H0 = np.array(params["h"])*100
-        Omega_r = 1 - Omega_bc - Omega_lambda
-        Hz = H0 * np.sqrt((Omega_bc*(1+zstar)**3 + Omega_r*(1+zstar)**4 + Omega_lambda))
+        h = np.array(params["h"])
+        Omega_nu = np.array(params["omnuh2"]) / h**2
+    
+        # Compute H(z)
+        Hz = H0 * np.sqrt(
+            (Omega_bc+Omega_nu) * (1 + zstar)**3 +
+            Omega_lambda 
+        )        
         return Hz
+    
     
     @staticmethod
     def convert_to_hMpc(Pk_Mpc: np.ndarray, 
@@ -95,7 +101,7 @@ class linPCosmologyCosmopower:
         logger.info(f"Fitting linear power to cosmology in {n_chunks} chunks")
         param_descriptions = {
             'h': 'Reduced Hubble parameter',
-            'm_ncdm': 'Sum of neutrino masses',
+            'mnu': 'Sum of neutrino masses',
             'ombh2': 'Total CDM density / h^2',
             'omch2': 'Total matter density',
             'ln_A_s_1e10': 'log(As/1e10)',
@@ -112,8 +118,7 @@ class linPCosmologyCosmopower:
                 if param == 'h':
                     params['H0'] = (chunk[mapping] * 100).tolist()
                     params['h'] = chunk[mapping].tolist()
-                elif param == 'm_ncdm':
-                    params['mnu'] = (3 * chunk[mapping]).tolist()
+                    params['mnu'] = (chunk[mapping]).tolist()
                 elif param == 'ln_A_s_1e10':
                     params['As'] = (np.exp(chunk[mapping]) / 1e10).tolist()
                 elif param == 'omch2' and 'Omega_m' in param_mapping and 'h' in param_mapping:

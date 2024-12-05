@@ -145,6 +145,7 @@ def create_corner_plot(
         levels=(0.68, 0.95),  # 1-sigma and 2-sigma contours
         smooth=1.0,  # Smoothing for the KDE
         scale_hist=True,
+        hist_kwargs={'density': True},  # Normalize the histograms
         figsize=figsize,
     )
  
@@ -179,6 +180,7 @@ def create_corner_plot(
                 plot_datapoints=False,
                 fill_contours=False,  # No fill for overlays
                 levels=(0.68, 0.95),  # 1-sigma and 2-sigma contours
+                hist_kwargs={'density': True},  # Normalize the histograms
                 smooth=1.0,
             )
             
