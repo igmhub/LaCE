@@ -1,13 +1,10 @@
-from enum import StrEnum
 import numpy as np
 
-class Postprocessings(StrEnum):
-    """
-    Enumeration of possible archives in LaCE.
-    """
-    PEDERSEN21 = "Pedersen21"
-    CABAYOL23 = "Cabayol23"
-    POST_768 = "768_768"
+Postprocessings = {
+    "Pedersen21",
+    "Cabayol23", 
+    "768_768"
+}
 
 # Constants for different post-processing configurations
 
@@ -135,3 +132,6 @@ LIST_SIM_NYX_TEST = ["nyx_central", "nyx_seed", "nyx_3_ic", "nyx_wdm"]
 LIST_SIM_NYX_CUBE = [f"nyx_{i}" for i in range(18)]
 LIST_ALL_SIMS_NYX = LIST_SIM_NYX_TEST + LIST_SIM_NYX_CUBE
 LIST_SIM_REDSHIFTS_NYX = [2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 4.2, 4.4, 4.6, 5.0, 5.4]
+
+LIST_SIM_MPG_CUBE_COMBINED = LIST_SIM_MPG_CUBE + LIST_SIM_NYX_CUBE
+LIST_ALL_SIMS_COMBINED = LIST_ALL_SIMS_MPG + LIST_ALL_SIMS_NYX
