@@ -120,7 +120,7 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
             EmulatorLabel.NYX_ALPHAP_COV_CENTRAL: "NNmodels/Nyxap_Jul2024_cov/",
         }.get(emulator_label, "")
 
-        model_path = f"{folder}{emulator_label.value}{'_drop_sim' + drop_sim if drop_sim else ''}.pt"
+        model_path = f"{folder}{emulator_label.value}{'_drop_sim_' + drop_sim if drop_sim else ''}.pt"
 
         emulator = NNEmulator(
             archive=archive,
