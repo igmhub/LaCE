@@ -54,21 +54,6 @@ def open_Chain(fname, source_code):
 
         
     elif source_code=='cup1d_old':
-        f = np.load(fname, allow_pickle=True)
-        df = pd.DataFrame(f.tolist())    
-        
-        mask = df[df.lnprob>-14]
-        df['ln_A_s_1e10'] = np.log(df.As*1e10)
-        df["Omega_m"] = 0.316329
-        df["Omega_Lambda"] = 1 - df.Omega_m.values
-        df["h"] = df.H0.values / 100 
-        df["ombh2"] = 0.049009 * df.h**2
-        df["omch2"] = (df.Omega_m - 0.049009) * df.h**2
-        df['mnu'] = 0
-        df['nrun'] = 0
-        df['omnuh2'] = df.mnu / 94.07
-
-    elif source_code=='cup1d':
 
 
         data = np.load(fname, allow_pickle=True).item()
@@ -86,21 +71,69 @@ def open_Chain(fname, source_code):
         df["omch2"] = data["like"]["cosmo_fid_label"]["cosmo"]["omch2"] 
         df["Omega_m"] = (df.omch2.values + df.ombh2.values + df.omnuh2.values) / df.h**2
         df["Omega_Lambda"] = 1 - df.Omega_m.values 
-        #df['nrun'] = data["like"]["cosmo_fid_label"]["cosmo"]["nrun"]  
+        df["As_fid"] = data["like"]["cosmo_fid_label"]["cosmo"]["As"]
+        df["ns_fid"] = data["like"]["cosmo_fid_label"]["cosmo"]["ns"]
+        try:
+            df["nrun"] = df["nrun"]
+        except:
+            df["nrun"] = 0
+    
+    elif source_code == 'cup1d':
+        data = np.load(fname, allow_pickle=True).item()
+        sampling_params = data["fitter"]["chain_names"]  # to chain
+        star_params = data["fitter"]["blobs_names"]  # to blob
+        _chain = data["fitter"]["chain"].reshape(
+            -1, data["fitter"]["chain"].shape[-1]
+        )
+        _blobs = data["fitter"]["blobs"].reshape(-1)
+        if "nrun" in sampling_params:
+            nstar = 3
+        else:
+            nstar = 2
+        all_params = np.zeros((_chain.shape[0], _chain.shape[1] + nstar))
+        all_params_names = []
+        for ii in range(_chain.shape[-1]):
+            prange = data["fitter"]["chain_from_cube"][sampling_params[ii]]
+            # print(sampling_params[ii], prange)
+            all_params[:, ii] = _chain[:, ii] * (prange[1] - prange[0]) + prange[0]
+            all_params_names.append(sampling_params[ii])
 
+        for ii in range(nstar):
+            all_params[:, -nstar + ii] = _blobs[star_params[ii]]
+            all_params_names.append(star_params[ii])
+
+        df = pd.DataFrame(all_params, columns=all_params_names)
+        h = data["like"]["cosmo_fid_label"]["cosmo"]["H0"] / 100
+        omch2 = data["like"]["cosmo_fid_label"]["cosmo"]["omch2"]
+        ombh2 = data["like"]["cosmo_fid_label"]["cosmo"]["ombh2"]
+        mnu = data["like"]["cosmo_fid_label"]["cosmo"]["mnu"]
+        As = data["like"]["cosmo_fid_label"]["cosmo"]["As"]
+        ns = data["like"]["cosmo_fid_label"]["cosmo"]["ns"]
+        # next two lines to be updated when using with neutrinos
+        omnuh2 = mnu / 94.07  # this is more complicated, need CAMB or CLASS
+        Omega_m = (omch2 + ombh2) / h**2  # should I include omnuh2 here?
+
+        if "nrun" not in sampling_params:
+            df["nrun"] = 0
+
+        df["ln_A_s_1e10"] = np.log(df.As * 1e10)
+        df["h"] = h
+        df["m_ncdm"] = mnu
+        df["omch2"] = omch2
+        df["ombh2"] = ombh2
+        df["omnuh2"] = omnuh2
+        df["Omega_m"] = Omega_m
+        df["Omega_Lambda"] = 1 - Omega_m
+        df["ns_fid"] = ns
+        df["As_fid"] = As
     return df
     
 
 # ## DEFINE PATHS TO CHAINS TO BE PLOTTED
 
 file_dirs = [
-    #["/pscratch/sd/l/lcabayol/P1D/mockChallengeLym1d/mock_challenge_v0/chains_fiducialMockChallenge/mock_v2.1.txt","lym1d"],
-    #"/pscratch/sd/l/lcabayol/P1D/mockChallengeLym1d/mock_challenge_v0/chains_Omh2_0.132/mock_v2.1.txt",
-    #"/pscratch/sd/l/lcabayol/P1D/mockChallengeLym1d/mock_challenge_v0/chains/mock_v2.1.txt"]
-    #["/pscratch/sd/l/lcabayol/P1D/mockChallengeLym1d/mock_challenge_v0/chains_H067/mock_v2.1.txt","lym1d"],
-    #["/pscratch/sd/l/lcabayol/P1D/mockChallengeLym1d/mock_challenge_v0/chains_H074/mock_v2.1.txt","lym1d"]]
-    ["/Users/lauracabayol/Documents/DESI/cup1d_chains/sampler_results_planck.npy","cup1d"],
-    ["/Users/lauracabayol/Documents/DESI/cup1d_chains/sampler_results_h74.npy","cup1d"]]
+    ["/Users/lauracabayol/Documents/DESI/cup1d_chains/sampler_results_nyxcentral.npy","cup1d"]
+    ]
     
 
 # ## OPEN AND SAVE CHAINS IN DATAFRAMES
@@ -109,8 +142,6 @@ dfs = []
 for file in file_dirs:
     df = open_Chain(file[0], file[1])    
     dfs.append(df)
-
-fitter_compressed_params = linPCosmologyCosmopower(cosmopower_model = "Pk_cp_NN_nrun")
 
 # +
 #The model expects the following parameter: h, m_ncdm, omch2, Omega_m, Omega_Lambda, ln_A_s_1e10, n_s, nrun.
@@ -123,7 +154,7 @@ fitter_compressed_params = linPCosmologyCosmopower(cosmopower_model = "Pk_cp_NN_
 
 param_mapping = {
     'h': 'h',
-    'mnu': 'mnu',
+    'mnu': 'm_ncdm',
     'omch2': 'omch2',
     'Omega_m': 'Omega_m',
     'Omega_Lambda': 'Omega_Lambda',
@@ -155,35 +186,35 @@ labels = ["$A_s$", "$n_s$"]
 create_corner_plot(list_of_dfs = dfs, 
                    params_to_plot = parameters_of_interest,
                    labels = labels, 
-                   colors = ['steelblue','crimson'], 
-                  legend_labels = [r"h = 0.67", r"h = 0.74"])
+                   colors = ['steelblue','crimson', 'goldenrod'], 
+                  legend_labels = [r"LaCE-Nyx (Planck)", r"LaCE-Nyx (Nyx)"])
 
 
-# -
+
+# +
+create_corner_plot(list_of_dfs = dfs, 
+                   params_to_plot = ["Delta2_star_cp", "n_star_cp"],
+                   labels = [r"$\Delta^2_*$", r"$n_*$"], 
+                   colors = ['steelblue','crimson', 'goldenrod'], 
+                  legend_labels = [r"LaCE-Nyx (Planck)", r"LaCE-Nyx (Nyx)"])
 
 
 
 # +
 #checking that CP is deriving the same parameters as those in the chain.
+ii = 0
+parameters_of_interest = ["Delta2_star", "n_star"]#, "alpha_star"]
+labels = [r"$\Delta^2_*$", r"$n_*$"]#, r"$\alpha_*$"]
 
-parameters_of_interest = ["Delta2_star", "n_star", "alpha_star"]
-labels = [r"$\Delta^2_*$", r"$n_*$", r"$\alpha_*$"]
+df_star_params = dfs[ii][["Delta2_star_cp", "n_star_cp", "alpha_star_cp"]].rename(columns = {"Delta2_star_cp": "Delta2_star", "n_star_cp": "n_star", "alpha_star_cp": "alpha_star"})
 
-create_corner_plot(list_of_dfs = [df_star_params.rename(columns = {"Delta2_star_cp": "Delta2_star", "n_star_cp": "n_star", "alpha_star_cp": "alpha_star"}), dfs[1]], 
+create_corner_plot(list_of_dfs = [df_star_params, dfs[ii]], 
                    params_to_plot = parameters_of_interest,
                    labels = labels, 
                    colors = ['steelblue','crimson'], 
                    legend_labels = [r"CP", r"Scaling CAMB"])
-
-# +
-parameters_of_interest = ["Delta2_star", "n_star", "alpha_star"]
-labels = [r"$\Delta^2_*$", r"$n_*$", r"$\alpha_*$"]
-
-create_corner_plot(list_of_dfs = dfs, 
-                   params_to_plot = parameters_of_interest,
-                   labels = labels, 
-                   colors = ['steelblue', 'crimson'], 
-                  legend_labels = [r"h=0.67", r"h=0.74"])
 # -
+
+
 
 
