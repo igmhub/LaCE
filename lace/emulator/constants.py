@@ -9,6 +9,7 @@ class TrainingSet(StrEnum):
     CABAYOL23 = "Cabayol23"
     NYX23_OCT2023 = "Nyx23_Oct2023"
     NYX23_JUL2024 = "Nyx23_Jul2024"
+    COMBINED = "Nyx+MPG"   
 
 
 class EmulatorLabel(StrEnum):
@@ -31,13 +32,14 @@ class EmulatorLabel(StrEnum):
     CABAYOL23_EXTENDED = "Cabayol23_extended"
     NYX_V0_EXTENDED = "Nyx_v0_extended"
     CABAYOL23_PLUS_EXTENDED = "Cabayol23+_extended"
-
+    COMBINED = "Nyx+MPG"
 
 GADGET_LABELS = {
     EmulatorLabel.PEDERSEN23_EXT,
     EmulatorLabel.CABAYOL23,
     EmulatorLabel.CABAYOL23_PLUS,
     EmulatorLabel.CABAYOL23_EXTENDED,
+    EmulatorLabel.COMBINED
 }
 NYX_LABELS = {
     EmulatorLabel.NYX_V0,
@@ -46,6 +48,7 @@ NYX_LABELS = {
     EmulatorLabel.NYX_ALPHAP_COV,
     EmulatorLabel.NYX_ALPHAP_COV_CENTRAL,
     EmulatorLabel.NYX_ALPHAP_EXTENDED,
+    EmulatorLabel.COMBINED
 }
 
 EMULATOR_PARAMS = {  # Model parameters for different emulators
@@ -212,9 +215,9 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
             "n_p",
             "alpha_p",
             "mF",
-            "sigT_Mpc",
+            #"sigT_Mpc",
             "gamma",
-            "kF_Mpc",
+            #"kF_Mpc",
         ],
         "emu_type": "polyfit",
         "kmax_Mpc": 4,
@@ -229,6 +232,30 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "amsgrad": True,
         "z_max": 5,
         "include_central": True,
+    },
+    "Nyx+MPG": {
+        "emu_params": [
+            "Delta2_p",
+            "n_p",
+            "alpha_p",
+            "mF",
+            "sigT_Mpc",
+            "gamma",
+            "kF_Mpc",
+        ],
+        "emu_type": "polyfit",
+        "kmax_Mpc": 4,
+        "ndeg": 6,
+        "nepochs": 600,
+        "step_size": 200,
+        "nhidden": 6,
+        "max_neurons": 400,
+        "lr0": 2.5e-4,
+        "weight_decay": 8e-3,
+        "batch_size": 500,
+        "amsgrad": True,
+        "z_max": 5,
+        "include_central": False,
     },
 }
 
@@ -281,6 +308,11 @@ EMULATOR_DESCRIPTIONS = {
     EmulatorLabel.CABAYOL23: (
         r"Neural network emulating the optimal P1D of Gadget simulations "
         "fitting coefficients to a 5th degree polynomial. It "
+        "goes to scales of 4Mpc^{-1} and z<=4.5."
+    ),
+    EmulatorLabel.COMBINED: (
+        r"Neural network emulating the optimal P1D of Gadget and Nyx simulations. As of today, it is not providing good results."
+        "fitting coefficients to a 6th degree polynomial. It "
         "goes to scales of 4Mpc^{-1} and z<=4.5."
     ),
 }
