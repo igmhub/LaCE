@@ -1,4 +1,4 @@
-# TRAINING OPTIONS
+# UNDER DEVELOPMENT SOLUTIONS
 
 There are several features that can be used to customize the training of the emulators. This tutorial will guide you through the process of training emulators with different options.
 
@@ -10,9 +10,9 @@ The emulator supports weighting the training simulations with a covariance matri
 
 To train an emulator with a covariance matrix, you need to provide a covariance matrix for the training simulations. Currently, the emulator only supports a diagonal covariance matrix. It is important that the covariance matrix is given in the __k__ binning of the training simulations.
 
-The function '_load_DESIY1_err' in the `nn_emulator.py` file loads a covariance matrix. The covariance must be a json file with the relative error as a function of __z__ for each __k__ bin.
+The function `_load_DESIY1_err` in the `nn_emulator.py` file loads a covariance matrix. The covariance must be a json file with the relative error as a function of __z__ for each __k__ bin.
 
-From the relative error file in 'data/DESI_cov/rel_err_DESI_Y1.npy', we can generate the json file with the following steps:
+From the relative error file in `data/DESI_cov/rel_err_DESI_Y1.npy`, we can generate the json file with the following steps:
 
 First we load the data from the relative error file:
 

@@ -5,7 +5,7 @@ Welcome to the LaCE developer documentation! This section contains information f
 ## Contents
 
 - [Creating New Emulators](CreateNewEmulator.md): Learn how to create and add new emulator types to LaCE
-- [Training Options](trainingOptions.md): Implemented solutions to improve the emulators performance
+- [Training Options](UnderDevelopment.md): Implemented solutions to improve the emulators performance
 - [Code Testing](advancedTesting.md): Information to mantain and extend the automated testing
 - [Documentation](documentation.md): How to write and maintain documentation
 

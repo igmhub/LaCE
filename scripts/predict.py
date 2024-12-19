@@ -101,6 +101,10 @@ def make_p1d_err_plot(p1ds_err: np.ndarray, kMpc_test: np.ndarray, zs_test: np.n
 
     plt.tight_layout()
     if config["save_plot_path"] is not None:
+        save_path = PROJ_ROOT / config["save_plot_path"]
+        if not save_path.parent.exists():
+            logger.warning(f"Creating directory {save_path.parent} as it does not exist")
+            save_path.parent.mkdir(parents=True)
         plt.savefig(PROJ_ROOT / config["save_plot_path"], bbox_inches='tight')
     plt.close()
     logger.info(f"P1D error plot saved to {PROJ_ROOT / config['save_plot_path']}")
@@ -109,17 +113,32 @@ def make_p1d_err_plot(p1ds_err: np.ndarray, kMpc_test: np.ndarray, zs_test: np.n
 def main():
     args = parse_args()
     config = load_config(args.config)
+    hyperparameters = {
+        key: (int(value) if key in ['ndeg', 'nepochs', 'step_size', 'nhidden', 'max_neurons', 'seed', 'batch_size']
+              else float(value) if key in ['kmax_Mpc', 'lr0', 'weight_decay', 'z_max']
+                  else bool(value) if key == 'weighted_emulator'
+                  else value)
+        for key, value in config["hyperparameters"].items()
+    }
 
     emu_params = config["emulator_params"]
     logger.info(f"Emulator parameters: {emu_params}")
     
-    archive = create_archive(config["archive"])
-
+    if config["archive"] is not None:
+        archive = create_archive(config["archive"])
+    
     logger.info("Setting up emulator")
-    emulator = set_emulator(
-        emulator_label=config["emulator_label"],
-        archive=archive,
-        drop_sim=config["drop_sim"])
+    if config["emulator_label"] is not None:
+        emulator = set_emulator(
+            emulator_label=config["emulator_label"],
+            archive=archive,
+                drop_sim=config["drop_sim"])
+    else:
+        emulator = NNEmulator(
+            archive=archive,
+            train=False,
+            models_dir=config["model_path"],
+            **hyperparameters)
     
     logger.info("Getting testing data")
     test_data = archive.get_testing_data(sim_label=config["sim_test"])
@@ -129,7 +148,12 @@ def main():
     make_p1d_err_plot(p1ds_err, kMpc_test, zs, config)
 
     if config["save_predictions_path"] is not None:
-        json.dump(predicted_p1d, PROJ_ROOT / open(PROJ_ROOT / config["save_predictions_path"], "w"))
+        save_path = PROJ_ROOT / config["save_predictions_path"]
+        if not save_path.parent.exists():
+            logger.warning(f"Creating directory {save_path.parent} as it does not exist")
+            save_path.parent.mkdir(parents=True)
+        with open(PROJ_ROOT / config["save_predictions_path"], "w") as f:
+            json.dump(predicted_p1d, f)
 
     logger.info("Main function completed")
 

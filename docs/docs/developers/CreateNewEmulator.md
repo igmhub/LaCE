@@ -90,10 +90,13 @@ emulator = emulator_manager(emulator_label="New_Emulator"
 ```
 
 In the first case, since you are specifying the `model path`, there is no naming convention for the model file. However, in the second case, the saved models must be stored in the following way:
+
 - The folder must be  `data/NNmodels/` from the root of the repository.
 - For a specific emulator label, you need to create a new folder, e.g. `New_Emulator`.
 - For the emulator using all training simulations, the model file is named `New_Emulator.pt`.
 - For the emulator using the training set excluding a given simulation, the model file is named `New_Emulator_drop_sim_{simulation suite}_{simulation index}.pt`. For example, if you exclude the 10th simulation from the mpg training set, the model file is named `New_Emulator_drop_sim_mpg_10.pt`.   
+
+**For this reason, if the emulator label is provided, it will be saved following the naming convention even if another model path is specified.**
 
 The emulator manager will automatically find the correct model file for the given emulator label. To set this up, you need to add the new emulator label to the `folder` dictionary in the `emulator_manager.py` file.
 ```python
