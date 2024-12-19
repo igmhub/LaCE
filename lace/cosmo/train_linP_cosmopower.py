@@ -171,15 +171,11 @@ def create_LH_sample(dict_params_ranges: dict,
                      nsamples: int=400000,
                      filename: str="LHS_params.npz"):
     
-    ombh2 =      np.linspace(dict_params_ranges['ombh2'][0], dict_params_ranges['ombh2'][1], nsamples)
-    omch2 =     np.linspace(dict_params_ranges['omch2'][0], dict_params_ranges['omch2'][1], nsamples)
-    H0 =         np.linspace(dict_params_ranges['H0'][0], dict_params_ranges['H0'][1], nsamples)
-    ns =        np.linspace(dict_params_ranges['ns'][0], dict_params_ranges['ns'][1], nsamples)
-    As =      np.linspace(dict_params_ranges['As'][0], dict_params_ranges['As'][1], nsamples)
-    mnu =       np.linspace(dict_params_ranges['mnu'][0], dict_params_ranges['mnu'][1], nsamples)
-    
+    params = {}
+    for param, range_values in dict_params_ranges.items():
+        params[param] = np.linspace(range_values[0], range_values[1], nsamples)
 
-    AllParams = np.vstack([ombh2, omch2, H0, ns, As, mnu])
+    AllParams = np.vstack(list(params.values()))
     n_params = len(AllParams)
 
     lhd = pyDOE.lhs(n_params, samples=nsamples, criterion=None)
@@ -189,13 +185,9 @@ def create_LH_sample(dict_params_ranges: dict,
     for i in range(n_params):
         AllCombinations[:, i] = AllParams[i][idx[:, i]]
 
-    params = {'omega_b': AllCombinations[:, 0],
-            'omega_cdm': AllCombinations[:, 1],
-            'H0': AllCombinations[:, 2],
-            'ns': AllCombinations[:, 3],
-            'As': AllCombinations[:, 4],
-            'mnu': AllCombinations[:, 5],
-            }
+    params = {}
+    for i, param in enumerate(dict_params_ranges.keys()):
+        params[param] = AllCombinations[:, i]
     
     np.savez(PROJ_ROOT / 'data' / 'cosmopower_models' / filename, **params)
         
@@ -209,16 +201,11 @@ def generate_training_spectra(input_LH_filename: str,
     if os.path.exists(PROJ_ROOT / 'data' / 'cosmopower_models' / output_filename):
         os.remove(PROJ_ROOT / 'data' / 'cosmopower_models' / output_filename)
 
-    for ii in tqdm(range(len(LH_params["H0"]))):
-        cosmo = get_cosmology(
-            H0=LH_params["H0"][ii],
-            mnu=LH_params["mnu"][ii],
-            omch2=LH_params["omega_cdm"][ii],
-            ombh2=LH_params["omega_b"][ii],
-            omk=0,
-            As=LH_params["As"][ii],
-            ns=LH_params["ns"][ii]  
-                        )
+    params_list = list(LH_params.keys())
+    for ii in tqdm(range(len(LH_params[params_list[0]]))):
+        cosmo_params = {param: LH_params[param][ii] for param in params_list}
+        cosmo_params["omk"] = 0
+        cosmo = get_cosmology(**cosmo_params)
 
         camb_results = get_camb_results(cosmo, 
                                         zs=[3])
@@ -231,7 +218,7 @@ def generate_training_spectra(input_LH_filename: str,
         )
 
         params_lhs = np.array([
-            LH_params[param][ii] for param in ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"] ])
+            LH_params[param][ii] for param in params_list ])
         
         cosmo_array = np.hstack((params_lhs, linP_Mpc.flatten()))
 
@@ -267,14 +254,14 @@ def cosmopower_prepare_training(params : List = ["H0", "mnu", "omega_cdm", "omeg
 
     logger.info(f"Number of valid spectra: {len(linear_log_spectra)}")
     
-    linear_parameters_dict = {params[i]: linear_parameters[:, i] for i in range(len(params))}
+    linear_parameters_dict = {params[i]: linear_parameters[:, i] for i in range(n_params)}
     linear_log_spectra_dict = {'modes': k_modes,
                             'features': linear_log_spectra}
     np.savez(PROJ_ROOT / "data" / "cosmopower_models" / "camb_linear_params.npz", **linear_parameters_dict)
     np.savez(PROJ_ROOT / "data" / "cosmopower_models" / "camb_linear_logpower.npz", **linear_log_spectra_dict)
 
 
-def cosmopower_train_model(model_params: List = ["H0", "mnu", "omega_cdm", "omega_b", "As", "ns"],
+def cosmopower_train_model(model_params: List,
                             model_save_filename: str = "Pk_cp_NN"):
     
     training_parameters = np.load(PROJ_ROOT / "data" / "cosmopower_models" / "camb_linear_params.npz")
