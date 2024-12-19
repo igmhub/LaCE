@@ -74,7 +74,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._validate_emulator_label()
         
-        archive, self.training_data = select_training(
+        archive, training_data = select_training(
             archive=archive,
             training_set=training_set,
             emu_params=self.emu_params,
@@ -87,13 +87,13 @@ class NNEmulator(base_emulator.BaseEmulator):
             print_func=self.print,
         )
 
-        self._check_consistency()
-        self._init_training_data(archive)
+        self._check_consistency(training_data)
+        self._init_training_data(archive, training_data)
 
         if not train:
-            self._load_pretrained_model()
+            self._load_pretrained_model(training_data)
         else:
-            self.train()
+            self.train(training_data)
             if self.save_path:
                 self.save_emulator()
 
@@ -136,26 +136,31 @@ class NNEmulator(base_emulator.BaseEmulator):
             for key, value in EMULATOR_PARAMS[self.emulator_label].items():
                 setattr(self, key, value)
 
-    def _init_training_data(self, archive) -> None:
+    def _init_training_data(self, 
+                            archive: gadget_archive.GadgetArchive,
+                            training_data: List[Dict]) -> None:
         """Initialize training data."""
-        self.print(f"Samples in training_set: {len(self.training_data)}")
+        self.print(f"Samples in training_set: {len(training_data)}")
         self.kp_Mpc = archive.kp_Mpc
 
-        mask = self.training_data[0]["k_Mpc"] > 0
-        self.kmin_Mpc = np.min(self.training_data[0]["k_Mpc"][mask])
+        mask = training_data[0]["k_Mpc"] > 0
+        self.kmin_Mpc = np.min(training_data[0]["k_Mpc"][mask])
         self._calculate_normalization(archive)
 
-    def _load_pretrained_model(self) -> None:
+    def _load_pretrained_model(self,
+                               training_data: List[Dict]) -> None:
         """Load pretrained model."""
         if self.model_path is None:
             raise ValueError("If train==False, model path is required.")
 
         pretrained_model = torch.load(self.models_dir / self.model_path, map_location="cpu")
-        self._setup_nn(pretrained_model["emulator"])
+        self._setup_nn(pretrained_model["emulator"], training_data)
         self.print("Model loaded. No training needed")
         self._check_model_consistency(pretrained_model["metadata"])
 
-    def _setup_nn(self, state_dict: Dict[str, torch.Tensor]) -> None:
+    def _setup_nn(self, 
+                  state_dict: Dict[str, torch.Tensor],
+                  training_data: List[Dict]) -> None:
         """Set up neural network."""
         self.nn = nn_architecture.MDNemulator_polyfit(
             nhidden=self.nhidden,
@@ -165,9 +170,10 @@ class NNEmulator(base_emulator.BaseEmulator):
         )
         self.nn.load_state_dict(state_dict)
         self.nn.to(self.device)
-        self._obtain_sim_params()
+        self._obtain_sim_params(training_data)
 
-    def _check_model_consistency(self, metadata: Dict[str, Any]) -> None:
+    def _check_model_consistency(self, 
+                                 metadata: Dict[str, Any]) -> None:
         """Check model consistency."""
         expected_values = {
             "emulator_label": self.emulator_label,
@@ -189,9 +195,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                 else:
                     raise ValueError(f"{key} mismatch: Expected '{expected}' but loaded '{loaded}'")
 
-    def _check_consistency(self) -> None:
+    def _check_consistency(self, 
+                           training_data: List[Dict]) -> None:
         """Check consistency between training data and emulator label."""
-        sim_label = self.training_data[0]["sim_label"][:3]
+        sim_label = training_data[0]["sim_label"][:3]
         if self.emulator_label in self.GADGET_LABELS and sim_label != "mpg":
             warn(f"Training data for {self.emulator_label} are not Gadget sims")
         elif self.emulator_label in self.NYX_LABELS and sim_label != "nyx":
@@ -222,14 +229,16 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         self.paramLims = np.column_stack((data.min(0), data.max(0)))
 
-    def _obtain_sim_params(self) -> torch.Tensor:
+    def _obtain_sim_params(self,
+                           training_data: List[Dict]) -> torch.Tensor:
         """Get simulation parameters."""
-        self.k_mask = [(d["k_Mpc"] < self.kmax_Mpc) & (d["k_Mpc"] > 0) for d in self.training_data]
-        k_Mpc_train = torch.Tensor([d["k_Mpc"][mask] for d, mask in zip(self.training_data, self.k_mask)])
+        self.k_mask = [(d["k_Mpc"] < self.kmax_Mpc) & (d["k_Mpc"] > 0) for d in training_data]
+        k_Mpc_train = np.array([d["k_Mpc"][mask] for d, mask in zip(training_data, self.k_mask)])
+        k_Mpc_train = torch.from_numpy(k_Mpc_train)
         self.k_Mpc = k_Mpc_train
         self.Nk = len(k_Mpc_train[0])
 
-        training_label = np.array([d["p1d_Mpc"][mask].tolist() for d, mask in zip(self.training_data, self.k_mask)])
+        training_label = np.array([d["p1d_Mpc"][mask].tolist() for d, mask in zip(training_data, self.k_mask)])
 
         if self.emulator_label not in ["Cabayol23", "Cabayol23_extended"]:
             for i, p1d in enumerate(training_label):
@@ -241,10 +250,11 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         return k_Mpc_train
 
-    def _get_training_data_nn(self) -> torch.Tensor:
+    def _get_training_data_nn(self,
+                              training_data: List[Dict]) -> torch.Tensor:
         """Get training data for neural network."""
         data = []
-        for entry in self.training_data:
+        for entry in training_data:
             data_dict = {}
             for param in self.emu_params:
                 try:
@@ -260,14 +270,15 @@ class NNEmulator(base_emulator.BaseEmulator):
         data = (data - self.paramLims[:, 0]) / (self.paramLims[:, 1] - self.paramLims[:, 0]) - 0.5
         return torch.Tensor(data)
 
-    def _get_training_cov(self) -> torch.Tensor:
+    def _get_training_cov(self,
+                          training_data: List[Dict]) -> torch.Tensor:
         """Get training covariance matrix."""
         if self.emulator_label == "Nyx_alphap_cov":
             training_cov = []
             self.Y1_relerr = self._load_DESIY1_err()
             z_values = np.array(list(self.Y1_relerr.keys()))
             
-            for entry in self.training_data:
+            for entry in training_data:
                 z = np.round(entry["z"], 1)
                 if z not in self.Y1_relerr:
                     z = z_values[np.abs(z_values - z).argmin()]
@@ -275,15 +286,16 @@ class NNEmulator(base_emulator.BaseEmulator):
                 
             training_cov = torch.Tensor(training_cov)
         else:
-            training_cov = torch.zeros((len(self.training_data), len(self.k_Mpc[0])))
+            training_cov = torch.zeros((len(training_data), len(self.k_Mpc[0])))
             
         return training_cov
 
-    def _get_rescalings_weights(self) -> torch.Tensor:
+    def _get_rescalings_weights(self,
+                               training_data: List[Dict]) -> torch.Tensor:
         """Get rescaling weights."""
-        weights = np.ones(len(self.training_data))
+        weights = np.ones(len(training_data))
         if self.emulator_label == "Nyx_alphap_cov":
-            mask = [(d['ind_rescaling'] not in [0,1] and d['z'] in [3,3.2]) for d in self.training_data]
+            mask = [(d['ind_rescaling'] not in [0,1] and d['z'] in [3,3.2]) for d in training_data]
             weights[np.where(mask)] = 1
         return torch.Tensor(weights)
 
@@ -292,9 +304,10 @@ class NNEmulator(base_emulator.BaseEmulator):
         with open(self.models_dir / "DESI_cov/rerr_DESI_Y1.json") as f:
             return {float(z): rel_error for z, rel_error in json.load(f).items()}
 
-    def _get_training_pd1_nn(self) -> torch.Tensor:
+    def _get_training_pd1_nn(self,
+                             training_data: List[Dict]) -> torch.Tensor:
         """Get p1d_Mpc training data."""
-        training_label = np.array([d["p1d_Mpc"][mask].tolist() for d, mask in zip(self.training_data, self.k_mask)])
+        training_label = np.array([d["p1d_Mpc"][mask].tolist() for d, mask in zip(training_data, self.k_mask)])
 
         if self.emulator_label not in ["Cabayol23", "Cabayol23_extended"]:
             for i, p1d in enumerate(training_label):
@@ -315,9 +328,10 @@ class NNEmulator(base_emulator.BaseEmulator):
             weights[self.k_Mpc[0] > 4] = torch.exp(-exp_values)
         return weights
 
-    def train(self) -> None:
+    def train(self, 
+              training_data: List[Dict]) -> None:
         """Train the emulator."""
-        k_Mpc_train = self._obtain_sim_params()
+        k_Mpc_train = self._obtain_sim_params(training_data)
         weights = self._set_weights().to(self.device)
         log_k_Mpc = torch.log10(k_Mpc_train).to(self.device)
         self.log_kMpc = log_k_Mpc
@@ -339,10 +353,10 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         scheduler = lr_scheduler.StepLR(optimizer, self.step_size, gamma=0.1)
 
-        training_data = self._get_training_data_nn()
-        training_label = self._get_training_pd1_nn()
-        training_cov = self._get_training_cov()
-        weights_rescalings = self._get_rescalings_weights()
+        training_data = self._get_training_data_nn(training_data)
+        training_label = self._get_training_pd1_nn(training_data)
+        training_cov = self._get_training_cov(training_data)
+        weights_rescalings = self._get_rescalings_weights(training_data)
 
         dataset = TensorDataset(training_data, training_label, training_cov, weights_rescalings, log_k_Mpc)
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
@@ -520,10 +534,11 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             return emu_p1d, covar
 
-    def check_hull(self) -> None:
+    def check_hull(self,
+                   training_data: List[Dict]) -> None:
         """Create convex hull of training data."""
         training_points = [
-            d for d in self.training_data 
+            d for d in training_data 
             if d["ind_axis"] == "average" and d["ind_phase"] == "average"
         ]
 
