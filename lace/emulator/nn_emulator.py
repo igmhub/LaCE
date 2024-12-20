@@ -53,6 +53,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         model_path: Optional[Path] = None,
         nyx_file: Optional[str] = None,
         weighted_emulator: bool = True,
+        filename_covariance: Optional[str] = "rerr_DESI_Y1.json",
         nhidden: int = 5,
         max_neurons: int = 50,
         seed: int = 32,
@@ -67,7 +68,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             emulator_label, training_set, emu_params, kmax_Mpc, ndeg, nepochs,
             step_size, save_path, model_path, drop_sim, drop_z, include_central,
             z_max, weighted_emulator, nhidden, fprint, lr0, max_neurons,
-            batch_size, weight_decay
+            batch_size, weight_decay, filename_covariance
         )
 
         self._set_random_seeds(seed)
@@ -105,7 +106,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             self.save_path, self.model_path, self.drop_sim, self.drop_z,
             self.include_central, self.z_max, self.weighted_emulator,
             self.nhidden, self.print, self.lr0, self.max_neurons,
-            self.batch_size, self.weight_decay
+            self.batch_size, self.weight_decay, self.filename_covariance
         ) = args
         
         self.models_dir = PROJ_ROOT / "data/"
@@ -301,7 +302,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
     def _load_DESIY1_err(self) -> Dict[float, List[float]]:
         """Load DESI Y1 error data."""
-        with open(self.models_dir / "DESI_cov/rerr_DESI_Y1.json") as f:
+        with open(self.models_dir / "DESI_cov" / self.filename_covariance) as f:
             return {float(z): rel_error for z, rel_error in json.load(f).items()}
 
     def _get_training_pd1_nn(self,
