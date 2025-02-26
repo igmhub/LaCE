@@ -12,6 +12,7 @@ camb_fluid = 8
 camb_fit_kmax_Mpc = 1.5
 # set kmax in transfer function beyond what you need (avoid warnings)
 camb_extra_kmax = 1.001
+clight_kms = 299792.458
 
 
 def get_cosmology(
@@ -350,6 +351,20 @@ def dkms_dMpc(cosmo, z, camb_results=None):
 
     h = cosmo.H0 / 100.0
     return h * dkms_dhMpc(cosmo, z, camb_results=camb_results)
+
+
+def dAA_dMpc(cosmo, z, lambda_AA, camb_results=None):
+    """Compute factor to translate wavelength separations (in AA) to comoving
+        separations (in Mpc).
+    Inputs:
+        - cosmo: CAMBparams object.
+        - z: redshift
+        - camb_results (optional): CAMBdata object, avoid calling get_results
+    """
+
+    _dkms_dMpc = dkms_dMpc(cosmo, z, camb_results=camb_results)
+    dAA_dkms = (1.0 + z) * lambda_AA / clight_kms
+    return _dkms_dMpc * dAA_dkms
 
 
 def dkms_dhMpc(cosmo, z, camb_results=None):
