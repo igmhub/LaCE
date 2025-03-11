@@ -14,6 +14,26 @@ from lace.emulator import base_emulator
 from lace.utils import poly_p1d
 from lace.utils.nonlinear_smoothing_p1d import Nonlinear_Smoothing
 
+from scipy.optimize import curve_fit
+import lace
+
+
+def func_poly(x, a, b, c, d, e, f, g):
+    return (
+        a * x**0.5
+        + b * x**0.75
+        + c * x
+        + d * x**2
+        + e * x**3
+        + f * x**4
+        + g * x**5
+    )
+
+
+def func_norm_logmF():
+    pfit = np.array([0.25705317, 1.04475434, -0.76853821, 0.01896378])
+    return np.poly1d(pfit)
+
 
 class GPEmulator(base_emulator.BaseEmulator):
     """
@@ -257,6 +277,28 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "gamma",
                     "kF_Mpc",
                 ]
+                self.func_norm = func_norm_logmF()
+
+                repo = os.path.dirname(lace.__path__[0])
+                fname = os.path.join(repo, "data", "norm_med_p1dff.npy")
+                self.input_norm = np.load(fname, allow_pickle=True).item()
+
+                self.zmax, self.kmax_Mpc, self.emu_type = (4.5, 4, "gpolyfit")
+
+            elif emulator_label == "CH24_old":
+                print(
+                    r"Gaussian Process emulator predicting the P1D at each k-bin after "
+                    + " applying smoothing. It goes to scales of 4 Mpc^{-1} and z<=4.5."
+                    + "The parameters passed to the emulator will be overwritten to match these ones."
+                )
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
                 self.zmax, self.kmax_Mpc, self.emu_type = (4.5, 4, "k_bin_sm")
                 # bandwidth for different k-ranges
                 self.smoothing_bn = [0.8, 0.4, 0.2]
@@ -281,6 +323,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         # GPs should probably avoid rescalings (low performance with large N)
         average = "both"
         val_scaling = 1
+        # val_scaling = None
         if archive.training_average != "both":
             warn("Enforce average=both in training of GP emulator")
         if archive.training_val_scaling != 1:
@@ -341,6 +384,31 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         return coeffs
 
+    def _training_points_gpolyfit(self):
+        """
+        Get the training points for polynomial fitting in the form of polynomial coefficients.
+
+        :return: Array of polynomial coefficients for each training data set.
+        :rtype: numpy.ndarray
+        """
+
+        # load otherwise
+        # store_fit = np.load("best_fitting_params_new.npy")
+        store_fit = self._gfit_p1d_in_archive()
+
+        # params2train = store_fit.copy()
+        # self.norm_mean = np.mean(store_fit, axis=0)
+        # self.norm_std = np.std(store_fit, axis=0)
+        # for ii in range(store_fit.shape[1]):
+        #     params2train[:, ii] = (
+        #         store_fit[:, ii] - self.norm_mean[ii]
+        #     ) / self.norm_std[ii]
+
+        # for ii, entry in enumerate(self.training_data):
+        #     entry["fit_p1d"] = params2train[ii, :]
+
+        return store_fit
+
     def _training_points_k_bin_sm(self):
         """
         Get the training points for k-bin smoothing in the form of smoothed P1D values.
@@ -389,6 +457,8 @@ class GPEmulator(base_emulator.BaseEmulator):
             trainingPoints = self._training_points_k_bin()
         elif self.emu_type == "polyfit":
             trainingPoints = self._training_points_polyfit()
+        elif self.emu_type == "gpolyfit":
+            trainingPoints = self._training_points_gpolyfit()
         elif self.emu_type == "k_bin_sm":
             trainingPoints = self._training_points_k_bin_sm()
         else:
@@ -425,6 +495,29 @@ class GPEmulator(base_emulator.BaseEmulator):
             entry[
                 "fit_p1d"
             ] = fit_p1d.lnP_fit  ## Add coeffs for each model to archive
+
+    def _gfit_p1d_in_archive(self):
+        """
+        Fit a function to the logarithm of P1D for each entry in the archive.
+        """
+
+        ind_k = (self.training_data[0]["k_Mpc"] > 0) & (
+            self.training_data[0]["k_Mpc"] < self.kmax_Mpc
+        )
+        k_Mpc = self.training_data[0]["k_Mpc"][ind_k]
+        k_fit = k_Mpc / self.kmax_Mpc
+        norm_use = np.interp(
+            k_Mpc, self.input_norm["kpar"], self.input_norm["p1d"]
+        )
+
+        store_fit = np.zeros((len(self.training_data), 7))
+
+        for ii, entry in enumerate(self.training_data):
+            norm = self.func_norm(np.log(entry["mF"])) * norm_use
+            y2fit = np.log(entry["p1d_Mpc"][ind_k] / norm)
+            store_fit[ii], _ = curve_fit(func_poly, k_fit, y2fit)
+
+        return store_fit
 
     def _k_bin_sm_p1d_in_archive(self, kmax_Mpc):
         """
@@ -781,6 +874,26 @@ class GPEmulator(base_emulator.BaseEmulator):
                 covar = covar[0]
 
             return p1d, covar
+
+        elif self.emu_type == "gpolyfit":
+            # gp_pred here are just the coefficients of func_poly
+
+            p1d = np.zeros((gp_pred.shape[0], k_Mpc.shape[1]))
+
+            for ii in range(gp_pred.shape[0]):
+                p1d_unorm = func_poly(k_Mpc[ii] / self.kmax_Mpc, *gp_pred[ii])
+                norm_use = np.interp(
+                    k_Mpc[ii], self.input_norm["kpar"], self.input_norm["p1d"]
+                )
+                if type(model["mF"]) == float:
+                    mF = model["mF"]
+                else:
+                    mF = model["mF"][ii]
+
+                norm = self.func_norm(np.log(mF)) * norm_use
+                p1d[ii] = np.exp(p1d_unorm) * norm
+
+            return p1d
 
         else:
             raise ValueError("wrong emulator type")

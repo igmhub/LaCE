@@ -38,6 +38,7 @@ GADGET_LABELS = {
     EmulatorLabel.CABAYOL23,
     EmulatorLabel.CABAYOL23_PLUS,
     EmulatorLabel.CABAYOL23_EXTENDED,
+    EmulatorLabel.CH24,
 }
 NYX_LABELS = {
     EmulatorLabel.NYX_V0,
@@ -49,6 +50,21 @@ NYX_LABELS = {
 }
 
 EMULATOR_PARAMS = {  # Model parameters for different emulators
+    "CH24": {
+        "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
+        "emu_type": "polyfit",
+        "kmax_Mpc": 4,
+        "ndeg": 5,
+        "nepochs": 100,
+        "step_size": 75,
+        "nhidden": 5,
+        "max_neurons": 100,
+        "lr0": 1e-3,
+        "weight_decay": 1e-4,
+        "batch_size": 100,
+        "amsgrad": False,
+        "include_central": False,
+    },
     "Cabayol23": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
         "emu_type": "polyfit",
@@ -233,6 +249,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
 }
 
 EMULATOR_DESCRIPTIONS = {
+    EmulatorLabel.CH24: (r"Testing"),
     EmulatorLabel.CABAYOL23_PLUS: (
         r"Neural network emulating the optimal P1D of Gadget simulations "
         "fitting coefficients to a 5th degree polynomial. It "
