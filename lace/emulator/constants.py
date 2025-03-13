@@ -21,6 +21,7 @@ class EmulatorLabel(StrEnum):
     PEDERSEN23_EXT = "Pedersen23_ext"
     PEDERSEN23_EXT8 = "Pedersen23_ext8"
     CH24 = "CH24"
+    CH24_NYX = "CH24_NYX"
     CABAYOL23 = "Cabayol23"
     CABAYOL23_PLUS = "Cabayol23+"
     NYX_V0 = "Nyx_v0"
@@ -47,10 +48,29 @@ NYX_LABELS = {
     EmulatorLabel.NYX_ALPHAP_COV,
     EmulatorLabel.NYX_ALPHAP_COV_CENTRAL,
     EmulatorLabel.NYX_ALPHAP_EXTENDED,
+    EmulatorLabel.CH24_NYX,
 }
 
 EMULATOR_PARAMS = {  # Model parameters for different emulators
     "CH24": {
+        "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
+        "emu_type": "gpolyfit",
+        "kmax_Mpc": 5,
+        "ndeg": 6,
+        "nepochs": 1000,
+        "step_size": 75,
+        "nhidden": 5,
+        "max_neurons": 100,
+        "lr0": 1e-3,
+        "weight_decay": 1e-4,
+        "batch_size": 25,
+        "amsgrad": True,
+        "include_central": False,
+        "gamma_optimizer": 0.75,
+        "weighted_emulator": False,
+        "average": "both",
+    },
+    "CH24_NYX": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
         "emu_type": "gpolyfit",
         "kmax_Mpc": 5,
@@ -262,7 +282,8 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
 }
 
 EMULATOR_DESCRIPTIONS = {
-    EmulatorLabel.CH24: (r"Testing"),
+    EmulatorLabel.CH24: (r"Testing mpg"),
+    EmulatorLabel.CH24_NYX: (r"Testing nyx"),
     EmulatorLabel.CABAYOL23_PLUS: (
         r"Neural network emulating the optimal P1D of Gadget simulations "
         "fitting coefficients to a 5th degree polynomial. It "
