@@ -52,18 +52,21 @@ NYX_LABELS = {
 EMULATOR_PARAMS = {  # Model parameters for different emulators
     "CH24": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
-        "emu_type": "polyfit",
-        "kmax_Mpc": 4,
-        "ndeg": 5,
-        "nepochs": 100,
+        "emu_type": "gpolyfit",
+        "kmax_Mpc": 5,
+        "ndeg": 6,
+        "nepochs": 1000,
         "step_size": 75,
         "nhidden": 5,
         "max_neurons": 100,
         "lr0": 1e-3,
         "weight_decay": 1e-4,
-        "batch_size": 100,
-        "amsgrad": False,
+        "batch_size": 25,
+        "amsgrad": True,
         "include_central": False,
+        "gamma_optimizer": 0.75,
+        "weighted_emulator": False,
+        "average": "both",
     },
     "Cabayol23": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
@@ -79,6 +82,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "batch_size": 100,
         "amsgrad": False,
         "include_central": False,
+        "average": "axes_phases_both",
     },
     "Cabayol23+": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
@@ -94,6 +98,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "batch_size": 100,
         "amsgrad": True,
         "include_central": False,
+        "average": "axes_phases_both",
     },
     "Nyx_v0": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
@@ -109,6 +114,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "batch_size": 100,
         "amsgrad": True,
         "include_central": False,
+        "average": "both",
     },
     "Nyx_alphap": {
         "emu_params": [
@@ -132,6 +138,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "batch_size": 100,
         "amsgrad": True,
         "include_central": False,
+        "average": "both",
     },
     "Nyx_alphap_extended": {
         "emu_params": [
@@ -155,6 +162,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "batch_size": 100,
         "amsgrad": True,
         "include_central": False,
+        "average": "both",
     },
     "Cabayol23_extended": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
@@ -170,6 +178,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "amsgrad": True,
         "weighted_emulator": False,
         "include_central": False,
+        "average": "axes_phases_both",
     },
     "Cabayol23+_extended": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
@@ -186,6 +195,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "amsgrad": True,
         "weighted_emulator": True,
         "include_central": False,
+        "average": "axes_phases_both",
     },
     "Nyx_v0_extended": {
         "emu_params": ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"],
@@ -197,6 +207,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "nhidden": 5,
         "weighted_emulator": True,
         "include_central": False,
+        "average": "both",
     },
     "Nyx_alphap_cov": {
         "emu_params": [
@@ -221,6 +232,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "amsgrad": True,
         "z_max": 5,
         "include_central": False,
+        "average": "both",
     },
     "Nyx_alphap_cov_central": {
         "emu_params": [
@@ -245,6 +257,7 @@ EMULATOR_PARAMS = {  # Model parameters for different emulators
         "amsgrad": True,
         "z_max": 5,
         "include_central": True,
+        "average": "both",
     },
 }
 

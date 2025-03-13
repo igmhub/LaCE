@@ -26,6 +26,7 @@ def select_training(
     nyx_file: str | None = None,
     train: bool = True,
     print_func: callable = print,
+    average: str = "both",
     kp_Mpc: float = 0.7,
     z_star: float = 3,
     kp_kms: float = 0.009,
@@ -79,6 +80,7 @@ def select_training(
             emu_params=emu_params,
             drop_sim=drop_sim,
             z_max=z_max,
+            average=average,
         )
     elif (training_set is None) and (archive is not None):
         print_func("Use custom archive provided by the user to train emulator")
@@ -87,6 +89,7 @@ def select_training(
             drop_sim=drop_sim,
             drop_z=drop_z,
             z_max=z_max,
+            average=average,
         )
 
     elif (training_set is not None) and (archive is not None):
@@ -103,6 +106,7 @@ def select_training(
                 drop_sim=drop_sim,
                 drop_z=drop_z,
                 z_max=z_max,
+                average=average,
             )
 
     return archive, training_data
