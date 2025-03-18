@@ -7,6 +7,7 @@ import time
 from warnings import warn
 from tqdm import tqdm
 from scipy.optimize import curve_fit
+from scipy.interpolate import interp1d
 
 # Torch related modules
 import torch
@@ -32,52 +33,77 @@ from lace.emulator.select_training import select_training
 
 
 from scipy.spatial import Delaunay
-from scipy.interpolate import interp1d
 
 
-def func_poly(x, a, b, c, d, e, f, g):
-    return (
-        a * x**0.5
-        + b * x**0.75
-        + c * x
-        + d * x**2
-        + e * x**3
-        + f * x**4
-        + g * x**5
-    )
+def func_poly(x, a, b, c, d, e):
+    return a + b * x**0.5 + c * x + d * x**2 + e * x**3
 
 
 def func_poly_train(y, ypars):
     x = y[None, :]
     pars = ypars[:, :, None]
-    res = (
-        pars[:, 0] * x**0.5
-        + pars[:, 1] * x**0.75
+    return (
+        pars[:, 0]
+        + pars[:, 1] * x**0.5
         + pars[:, 2] * x
         + pars[:, 3] * x**2
         + pars[:, 4] * x**3
-        + pars[:, 5] * x**4
-        + pars[:, 6] * x**5
     )
-    return res
 
 
 def func_poly_evaluate(x, pars):
-    res = (
-        pars[:, 0] * x**0.5
-        + pars[:, 1] * x**0.75
+    return (
+        pars[:, 0]
+        + pars[:, 1] * x**0.5
         + pars[:, 2] * x
         + pars[:, 3] * x**2
         + pars[:, 4] * x**3
-        + pars[:, 5] * x**4
-        + pars[:, 6] * x**5
     )
-    return res
 
 
-def func_norm_logmF():
-    pfit = np.array([0.25705317, 1.04475434, -0.76853821, 0.01896378])
-    return np.poly1d(pfit)
+# def func_poly(x, a, b, c, d, e, f, g):
+#     return (
+#         a * x**0.5
+#         + b * x**0.75
+#         + c * x
+#         + d * x**2
+#         + e * x**3
+#         + f * x**4
+#         + g * x**5
+#     )
+
+
+# def func_poly_train(y, ypars):
+#     x = y[None, :]
+#     pars = ypars[:, :, None]
+#     res = (
+#         pars[:, 0] * x**0.5
+#         + pars[:, 1] * x**0.75
+#         + pars[:, 2] * x
+#         + pars[:, 3] * x**2
+#         + pars[:, 4] * x**3
+#         + pars[:, 5] * x**4
+#         + pars[:, 6] * x**5
+#     )
+#     return res
+
+
+# def func_poly_evaluate(x, pars):
+#     res = (
+#         pars[:, 0] * x**0.5
+#         + pars[:, 1] * x**0.75
+#         + pars[:, 2] * x
+#         + pars[:, 3] * x**2
+#         + pars[:, 4] * x**3
+#         + pars[:, 5] * x**4
+#         + pars[:, 6] * x**5
+#     )
+#     return res
+
+
+# def func_norm_logmF():
+#     pfit = np.array([0.25705317, 1.04475434, -0.76853821, 0.01896378])
+#     return np.poly1d(pfit)
 
 
 def init_xavier(m):
@@ -205,14 +231,19 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             params = EMULATOR_PARAMS[emulator_label]
             for key, value in params.items():
-                # print(key, value)
+                print(key, value)
                 setattr(self, key, value)
 
         if emulator_label[:4] == "CH24":
             repo = os.path.dirname(lace.__path__[0])
-            fname = os.path.join(repo, "data", "norm_med_p1dff.npy")
+            fname = os.path.join(repo, "data", "ff_mpgcen.npy")
             self.input_norm = np.load(fname, allow_pickle=True).item()
-            self.func_norm = func_norm_logmF()
+            self.norm_imF = interp1d(
+                self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
+            )
+            self.pred_error = False
+        else:
+            self.pred_error = True
 
         if (emulator_label[:4] != "CH24") | (
             (emulator_label[:4] == "CH24") & train
@@ -273,17 +304,16 @@ class NNEmulator(base_emulator.BaseEmulator):
         self.nn.load_state_dict(state_dict)
         self.nn.to(self.device)
 
-        self.min_params = metadata["min_params"]
-        self.max_params = metadata["max_params"]
-        self.pred_error = metadata["pred_error"]
-        self.kmax_Mpc = metadata["kmax_Mpc"]
-        self.kmin_Mpc = metadata["kmin_Mpc"]
-        self.kp_Mpc = metadata["kp_Mpc"]
-
-        if self.emulator_label[:4] != "CH24":
-            self.yscalings = metadata["yscalings"]
-
-        # kMpc_train = self._obtain_sim_params()
+        if self.emulator_label[:4] == "CH24":
+            self.min_params = metadata["min_params"]
+            self.max_params = metadata["max_params"]
+            self.pred_error = metadata["pred_error"]
+            self.kmax_Mpc = metadata["kmax_Mpc"]
+            self.kmin_Mpc = metadata["kmin_Mpc"]
+            self.kp_Mpc = metadata["kp_Mpc"]
+        else:
+            # self.yscalings = metadata["yscalings"]
+            _ = self._obtain_sim_params()
 
     def _check_model_consistency(self, metadata):
         expected_values = {
@@ -378,69 +408,68 @@ class NNEmulator(base_emulator.BaseEmulator):
         data = [list(data[i].values()) for i in range(len(training_data_all))]
         data = np.array(data)
 
-        self.paramLims = np.concatenate(
-            (
-                data.min(0).reshape(len(data.min(0)), 1),
-                data.max(0).reshape(len(data.max(0)), 1),
-            ),
-            1,
-        )
+        self.min_params = np.min(data, axis=0)
+        self.max_params = np.max(data, axis=0)
 
-    # def _obtain_sim_params(self):
-    #     """
-    #     Obtains simulation parameters including k_Mpc and redshift values.
+        # self.paramLims = np.concatenate(
+        #     (
+        #         data.min(0).reshape(len(data.min(0)), 1),
+        #         data.max(0).reshape(len(data.max(0)), 1),
+        #     ),
+        #     1,
+        # )
 
-    #     Returns:
-    #         k_Mpc (np.ndarray): The simulation k values.
+    def _obtain_sim_params(self):
+        """
+        Obtains simulation parameters including k_Mpc and redshift values.
 
-    #     Side Effects:
-    #         - Sets the `self.k_Mpc`, `self.Nk`, and `self.yscalings` attributes.
-    #     """
-    #     self.k_mask = [
-    #         (self.training_data[i]["k_Mpc"] < self.kmax_Mpc)
-    #         & (self.training_data[i]["k_Mpc"] > 0)
-    #         for i in range(len(self.training_data))
-    #     ]
+        Returns:
+            k_Mpc (np.ndarray): The simulation k values.
 
-    #     k_Mpc_train = [
-    #         self.training_data[i]["k_Mpc"][self.k_mask[i]]
-    #         for i in range(len(self.training_data))
-    #     ]
-    #     Nk = len(k_Mpc_train[0])
-    #     self.Nk = Nk
-    #     self.k_Mpc = torch.Tensor(np.array(k_Mpc_train))
+        Side Effects:
+            - Sets the `self.k_Mpc`, `self.Nk`, and `self.yscalings` attributes.
+        """
+        self.k_mask = [
+            (self.training_data[i]["k_Mpc"] < self.kmax_Mpc)
+            & (self.training_data[i]["k_Mpc"] > 0)
+            for i in range(len(self.training_data))
+        ]
 
-    #     training_label = [
-    #         {
-    #             key: value
-    #             for key, value in self.training_data[i].items()
-    #             if key in ["p1d_Mpc"]
-    #         }
-    #         for i in range(len(self.training_data))
-    #     ]
+        k_Mpc_train = [
+            self.training_data[i]["k_Mpc"][self.k_mask[i]]
+            for i in range(len(self.training_data))
+        ]
+        self.kmin_Mpc = k_Mpc_train[0][0]
+        Nk = len(k_Mpc_train[0])
+        self.Nk = Nk
+        self.k_Mpc = torch.Tensor(np.array(k_Mpc_train))
 
-    #     training_label = [
-    #         training_label[i]["p1d_Mpc"][self.k_mask[i]].tolist()
-    #         for i in range(len(self.training_data))
-    #     ]
-    #     training_label = np.array(training_label)
+        training_label = [
+            {
+                key: value
+                for key, value in self.training_data[i].items()
+                if key in ["p1d_Mpc"]
+            }
+            for i in range(len(self.training_data))
+        ]
 
-    #     if self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
-    #         self.yscalings = np.median(training_label)
-    #     elif self.emulator_label == "CH24":
-    #         repo = os.path.dirname(lace.__path__[0])
-    #         fname = os.path.join(repo, "data", "norm_med_p1dff.npy")
-    #         self.input_norm = np.load(fname, allow_pickle=True).item()
-    #         self.yscalings = np.interp(
-    #             k_Mpc_train[0], self.input_norm["kpar"], self.input_norm["p1d"]
-    #         )
-    #     else:
-    #         for ii, p1d in enumerate(training_label):
-    #             fit_p1d = poly_p1d.PolyP1D(self.k_Mpc[ii], p1d, deg=self.ndeg)
-    #             training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc[ii])
-    #         self.yscalings = np.median(np.log(training_label))
+        training_label = [
+            training_label[i]["p1d_Mpc"][self.k_mask[i]].tolist()
+            for i in range(len(self.training_data))
+        ]
+        training_label = np.array(training_label)
 
-    #     return k_Mpc_train
+        if self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
+            self.yscalings = np.median(training_label)
+        elif self.emulator_label[:4] == "CH24":
+            pass
+        else:
+            for ii, p1d in enumerate(training_label):
+                fit_p1d = poly_p1d.PolyP1D(self.k_Mpc[ii], p1d, deg=self.ndeg)
+                training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc[ii])
+            self.yscalings = np.median(np.log(training_label))
+
+        return k_Mpc_train
 
     def _get_training_data_nn(self):
         """
@@ -461,9 +490,6 @@ class NNEmulator(base_emulator.BaseEmulator):
         x_fit = k_Mpc_mask / self.kmax_Mpc
 
         if self.emulator_label[:4] == "CH24":
-            norm_use = np.interp(
-                k_Mpc_mask, self.input_norm["kpar"], self.input_norm["p1d"]
-            )
             yscalings = np.zeros((len(self.training_data), len(x_fit)))
         train_p1d = np.zeros((len(self.training_data), len(x_fit)))
 
@@ -485,7 +511,12 @@ class NNEmulator(base_emulator.BaseEmulator):
             if self.emulator_label[:4] == "CH24":
                 # smooth version goes into likelihood
                 # normalize and compute parameters of fit
-                yscalings[ii] = self.func_norm(np.log(entry["mF"])) * norm_use
+                yscalings[ii] = np.interp(
+                    k_Mpc_mask,
+                    self.input_norm["k_Mpc"],
+                    self.norm_imF(entry["mF"]),
+                )
+                # yscalings[ii] = self.func_norm(np.log(entry["mF"])) * norm_use
                 store_fit, _ = curve_fit(
                     func_poly,
                     x_fit,
@@ -551,14 +582,13 @@ class NNEmulator(base_emulator.BaseEmulator):
             self.Y1_relerr = self._load_DESIY1_err()
             z_values = np.array(list(self.Y1_relerr.keys()))
             for ii in range(len(self.training_data)):
-                z = np.round(self.training_data[ii]["z"], 1)
+                z = np.round(self.training_data[ii]["z"], 2)
                 # Find closest z value if exact match not found
                 if z not in self.Y1_relerr:
                     closest_z = z_values[np.abs(z_values - z).argmin()]
                     z = closest_z
                 training_cov.append(self.Y1_relerr[z])
-            training_cov = np.array(training_cov)
-            training_cov = torch.Tensor(training_cov)
+            training_cov = torch.Tensor(np.array(training_cov))
         else:
             training_cov = np.zeros(shape=(len(self.training_data), len(k_Mpc)))
             training_cov = torch.Tensor(training_cov)
@@ -587,7 +617,10 @@ class NNEmulator(base_emulator.BaseEmulator):
             self.models_dir / "DESI_cov/rerr_DESI_Y1.json", "r"
         ) as json_file:
             z_to_rel = json.load(json_file)
-        z_to_rel = {float(z): rel_error for z, rel_error in z_to_rel.items()}
+        z_to_rel = {
+            np.round(float(z), 2): rel_error
+            for z, rel_error in z_to_rel.items()
+        }
 
         return z_to_rel
 
@@ -794,7 +827,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             "kp_Mpc": self.kp_Mpc,
         }
 
-        if self.emulator_label != "CH24":
+        if self.emulator_label[:4] != "CH24":
             metadata["yscalings"] = self.yscalings
 
         # Combine model_state_dict and metadata into a single dictionary
@@ -882,21 +915,20 @@ class NNEmulator(base_emulator.BaseEmulator):
             # k_Mpc tensor
             if self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
                 x_P1Ds = torch.log(k_Mpc).to(self.device)
-            elif self.emulator_label == "CH24":
+            elif self.emulator_label[:4] == "CH24":
                 x_P1Ds = torch.Tensor(k_Mpc / self.kmax_Mpc).to(self.device)
                 norm_use = np.zeros_like(k_Mpc)
                 for ii in range(k_Mpc.shape[0]):
                     norm_use[ii] = np.interp(
-                        k_Mpc[ii],
-                        self.input_norm["kpar"],
-                        self.input_norm["p1d"],
+                        k_Mpc,
+                        self.input_norm["k_Mpc"],
+                        self.norm_imF(mF[ii]),
                     )
-                yscalings = self.func_norm(np.log(mF))[:, None] * norm_use
-                yscalings = torch.Tensor(yscalings).to(self.device)
+                yscalings = torch.Tensor(norm_use).to(self.device)
             else:
-                x_P1Ds = torch.log10(k_Mpc).to(self.device)
+                x_P1Ds = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
 
-            if self.emulator_label == "CH24":
+            if self.emulator_label[:4] == "CH24":
                 emu_p1d = func_poly_evaluate(x_P1Ds, coeffsPred[0])
             else:
                 powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
@@ -910,7 +942,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             if self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
                 emu_p1d = 10 ** (emu_p1d) * self.yscalings
-            elif self.emulator_label == "CH24":
+            elif self.emulator_label[:4] == "CH24":
                 emu_p1d = yscalings * np.exp(emu_p1d)
             else:
                 emu_p1d = np.exp(emu_p1d * self.yscalings**2)
