@@ -35,11 +35,11 @@ from lace.emulator.select_training import select_training
 from scipy.spatial import Delaunay
 
 
-def func_poly(x, a, b, c, d, e):
+def func_poly1(x, a, b, c, d, e):
     return a + b * x**0.5 + c * x + d * x**2 + e * x**3
 
 
-def func_poly_train(y, ypars):
+def func_poly1_train(y, ypars):
     x = y[None, :]
     pars = ypars[:, :, None]
     return (
@@ -51,7 +51,7 @@ def func_poly_train(y, ypars):
     )
 
 
-def func_poly_evaluate(x, pars):
+def func_poly1_evaluate(x, pars):
     return (
         pars[:, 0]
         + pars[:, 1] * x**0.5
@@ -61,49 +61,44 @@ def func_poly_evaluate(x, pars):
     )
 
 
-# def func_poly(x, a, b, c, d, e, f, g):
-#     return (
-#         a * x**0.5
-#         + b * x**0.75
-#         + c * x
-#         + d * x**2
-#         + e * x**3
-#         + f * x**4
-#         + g * x**5
-#     )
+def func_poly2(x, a, b, c, d, e, f, g):
+    return (
+        a
+        + b * x**0.5
+        + c * x**0.75
+        + d * x
+        + e * x**2
+        + f * x**3
+        + g * x**4
+    )
 
 
-# def func_poly_train(y, ypars):
-#     x = y[None, :]
-#     pars = ypars[:, :, None]
-#     res = (
-#         pars[:, 0] * x**0.5
-#         + pars[:, 1] * x**0.75
-#         + pars[:, 2] * x
-#         + pars[:, 3] * x**2
-#         + pars[:, 4] * x**3
-#         + pars[:, 5] * x**4
-#         + pars[:, 6] * x**5
-#     )
-#     return res
+def func_poly2_train(y, ypars):
+    x = y[None, :]
+    pars = ypars[:, :, None]
+    res = (
+        pars[:, 0]
+        + pars[:, 1] * x**0.5
+        + pars[:, 2] * x**0.75
+        + pars[:, 3] * x
+        + pars[:, 4] * x**2
+        + pars[:, 5] * x**3
+        + pars[:, 6] * x**4
+    )
+    return res
 
 
-# def func_poly_evaluate(x, pars):
-#     res = (
-#         pars[:, 0] * x**0.5
-#         + pars[:, 1] * x**0.75
-#         + pars[:, 2] * x
-#         + pars[:, 3] * x**2
-#         + pars[:, 4] * x**3
-#         + pars[:, 5] * x**4
-#         + pars[:, 6] * x**5
-#     )
-#     return res
-
-
-# def func_norm_logmF():
-#     pfit = np.array([0.25705317, 1.04475434, -0.76853821, 0.01896378])
-#     return np.poly1d(pfit)
+def func_poly2_evaluate(x, pars):
+    res = (
+        pars[:, 0]
+        + pars[:, 1] * x**0.5
+        + pars[:, 2] * x**0.75
+        + pars[:, 3] * x
+        + pars[:, 4] * x**2
+        + pars[:, 5] * x**3
+        + pars[:, 6] * x**4
+    )
+    return res
 
 
 def init_xavier(m):
@@ -231,10 +226,20 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             params = EMULATOR_PARAMS[emulator_label]
             for key, value in params.items():
-                print(key, value)
+                # print(key, value)
                 setattr(self, key, value)
 
         if emulator_label[:4] == "CH24":
+            # we use different functions for the fits
+            if emulator_label == "CH24":
+                self.func_poly = func_poly1
+                self.func_poly_train = func_poly1_train
+                self.func_poly_evaluate = func_poly1_evaluate
+            elif emulator_label == "CH24_NYX":
+                self.func_poly = func_poly2
+                self.func_poly_train = func_poly2_train
+                self.func_poly_evaluate = func_poly2_evaluate
+
             repo = os.path.dirname(lace.__path__[0])
             fname = os.path.join(repo, "data", "ff_mpgcen.npy")
             self.input_norm = np.load(fname, allow_pickle=True).item()
@@ -311,6 +316,8 @@ class NNEmulator(base_emulator.BaseEmulator):
             self.kmax_Mpc = metadata["kmax_Mpc"]
             self.kmin_Mpc = metadata["kmin_Mpc"]
             self.kp_Mpc = metadata["kp_Mpc"]
+            self.tscalings_mean = torch.Tensor(metadata["tscalings_mean"])
+            self.tscalings_std = torch.Tensor(metadata["tscalings_std"])
         else:
             # self.yscalings = metadata["yscalings"]
             _ = self._obtain_sim_params()
@@ -491,6 +498,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         if self.emulator_label[:4] == "CH24":
             yscalings = np.zeros((len(self.training_data), len(x_fit)))
+            store_fit = np.zeros((len(self.training_data), self.ndeg + 1))
         train_p1d = np.zeros((len(self.training_data), len(x_fit)))
 
         # loop over archive to extract x and y data
@@ -517,22 +525,15 @@ class NNEmulator(base_emulator.BaseEmulator):
                     self.norm_imF(entry["mF"]),
                 )
                 # yscalings[ii] = self.func_norm(np.log(entry["mF"])) * norm_use
-                store_fit, _ = curve_fit(
-                    func_poly,
+                store_fit[ii], _ = curve_fit(
+                    self.func_poly,
                     x_fit,
                     np.log(entry["p1d_Mpc"][mask] / yscalings[ii]),
                 )
                 # evaluate the fit
                 train_p1d[ii] = yscalings[ii] * np.exp(
-                    func_poly(x_fit, *store_fit)
+                    self.func_poly(x_fit, *store_fit[ii])
                 )
-
-                # XXX
-                # if ii == 0:
-                #     print(store_fit)
-                #     plt.plot(k_Mpc_mask, k_Mpc_mask * train_p1d[ii])
-                #     plt.plot(k_Mpc_mask, k_Mpc_mask * entry["p1d_Mpc"][mask])
-
             else:
                 # original version, no smoothing!
                 train_p1d[ii] = entry["p1d_Mpc"][mask]
@@ -542,7 +543,11 @@ class NNEmulator(base_emulator.BaseEmulator):
             self.yscalings = np.median(train_p1d, axis=0)
             train_p1d = np.log10(train_p1d / self.yscalings[None, :])
         elif self.emulator_label[:4] == "CH24":
-            pass
+            # normalize best-fitting parameters
+            # self.tscalings_mean = np.mean(store_fit, axis=0)
+            # self.tscalings_std = np.std(store_fit, axis=0)
+            self.tscalings_mean = torch.Tensor(np.mean(store_fit, axis=0))
+            self.tscalings_std = torch.Tensor(np.std(store_fit, axis=0))
         else:
             fit_p1d = np.zeros((len(self.training_data), len(x_fit)))
             for ii in range(len(train_p1d)):
@@ -737,8 +742,11 @@ class NNEmulator(base_emulator.BaseEmulator):
 
                 # transform back from coeff to P1D
                 if self.emulator_label[:4] == "CH24":
+                    coeffsPred2 = (
+                        coeffsPred * self.tscalings_std + self.tscalings_mean
+                    )
                     P1Dpred = yscalings * torch.exp(
-                        func_poly_train(x_P1Ds, coeffsPred)
+                        self.func_poly_train(x_P1Ds, coeffsPred2)
                     )
                 else:
                     powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
@@ -825,6 +833,8 @@ class NNEmulator(base_emulator.BaseEmulator):
             "kmax_Mpc": self.kmax_Mpc,
             "kmin_Mpc": self.kmin_Mpc,
             "kp_Mpc": self.kp_Mpc,
+            "tscalings_mean": self.tscalings_mean.detach().cpu().numpy(),
+            "tscalings_std": self.tscalings_std.detach().cpu().numpy(),
         }
 
         if self.emulator_label[:4] != "CH24":
@@ -912,6 +922,8 @@ class NNEmulator(base_emulator.BaseEmulator):
             else:
                 coeffsPred = res_call
 
+            # print(coeffsPred)
+
             # k_Mpc tensor
             if self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
                 x_P1Ds = torch.log(k_Mpc).to(self.device)
@@ -929,7 +941,10 @@ class NNEmulator(base_emulator.BaseEmulator):
                 x_P1Ds = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
 
             if self.emulator_label[:4] == "CH24":
-                emu_p1d = func_poly_evaluate(x_P1Ds, coeffsPred[0])
+                coeffsPred2 = (
+                    coeffsPred[0] * self.tscalings_std + self.tscalings_mean
+                )
+                emu_p1d = self.func_poly_evaluate(x_P1Ds, coeffsPred2)
             else:
                 powers = torch.arange(0, self.ndeg + 1, 1).to(self.device)
                 # TODO check next line!
