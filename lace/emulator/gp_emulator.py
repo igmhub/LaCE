@@ -18,21 +18,8 @@ from scipy.optimize import curve_fit
 import lace
 
 
-def func_poly(x, a, b, c, d, e, f, g):
-    return (
-        a * x**0.5
-        + b * x**0.75
-        + c * x
-        + d * x**2
-        + e * x**3
-        + f * x**4
-        + g * x**5
-    )
-
-
-def func_norm_logmF():
-    pfit = np.array([0.25705317, 1.04475434, -0.76853821, 0.01896378])
-    return np.poly1d(pfit)
+def func_poly(x, a, b, c, d, e):
+    return a + b * x**0.5 + c * x + d * x**2 + e * x**3
 
 
 class GPEmulator(base_emulator.BaseEmulator):
@@ -134,7 +121,8 @@ class GPEmulator(base_emulator.BaseEmulator):
             "Pedersen23_ext",
             "Pedersen21_ext8",
             "Pedersen23_ext8",
-            "CH24",
+            "CH24_mpg_gp",
+            "CH24_nyx_gp",
         ]
         if emulator_label is not None:
             if emulator_label in emulator_label_all:
@@ -263,12 +251,13 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "polyfit",
                 )
 
-            elif emulator_label == "CH24":
+            elif emulator_label == "CH24_mpg_gp":
                 print(
                     r"Gaussian Process emulator predicting the P1D at each k-bin after "
                     + " applying smoothing. It goes to scales of 4 Mpc^{-1} and z<=4.5."
                     + "The parameters passed to the emulator will be overwritten to match these ones."
                 )
+                self.func_poly = func_poly
                 self.emu_params = [
                     "Delta2_p",
                     "n_p",
@@ -277,13 +266,40 @@ class GPEmulator(base_emulator.BaseEmulator):
                     "gamma",
                     "kF_Mpc",
                 ]
-                self.func_norm = func_norm_logmF()
 
                 repo = os.path.dirname(lace.__path__[0])
-                fname = os.path.join(repo, "data", "norm_med_p1dff.npy")
+                fname = os.path.join(repo, "data", "ff_mpgcen.npy")
                 self.input_norm = np.load(fname, allow_pickle=True).item()
+                self.norm_imF = interp1d(
+                    self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
+                )
 
-                self.zmax, self.kmax_Mpc, self.emu_type = (4.5, 4, "gpolyfit")
+                self.zmax, self.kmax_Mpc, self.emu_type = (4.5, 5, "gpolyfit")
+
+            elif emulator_label == "CH24_nyx_gp":
+                print(
+                    r"Gaussian Process emulator predicting the P1D at each k-bin after "
+                    + " applying smoothing. It goes to scales of 4 Mpc^{-1} and z<=4.5."
+                    + "The parameters passed to the emulator will be overwritten to match these ones."
+                )
+                self.func_poly = func_poly
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "alpha_p" "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+
+                repo = os.path.dirname(lace.__path__[0])
+                fname = os.path.join(repo, "data", "ff_mpgcen.npy")
+                self.input_norm = np.load(fname, allow_pickle=True).item()
+                self.norm_imF = interp1d(
+                    self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
+                )
+
+                self.zmax, self.kmax_Mpc, self.emu_type = (4.5, 5, "gpolyfit")
 
             elif emulator_label == "CH24_old":
                 print(
@@ -309,25 +325,40 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         # If none, take all parameters
         if emu_params == None:
-            self.emu_params = [
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-                "Delta2_p",
-                "n_p",
-            ]
+            if "nyx" in emulator_label:
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "alpha_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
+            else:
+                self.emu_params = [
+                    "Delta2_p",
+                    "n_p",
+                    "mF",
+                    "sigT_Mpc",
+                    "gamma",
+                    "kF_Mpc",
+                ]
         else:
             self.emu_params = emu_params
 
         # GPs should probably avoid rescalings (low performance with large N)
         average = "both"
-        val_scaling = 1
+
+        if "nyx" not in emulator_label:
+            val_scaling = 1
+            if archive.training_val_scaling != 1:
+                warn("Enforce val_scalinge=1 in training of GP emulator")
+        else:
+            val_scaling = None
         # val_scaling = None
         if archive.training_average != "both":
             warn("Enforce average=both in training of GP emulator")
-        if archive.training_val_scaling != 1:
-            warn("Enforce val_scalinge=1 in training of GP emulator")
 
         # keep track of training data to be used in emulator
         self.training_data = archive.get_training_data(
@@ -392,20 +423,9 @@ class GPEmulator(base_emulator.BaseEmulator):
         :rtype: numpy.ndarray
         """
 
-        # load otherwise
-        # store_fit = np.load("best_fitting_params_new.npy")
         store_fit = self._gfit_p1d_in_archive()
-
-        # params2train = store_fit.copy()
-        # self.norm_mean = np.mean(store_fit, axis=0)
-        # self.norm_std = np.std(store_fit, axis=0)
-        # for ii in range(store_fit.shape[1]):
-        #     params2train[:, ii] = (
-        #         store_fit[:, ii] - self.norm_mean[ii]
-        #     ) / self.norm_std[ii]
-
-        # for ii, entry in enumerate(self.training_data):
-        #     entry["fit_p1d"] = params2train[ii, :]
+        self.tscalings_mean = np.mean(store_fit, axis=0)
+        self.tscalings_std = np.std(store_fit, axis=0)
 
         return store_fit
 
@@ -506,16 +526,18 @@ class GPEmulator(base_emulator.BaseEmulator):
         )
         k_Mpc = self.training_data[0]["k_Mpc"][ind_k]
         k_fit = k_Mpc / self.kmax_Mpc
-        norm_use = np.interp(
-            k_Mpc, self.input_norm["kpar"], self.input_norm["p1d"]
-        )
 
-        store_fit = np.zeros((len(self.training_data), 7))
+        store_fit = np.zeros((len(self.training_data), self.ndeg + 1))
 
         for ii, entry in enumerate(self.training_data):
-            norm = self.func_norm(np.log(entry["mF"])) * norm_use
+            norm = np.interp(
+                k_Mpc, self.input_norm["k_Mpc"], self.norm_imF(entry["mF"])
+            )
+
             y2fit = np.log(entry["p1d_Mpc"][ind_k] / norm)
-            store_fit[ii], _ = curve_fit(func_poly, k_fit, y2fit)
+            store_fit[ii], _ = curve_fit(self.func_poly, k_fit, y2fit)
+            # if ii < 10:
+            #     print(store_fit[ii])
 
         return store_fit
 
@@ -560,17 +582,23 @@ class GPEmulator(base_emulator.BaseEmulator):
         ## Get parameter limits for rescaling
         self.param_limits = self._get_param_limits(self.X_param_grid)
 
-        ## Rescaling to unit volume
+        ## Rescaling data
         for cc in range(len(self.training_data)):
             self.X_param_grid[cc] = self._rescale_params(self.X_param_grid[cc])
+
         if self.verbose:
             print("Rescaled params to unity volume")
 
-        ## Factors by which to rescale the flux to set a mean of 0
-        self.scalefactors = np.median(self.Ypoints, axis=0)
+        if self.emu_type != "gpolyfit":
+            ## Factors by which to rescale the flux to set a mean of 0
+            self.scalefactors = np.median(self.Ypoints, axis=0)
 
-        # Normalise by the median value
-        self.normspectra = (self.Ypoints / self.scalefactors) - 1.0
+            # Normalise by the median value
+            self.normspectra = (self.Ypoints / self.scalefactors) - 1.0
+        else:
+            self.normspectra = (
+                self.Ypoints - self.tscalings_mean
+            ) / self.tscalings_std
 
         kernel = GPy.kern.RBF(len(self.emu_params), ARD=True)
 
@@ -741,8 +769,12 @@ class GPEmulator(base_emulator.BaseEmulator):
         else:
             pred, var = self.gp.predict(emu_call)
 
-        out_pred = (pred + 1) * self.scalefactors
-        out_err = np.sqrt(var) * self.scalefactors
+        if self.emu_type != "gpolyfit":
+            out_pred = (pred + 1) * self.scalefactors
+            out_err = np.sqrt(var) * self.scalefactors
+        else:
+            out_pred = pred * self.tscalings_std + self.tscalings_mean
+            out_err = np.sqrt(var) * self.tscalings_std
 
         return out_pred, out_err
 
@@ -881,16 +913,18 @@ class GPEmulator(base_emulator.BaseEmulator):
             p1d = np.zeros((gp_pred.shape[0], k_Mpc.shape[1]))
 
             for ii in range(gp_pred.shape[0]):
-                p1d_unorm = func_poly(k_Mpc[ii] / self.kmax_Mpc, *gp_pred[ii])
-                norm_use = np.interp(
-                    k_Mpc[ii], self.input_norm["kpar"], self.input_norm["p1d"]
+                p1d_unorm = self.func_poly(
+                    k_Mpc[ii] / self.kmax_Mpc, *gp_pred[ii]
                 )
-                if type(model["mF"]) == float:
-                    mF = model["mF"]
-                else:
-                    mF = model["mF"][ii]
 
-                norm = self.func_norm(np.log(mF)) * norm_use
+                try:
+                    mF = model["mF"][ii]
+                except:
+                    mF = model["mF"]
+
+                norm = np.interp(
+                    k_Mpc[ii], self.input_norm["k_Mpc"], self.norm_imF(mF)
+                )
                 p1d[ii] = np.exp(p1d_unorm) * norm
 
             return p1d

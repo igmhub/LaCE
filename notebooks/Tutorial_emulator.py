@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.4
+#       jupytext_version: 1.16.1
 #   kernelspec:
-#     display_name: lace
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -41,6 +41,184 @@ from lace.emulator.emulator_manager import set_emulator
 # %%
 # %%time
 emulator_C23 = set_emulator(emulator_label="Cabayol23+")
+
+# %%
+# No need to load archive, just training set, to speed out process
+
+# %%
+
+from lace.archive import gadget_archive
+from lace.archive import nyx_archive
+from lace.emulator.nn_emulator import NNEmulator
+from lace.emulator.gp_emulator import GPEmulator
+from cup1d.likelihood.pipeline import set_archive
+
+# %%
+
+training_set = "Nyx23_Jul2024"
+archive_nyx = set_archive(training_set)
+
+# %%
+
+emulator = GPEmulator(archive=archive_nyx, emulator_label="CH24_nyx_gp")
+
+
+# %% [markdown]
+# ## 2 min, need to save
+
+# %%
+archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
+
+# %%
+# emulator = set_emulator(emulator_label="CH24")
+emulator = GPEmulator(archive=archive, emulator_label="CH24_mpg_gp")
+
+# %%
+archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
+# emulator = GPEmulator(archive=archive, emulator_label="Pedersen23_ext")
+
+# %% [markdown]
+# SAVE_EMU!!! With everything, no need to read data
+
+# %%
+k_Mpc = np.geomspace(0.1, 3, 100)
+input_params = {
+    'Delta2_p': [0.30, 0.30],
+    'n_p': [-2.301, -2.3],
+    'alpha_p': [-0.215, -0.215],
+    'mF': [0.66, 0.66],
+    'gamma': [1.5, 1.5],
+    'sigT_Mpc': [0.128, 0.128],
+    'kF_Mpc': [10.5, 10.5]
+}
+p1d = emulator.emulate_p1d_Mpc(input_params, k_Mpc)
+# p1d = emulator.emulate_p1d_Mpc(testing_data[0],kMpc)
+
+for ii in range(p1d.shape[0]):
+    plt.plot(k_Mpc, k_Mpc * p1d[ii]/np.pi)
+    
+plt.xlabel(r'$k_\parallel$ [1/Mpc]')
+plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
+plt.xscale('log')
+
+# %%
+plt.plot(k_Mpc, p1d[1]/p1d[0]-1)
+
+# %%
+archive = archive_nyx
+
+# %%
+emu_params = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
+training_data = archive.get_training_data(emu_params, average="both")
+
+# %%
+training_data = archive.get_testing_data("nyx_central")
+
+# %%
+from lace.emulator.gp_emulator import func_poly
+from scipy.optimize import curve_fit
+from scipy.interpolate import interp1d
+from lace.utils import poly_p1d
+
+# %%
+
+# repo = os.path.dirname(lace.__path__[0])
+# fname = os.path.join(repo, "data", "ff_mpgcen.npy")
+# input_norm = np.load(fname, allow_pickle=True).item()
+# norm_imF = interp1d(
+#     input_norm["mF"], input_norm["p1d_Mpc_mF"], axis=0
+# )
+
+# %%
+_k_Mpc = training_data[0]['k_Mpc']
+ind = (_k_Mpc < 5) & (_k_Mpc > 0)
+k_Mpc = _k_Mpc[ind]
+x = k_Mpc / emulator.kmax_Mpc
+nsam = len(training_data)
+p1d_Mpc_sim = np.zeros((nsam, k_Mpc.shape[0]))
+p1d_Mpc_sm = np.zeros((nsam, k_Mpc.shape[0]))
+p1d_Mpc_emu = np.zeros((nsam, k_Mpc.shape[0]))
+
+for ii in range(nsam):
+# for ii in range(10):
+    if "kF_Mpc" not in  training_data[ii]:
+        continue
+    p1d_Mpc_sim[ii] = training_data[ii]['p1d_Mpc'][ind]
+    p1d_Mpc_emu[ii] = emulator.emulate_p1d_Mpc(
+        training_data[ii], 
+        k_Mpc
+    )
+
+    if emulator.emu_type == "gpolyfit":
+        norm = np.interp(
+            k_Mpc,
+            emulator.input_norm["k_Mpc"],
+            emulator.norm_imF(training_data[ii]["mF"]),
+        )
+        y2fit = np.log(training_data[ii]["p1d_Mpc"][ind] / norm)
+        store_fit, _ = curve_fit(emulator.func_poly, x, y2fit)
+        # print("a", store_fit)
+    
+        p1d_Mpc_sm[ii] = np.exp(emulator.func_poly(x, *store_fit)) * norm
+    else:
+        fit_p1d = poly_p1d.PolyP1D(
+            training_data[ii]["k_Mpc"], 
+            training_data[ii]["p1d_Mpc"], 
+            kmin_Mpc=1.0e-3, 
+            kmax_Mpc=emulator.kmax_Mpc, 
+            deg=emulator.ndeg
+        )
+
+        p1d_Mpc_sm[ii] = np.exp(fit_p1d.lnP(np.log(k_Mpc)))
+
+# %%
+
+# emulator = GPEmulator(archive=archive, emulator_label="CH24_mpg_gp")
+
+# %% [markdown]
+# #### L1O test for emulator
+
+# %%
+np.isfinite(rat[:, 0])
+
+# %%
+# ii = 0
+# plt.plot(k_Mpc, p1d_Mpc_sim[ii]/p1d_Mpc_sm[ii])
+# plt.plot(k_Mpc, p1d_Mpc_emu[ii]/p1d_Mpc_sm[ii])
+# plt.xlabel(r'$k_\parallel$ [1/Mpc]')
+# plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
+# plt.xscale('log')
+
+# %%
+rat = p1d_Mpc_emu/p1d_Mpc_sim-1
+ind = np.isfinite(rat[:, 0])
+# rat = p1d_Mpc_emu/p1d_Mpc_sm-1
+# plt.plot(k_Mpc, np.percentile(rat, 5, axis=0), label="5")
+plt.plot(k_Mpc, np.percentile(rat[ind], 16, axis=0), "C0", label="16")
+plt.plot(k_Mpc, np.percentile(rat[ind], 50, axis=0), "C1", label="50")
+plt.plot(k_Mpc, np.percentile(rat[ind], 84, axis=0), "C2", label="84")
+# plt.plot(k_Mpc, np.percentile(rat, 95, axis=0), label="95")
+
+ratsm = p1d_Mpc_emu/p1d_Mpc_sm-1
+plt.plot(k_Mpc, np.percentile(ratsm[ind], 16, axis=0), "C0--", label="16")
+plt.plot(k_Mpc, np.percentile(ratsm[ind], 50, axis=0), "C1--", label="50")
+plt.plot(k_Mpc, np.percentile(ratsm[ind], 84, axis=0), "C2--", label="84")
+
+
+plt.plot(k_Mpc, k_Mpc[:]*0, "k:")
+plt.legend()
+plt.xscale("log")
+plt.ylim(-0.025, 0.025)
+plt.xlabel("k [Mpc]")
+plt.ylabel("emu/data-1")
+# plt.savefig("precision_PE23_noscalig.png")
+
+# %% [markdown]
+# compare with smooth!!
+
+# %%
+# # %%time
+# emulator_P23 = set_emulator(emulator_label="CH24")
 
 # %% [markdown]
 # To evaluate it, provide input cosmological and IGM parameters and a series of kpar values
@@ -191,6 +369,157 @@ kMpc = kMpc[(kMpc>0) & (kMpc<4)]
 
 # %% [markdown]
 # ## NEURAL NETWORK EMULATOR  
+
+# %%
+# archive = gadget_archive.GadgetArchive(postproc="Pedersen21")
+archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
+
+# %%
+training_data = archive.get_training_data(emu_params=emu_params, average="both")
+
+# %%
+len(training_data)
+
+# %%
+# for ii in range(len(training_data)):
+#     ind = (training_data[ii]["k_Mpc"] > 0) & (training_data[ii]["k_Mpc"] < 4)
+#     print(ii, training_data[ii]["k_Mpc"][ind].shape[0])
+#     print(training_data[ii]["k_Mpc"][ind][0], training_data[ii]["k_Mpc"][ind][-1])
+
+# %%
+emulator = NNEmulator(
+    archive=archive, 
+    emulator_label='CH24', 
+    nepochs=500,
+    gamma_optimizer=0.75
+)
+
+# %% [markdown]
+# keeps getting better down to 500
+
+# %%
+plt.plot(emulator.loss_arr)
+plt.yscale("log")
+
+# %%
+
+from scipy.optimize import curve_fit
+def func_poly(x, a, b, c, d, e, f, g):
+    return (
+        a * x**0.5
+        + b * x**0.75
+        + c * x
+        + d * x**2
+        + e * x**3
+        + f * x**4
+        + g * x**5
+    )
+
+
+# %%
+get_smooth = True
+
+_k_Mpc = training_data[0]['k_Mpc']
+ind = (_k_Mpc < 4) & (_k_Mpc > 0)
+k_Mpc = _k_Mpc[ind]
+k_fit = k_Mpc/emulator.kmax_Mpc
+nsam = len(training_data)
+p1d_Mpc_sim = np.zeros((nsam, k_Mpc.shape[0]))
+p1d_Mpc_emu = np.zeros((nsam, k_Mpc.shape[0]))
+if get_smooth:
+    p1d_Mpc_sm = np.zeros((nsam, k_Mpc.shape[0]))
+    norm_use = np.interp(
+        k_Mpc, emulator.input_norm["kpar"], emulator.input_norm["p1d"]
+    )
+
+for ii in range(nsam):
+    p1d_Mpc_sim[ii] = training_data[ii]['p1d_Mpc'][ind]
+    p1d_Mpc_emu[ii] = emulator.emulate_p1d_Mpc(
+        training_data[ii], 
+        k_Mpc
+    )
+    if get_smooth:
+        mF = training_data[ii]["mF"]
+        norm = emulator.func_norm(np.log(mF)) * norm_use
+        yfit = np.log(training_data[ii]["p1d_Mpc"][ind]/norm)
+        popt, _ = curve_fit(func_poly, k_fit, yfit)
+        p1d_Mpc_sm[ii] = norm * np.exp(func_poly(k_fit, *popt))
+
+# %%
+# rat = p1d_Mpc_emu/p1d_Mpc_sim-1
+rat = p1d_Mpc_emu/p1d_Mpc_sm-1
+plt.plot(k_Mpc, np.percentile(rat, 5, axis=0), label="5")
+plt.plot(k_Mpc, np.percentile(rat, 16, axis=0), label="16")
+plt.plot(k_Mpc, np.percentile(rat, 50, axis=0), label="50")
+plt.plot(k_Mpc, np.percentile(rat, 84, axis=0), label="84")
+plt.plot(k_Mpc, np.percentile(rat, 95, axis=0), label="95")
+plt.plot(k_Mpc, k_Mpc[:]*0, "k:")
+plt.plot(k_Mpc, k_Mpc[:]*0+0.01, "k:")
+plt.plot(k_Mpc, k_Mpc[:]*0-0.01, "k:")
+plt.legend()
+plt.xscale("log")
+plt.xlabel("k [Mpc]")
+plt.ylabel("emu/data-1")
+
+# %% [markdown]
+# #### testing
+
+# %%
+testing_data = archive.get_testing_data("mpg_seed")
+len(testing_data)
+
+# %%
+get_smooth = True
+
+_k_Mpc = testing_data[0]['k_Mpc']
+ind = (_k_Mpc < 4) & (_k_Mpc > 0)
+k_Mpc = _k_Mpc[ind]
+k_fit = k_Mpc/emulator.kmax_Mpc
+nsam = len(testing_data)
+p1d_Mpc_sim = np.zeros((nsam, k_Mpc.shape[0]))
+p1d_Mpc_emu = np.zeros((nsam, k_Mpc.shape[0]))
+if get_smooth:
+    p1d_Mpc_sm = np.zeros((nsam, k_Mpc.shape[0]))
+    norm_use = np.interp(
+        k_Mpc, emulator.input_norm["kpar"], emulator.input_norm["p1d"]
+    )
+
+for ii in range(nsam):
+    p1d_Mpc_sim[ii] = testing_data[ii]['p1d_Mpc'][ind]
+    p1d_Mpc_emu[ii] = emulator.emulate_p1d_Mpc(
+        testing_data[ii], 
+        k_Mpc
+    )
+    if get_smooth:
+        mF = testing_data[ii]["mF"]
+        norm = emulator.func_norm(np.log(mF)) * norm_use
+        yfit = np.log(testing_data[ii]["p1d_Mpc"][ind]/norm)
+        popt, _ = curve_fit(func_poly, k_fit, yfit)
+        p1d_Mpc_sm[ii] = norm * np.exp(func_poly(k_fit, *popt))
+
+# %%
+
+cmap=plt.get_cmap('tab20')
+
+# %%
+for ii in range(nsam):
+    plt.plot(k_Mpc, p1d_Mpc_emu[ii]/p1d_Mpc_sm[ii]-1, label=str(testing_data[ii]["z"]), color=cmap(ii))
+    # plt.plot(k_Mpc, p1d_Mpc_sim[ii]/p1d_Mpc_sm[ii]-1, color=cmap(ii))
+plt.plot(k_Mpc, k_Mpc[:] * 0, "k:")
+plt.plot(k_Mpc, k_Mpc[:] * 0 + 0.01, "k:")
+plt.plot(k_Mpc, k_Mpc[:] * 0 - 0.01, "k:")
+plt.legend()
+plt.xscale("log")
+
+# %%
+for ii in range(nsam):
+    plt.plot(k_Mpc, p1d_Mpc_emu[ii]/p1d_Mpc_sm[ii]-1, label=str(testing_data[ii]["z"]), color=cmap(ii))
+    # plt.plot(k_Mpc, p1d_Mpc_sim[ii]/p1d_Mpc_sm[ii]-1, color=cmap(ii))
+plt.plot(k_Mpc, k_Mpc[:] * 0, "k:")
+plt.plot(k_Mpc, k_Mpc[:] * 0 + 0.01, "k:")
+plt.plot(k_Mpc, k_Mpc[:] * 0 - 0.01, "k:")
+plt.legend()
+plt.xscale("log")
 
 # %% [markdown]
 # Some of the cells in this notebooks can be quite slow, so we only run them if thorough==True

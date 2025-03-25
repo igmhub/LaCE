@@ -2,6 +2,8 @@
 
 from lace.emulator.nn_emulator import NNEmulator
 from lace.emulator.gp_emulator import GPEmulator
+
+from lace.emulator.gp_emulator_new import GPEmulator as GPEmulator_new
 from lace.emulator.constants import (
     EmulatorLabel,
     TrainingSet,
@@ -61,6 +63,10 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
     object
         Loaded emulator.
     """
+
+    # load new emulators
+    if emulator_label in ["CH24_mpg_gp", "CH24_nyx_gp"]:
+        return GPEmulator_new(emulator_label=emulator_label)
 
     if emulator_label not in emulators_supported():
         msg = f"Emulator {emulator_label} not supported. Supported emulators are {emulators_supported()}"

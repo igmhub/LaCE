@@ -239,6 +239,20 @@ class NNEmulator(base_emulator.BaseEmulator):
                 self.func_poly = func_poly2
                 self.func_poly_train = func_poly2_train
                 self.func_poly_evaluate = func_poly2_evaluate
+                # MPG-like
+                # self.nhidden = 8
+                # self.ndeg = 4
+                # self.func_poly = func_poly1
+                # self.func_poly_train = func_poly1_train
+                # self.func_poly_evaluate = func_poly1_evaluate
+            # testing stuff
+            if model_path is not None:
+                if "CH24_NYX_MPGlike" in model_path:
+                    self.nhidden = 8
+                    self.ndeg = 4
+                    self.func_poly = func_poly1
+                    self.func_poly_train = func_poly1_train
+                    self.func_poly_evaluate = func_poly1_evaluate
 
             repo = os.path.dirname(lace.__path__[0])
             fname = os.path.join(repo, "data", "ff_mpgcen.npy")
