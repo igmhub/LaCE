@@ -63,25 +63,16 @@ class GPEmulator(base_emulator.BaseEmulator):
             )
 
         repo = os.path.dirname(lace.__path__[0])
-        self.path_save_meta = os.path.join(
-            repo,
-            "data",
-            "GPmodels",
-            emulator_label,
-            "meta.npy",
-        )
+        folder_save = os.path.join(repo, "data", "GPmodels", emulator_label)
+        os.makedirs(folder_save, exist_ok=True)
+        if train:
+            print("Storing emulator in " + folder_save)
+        self.path_save_meta = os.path.join(folder_save, "meta.npy")
         if drop_sim is None:
             label = "full.pkl"
         else:
             label = self.drop_sim + ".pkl"
-
-        self.path_save_gp = os.path.join(
-            repo,
-            "data",
-            "GPmodels",
-            emulator_label,
-            label,
-        )
+        self.path_save_gp = os.path.join(folder_save, label)
 
         if self.emulator_label == "CH24_mpg_gp":
             self.emu_params = [
