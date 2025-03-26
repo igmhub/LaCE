@@ -8,11 +8,11 @@ def main():
     """Train and store latest GP models. One need to be done once"""
 
     # Train CH24_mpg_gp emulator
-    # archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
-    # print("Training CH24_mpg_gp emulator")
-    # emulator = GPEmulator(
-    #     archive=archive, emulator_label="CH24_mpg_gp", train=True
-    # )
+    archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
+    print("Training CH24_mpg_gp emulator")
+    emulator = GPEmulator(
+        archive=archive, emulator_label="CH24_mpg_gp", train=True
+    )
 
     # Train CH24_nyx_gp emulator
     archive = nyx_archive.NyxArchive(nyx_version="Jul2024")
