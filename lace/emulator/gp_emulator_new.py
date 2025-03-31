@@ -8,31 +8,23 @@ import lace
 from lace.emulator import base_emulator
 
 
-def func_poly1(x, a, b, c, d, e, f):
-    return a + b * x**0.5 + c * x + d * x**2 + e * x**3 + f * x**4
-
-
-# def func_poly2(x, a, b, c, d, e, f, g):
-#     return (
-#         a
-#         + b * x**0.5
-#         + c * x**0.75
-#         + d * x
-#         + e * x**2
-#         + f * x**3
-#         + g * x**4
-#     )
-
-
-def func_poly2(x, a, b, c, d, e, f, g):
+def func_poly_nyx(x, a, b, c, d, e, f):
     return (
-        a
-        + b * x**0.5
-        + c * x**0.75
-        + d * x
-        + e * x**2
-        + f * x**3
-        + g * x**4
+        a / (1 + np.exp(0.5 * x))
+        + b / (1 + np.exp(1 * x))
+        + c / (1 + np.exp(2 * x))
+        + d / (1 + np.exp(4 * x))
+        + e / (1 + np.exp(6 * x))
+        + f / (1 + np.exp(8 * x))
+    )
+
+
+def func_poly_mpg(x, a, b, c, d):
+    return (
+        a / (1 + np.exp(0.5 * x))
+        + b / (1 + np.exp(1 * x))
+        + c / (1 + np.exp(2 * x))
+        + d / (1 + np.exp(8 * x))
     )
 
 
@@ -83,12 +75,12 @@ class GPEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "kF_Mpc",
             ]
-            self.zmax, self.kmax_Mpc, self.emu_type = (5.5, 5, "gpolyfit")
+            self.zmax, self.kmax_Mpc, self.emu_type = (5.5, 4.25, "gpolyfit")
             self.average = "both"
             self.val_scaling = None
             # smoothing function
-            self.func_poly = func_poly1
-            self.ndeg = 6
+            self.func_poly = func_poly_mpg
+            self.ndeg = 4
             # normalization
             fname = os.path.join(repo, "data", "ff_mpgcen.npy")
             self.input_norm = np.load(fname, allow_pickle=True).item()
@@ -107,11 +99,11 @@ class GPEmulator(base_emulator.BaseEmulator):
                 "kF_Mpc",
             ]
 
-            self.zmax, self.kmax_Mpc, self.emu_type = (5.5, 5, "gpolyfit")
+            self.zmax, self.kmax_Mpc, self.emu_type = (5.5, 4.25, "gpolyfit")
             self.average = "both"
             self.val_scaling = None
             # smoothing function
-            self.func_poly = func_poly1
+            self.func_poly = func_poly_nyx
             self.ndeg = 6
             # normalization
             fname = os.path.join(repo, "data", "ff_mpgcen.npy")
@@ -119,6 +111,8 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
+
+        self.kernel = GPy.kern.Matern52
 
         if train == False:
             self._load_emu()
@@ -139,8 +133,35 @@ class GPEmulator(base_emulator.BaseEmulator):
                 val_scaling=self.val_scaling,
             )
 
+            # subsample training data to speed up evaluation
+            # otherwise 4s per 100 calls of 11 redshifts (fiducial DESI-DR1)
+            if self.emulator_label == "CH24_nyx_gp":
+                nn = len(training_data)
+                call_emu = {}
+                for par in self.emu_params:
+                    call_emu[par] = np.zeros((nn))
+                    for ii in range(nn):
+                        call_emu[par][ii] = training_data[ii][par]
+
+                # keep all unique values of Delta2_p
+                u, ind = np.unique(call_emu["Delta2_p"], return_index=True)
+                # keep all unique values of Delta2_p
+                u, ind2 = np.unique(call_emu["gamma"], return_index=True)
+                # get a subsample of the mF and sigma_T rescalings
+                rng = np.random.default_rng(1)
+                ind3 = rng.integers(
+                    0, high=len(training_data), size=400, dtype=int
+                )
+                # keep all unique values of previous arrays
+                ind4 = np.unique(np.concatenate([ind, ind2, ind3]))
+                # subsample
+
+                training_data_new = []
+                for ind in ind4:
+                    training_data_new.append(training_data[ind])
+                training_data = training_data_new
+
             k_Mpc = training_data[0]["k_Mpc"]
-            # do we need this condition?
             self.kmin_Mpc = k_Mpc[k_Mpc > 0].min()
 
             self._initialize(training_data)
@@ -276,9 +297,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.Ypoints - self.tscalings_mean
         ) / self.tscalings_std
 
-        # kernel = GPy.kern.RBF(len(self.emu_params), ARD=True)
-        kernel = GPy.kern.Matern32(len(self.emu_params), ARD=True)
-        # kernel = GPy.kern.Matern52(len(self.emu_params), ARD=True)
+        kernel = self.kernel(len(self.emu_params), ARD=True)
 
         self.gp = GPy.models.GPRegression(
             self.X_param_grid,

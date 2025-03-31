@@ -44,7 +44,6 @@ from cup1d.likelihood.pipeline import set_archive
 from cup1d.p1ds.data_Chabanier2019 import P1D_Chabanier2019
 
 # %%
-emu = set_emulator("CH24_nyx_gp")
 
 # %%
 path_fig = '/home/jchaves/Proyectos/projects/lya/data/lace/precision/'
@@ -141,6 +140,14 @@ full_emulator_c23plus = NNEmulator(
 
 
 # %%
+
+# %%
+emulator_label = 'CH24'
+full_emulator_ch24 = NNEmulator(
+    model_path="NNmodels" +"/"+ emulator_label +"/"+ emulator_label + ".pt", 
+    emulator_label=emulator_label, 
+    train=False,
+)
 
 # %%
 
@@ -261,9 +268,9 @@ full_emulator = [
     # full_emulator_p23_ext, 
     CH24_mpg_gp,
     CH24_nyx_gp,
-    # full_emulator_ch24,
+    full_emulator_ch24,
     # full_emulator_ch24_nyx,
-    # full_emulator_nyx
+    full_emulator_ch24_nyx
     # full_emulator_ch24_nyx2,
     # full_emulator_ch24_nyx3
 ]
@@ -282,8 +289,8 @@ emu_labs = [
     # "P23_ext",
     "CH24_MPG_GP",
     "CH24_NYX_GP",
-    # "CH24_MPG_NN",
-    # "CH24_NYX_NN",
+    "CH24_MPG_NN",
+    "CH24_NYX_NN",
     # "Nyx"
     # "CH24_NYX_MPG_like",
     # "CH24_NYX_MPGZ_like",
@@ -814,6 +821,12 @@ full_emulator = [
 ]
 
 emu_labs = ["CH24_mpg_gp", "CH24_nyx_gp"]
+
+# %% [markdown]
+# # HERE
+
+# %%
+path_fig = '/home/jchaves/Proyectos/projects/lya/data/lace/precision/'
 
 # %%
 

@@ -68,6 +68,25 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
     if emulator_label in ["CH24_mpg_gp", "CH24_nyx_gp"]:
         return GPEmulator_new(emulator_label=emulator_label)
 
+    elif emulator_label in ["CH24", "CH24_NYX"]:
+        model_path = (
+            "NNmodels" + "/" + emulator_label + "/" + emulator_label + ".pt"
+        )
+        emulator = NNEmulator(
+            model_path=model_path,
+            emulator_label=emulator_label,
+            train=False,
+        )
+        emulator.list_sim_cube = []
+        if emulator_label == "CH24":
+            for ii in range(30):
+                emulator.list_sim_cube.append("mpg_" + str(ii))
+        else:
+            for ii in range(18):
+                if ii != 14:
+                    emulator.list_sim_cube.append("nyx_" + str(ii))
+        return emulator
+
     if emulator_label not in emulators_supported():
         msg = f"Emulator {emulator_label} not supported. Supported emulators are {emulators_supported()}"
         raise ValueError(msg)
