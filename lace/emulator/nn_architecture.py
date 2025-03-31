@@ -14,29 +14,31 @@ class MDNemulator_polyfit(torch.nn.Module):
         ninput (int, optional): Number of input features. Defaults to 6.
     """
 
-    def __init__(self, nhidden, ndeg, max_neurons=100, ninput=6):
+    def __init__(
+        self, nhidden, ndeg, max_neurons=100, ninput=6, pred_error=False
+    ):
         super().__init__()
+        self.pred_error = pred_error
         self.inputlay = torch.nn.Sequential(
-            nn.Linear(ninput, 10), nn.LeakyReLU(0.5)
+            nn.Linear(ninput, max_neurons), nn.LeakyReLU(0.5)
         )
 
-        params = np.linspace(10, max_neurons, nhidden)
         modules = []
         for k in range(nhidden - 1):
-            modules.append(nn.Linear(int(params[k]), int(params[k + 1])))
+            modules.append(nn.Linear(max_neurons, max_neurons))
             modules.append(nn.LeakyReLU(0.5))
         self.hiddenlay = nn.Sequential(*modules)
 
         self.means = torch.nn.Sequential(
-            nn.Linear(max_neurons, 50),
-            nn.LeakyReLU(0.5),
-            nn.Linear(50, ndeg + 1),
+            nn.Linear(max_neurons, ndeg),
         )
-        self.stds = torch.nn.Sequential(
-            nn.Linear(max_neurons, 50),
-            nn.LeakyReLU(0.5),
-            nn.Linear(50, ndeg + 1),
-        )
+
+        if self.pred_error:
+            self.stds = torch.nn.Sequential(
+                nn.Linear(max_neurons, 50),
+                nn.LeakyReLU(0.5),
+                nn.Linear(50, ndeg),
+            )
 
     def forward(self, inp):
         """
@@ -53,6 +55,9 @@ class MDNemulator_polyfit(torch.nn.Module):
         x = self.inputlay(inp)
         x = self.hiddenlay(x)
         p1d = self.means(x)
-        logerrp1d = self.stds(x)
 
-        return p1d, logerrp1d
+        if self.pred_error:
+            logerrp1d = self.stds(x)
+            return p1d, logerrp1d
+        else:
+            return p1d
