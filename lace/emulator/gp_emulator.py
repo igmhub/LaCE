@@ -18,10 +18,6 @@ from scipy.optimize import curve_fit
 import lace
 
 
-def func_poly(x, a, b, c, d, e):
-    return a + b * x**0.5 + c * x + d * x**2 + e * x**3
-
-
 class GPEmulator(base_emulator.BaseEmulator):
     """
     Initialize the Gaussian Process emulator.
@@ -250,75 +246,6 @@ class GPEmulator(base_emulator.BaseEmulator):
                     7,
                     "polyfit",
                 )
-
-            elif emulator_label == "CH24_mpg_gp":
-                print(
-                    r"Gaussian Process emulator predicting the P1D at each k-bin after "
-                    + " applying smoothing. It goes to scales of 4 Mpc^{-1} and z<=4.5."
-                    + "The parameters passed to the emulator will be overwritten to match these ones."
-                )
-                self.func_poly = func_poly
-                self.emu_params = [
-                    "Delta2_p",
-                    "n_p",
-                    "mF",
-                    "sigT_Mpc",
-                    "gamma",
-                    "kF_Mpc",
-                ]
-
-                repo = os.path.dirname(lace.__path__[0])
-                fname = os.path.join(repo, "data", "ff_mpgcen.npy")
-                self.input_norm = np.load(fname, allow_pickle=True).item()
-                self.norm_imF = interp1d(
-                    self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
-                )
-
-                self.zmax, self.kmax_Mpc, self.emu_type = (4.5, 5, "gpolyfit")
-
-            elif emulator_label == "CH24_nyx_gp":
-                print(
-                    r"Gaussian Process emulator predicting the P1D at each k-bin after "
-                    + " applying smoothing. It goes to scales of 4 Mpc^{-1} and z<=4.5."
-                    + "The parameters passed to the emulator will be overwritten to match these ones."
-                )
-                self.func_poly = func_poly
-                self.emu_params = [
-                    "Delta2_p",
-                    "n_p",
-                    "alpha_p" "mF",
-                    "sigT_Mpc",
-                    "gamma",
-                    "kF_Mpc",
-                ]
-
-                repo = os.path.dirname(lace.__path__[0])
-                fname = os.path.join(repo, "data", "ff_mpgcen.npy")
-                self.input_norm = np.load(fname, allow_pickle=True).item()
-                self.norm_imF = interp1d(
-                    self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
-                )
-
-                self.zmax, self.kmax_Mpc, self.emu_type = (4.5, 5, "gpolyfit")
-
-            elif emulator_label == "CH24_old":
-                print(
-                    r"Gaussian Process emulator predicting the P1D at each k-bin after "
-                    + " applying smoothing. It goes to scales of 4 Mpc^{-1} and z<=4.5."
-                    + "The parameters passed to the emulator will be overwritten to match these ones."
-                )
-                self.emu_params = [
-                    "Delta2_p",
-                    "n_p",
-                    "mF",
-                    "sigT_Mpc",
-                    "gamma",
-                    "kF_Mpc",
-                ]
-                self.zmax, self.kmax_Mpc, self.emu_type = (4.5, 4, "k_bin_sm")
-                # bandwidth for different k-ranges
-                self.smoothing_bn = [0.8, 0.4, 0.2]
-                self.smoothing_krange = [0.15, 1, 2.5, 4]
 
         else:
             print("Selected custom emulator")
