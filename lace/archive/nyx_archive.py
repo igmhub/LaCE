@@ -387,6 +387,9 @@ class NyxArchive(BaseArchive):
                         for key in _igm.keys():
                             _arch[self.key_conv[key]] = _igm[key]
 
+                        # if isim == "cosmo_grid_3":
+                        #     print(iz, iscaling, iaxis, _arch["T0"])
+
                         # compute thermal broadening in Mpc
                         sigma_T_kms = thermal_broadening_kms(_arch["T0"])
                         _arch["sigT_Mpc"] = (
