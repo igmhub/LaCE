@@ -44,6 +44,9 @@ from cup1d.likelihood.pipeline import set_archive
 from cup1d.p1ds.data_Chabanier2019 import P1D_Chabanier2019
 
 # %%
+from scipy.linalg import block_diag
+
+# %%
 
 # %%
 path_fig = '/home/jchaves/Proyectos/projects/lya/data/lace/precision/'
@@ -812,15 +815,15 @@ full_emulator = [
     # full_emulator_p21_ext, 
     # full_emulator_p23_ext, 
     CH24_mpg_gp,
+    full_emulator_ch24,
     CH24_nyx_gp,
-    # full_emulator_ch24,
-    # full_emulator_ch24_nyx,
+    full_emulator_ch24_nyx,
     # full_emulator_nyx
     # full_emulator_ch24_nyx2,
     # full_emulator_ch24_nyx3
 ]
 
-emu_labs = ["CH24_mpg_gp", "CH24_nyx_gp"]
+emu_labs = ["CH24_mpg_gp", "CH24_mpg_nn", "CH24_nyx_gp", "CH24_nyx_nn"]
 
 # %% [markdown]
 # # HERE
@@ -843,13 +846,14 @@ ztar = 3.
 #      'alpha_p': -0.21536751361410592
 # }
 input = {
-    'Delta2_p': 0.4, # 0.2-0.5
+    'Delta2_p': 0.5, # 0.2-0.5
     'n_p': -2.3,
     'alpha_p': -0.215,
-    'mF':0.5,
+    'mF':0.7,
     'sigT_Mpc': 0.12,
     'gamma': 1.5,
     'kF_Mpc': 12.5,
+    'kF_Mpc': 15,
 }
 
 range_par = {}
