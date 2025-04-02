@@ -35,18 +35,17 @@ from lace.emulator.select_training import select_training
 from scipy.spatial import Delaunay
 
 
-def func_poly_nyx(x, a, b, c, d, e):
+def func_poly(x, a, b, c, d, e):
     return (
         a / (1 + np.exp(0.5 * x))
         + b / (1 + np.exp(1 * x))
         + c / (1 + np.exp(2 * x))
         + d / (1 + np.exp(4 * x))
-        + e / (1 + np.exp(8 * x))  # 6
-        # + f / (1 + np.exp(8 * x))
+        + e / (1 + np.exp(8 * x))
     )
 
 
-def func_poly_nyx_train(y, ypars):
+def func_poly_train(y, ypars):
     x = y[None, :]
     pars = ypars[:, :, None]
     return (
@@ -55,11 +54,10 @@ def func_poly_nyx_train(y, ypars):
         + pars[:, 2] / (1 + np.exp(2 * x))
         + pars[:, 3] / (1 + np.exp(4 * x))
         + pars[:, 4] / (1 + np.exp(8 * x))
-        # + pars[:, 5] / (1 + np.exp(8 * x))
     )
 
 
-def func_poly_nyx_evaluate(x, ypars):
+def func_poly_evaluate(x, ypars):
     pars = ypars[:, :, None]
     return (
         pars[:, 0] / (1 + np.exp(0.5 * x))
@@ -67,36 +65,6 @@ def func_poly_nyx_evaluate(x, ypars):
         + pars[:, 2] / (1 + np.exp(2 * x))
         + pars[:, 3] / (1 + np.exp(4 * x))
         + pars[:, 4] / (1 + np.exp(8 * x))
-        # + pars[:, 5] / (1 + np.exp(8 * x))
-    )
-
-
-def func_poly_mpg(x, a, b, c, d):
-    return (
-        a / (1 + np.exp(0.5 * x))
-        + b / (1 + np.exp(1 * x))
-        + c / (1 + np.exp(2 * x))
-        + d / (1 + np.exp(8 * x))
-    )
-
-
-def func_poly_mpg_train(y, ypars):
-    x = y[None, :]
-    pars = ypars[:, :, None]
-    return (
-        pars[:, 0] / (1 + np.exp(0.5 * x))
-        + pars[:, 1] / (1 + np.exp(1 * x))
-        + pars[:, 2] / (1 + np.exp(2 * x))
-        + pars[:, 3] / (1 + np.exp(8 * x))
-    )
-
-
-def func_poly_mpg_evaluate(x, pars):
-    return (
-        pars[:, 0] / (1 + np.exp(0.5 * x))
-        + pars[:, 1] / (1 + np.exp(1 * x))
-        + pars[:, 2] / (1 + np.exp(2 * x))
-        + pars[:, 3] / (1 + np.exp(8 * x))
     )
 
 
@@ -231,13 +199,13 @@ class NNEmulator(base_emulator.BaseEmulator):
         if emulator_label[:4] == "CH24":
             # we use different functions for the fits
             if emulator_label == "CH24":
-                self.func_poly = func_poly_nyx
-                self.func_poly_train = func_poly_nyx_train
-                self.func_poly_evaluate = func_poly_nyx_evaluate
+                self.func_poly = func_poly
+                self.func_poly_train = func_poly_train
+                self.func_poly_evaluate = func_poly_evaluate
             elif emulator_label == "CH24_NYX":
-                self.func_poly = func_poly_nyx
-                self.func_poly_train = func_poly_nyx_train
-                self.func_poly_evaluate = func_poly_nyx_evaluate
+                self.func_poly = func_poly
+                self.func_poly_train = func_poly_train
+                self.func_poly_evaluate = func_poly_evaluate
 
             repo = os.path.dirname(lace.__path__[0])
             fname = os.path.join(repo, "data", "ff_mpgcen.npy")
