@@ -481,7 +481,7 @@ class GPEmulator(base_emulator.BaseEmulator):
                     k_Mpc[ii] / self.kmax_Mpc, *gp_pred[ii]
                 )
             elif self.emu_type == "gkbin":
-                p1d_unorm = np.interp(k_Mpc, self.k_Mpc_emu, gp_pred[ii])
+                p1d_unorm = np.interp(k_Mpc[ii], self.k_Mpc_emu, gp_pred[ii])
 
             p1d[ii] = np.exp(p1d_unorm) * norm
 
