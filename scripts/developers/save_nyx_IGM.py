@@ -96,6 +96,7 @@ def main():
         cosmo_params, linP_params, star_params = nyx_archive._get_emu_cosmo(
             None, rsim_conv[sim_label]
         )
+        print(sim_label)
         if sim_label == "nyx_central":
             ind_rescaling = 1
         else:
@@ -123,20 +124,32 @@ def main():
                     & (testing[ind_book]["ind_phase"] == ind_phase)
                     & (testing[ind_book]["sim_label"] == sim_label)
                 ):
+                    print(testing[ind_book].keys())
                     dict_index[lab]["z"][ind_snap] = testing[ind_book]["z"]
                     dict_index[lab]["mF"][ind_snap] = testing[ind_book]["mF"]
-                    dict_index[lab]["gamma"][ind_snap] = testing[ind_book][
-                        "gamma"
-                    ]
-                    dict_index[lab]["sigT_Mpc"][ind_snap] = testing[ind_book][
-                        "sigT_Mpc"
-                    ]
+                    if "gamma" in testing[ind_book]:
+                        dict_index[lab]["gamma"][ind_snap] = testing[ind_book][
+                            "gamma"
+                        ]
+                    else:
+                        dict_index[lab]["gamma"][ind_snap] = np.nan
+
+                    if "sigT_Mpc" in testing[ind_book]:
+                        dict_index[lab]["sigT_Mpc"][ind_snap] = testing[
+                            ind_book
+                        ]["sigT_Mpc"]
+                    else:
+                        dict_index[lab]["sigT_Mpc"][ind_snap] = np.nan
 
                     dict_index[lab]["tau_eff"][ind_snap] = -np.log(
                         testing[ind_book]["mF"]
                     )
-                    _ = thermal_broadening_kms(testing[ind_book]["T0"])
-                    dict_index[lab]["sigT_kms"][ind_snap] = _
+
+                    if "T0" in testing[ind_book]:
+                        _ = thermal_broadening_kms(testing[ind_book]["T0"])
+                        dict_index[lab]["sigT_kms"][ind_snap] = _
+                    else:
+                        dict_index[lab]["sigT_kms"][ind_snap] = np.nan
 
                     ind_z = np.argwhere(
                         np.round(testing[ind_book]["z"], 2) == linP_params["z"]
@@ -154,6 +167,7 @@ def main():
                         print(
                             "no kF_Mpc in ", sim_label, testing[ind_book]["z"]
                         )
+        print(dict_index[lab])
 
     folder = os.environ["NYX_PATH"]
     np.save(folder + "/IGM_histories.npy", dict_index)
