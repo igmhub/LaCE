@@ -96,7 +96,6 @@ def main():
         cosmo_params, linP_params, star_params = nyx_archive._get_emu_cosmo(
             None, rsim_conv[sim_label]
         )
-        print(sim_label)
         if sim_label == "nyx_central":
             ind_rescaling = 1
         else:
@@ -124,7 +123,6 @@ def main():
                     & (testing[ind_book]["ind_phase"] == ind_phase)
                     & (testing[ind_book]["sim_label"] == sim_label)
                 ):
-                    print(testing[ind_book].keys())
                     dict_index[lab]["z"][ind_snap] = testing[ind_book]["z"]
                     dict_index[lab]["mF"][ind_snap] = testing[ind_book]["mF"]
                     if "gamma" in testing[ind_book]:
@@ -167,7 +165,6 @@ def main():
                         print(
                             "no kF_Mpc in ", sim_label, testing[ind_book]["z"]
                         )
-        print(dict_index[lab])
 
     folder = os.environ["NYX_PATH"]
     np.save(folder + "/IGM_histories.npy", dict_index)
