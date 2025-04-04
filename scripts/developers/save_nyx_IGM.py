@@ -8,6 +8,7 @@ def main():
     """Save IGM history of all mpg simulations"""
 
     nyx_version = "Oct2023"
+    nyx_version = "models_Nyx_Mar2025_with_CGAN_val_3axes"
     nyx_archive = NyxArchive(nyx_version=nyx_version)
     emu_params = [
         "Delta2_p",
