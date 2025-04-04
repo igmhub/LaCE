@@ -12,9 +12,10 @@ def main():
     # os.environ["NYX_PATH"] = # path to the Nyx files in your local computer
 
     # file containing Nyx data
-    nyx_version = "Oct2023"
-    nyx_version = "Jul2024"
-    nyx_fname = os.environ["NYX_PATH"] + "/models_Nyx_" + nyx_version + ".hdf5"
+    # nyx_version = "Oct2023"
+    # nyx_version = "Jul2024"
+    nyx_version = "models_Nyx_Mar2025_with_CGAN_val_3axes"
+    nyx_fname = os.environ["NYX_PATH"] + "/" + nyx_version + ".hdf5"
     # file that will be written containing cosmo data for Nyx file
     cosmo_fname = (
         os.environ["NYX_PATH"] + "/nyx_emu_cosmo_" + nyx_version + ".npy"
@@ -35,9 +36,9 @@ def main():
         # this simulation seems to have issues
         if sim_label == "cosmo_grid_14":
             continue
-        # contained in CGAN_4096_base
-        elif sim_label == "CGAN_4096_val":
-            continue
+        # # contained in CGAN_4096_base
+        # elif sim_label == "CGAN_4096_val":
+        #     continue
 
         isim = nyx_archive.sim_conv[sim_label]
         sim_dict = {}
