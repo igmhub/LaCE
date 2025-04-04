@@ -115,7 +115,10 @@ class NyxArchive(BaseArchive):
             "fiducial": "nyx_central",
             "bar_ic_grid_3": "nyx_3_ic",
             "CGAN_4096_base": "nyx_seed",
+            "CGAN_4096_val": "nyx_seed_val",
+            "Sherwood_2048_40": "sherwood",
             "wdm_3.5kev_grid_1": "nyx_wdm",
+            "ACCEL2_6144_160": "accel2",
         }
         for ii in range(nfiles):
             self.sim_conv["cosmo_grid_" + str(ii)] = "nyx_" + str(ii)
@@ -211,7 +214,12 @@ class NyxArchive(BaseArchive):
             try:
                 file_cosmo = np.load(self.file_cosmo, allow_pickle=True).item()
             except:
-                raise IOError("The file " + file_cosmo + " does not exist")
+                raise IOError(
+                    "The file "
+                    + self.file_cosmo
+                    + " does not exist. "
+                    + "Need to run the LaCE script save_nyx_emu_cosmo.py first."
+                )
 
             if isim not in file_cosmo:
                 file_error = (
@@ -248,14 +256,11 @@ class NyxArchive(BaseArchive):
             from lace.cosmo import camb_cosmo, fit_linP
 
             cosmo_params = self._get_attrs(nyx_data[sim_label])
-            if isim == "nyx_central":
-                cosmo_params["A_s"] = 2.10e-9
-                cosmo_params["n_s"] = 0.966
+            if "h" not in cosmo_params:
                 cosmo_params["h"] = cosmo_params["H_0"] / 100
-            elif isim == "nyx_seed":
-                cosmo_params["A_s"] = 2.15865e-9
+            if isim == "accel2":
+                cosmo_params["A_s"] = 2.20652e-09  # Planck16 tab 4
                 cosmo_params["n_s"] = 0.96
-                cosmo_params["h"] = cosmo_params["H_0"] / 100
             # setup CAMB object
             sim_cosmo = camb_cosmo.get_Nyx_cosmology(cosmo_params)
 
@@ -295,12 +300,18 @@ class NyxArchive(BaseArchive):
                     + "the hdf5 file containing Nyx data"
                 )
                 raise ValueError(error_text)
-            nyx_file = (
-                os.environ["NYX_PATH"]
-                + "/models_Nyx_"
-                + self.nyx_version
-                + ".hdf5"
-            )
+
+            if "CGAN" in self.nyx_version:
+                nyx_file = os.path.join(
+                    os.environ["NYX_PATH"], self.nyx_version + ".hdf5"
+                )
+            else:
+                nyx_file = (
+                    os.environ["NYX_PATH"]
+                    + "/models_Nyx_"
+                    + self.nyx_version
+                    + ".hdf5"
+                )
 
         try:
             ff = h5py.File(nyx_file, "r")
@@ -326,9 +337,6 @@ class NyxArchive(BaseArchive):
         for isim in sim_avail:
             # this simulation seems to have issues
             if isim == "cosmo_grid_14":
-                continue
-            # contained in CGAN_4096_base
-            elif isim == "CGAN_4096_val":
                 continue
 
             if self.verbose:
@@ -387,14 +395,21 @@ class NyxArchive(BaseArchive):
                         for key in _igm.keys():
                             _arch[self.key_conv[key]] = _igm[key]
 
+                        key = "tau_rescale_factor"
+                        if key not in _igm.keys():
+                            _arch[self.key_conv[key]] = 1
+
                         # if isim == "cosmo_grid_3":
                         #     print(iz, iscaling, iaxis, _arch["T0"])
 
                         # compute thermal broadening in Mpc
-                        sigma_T_kms = thermal_broadening_kms(_arch["T0"])
-                        _arch["sigT_Mpc"] = (
-                            sigma_T_kms / linP_params["dkms_dMpc"][ind_z]
-                        )
+                        if "T0" in _arch.keys():
+                            sigma_T_kms = thermal_broadening_kms(_arch["T0"])
+                            _arch["sigT_Mpc"] = (
+                                sigma_T_kms / linP_params["dkms_dMpc"][ind_z]
+                            )
+                        else:
+                            _arch["sigT_Mpc"] = np.nan
 
                         # store pressure parameters
                         # not available in bar_ic_grid_3 and wdm_3.5kev_grid_1
@@ -405,6 +420,8 @@ class NyxArchive(BaseArchive):
                             _arch[self.key_conv[key]] = 1 / (
                                 1e-3 * _pressure[key]
                             )
+                        else:
+                            _arch[self.key_conv[key]] = np.nan
                         ## done store IGM parameters
 
                         ## store P1D and P3D measurements (if available)
