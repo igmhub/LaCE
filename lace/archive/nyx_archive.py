@@ -54,7 +54,15 @@ class NyxArchive(BaseArchive):
 
         ## sets list simulations available for this suite
         # list of especial simulations
-        self.list_sim_test = ["nyx_central", "nyx_seed", "nyx_3_ic", "nyx_wdm"]
+        self.list_sim_test = [
+            "nyx_central",
+            "nyx_seed",
+            "nyx_seed_val",
+            "nyx_3_ic",
+            "nyx_wdm",
+            "accel2",
+            "sherwood",
+        ]
         # list of hypercube simulations
         self.list_sim_cube = []
         # simulation 14 was identified as problematic by the Nyx team
@@ -410,6 +418,9 @@ class NyxArchive(BaseArchive):
                             )
                         else:
                             _arch["sigT_Mpc"] = np.nan
+
+                        if "gamma" not in _arch.keys():
+                            _arch["gamma"] = np.nan
 
                         # store pressure parameters
                         # not available in bar_ic_grid_3 and wdm_3.5kev_grid_1
