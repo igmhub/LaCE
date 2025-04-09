@@ -111,7 +111,14 @@ def compute_fz(cosmo, z, kp_Mpc):
 
 
 def fit_linP_kms(
-    cosmo, z_star, kp_kms, deg=2, camb_results=None, fit_min=0.5, fit_max=2.0
+    cosmo,
+    z_star,
+    kp_kms,
+    deg=2,
+    camb_results=None,
+    fit_min=0.5,
+    fit_max=2.0,
+    camb_kmax_Mpc_fast=1.5,
 ):
     """Given input cosmology, compute linear power at z_star
     (in km/s) and fit polynomial around kp_kms.
@@ -121,7 +128,9 @@ def fit_linP_kms(
 
     if camb_results == None:
         zs = [z_star]
-        camb_results = camb_cosmo.get_camb_results(cosmo, zs=zs, fast_camb=True)
+        camb_results = camb_cosmo.get_camb_results(
+            cosmo, zs=zs, fast_camb=True, camb_kmax_Mpc_fast=camb_kmax_Mpc_fast
+        )
 
     assert z_star in list(camb_results.transfer_redshifts), (
         "Transfer function " "not calculated for z_star in camb_results"
@@ -152,7 +161,13 @@ def fit_linP_kms(
 
 
 def parameterize_cosmology_kms(
-    cosmo, camb_results, z_star, kp_kms, fit_min=0.5, fit_max=2.0
+    cosmo,
+    camb_results,
+    z_star,
+    kp_kms,
+    fit_min=0.5,
+    fit_max=2.0,
+    camb_kmax_Mpc_fast=1.5,
 ):
     """Given input cosmology, compute set of parameters that describe
     the linear power around z_star and wavenumbers kp_kms"""
@@ -160,7 +175,9 @@ def parameterize_cosmology_kms(
     # call get_results first, to avoid calling it twice
     if camb_results == None:
         zs = [z_star]
-        camb_results = camb_cosmo.get_camb_results(cosmo, zs=zs, fast_camb=True)
+        camb_results = camb_cosmo.get_camb_results(
+            cosmo, zs=zs, fast_camb=True, camb_kmax_Mpc_fast=camb_kmax_Mpc_fast
+        )
 
     # compute linear power, in km/s, at z_star
     # and fit a second order polynomial to the log power, around kp_kms
