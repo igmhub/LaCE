@@ -482,7 +482,7 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         return out_pred
 
-    def emulate_p1d_Mpc(self, model, k_Mpc):
+    def emulate_p1d_Mpc(self, model, k_Mpc, verbose=False):
         """
         Return the trained P(k) for an arbitrary set of k bins by interpolating the trained data.
 
@@ -508,14 +508,15 @@ class GPEmulator(base_emulator.BaseEmulator):
             if param not in model:
                 raise ValueError(f"{param} not in input model")
 
-        if np.max(k_Mpc) > self.kmax_Mpc:
-            warn(
-                f"Some of the requested k's are higher than the maximum training value k={self.kmax_Mpc}",
-            )
-        elif np.min(k_Mpc) < self.kmin_Mpc:
-            warn(
-                f"Some of the requested k's are lower than the minimum training value k={self.kmin_Mpc}"
-            )
+        if verbose:
+            if np.max(k_Mpc) > self.kmax_Mpc:
+                warn(
+                    f"Some of the requested k's are higher than the maximum training value k={self.kmax_Mpc}",
+                )
+            elif np.min(k_Mpc) < self.kmin_Mpc:
+                warn(
+                    f"Some of the requested k's are lower than the minimum training value k={self.kmin_Mpc}"
+                )
 
         try:
             length = len(model[self.emu_params[0]])
