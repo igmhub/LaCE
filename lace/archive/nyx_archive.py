@@ -269,6 +269,11 @@ class NyxArchive(BaseArchive):
             if isim == "accel2":
                 cosmo_params["A_s"] = 2.20652e-09  # Planck16 tab 4
                 cosmo_params["n_s"] = 0.96
+
+            # if "A_s" not in cosmo_params:
+            #     cosmo_params["A_s"] = 2.2e-9
+            #     cosmo_params["n_s"] = 0.96
+
             # setup CAMB object
             sim_cosmo = camb_cosmo.get_Nyx_cosmology(cosmo_params)
 
@@ -321,6 +326,7 @@ class NyxArchive(BaseArchive):
                     + ".hdf5"
                 )
 
+        print(nyx_file)
         try:
             ff = h5py.File(nyx_file, "r")
         except Exception as e:

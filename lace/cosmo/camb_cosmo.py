@@ -26,6 +26,7 @@ def get_cosmology(
     nrun=0.0,
     pivot_scalar=0.05,
     w=-1,
+    wa=0,
 ):
     """Given set of cosmological parameters, return CAMB cosmology object.
 
@@ -36,7 +37,7 @@ def get_cosmology(
     # set background cosmology
     pars.set_cosmology(H0=H0, ombh2=ombh2, omch2=omch2, omk=omk, mnu=mnu)
     # set DE
-    pars.set_dark_energy(w=w)
+    pars.set_dark_energy(w=w, wa=wa)
     # set primordial power
     pars.InitPower.set_params(
         As=As, ns=ns, nrun=nrun, pivot_scalar=pivot_scalar
@@ -107,7 +108,12 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
         w = params["w"]
     else:
         w = cosmo_fid.DarkEnergy.w
-    pars.set_dark_energy(w=w)
+
+    if "wa" in params:
+        wa = params["wa"]
+    else:
+        wa = cosmo_fid.DarkEnergy.wa
+    pars.set_dark_energy(w=w, wa=wa)
 
     # collect primorial power parameters
     if "As" in params:

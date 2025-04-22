@@ -4,6 +4,7 @@ from lace.emulator.nn_emulator import NNEmulator
 from lace.emulator.gp_emulator import GPEmulator
 
 from lace.emulator.gp_emulator_new import GPEmulator as GPEmulator_new
+from lace.emulator.gp_emulator_multi import GPEmulator as GPEmulator_multi
 from lace.emulator.constants import (
     EmulatorLabel,
     TrainingSet,
@@ -67,6 +68,9 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
     # load new emulators
     if emulator_label in ["CH24_mpg_gp", "CH24_nyx_gp"]:
         return GPEmulator_new(emulator_label=emulator_label)
+
+    if emulator_label in ["CH24_nyx_gpr"]:
+        return GPEmulator_multi(emulator_label=emulator_label)
 
     elif emulator_label in ["CH24", "CH24_NYX"]:
         model_path = (
