@@ -39,7 +39,8 @@ class GPEmulator(base_emulator.BaseEmulator):
     def __init__(
         self,
         archive=None,
-        emulator_label="CH24_mpg_gpr",
+        archive2=None,
+        emulator_label="CH24_nyx_gpr",
         drop_sim=None,
         train=False,
         save=False,
@@ -48,7 +49,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.drop_sim = drop_sim
 
         # check emulator
-        emulator_label_all = ["CH24_mpg_gpr", "CH24_nyx_gpr"]
+        emulator_label_all = ["CH24_mpg_gpr", "CH24_nyx_gpr", "CH24_gpr"]
         if self.emulator_label in emulator_label_all:
             print(f"Select emulator in {self.emulator_label}")
         else:
@@ -125,6 +126,47 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
+        elif self.emulator_label == "CH24_gpr":
+            self.emu_params = [
+                "Delta2_p",
+                "n_p",
+                "alpha_p",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                # "kF_Mpc",
+            ]
+
+            # self.z_max, self.kmax_Mpc, self.emu_type = (5.5, 4.25, "gpolyfit")
+            self.z_max, self.kmin_Mpc, self.kmax_Mpc, self.emu_type = (
+                5.5,
+                0.02,
+                4.25,
+                "gkbin",
+            )
+            self.average = "both"
+            if "mpg" in archive.data[0]["sim_label"]:
+                self.val_scaling = 1
+            else:
+                self.val_scaling = None
+
+            if "mpg" in archive2.data[0]["sim_label"]:
+                self.val_scaling2 = 1
+            else:
+                self.val_scaling2 = None
+
+            self.kernel = Matern(
+                nu=0.5, length_scale=np.ones(len(self.emu_params))
+            )
+            # smoothing function
+            self.func_poly = func_poly
+            self.ndeg = 5
+            # normalization
+            fname = os.path.join(repo, "data", "ff_mpgcen.npy")
+            self.input_norm = np.load(fname, allow_pickle=True).item()
+            self.norm_imF = interp1d(
+                self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
+            )
 
         self.ind_mF = np.argwhere(np.array(self.emu_params) == "mF")[0, 0]
 
@@ -148,35 +190,17 @@ class GPEmulator(base_emulator.BaseEmulator):
                 z_max=self.z_max,
             )
 
-            # XXX split data in batches
-            # nn = len(training_data)
-
-            # call_emu = {}
-            # for par in self.emu_params:
-            #     call_emu[par] = np.zeros((nn))
-            #     for ii in range(nn):
-            #         call_emu[par][ii] = training_data[ii][par]
-
-            # # keep all unique values of Delta2_p
-            # u, ind = np.unique(call_emu["Delta2_p"], return_index=True)
-            # # keep all unique values of Delta2_p
-            # u, ind2 = np.unique(call_emu["gamma"], return_index=True)
-            # # get a subsample of the mF and sigma_T rescalings
-            # rng = np.random.default_rng(2)
-            # ind3 = rng.integers(
-            #     0, high=len(training_data), size=1000, dtype=int
-            # )
-            # # keep all unique values of previous arrays
-            # ind4 = np.unique(np.concatenate([ind, ind2, ind3]))
-            # # subsample
-
-            # training_data_new = []
-            # for ind in ind4:
-            #     training_data_new.append(training_data[ind])
-            # training_data = training_data_new
-
-            k_Mpc = training_data[0]["k_Mpc"]
-            self.kmin_Mpc = k_Mpc[k_Mpc > 0].min()
+            if self.emulator_label == "CH24_gpr":
+                self.list_sim_cube += archive2.list_sim_cube
+                if self.kp_Mpc != archive2.kp_Mpc:
+                    raise ("Must be same kp_Mpc for archive and archive2")
+                training_data += archive2.get_training_data(
+                    emu_params=self.emu_params,
+                    drop_sim=self.drop_sim,
+                    average=self.average,
+                    val_scaling=self.val_scaling2,
+                    z_max=self.z_max,
+                )
 
             self._initialize(training_data)
             self._save_emu()
@@ -290,14 +314,10 @@ class GPEmulator(base_emulator.BaseEmulator):
         if self.emu_type == "gpolyfit":
             store_fit = np.zeros((len(training_data), self.ndeg))
         elif self.emu_type == "gkbin":
-            ind_k = (training_data[0]["k_Mpc"] > 0) & (
-                training_data[0]["k_Mpc"] < self.kmax_Mpc
-            )
-            k_Mpc = training_data[0]["k_Mpc"][ind_k]
-
             self.k_Mpc_emu = np.logspace(
-                np.log10(k_Mpc[0]), np.log10(k_Mpc[-1]), 50
+                np.log10(self.kmin_Mpc), np.log10(self.kmax_Mpc), 50
             )
+            kpoly = self.k_Mpc_emu / self.kmax_Mpc
 
             store_fit = np.zeros((len(training_data), self.k_Mpc_emu.shape[0]))
 
@@ -316,9 +336,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             if self.emu_type == "gpolyfit":
                 store_fit[ii] = par_fit
             elif self.emu_type == "gkbin":
-                store_fit[ii] = self.func_poly(
-                    self.k_Mpc_emu / self.kmax_Mpc, *par_fit
-                )
+                store_fit[ii] = self.func_poly(kpoly, *par_fit)
 
         return store_fit
 
