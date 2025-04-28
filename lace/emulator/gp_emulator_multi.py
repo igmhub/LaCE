@@ -4,7 +4,7 @@ from warnings import warn
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit, minimize
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern, RBF
+from sklearn.gaussian_process.kernels import Matern, RBF, WhiteKernel
 import lace
 from lace.emulator import base_emulator
 
@@ -44,12 +44,19 @@ class GPEmulator(base_emulator.BaseEmulator):
         drop_sim=None,
         train=False,
         save=False,
+        n_restarts_optimizer=0,
     ):
         self.emulator_label = emulator_label
         self.drop_sim = drop_sim
+        self.n_restarts_optimizer = n_restarts_optimizer
 
         # check emulator
-        emulator_label_all = ["CH24_mpg_gpr", "CH24_nyx_gpr", "CH24_gpr"]
+        emulator_label_all = [
+            "CH24_mpg_gpr",
+            "CH24_nyx_gpr",
+            "CH24_nyxcen_gpr",
+            "CH24_gpr",
+        ]
         if self.emulator_label in emulator_label_all:
             print(f"Select emulator in {self.emulator_label}")
         else:
@@ -88,6 +95,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.average = "both"
             # self.val_scaling = None
             self.kernel = Matern(nu=2.5, length_scale=1.0)
+            self.nelem_max = 2000
             self.val_scaling = 1
             # smoothing function
             self.func_poly = func_poly
@@ -98,6 +106,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
+            self.add_central = False
 
         elif self.emulator_label == "CH24_nyx_gpr":
             self.emu_params = [
@@ -110,14 +119,24 @@ class GPEmulator(base_emulator.BaseEmulator):
                 "kF_Mpc",
             ]
 
-            # self.z_max, self.kmax_Mpc, self.emu_type = (5.5, 4.25, "gpolyfit")
-            self.z_max, self.kmax_Mpc, self.emu_type = (5.5, 4.25, "gkbin")
+            self.z_max, self.kmin_Mpc, self.kmax_Mpc, self.emu_type = (
+                5.5,
+                0.02,
+                4.25,
+                "gpolyfit",
+            )
+            # self.z_max, self.kmax_Mpc, self.emu_type = (5.5, 4.25, "gkbin")
             self.average = "both"
             self.val_scaling = None
+            # self.kernel = Matern(
+            #     nu=0.5, length_scale=np.ones(len(self.emu_params))
+            # ) + WhiteKernel(noise_level_bounds=(1e-15, 1e2))
             self.kernel = Matern(
                 nu=0.5, length_scale=np.ones(len(self.emu_params))
             )
             # smoothing function
+            # self.nelem_max = 750
+            self.nelem_max = 1200
             self.func_poly = func_poly
             self.ndeg = 5
             # normalization
@@ -126,6 +145,40 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
+            self.add_central = False
+        elif self.emulator_label == "CH24_nyxcen_gpr":
+            self.emu_params = [
+                "Delta2_p",
+                "n_p",
+                "alpha_p",
+                "mF",
+                "sigT_Mpc",
+                "gamma",
+                "kF_Mpc",
+            ]
+
+            self.z_max, self.kmin_Mpc, self.kmax_Mpc, self.emu_type = (
+                5.5,
+                0.02,
+                4.25,
+                "gpolyfit",
+            )
+            self.average = "both"
+            self.val_scaling = None
+            self.kernel = Matern(
+                nu=0.5, length_scale=np.ones(len(self.emu_params))
+            )
+            # smoothing function
+            self.nelem_max = 1200
+            self.func_poly = func_poly
+            self.ndeg = 5
+            # normalization
+            fname = os.path.join(repo, "data", "ff_mpgcen.npy")
+            self.input_norm = np.load(fname, allow_pickle=True).item()
+            self.norm_imF = interp1d(
+                self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
+            )
+            self.add_central = True
         elif self.emulator_label == "CH24_gpr":
             self.emu_params = [
                 "Delta2_p",
@@ -167,6 +220,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
+            self.add_central = False
 
         self.ind_mF = np.argwhere(np.array(self.emu_params) == "mF")[0, 0]
 
@@ -180,8 +234,6 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.list_sim_cube = archive.list_sim_cube
             self.kp_Mpc = archive.kp_Mpc
 
-            ## XXX LOAD BOTH AND COMBINE
-            # keep track of training data to be used in emulator
             training_data = archive.get_training_data(
                 emu_params=self.emu_params,
                 drop_sim=self.drop_sim,
@@ -189,6 +241,13 @@ class GPEmulator(base_emulator.BaseEmulator):
                 val_scaling=self.val_scaling,
                 z_max=self.z_max,
             )
+
+            if self.add_central:
+                # never add for l10
+                if self.drop_sim is not None:
+                    pass
+                else:
+                    training_data += archive.get_testing_data("nyx_central")
 
             if self.emulator_label == "CH24_gpr":
                 self.list_sim_cube += archive2.list_sim_cube
@@ -266,22 +325,6 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         return store_fit
 
-    # def _rescale_params(self, params):
-    #     """
-    #     Rescale a set of parameters to a unit volume.
-
-    #     :param params: Parameters to be rescaled.
-    #     :type params: list or numpy.ndarray
-    #     :return: Rescaled parameters.
-    #     :rtype: numpy.ndarray
-    #     """
-    #     for ii in range(len(params)):
-    #         params[ii] = (params[ii] - self.param_limits[ii, 0]) / (
-    #             self.param_limits[ii, 1] - self.param_limits[ii, 0]
-    #         )
-
-    #     return params
-
     def _buildTrainingSets(self, training_data):
         """
         Build training sets containing the parameter grid and corresponding training points.
@@ -294,15 +337,22 @@ class GPEmulator(base_emulator.BaseEmulator):
             - numpy.ndarray: Training points.
         """
         ## Grid that will contain all training params
-        params = np.empty([len(training_data), len(self.emu_params)])
+        params = np.zeros((len(training_data), len(self.emu_params)))
+
+        ## Populate parameter grid
+        for ii in range(len(training_data)):
+            for jj in range(len(self.emu_params)):
+                params[ii, jj] = training_data[ii][self.emu_params[jj]]
 
         trainingPoints = self._training_points_gpolyfit(training_data)
 
-        for aa in range(len(training_data)):
-            for bb in range(len(self.emu_params)):
-                params[aa][bb] = training_data[aa][
-                    self.emu_params[bb]
-                ]  ## Populate parameter grid
+        # curate data
+        mask1 = np.all(np.isfinite(params), axis=1)
+        mask2 = np.all(np.isfinite(trainingPoints), axis=1)
+        mask = (mask1 == True) & (mask2 == True)
+        params = params[mask]
+        trainingPoints = trainingPoints[mask]
+        print(params.shape, trainingPoints.shape)
 
         return params, trainingPoints
 
@@ -366,8 +416,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.tpoints = (self.tpoints - self.tscalings_mean) / self.tscalings_std
 
         nelem = self.xpoints.shape[0]
-        nelem_max = 1000
-        nn_gps = int(np.ceil(nelem / nelem_max * 2))
+        nn_gps = int(np.ceil(nelem / self.nelem_max * 2))
 
         # overlap
         list_percen = np.linspace(0, 100, nn_gps)
@@ -400,7 +449,10 @@ class GPEmulator(base_emulator.BaseEmulator):
 
             self.gp.append(
                 GaussianProcessRegressor(
-                    kernel=self.kernel, optimizer=optimizer, random_state=0
+                    kernel=self.kernel,
+                    optimizer=optimizer,
+                    random_state=0,
+                    n_restarts_optimizer=self.n_restarts_optimizer,
                 ).fit(
                     self.xpoints[mask],
                     self.tpoints[mask],
@@ -409,57 +461,6 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         end = time.time()
         print("GPs optimised in {0:.2f} seconds".format(end - start))
-
-    # def _get_param_limits(self, paramGrid):
-    #     """
-    #     Get the minimum and maximum values for each parameter.
-
-    #     This method computes the minimum and maximum values for each parameter in the provided
-    #     parameter grid (`paramGrid`), which is used for rescaling parameters to a unit volume.
-
-    #     :param paramGrid: 2D array where each column represents a parameter and each row represents a training point.
-    #     :type paramGrid: numpy.ndarray
-    #     :return: An array where each row contains the minimum and maximum values for a parameter.
-    #     :rtype: numpy.ndarray
-    #     """
-    #     param_limits = np.empty((np.shape(paramGrid)[1], 2))
-    #     for aa in range(len(param_limits)):
-    #         param_limits[aa, 0] = min(paramGrid[:, aa])
-    #         param_limits[aa, 1] = max(paramGrid[:, aa])
-
-    #     return param_limits
-
-    # def _train(self):
-    #     """
-    #     Train the Gaussian Process (GP) emulator.
-
-    #     This method initializes and optimizes the Gaussian Process models. If `emu_per_k` is True,
-    #     it trains multiple GP models, one for each k-bin. Otherwise, it trains a single GP model
-    #     for all k-bins.
-
-    #     :return: None
-    #     """
-
-    #     start = time.time()
-    #     for ii in range(len(self.gp)):
-    #         # self.gp[ii].initialize_parameter()
-    #         status = self.gp[ii].optimize(messages=False)
-    #     end = time.time()
-    #     print("GPs optimised in {0:.2f} seconds".format(end - start))
-
-    #     return
-
-    # def printPriorVolume(self):
-    #     """
-    #     Print the limits for each parameter.
-
-    #     This method prints the minimum and maximum values for all parameters used in the emulator.
-    #     This provides a way to inspect the parameter space covered by the emulator.
-
-    #     :return: None
-    #     """
-    #     for aa in range(len(self.emu_params)):
-    #         print(self.emu_params[aa], self.param_limits[aa])
 
     def predict(self, model):
         """
@@ -500,7 +501,7 @@ class GPEmulator(base_emulator.BaseEmulator):
 
         return out_pred
 
-    def emulate_p1d_Mpc(self, model, k_Mpc, verbose=False):
+    def emulate_p1d_Mpc(self, model, k_Mpc, verbose=False, return_coeff=False):
         """
         Return the trained P(k) for an arbitrary set of k bins by interpolating the trained data.
 
@@ -568,4 +569,7 @@ class GPEmulator(base_emulator.BaseEmulator):
 
             p1d[ii] = np.exp(p1d_unorm) * norm
 
-        return p1d
+        if return_coeff:
+            return p1d, gp_pred
+        else:
+            return p1d
