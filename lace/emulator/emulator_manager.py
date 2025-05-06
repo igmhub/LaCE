@@ -69,7 +69,7 @@ def set_emulator(emulator_label, archive=None, drop_sim=None):
     if emulator_label in ["CH24_mpg_gp", "CH24_nyx_gp"]:
         return GPEmulator_new(emulator_label=emulator_label)
 
-    if emulator_label in ["CH24_nyx_gpr", "CH24_nyxcen_gpr"]:
+    if emulator_label in ["CH24_nyx_gpr", "CH24_nyxcen_gpr", "CH24_mpgcen_gpr"]:
         return GPEmulator_multi(emulator_label=emulator_label)
 
     elif emulator_label in ["CH24", "CH24_NYX"]:
