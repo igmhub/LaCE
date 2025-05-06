@@ -54,6 +54,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         emulator_label_all = [
             "CH24_mpg_gpr",
             "CH24_nyx_gpr",
+            "CH24_mpgcen_gpr",
             "CH24_nyxcen_gpr",
             "CH24_gpr",
         ]
@@ -81,7 +82,9 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.label = label
         self.path_save_meta = os.path.join(folder_save, label_meta)
 
-        if self.emulator_label == "CH24_mpg_gpr":
+        if (self.emulator_label == "CH24_mpg_gpr") | (
+            self.emulator_label == "CH24_mpgcen_gpr"
+        ):
             self.emu_params = [
                 "Delta2_p",
                 "n_p",
@@ -90,13 +93,20 @@ class GPEmulator(base_emulator.BaseEmulator):
                 "gamma",
                 "kF_Mpc",
             ]
-            self.z_max, self.kmax_Mpc, self.emu_type = (5.5, 4.25, "gpolyfit")
+            self.z_max, self.kmin_Mpc, self.kmax_Mpc, self.emu_type = (
+                5.5,
+                0.02,
+                4.25,
+                "gpolyfit",
+            )
             # self.z_max, self.kmax_Mpc, self.emu_type = (5.5, 4.25, "gkbin")
             self.average = "both"
-            # self.val_scaling = None
-            self.kernel = Matern(nu=2.5, length_scale=1.0)
-            self.nelem_max = 2000
-            self.val_scaling = 1
+            self.kernel = Matern(
+                nu=0.5, length_scale=np.ones(len(self.emu_params))
+            )
+            self.nelem_max = 1200
+            # self.val_scaling = 1
+            self.val_scaling = None
             # smoothing function
             self.func_poly = func_poly
             self.ndeg = 5
@@ -106,9 +116,14 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
-            self.add_central = False
+            if self.emulator_label == "CH24_mpg_gpr":
+                self.add_central = False
+            else:
+                self.add_central = True
 
-        elif self.emulator_label == "CH24_nyx_gpr":
+        elif (self.emulator_label == "CH24_nyx_gpr") | (
+            self.emulator_label == "CH24_nyxcen_gpr"
+        ):
             self.emu_params = [
                 "Delta2_p",
                 "n_p",
@@ -125,7 +140,6 @@ class GPEmulator(base_emulator.BaseEmulator):
                 4.25,
                 "gpolyfit",
             )
-            # self.z_max, self.kmax_Mpc, self.emu_type = (5.5, 4.25, "gkbin")
             self.average = "both"
             self.val_scaling = None
             # self.kernel = Matern(
@@ -135,7 +149,6 @@ class GPEmulator(base_emulator.BaseEmulator):
                 nu=0.5, length_scale=np.ones(len(self.emu_params))
             )
             # smoothing function
-            # self.nelem_max = 750
             self.nelem_max = 1200
             self.func_poly = func_poly
             self.ndeg = 5
@@ -145,40 +158,11 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
-            self.add_central = False
-        elif self.emulator_label == "CH24_nyxcen_gpr":
-            self.emu_params = [
-                "Delta2_p",
-                "n_p",
-                "alpha_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                "kF_Mpc",
-            ]
+            if self.emulator_label == "CH24_nyx_gpr":
+                self.add_central = False
+            else:
+                self.add_central = True
 
-            self.z_max, self.kmin_Mpc, self.kmax_Mpc, self.emu_type = (
-                5.5,
-                0.02,
-                4.25,
-                "gpolyfit",
-            )
-            self.average = "both"
-            self.val_scaling = None
-            self.kernel = Matern(
-                nu=0.5, length_scale=np.ones(len(self.emu_params))
-            )
-            # smoothing function
-            self.nelem_max = 1200
-            self.func_poly = func_poly
-            self.ndeg = 5
-            # normalization
-            fname = os.path.join(repo, "data", "ff_mpgcen.npy")
-            self.input_norm = np.load(fname, allow_pickle=True).item()
-            self.norm_imF = interp1d(
-                self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
-            )
-            self.add_central = True
         elif self.emulator_label == "CH24_gpr":
             self.emu_params = [
                 "Delta2_p",
@@ -247,7 +231,12 @@ class GPEmulator(base_emulator.BaseEmulator):
                 if self.drop_sim is not None:
                     pass
                 else:
-                    training_data += archive.get_testing_data("nyx_central")
+                    if "mpg" in self.emulator_label:
+                        cen_lab = "mpg_central"
+                    else:
+                        cen_lab = "nyx_central"
+
+                    training_data += archive.get_testing_data(cen_lab)
 
             if self.emulator_label == "CH24_gpr":
                 self.list_sim_cube += archive2.list_sim_cube
