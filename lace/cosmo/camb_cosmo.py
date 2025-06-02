@@ -393,7 +393,7 @@ def dkms_dhMpc(cosmo, z, camb_results=None):
 
 
 
-def ddeg_dMpc_tvs(cosmo, z, camb_results=None):
+def ddeg_dMpc(cosmo, z, camb_results=None):
     """Compute factor to translate angular transverse separations (in deg) to comoving
         transverse separations (in Mpc).
     Inputs:
@@ -407,9 +407,8 @@ def ddeg_dMpc_tvs(cosmo, z, camb_results=None):
     if camb_results is None:
         camb_results = camb.get_results(cosmo)
     
-    dc = camb_results.comoving_radial_distance(z) # comoving distance from 0 to z
-    assert cosmo.omk==0, "Unit conversions will fail if curvature is nonzero. Need to implement."
-    return (180./np.pi) / dc # pi/180 [deg/rad] / dc [Mpc/rad] *  = dc [deg/Mpc]
+    dm = camb_results.angular_diameter_distance(z)*(1+z) # transverse distance in cMpc for one radian
+    return (180./np.pi) / dm  # 180/pi [deg/rad] / dm [Mpc/rad] = dtheta/dm [deg/Mpc]
     
 
 
