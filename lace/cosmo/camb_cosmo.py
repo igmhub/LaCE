@@ -392,6 +392,26 @@ def dkms_dhMpc(cosmo, z, camb_results=None):
     return dvdX
 
 
+
+def ddeg_dMpc(cosmo, z, camb_results=None):
+    """Compute factor to translate angular transverse separations (in deg) to comoving
+        transverse separations (in Mpc).
+    Inputs:
+        - cosmo: CAMBparams object.
+        - z: redshift
+        - camb_results (optional): CAMBdata object, avoid calling get_results
+    Returns:
+        - transverse degrees per comoving Mpc at redshift z
+    """
+    
+    if camb_results is None:
+        camb_results = camb.get_results(cosmo)
+    
+    dm = camb_results.angular_diameter_distance(z)*(1+z) # transverse distance in cMpc for one radian
+    return (180./np.pi) / dm  # 180/pi [deg/rad] / dm [Mpc/rad] = dtheta/dm [deg/Mpc]
+    
+
+
 def shift_primordial_pivot(cosmo_dict, pivot_scalar):
     """Shift the value of A_s calculated at a new pivot point.
     It used to be used in test_simulation if using a different pivot
