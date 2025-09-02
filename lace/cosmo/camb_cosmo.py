@@ -119,7 +119,13 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
         wa = params["wa"]
     else:
         wa = cosmo_fid.DarkEnergy.wa
-    pars.set_dark_energy(w=w, wa=wa)
+
+    # set DE (fluid or ppf from https://camb.readthedocs.io/en/latest/_modules/camb/dark_energy.html)
+    if ((w + 1) < -1e-6) or ((1 + w + wa) < -1e-6):
+        dark_energy_model = "ppf"
+    else:
+        dark_energy_model = "fluid"
+    pars.set_dark_energy(w=w, wa=wa, dark_energy_model=dark_energy_model)
 
     # collect primorial power parameters
     if "As" in params:
@@ -398,7 +404,6 @@ def dkms_dhMpc(cosmo, z, camb_results=None):
     return dvdX
 
 
-
 def ddeg_dMpc(cosmo, z, camb_results=None):
     """Compute factor to translate angular transverse separations (in deg) to comoving
         transverse separations (in Mpc).
@@ -409,13 +414,16 @@ def ddeg_dMpc(cosmo, z, camb_results=None):
     Returns:
         - transverse degrees per comoving Mpc at redshift z
     """
-    
+
     if camb_results is None:
         camb_results = camb.get_results(cosmo)
-    
-    dm = camb_results.angular_diameter_distance(z)*(1+z) # transverse distance in cMpc for one radian
-    return (180./np.pi) / dm  # 180/pi [deg/rad] / dm [Mpc/rad] = dtheta/dm [deg/Mpc]
-    
+
+    dm = camb_results.angular_diameter_distance(z) * (
+        1 + z
+    )  # transverse distance in cMpc for one radian
+    return (
+        180.0 / np.pi
+    ) / dm  # 180/pi [deg/rad] / dm [Mpc/rad] = dtheta/dm [deg/Mpc]
 
 
 def shift_primordial_pivot(cosmo_dict, pivot_scalar):
