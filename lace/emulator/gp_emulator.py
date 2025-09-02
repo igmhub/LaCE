@@ -1,4 +1,3 @@
-import GPy
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
@@ -69,6 +68,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         smoothing_bn=None,
         smoothing_krange=None,
     ):
+        import GPy
+
         self.kmax_Mpc = kmax_Mpc
         self.emu_type = emu_type
         self.emu_noise = set_noise_var

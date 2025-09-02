@@ -1,4 +1,4 @@
-import GPy, pickle, os, time
+import pickle, os, time
 import numpy as np
 from warnings import warn
 from scipy.interpolate import interp1d
@@ -31,6 +31,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         train=False,
         save=False,
     ):
+        import GPy
+
         self.emulator_label = emulator_label
         self.drop_sim = drop_sim
 

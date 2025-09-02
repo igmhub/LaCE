@@ -36,8 +36,14 @@ def get_cosmology(
     pars = camb.CAMBparams()
     # set background cosmology
     pars.set_cosmology(H0=H0, ombh2=ombh2, omch2=omch2, omk=omk, mnu=mnu)
-    # set DE
-    pars.set_dark_energy(w=w, wa=wa)
+    # set DE (fluid or ppf from https://camb.readthedocs.io/en/latest/_modules/camb/dark_energy.html)
+    if ((w + 1) < -1e-6) or ((1 + w + wa) < -1e-6):
+        dark_energy_model = "ppf"
+    else:
+        dark_energy_model = "fluid"
+    pars.set_dark_energy(
+        w=w, wa=wa, cs2=1.0, dark_energy_model=dark_energy_model
+    )
     # set primordial power
     pars.InitPower.set_params(
         As=As, ns=ns, nrun=nrun, pivot_scalar=pivot_scalar
