@@ -24,7 +24,9 @@ def get_cosmology(
     As=2.105e-09,
     ns=0.9665,
     nrun=0.0,
+    nrunrun=0.0,
     pivot_scalar=0.05,
+    nnu=3.046,
     w=-1,
     wa=0,
 ):
@@ -35,7 +37,9 @@ def get_cosmology(
 
     pars = camb.CAMBparams()
     # set background cosmology
-    pars.set_cosmology(H0=H0, ombh2=ombh2, omch2=omch2, omk=omk, mnu=mnu)
+    pars.set_cosmology(
+        H0=H0, ombh2=ombh2, omch2=omch2, omk=omk, mnu=mnu, nnu=nnu
+    )
     # set DE (fluid or ppf from https://camb.readthedocs.io/en/latest/_modules/camb/dark_energy.html)
     if ((w + 1) < -1e-6) or ((1 + w + wa) < -1e-6):
         dark_energy_model = "ppf"
@@ -46,7 +50,7 @@ def get_cosmology(
     )
     # set primordial power
     pars.InitPower.set_params(
-        As=As, ns=ns, nrun=nrun, pivot_scalar=pivot_scalar
+        As=As, ns=ns, nrun=nrun, nrunrun=nrunrun, pivot_scalar=pivot_scalar
     )
 
     return pars
@@ -74,26 +78,38 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
     else:
         H0 = cosmo_fid.H0
         cosmomc_theta = None
+
     if "ombh2" in params:
         ombh2 = params["ombh2"]
     elif "omegabh2" in params:
         ombh2 = params["omegabh2"]
     else:
         ombh2 = cosmo_fid.ombh2
+
     if "omch2" in params:
         omch2 = params["omch2"]
     elif "omegach2" in params:
         omch2 = params["omegach2"]
     else:
         omch2 = cosmo_fid.omch2
+
     if "omk" in params:
         omk = params["omk"]
+    elif "omegak" in params:
+        omk = params["omegak"]
     else:
         omk = cosmo_fid.omk
+
     if "mnu" in params:
         mnu = params["mnu"]
     else:
         mnu = get_mnu(cosmo_fid)
+
+    if "nnu" in params:
+        nnu = params["nnu"]
+    else:
+        nnu = cosmo_fid.nnu
+
     if "tau" in params:
         tau = params["tau"]
     else:
@@ -106,6 +122,7 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
         omch2=omch2,
         omk=omk,
         mnu=mnu,
+        nnu=nnu,
         tau=tau,
     )
 
@@ -131,24 +148,33 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
     if "As" in params:
         As = params["As"]
     elif "logA" in params:
-        As = np.exp(params["logA"]) / (10**10)
+        As = np.exp(params["logA"]) / 1e10
     else:
         As = cosmo_fid.InitPower.As
+
     if "ns" in params:
         ns = params["ns"]
     else:
         ns = cosmo_fid.InitPower.ns
+
     if "nrun" in params:
         nrun = params["nrun"]
     else:
         nrun = cosmo_fid.InitPower.nrun
+
+    if "nrunrun" in params:
+        nrunrun = params["nrunrun"]
+    else:
+        nrunrun = cosmo_fid.InitPower.nrunrun
+
     if "pivot_scalar" in params:
         pivot_scalar = params["pivot_scalar"]
     else:
         pivot_scalar = cosmo_fid.InitPower.pivot_scalar
+
     # update primordial power
     pars.InitPower.set_params(
-        As=As, ns=ns, nrun=nrun, pivot_scalar=pivot_scalar
+        As=As, ns=ns, nrun=nrun, nrunrun=nrunrun, pivot_scalar=pivot_scalar
     )
 
     return pars
