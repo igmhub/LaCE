@@ -167,6 +167,11 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
     else:
         nrunrun = cosmo_fid.InitPower.nrunrun
 
+    if "r" in params:
+        r = params["r"]
+    else:
+        r = cosmo_fid.InitPower.r
+
     if "pivot_scalar" in params:
         pivot_scalar = params["pivot_scalar"]
     else:
@@ -174,7 +179,12 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
 
     # update primordial power
     pars.InitPower.set_params(
-        As=As, ns=ns, nrun=nrun, nrunrun=nrunrun, pivot_scalar=pivot_scalar
+        As=As,
+        ns=ns,
+        nrun=nrun,
+        nrunrun=nrunrun,
+        r=r,
+        pivot_scalar=pivot_scalar,
     )
 
     return pars
