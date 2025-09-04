@@ -60,7 +60,16 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
     """Given a dictionary with parameters, return CAMB cosmology object.
     - cosmo_fid will be used for parameters not provided."""
 
-    pars = camb.CAMBparams()
+    init_tensor = False
+    if "r" in params:
+        if params["r"] != 0:
+            init_tensor = True
+
+    if init_tensor:
+        pars = camb.CAMBparams(WantTensors=True)
+    else:
+        pars = camb.CAMBparams()
+
     # use default values for those not provided
     if cosmo_fid is None:
         cosmo_fid = get_cosmology()
@@ -114,6 +123,7 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
         tau = params["tau"]
     else:
         tau = cosmo_fid.Reion.optical_depth
+
     # update cosmology object
     pars.set_cosmology(
         H0=H0,
