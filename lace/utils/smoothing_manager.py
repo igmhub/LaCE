@@ -1,3 +1,6 @@
+import numpy as np
+from scipy.optimize import curve_fit
+
 from lace.utils import poly_p1d
 
 
@@ -35,6 +38,34 @@ def apply_smoothing(emulator, data, fprint=print):
                 data[ii]["k_Mpc"], data[ii]
             )
             data[ii]["p1d_Mpc_smooth"] = _
+    elif emulator.emu_type == "gpolyfit":
+        for ii in range(len(data)):
+            ind_k = (data[ii]["k_Mpc"] > 0) & (
+                data[ii]["k_Mpc"] < emulator.kmax_Mpc
+            )
+            k_Mpc = data[ii]["k_Mpc"][ind_k]
+            k_fit = k_Mpc / emulator.kmax_Mpc
+
+            norm = np.interp(
+                k_Mpc,
+                emulator.input_norm["k_Mpc"],
+                emulator.norm_imF(data[ii]["mF"]),
+            )
+
+            y2fit = np.log(data[ii]["p1d_Mpc"][ind_k] / norm)
+            par_fit, _ = curve_fit(emulator.func_poly, k_fit, y2fit)
+
+            log_unorm_p1d = emulator.func_poly(
+                data[ii]["k_Mpc"] / emulator.kmax_Mpc, *par_fit
+            )
+
+            norm = np.interp(
+                data[ii]["k_Mpc"],
+                emulator.input_norm["k_Mpc"],
+                emulator.norm_imF(data[ii]["mF"]),
+            )
+
+            data[ii]["p1d_Mpc_smooth"] = np.exp(log_unorm_p1d) * norm
     else:
         raise ValueError(
             "Smoothing technique not recognized:", emulator.emu_type
