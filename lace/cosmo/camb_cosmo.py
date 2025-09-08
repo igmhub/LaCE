@@ -117,7 +117,7 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
     if "nnu" in params:
         nnu = params["nnu"]
     else:
-        nnu = cosmo_fid.nnu
+        nnu = cosmo_fid.N_eff
 
     if "tau" in params:
         tau = params["tau"]
