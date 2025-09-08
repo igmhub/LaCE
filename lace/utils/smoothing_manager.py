@@ -36,7 +36,9 @@ def apply_smoothing(emulator, data, fprint=print):
             )
             data[ii]["p1d_Mpc_smooth"] = _
     else:
-        raise ValueError("Smoothing technique not recognized:", technique)
+        raise ValueError(
+            "Smoothing technique not recognized:", emulator.emu_type
+        )
 
     if type_data is not list:
         data = data[0]
