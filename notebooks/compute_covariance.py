@@ -190,6 +190,7 @@ for ii in range(cov.shape[0]):
     for jj in range(cov.shape[0]):
         corr[ii, jj] = cov[ii, jj]/np.sqrt(cov[ii, ii] * cov[jj, jj])
 plt.imshow(corr)
+plt.colorbar()
 
 # #### nyx
 
@@ -198,12 +199,25 @@ for ii in range(cov.shape[0]):
     for jj in range(cov.shape[0]):
         corr[ii, jj] = cov[ii, jj]/np.sqrt(cov[ii, ii] * cov[jj, jj])
 plt.imshow(corr)
+plt.colorbar()
+
+
 
 # #### mpg
 
-bias = np.mean(rel_diff, axis=(0, 1))
+# +
+
 plt.plot(k_Mpc, np.sqrt(np.diag(cov)))
-plt.plot(k_Mpc, bias)
+plt.xlabel(r"$k$[1/Mpc]")
+plt.ylabel(r"Relative error")
+# bias = np.mean(rel_diff, axis=(0, 1))
+# plt.plot(k_Mpc, bias)
+plt.xscale("log")
+plt.tight_layout()
+plt.savefig("figs/err_CH24_mpgcen_gpr.png")
+plt.savefig("figs/err_CH24_mpgcen_gpr.pdf")
+
+# -
 
 # #### nyx
 
@@ -219,6 +233,16 @@ dict_save["zz"] = zz
 dict_save["k_Mpc"] = k_Mpc
 np.save(full_path, dict_save)
 
+# #### Load data
 
+suite = "mpg"
+# suite = "nyx"
+emulator_label = "CH24_"+suite+"cen_gpr"
+filename = "l1O_cov_" + emulator_label + ".npy"
+full_path = os.path.join(os.path.dirname(lace.__path__[0]), "data", "covariance", filename)
+dat = np.load(full_path, allow_pickle=True).item()
+
+cov = dat["cov"]
+k_Mpc = dat["k_Mpc"]
 
 
