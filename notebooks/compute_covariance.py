@@ -13,7 +13,7 @@
 #     name: python3
 # ---
 
-# # Compute covariance matrix
+# # Compute covariance matrix, also figure smoothing
 
 # First show how to train and load emulators, then compute covariance matrix
 
@@ -74,8 +74,8 @@ emulator = emulator_keep
 
 # +
 # testing_data = archive.get_testing_data("nyx_central")
-# testing_data = archive.get_testing_data("mpg_central")
-testing_data = archive.get_testing_data("mpg_seed")
+testing_data = archive.get_testing_data("mpg_central")
+# testing_data = archive.get_testing_data("mpg_seed")
 # testing_data = archive.get_testing_data("nyx_0")
 # emulator = GPEmulator(emulator_label=emulator_label, train=False, drop_sim=isim)
 
@@ -92,7 +92,8 @@ else:
         
 
 nz = len(testing_data)
-# p1d_Mpc_sim = np.zeros((nsam, k_Mpc.shape[0]))
+
+p1d_Mpc_sim = np.zeros((nz, k_Mpc.shape[0]))
 p1d_Mpc_emu = np.zeros((nz, k_Mpc.shape[0]))
 p1d_Mpc_sm = np.zeros((nz, k_Mpc.shape[0]))
 zz_full = np.zeros((nz, k_Mpc.shape[0]))
@@ -112,7 +113,7 @@ for ii in range(nz):
     zz_full[ii] = testing_data[ii]["z"]
     k_Mpc_full[ii] = k_Mpc_0
 
-    # p1d_Mpc_sim[i2] = testing_data[ii]['p1d_Mpc'][ind]
+    p1d_Mpc_sim[ii] = testing_data[ii]['p1d_Mpc'][ind]
     p1d_Mpc_emu[ii] = emulator.emulate_p1d_Mpc(
         testing_data[ii], 
         k_Mpc
@@ -124,6 +125,43 @@ for ii in range(nz):
     popt, _ = curve_fit(emulator.func_poly, k_fit, yfit)
     p1d_Mpc_sm[ii] = norm * np.exp(emulator.func_poly(k_fit, *popt))
 # -
+
+p1d_Mpc_sim_seed = p1d_Mpc_sim.copy()
+p1d_Mpc_sm_seed = p1d_Mpc_sm.copy()
+
+# +
+
+from matplotlib import rcParams
+
+rcParams["mathtext.fontset"] = "stix"
+rcParams["font.family"] = "STIXGeneral"
+
+
+# +
+fig, ax = plt.subplots(1, figsize=(8, 6))
+ftsize = 24
+
+jj = 0
+for ii in range(6, 7):
+    ax.plot(k_Mpc_full[ii], p1d_Mpc_sm[ii]/p1d_Mpc_sim[ii]-1, "C0-", lw=2, label="mpg-central")
+    ax.plot(k_Mpc_full[ii], p1d_Mpc_sim_seed[ii]/p1d_Mpc_sm_seed[ii]-1, "C1--", lw=2, label="mpg-seed")
+    jj += 1
+ax.axhline(color="k", linestyle=":")
+ax.set_ylim(-0.022, 0.022)
+
+ax.set_xscale("log")
+ax.set_ylabel(r"$P_\mathrm{1D}^\mathrm{smooth}/P_\mathrm{1D}^\mathrm{sim}-1$", fontsize=ftsize)
+ax.set_xlabel(r"$k\,\left[\mathrm{Mpc}^{-1}\right]$", fontsize=ftsize)
+ax.tick_params(axis="both", which="major", labelsize=ftsize)
+plt.legend(fontsize=ftsize-2)
+plt.tight_layout()
+plt.savefig("figs/smooth_cen_seed.png")
+plt.savefig("figs/smooth_cen_seed.pdf")
+# -
+
+
+
+
 
 for ii in range(nz):
     plt.plot(k_Mpc_full[ii], p1d_Mpc_emu[ii]/p1d_Mpc_sm[ii])
