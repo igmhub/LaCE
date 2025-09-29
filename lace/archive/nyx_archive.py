@@ -57,7 +57,8 @@ class NyxArchive(BaseArchive):
         self.list_sim_test = [
             "nyx_central",
             "nyx_seed",
-            "nyx_seed_val",
+            "nyx_cgan_base",
+            "nyx_cgan_val",
             "nyx_3_ic",
             "nyx_wdm",
             "accel2",
@@ -122,8 +123,9 @@ class NyxArchive(BaseArchive):
         self.sim_conv = {
             "fiducial": "nyx_central",
             "bar_ic_grid_3": "nyx_3_ic",
-            "CGAN_4096_base": "nyx_seed",
-            "CGAN_4096_val": "nyx_seed_val",
+            "Nyx_fid_rseed": "nyx_seed",
+            "CGAN_4096_base": "nyx_cgan_base",
+            "CGAN_4096_val": "nyx_cgan_val",
             "Sherwood_2048_40": "sherwood",
             "wdm_3.5kev_grid_1": "nyx_wdm",
             "ACCEL2_6144_160": "accel2",
@@ -314,7 +316,7 @@ class NyxArchive(BaseArchive):
                 )
                 raise ValueError(error_text)
 
-            if "CGAN" in self.nyx_version:
+            if ("CGAN" in self.nyx_version) | ("fid_rseed" in self.nyx_version):
                 nyx_file = os.path.join(
                     os.environ["NYX_PATH"], self.nyx_version + ".hdf5"
                 )
@@ -348,6 +350,7 @@ class NyxArchive(BaseArchive):
         # loop over simulations. always check if avail because there are some
         # configurations missing here and there
         sim_avail = list(ff.keys())
+        print(sim_avail)
         for isim in sim_avail:
             # this simulation seems to have issues
             if isim == "cosmo_grid_14":
