@@ -128,6 +128,7 @@ class BaseArchive(object):
                     & (self.ind_snap == ind_snap)
                     & ~np.isin(self.ind_axis, drop_axis)
                 )[:, 0]
+                # print(sim_label, ind_rescaling, ind_snap, ind_merge)
 
                 dict_av["ind_axis"] = "average"
                 dict_av["ind_phase"] = "average"
@@ -453,7 +454,7 @@ class BaseArchive(object):
         if isinstance(ind_rescaling, (int, type(None))) == False:
             raise TypeError("val_scaling must be an int or None")
         if ind_rescaling is None:
-            if sim_label == "nyx_central":
+            if (sim_label == "nyx_central") | (sim_label == "nyx_seed"):
                 ind_rescaling = 1
             else:
                 ind_rescaling = self.testing_ind_rescaling
