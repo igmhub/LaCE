@@ -14,7 +14,8 @@ def main():
     # file containing Nyx data
     # nyx_version = "Oct2023"
     # nyx_version = "Jul2024"
-    nyx_version = "models_Nyx_Mar2025_with_CGAN_val_3axes"
+    # nyx_version = "models_Nyx_Mar2025_with_CGAN_val_3axes"
+    nyx_version = "models_Nyx_Sept2025_include_Nyx_fid_rseed"
     nyx_fname = os.environ["NYX_PATH"] + "/" + nyx_version + ".hdf5"
     # file that will be written containing cosmo data for Nyx file
     cosmo_fname = (
@@ -41,6 +42,7 @@ def main():
         #     continue
 
         isim = nyx_archive.sim_conv[sim_label]
+        print(sim_label, isim)
         sim_dict = {}
         sim_dict["sim_label"] = isim
         # iterate over snapshots

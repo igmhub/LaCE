@@ -7,8 +7,10 @@ import os
 def main():
     """Save IGM history of all mpg simulations"""
 
-    nyx_version = "Oct2023"
-    nyx_version = "models_Nyx_Mar2025_with_CGAN_val_3axes"
+    # nyx_version = "Oct2023"
+    # nyx_version = "models_Nyx_Mar2025_with_CGAN_val_3axes"
+    # nyx_version = "models_Nyx_Mar2025_with_CGAN_val_3axes"
+    nyx_version = "models_Nyx_Sept2025_include_Nyx_fid_rseed"
     nyx_archive = NyxArchive(nyx_version=nyx_version)
     emu_params = [
         "Delta2_p",
@@ -96,7 +98,7 @@ def main():
         cosmo_params, linP_params, star_params = nyx_archive._get_emu_cosmo(
             None, rsim_conv[sim_label]
         )
-        if sim_label == "nyx_central":
+        if (sim_label == "nyx_central") | (sim_label == "nyx_seed"):
             ind_rescaling = 1
         else:
             ind_rescaling = None
