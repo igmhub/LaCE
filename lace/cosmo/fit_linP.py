@@ -5,11 +5,11 @@ from lace.cosmo import camb_cosmo
 from lace.utils.poly_p1d import fit_polynomial
 
 
-def get_linP_Mpc_zs(cosmo, zs, kp_Mpc):
+def get_linP_Mpc_zs(cosmo, zs, kp_Mpc, fast_camb=True):
     """For each redshift, obtain and fit linear power parameters around kp_Mpc"""
 
     # run slowest part of CAMB computation, to avoid repetition
-    camb_results = camb_cosmo.get_camb_results(cosmo, zs, fast_camb=True)
+    camb_results = camb_cosmo.get_camb_results(cosmo, zs, fast_camb=fast_camb)
 
     # compute linear power at all zs
     k_Mpc, zs_out, P_Mpc = camb_cosmo.get_linP_Mpc(cosmo, zs, camb_results)
@@ -64,7 +64,7 @@ def compute_gz(cosmo, z_star, camb_results=None):
     g(z) = dln H(z) / dln(1+z)^3/2 = 2/3 (1+z)/H(z) dH/dz"""
 
     if camb_results is None:
-        camb_results = camb_cosmo.get_camb_results(cosmo)
+        camb_results = camb_cosmo.get_camb_results(cosmo, fast_camb=fast_camb)
 
     # compute derivative of Hubble
     dz = z_star / 100.0
@@ -79,7 +79,7 @@ def compute_gz(cosmo, z_star, camb_results=None):
     return gz
 
 
-def compute_fz(cosmo, z, kp_Mpc):
+def compute_fz(cosmo, z, kp_Mpc, fast_camb=True):
     """Given cosmology, compute logarithmic growth rate (f) at z, around
     pivot point k_p (in 1/Mpc):
     f(z) = d lnD / d lna = - 1/2 * (1+z)/P(z) dP/dz"""
@@ -89,7 +89,9 @@ def compute_fz(cosmo, z, kp_Mpc):
     zs = [z + dz, z, z - dz]
 
     # slowest part to run
-    camb_results = camb_cosmo.get_camb_results(cosmo, zs=zs, fast_camb=True)
+    camb_results = camb_cosmo.get_camb_results(
+        cosmo, zs=zs, fast_camb=fast_camb
+    )
     k_Mpc, zs_out, P_Mpc = camb_cosmo.get_linP_Mpc(cosmo, zs, camb_results)
 
     # compute derivative of linear power
@@ -119,6 +121,7 @@ def fit_linP_kms(
     fit_min=0.5,
     fit_max=2.0,
     camb_kmax_Mpc_fast=1.5,
+    fast_camb=True,
 ):
     """Given input cosmology, compute linear power at z_star
     (in km/s) and fit polynomial around kp_kms.
@@ -129,7 +132,10 @@ def fit_linP_kms(
     if camb_results == None:
         zs = [z_star]
         camb_results = camb_cosmo.get_camb_results(
-            cosmo, zs=zs, fast_camb=True, camb_kmax_Mpc_fast=camb_kmax_Mpc_fast
+            cosmo,
+            zs=zs,
+            fast_camb=fast_camb,
+            camb_kmax_Mpc_fast=camb_kmax_Mpc_fast,
         )
 
     assert z_star in list(camb_results.transfer_redshifts), (
@@ -168,6 +174,7 @@ def parameterize_cosmology_kms(
     fit_min=0.5,
     fit_max=2.0,
     camb_kmax_Mpc_fast=1.5,
+    fast_camb=True,
 ):
     """Given input cosmology, compute set of parameters that describe
     the linear power around z_star and wavenumbers kp_kms"""
@@ -176,7 +183,10 @@ def parameterize_cosmology_kms(
     if camb_results == None:
         zs = [z_star]
         camb_results = camb_cosmo.get_camb_results(
-            cosmo, zs=zs, fast_camb=True, camb_kmax_Mpc_fast=camb_kmax_Mpc_fast
+            cosmo,
+            zs=zs,
+            fast_camb=fast_camb,
+            camb_kmax_Mpc_fast=camb_kmax_Mpc_fast,
         )
 
     # compute linear power, in km/s, at z_star
@@ -189,6 +199,7 @@ def parameterize_cosmology_kms(
         camb_results=camb_results,
         fit_min=fit_min,
         fit_max=fit_max,
+        fast_camb=fast_camb,
     )
 
     # translate the polynomial to our parameters
