@@ -30,6 +30,10 @@ with open(file) as f:
 data = np.genfromtxt(file, comments='#', names=col_names, dtype=None, encoding=None)
 data.dtype
 
+# +
+# data["Name"][0]
+# -
+
 # #### Running CAMB twice since we do not have As
 
 # +
@@ -90,7 +94,16 @@ out["zs"] = zs
 out["lab_pars"] = lab_pars
 
 np.save("/home/jchaves/Proyectos/projects/lya/data/camels/camels_linP.npy", out)
+
+# +
+
+out = np.load("/home/jchaves/Proyectos/projects/lya/data/camels/camels_linP.npy", allow_pickle=True).item()
+results = out["linP"]
+
 # -
+
+idz = np.argwhere(out["zs"] == 3)[0,0]
+idz
 
 # ## Plot with camels suite, z
 
@@ -123,6 +136,8 @@ plt.savefig("camels_nz.png")
 mpg_cosmos = set_cosmo(cosmo_label="mpg_central", return_all=True)
 nyx_cosmos = set_cosmo(cosmo_label="nyx_central", return_all=True)
 
+# #### IDs of closest simulations
+
 # +
 nsim_mpg = 30
 nz_mpg = 11
@@ -144,6 +159,31 @@ for isim in range(nsim_nyx):
         for iz in range(nz_nyx):
             for kk, lab in enumerate(lab_pars):
                 nyx_cosmo[isim, iz, kk] = nyx_cosmos["nyx_"+str(isim)]["linP_params"][lab][iz]
+# -
+
+
+nyx_cen = nyx_cosmos["nyx_central"]["linP_params"].copy()
+idznyx = nyx_cen["z"] == 3
+params = np.array([nyx_cen['Delta2_p'][_], nyx_cen['n_p'][_], nyx_cen['alpha_p'][_]])[:, 0]
+params
+
+camels_params = results[:, idz, :]
+
+nyx_cosmo.shape
+
+metric = np.zeros(3)
+for ii in range(3):
+    _ = nyx_cosmo[:, :, ii] != 0
+    metric[ii] = np.max(nyx_cosmo[_, ii]) - np.min(nyx_cosmo[_, ii])
+metric
+
+dist = np.zeros(camels_params.shape[0])
+for ii in range(3):
+    dist += (camels_params[:,ii] - params[ii])**2/metric[ii]**2
+np.argmin(dist)
+
+camels_params[890]
+
 
 
 # +
@@ -227,6 +267,51 @@ ax[2].set_ylim(-0.26, -0.16)
 
 plt.tight_layout()
 plt.savefig("camels_nyx_mpg_zoom.png")
+# +
+fig, ax = plt.subplots(1, 3, figsize=(12, 4))
+col = "C0"
+ax[0].scatter(results[:, :, 0].reshape(-1), results[:, :, 1].reshape(-1), color=col, s=3, label="camels")
+ax[1].scatter(results[:, :, 1].reshape(-1), results[:, :, 2].reshape(-1), color=col, s=3)
+ax[2].scatter(results[:, :, 0].reshape(-1), results[:, :, 2].reshape(-1), color=col, s=3)
+
+
+col = "C3"
+x = nyx_cosmo[:, :, 0].reshape(-1)
+y = nyx_cosmo[:, :, 1].reshape(-1)
+z = nyx_cosmo[:, :, 2].reshape(-1)
+_ = (x != 0)
+ax[0].scatter(x[_], y[_], color=col, s=3, label="nyx")
+ax[1].scatter(y[_], z[_], color=col, s=3)
+ax[2].scatter(x[_], z[_], color=col, s=3)
+
+col = "C1"
+ax[0].scatter(mpg_cosmo[:, :, 0].reshape(-1), mpg_cosmo[:, :, 1].reshape(-1), color=col, s=3, label="mpg")
+ax[1].scatter(mpg_cosmo[:, :, 1].reshape(-1), mpg_cosmo[:, :, 2].reshape(-1), color=col, s=3)
+ax[2].scatter(mpg_cosmo[:, :, 0].reshape(-1), mpg_cosmo[:, :, 2].reshape(-1), color=col, s=3)
+
+
+ax[0].legend()
+
+ax[0].set_xlabel(lab_pars[0])
+ax[1].set_xlabel(lab_pars[2])
+ax[2].set_xlabel(lab_pars[0])
+
+ax[0].set_ylabel(lab_pars[1])
+ax[1].set_ylabel(lab_pars[2])
+ax[2].set_ylabel(lab_pars[2])
+
+ax[0].set_xlim(0.05, 0.85)
+ax[1].set_xlim(-2.37, -2.23)
+ax[2].set_xlim(0.05, 0.85)
+
+ax[0].set_ylim(-2.37, -2.23)
+ax[1].set_ylim(-0.235, -0.19)
+ax[2].set_ylim(-0.235, -0.19)
+
+
+plt.tight_layout()
+plt.savefig("camels_nyx_mpg_zoom2.png")
 # -
+
 
 
