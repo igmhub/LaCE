@@ -36,6 +36,7 @@ from matplotlib import pyplot as plt
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator.emulator_manager import set_emulator
 from lace.emulator.gp_emulator_new import GPEmulator
+from lace.emulator.gp_emulator_multi import GPEmulator as GPEmulator_new
 from lace.emulator.nn_emulator import NNEmulator
 from lace.utils import poly_p1d
 import lace
@@ -156,6 +157,7 @@ full_emulator_ch24 = NNEmulator(
 
 CH24_mpg_gp = GPEmulator(emulator_label="CH24_mpg_gp")
 CH24_nyx_gp = GPEmulator(emulator_label="CH24_nyx_gp")
+CH24_nyx_gpr = GPEmulator_new(emulator_label="CH24_nyx_gpr")
 
 
 emulator_label = 'CH24'
@@ -271,6 +273,7 @@ full_emulator = [
     # full_emulator_p23_ext, 
     CH24_mpg_gp,
     CH24_nyx_gp,
+    CH24_nyx_gpr,
     full_emulator_ch24,
     # full_emulator_ch24_nyx,
     full_emulator_ch24_nyx
@@ -292,6 +295,7 @@ emu_labs = [
     # "P23_ext",
     "CH24_MPG_GP",
     "CH24_NYX_GP",
+    "CH24_NYX_GPR",
     "CH24_MPG_NN",
     "CH24_NYX_NN",
     # "Nyx"
@@ -1029,7 +1033,7 @@ for ii in range(3):
 #
 # We compute chi2 and bias.
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # #### Get IDs
 
 # %%
