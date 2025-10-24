@@ -36,7 +36,7 @@ from lace.emulator.gp_emulator_multi import GPEmulator
 
 archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
 
-archive = nyx_archive.NyxArchive(nyx_version="models_Nyx_Mar2025_with_CGAN_val_3axes")
+archive = nyx_archive.NyxArchive(nyx_version="models_Nyx_Sept2025_include_Nyx_fid_rseed")
 
 # ## Train GPs and check precision
 
@@ -50,15 +50,15 @@ archive = nyx_archive.NyxArchive(nyx_version="models_Nyx_Mar2025_with_CGAN_val_3
 
 # Full
 
-# train = True
-train = False
+train = True
+# train = False
 # emulator_label = "CH24_mpgcen_gpr"
-emulator_label = "CH24_mpg_gpr"
-# emulator_label = "CH24_nyxcen_gpr"
+# emulator_label = "CH24_mpg_gpr"
+emulator_label = "CH24_nyxcen_gpr"
 emulator = GPEmulator(emulator_label=emulator_label, archive=archive, train=train, drop_sim=None)
 
 emulator_load = GPEmulator(
-    emulator_label="CH24_nyx_gpr", 
+    emulator_label="CH24_nyxcen_gpr", 
     train=False,
 )
 emulator = emulator_load
@@ -73,9 +73,13 @@ emulator = emulator_keep
 # Validate central!
 
 # +
-# testing_data = archive.get_testing_data("nyx_central")
-testing_data = archive.get_testing_data("mpg_central")
+
+# testing_data = archive.get_testing_data("mpg_central")
 # testing_data = archive.get_testing_data("mpg_seed")
+
+testing_data = archive.get_testing_data("nyx_central")
+# testing_data = archive.get_testing_data("nyx_seed")
+
 # testing_data = archive.get_testing_data("nyx_0")
 # emulator = GPEmulator(emulator_label=emulator_label, train=False, drop_sim=isim)
 
@@ -100,8 +104,9 @@ zz_full = np.zeros((nz, k_Mpc.shape[0]))
 k_Mpc_full = np.zeros((nz, k_Mpc.shape[0]))
 
 for ii in range(nz):
-    if ("kF_Mpc" not in testing_data[ii]) | (np.isfinite(testing_data[ii]["kF_Mpc"]) == False):
-        continue
+    # if ("kF_Mpc" not in testing_data[ii]) | (np.isfinite(testing_data[ii]["kF_Mpc"]) == False):
+        
+    #     continue
 
     # i2 = np.argwhere(np.abs(zz - testing_data[ii]["z"]) < 0.05)[:, 0]
     # if len(i2) == 0:
@@ -126,6 +131,7 @@ for ii in range(nz):
     p1d_Mpc_sm[ii] = norm * np.exp(emulator.func_poly(k_fit, *popt))
 # -
 
+zz_full_seed = zz_full.copy()
 p1d_Mpc_sim_seed = p1d_Mpc_sim.copy()
 p1d_Mpc_sm_seed = p1d_Mpc_sm.copy()
 
@@ -141,30 +147,48 @@ rcParams["font.family"] = "STIXGeneral"
 fig, ax = plt.subplots(1, figsize=(8, 6))
 ftsize = 24
 
-jj = 0
-for ii in range(6, 7):
-    ax.plot(k_Mpc_full[ii], p1d_Mpc_sm[ii]/p1d_Mpc_sim[ii]-1, "C0-", lw=2, label="mpg-central")
-    ax.plot(k_Mpc_full[ii], p1d_Mpc_sim_seed[ii]/p1d_Mpc_sm_seed[ii]-1, "C1--", lw=2, label="mpg-seed")
-    jj += 1
+ztar = 3
+ii = np.argwhere(zz_full == ztar)[0,0]
+jj = np.argwhere(zz_full_seed == ztar)[0,0] 
+    
+psm = 0.5 * (p1d_Mpc_sm_seed[jj] + p1d_Mpc_sm[ii])
+# ax.plot(k_Mpc_full[ii], p1d_Mpc_sm[ii]/p1d_Mpc_sim[ii]-1, "C0-", lw=2, label="mpg-central")
+# ax.plot(k_Mpc_full[ii], p1d_Mpc_sim_seed[ii]/p1d_Mpc_sm_seed[ii]-1, "C1--", lw=2, label="mpg-seed")
+ax.plot(k_Mpc_full[ii], p1d_Mpc_sim[ii]/psm-1, "C0-", lw=2, label="central")
+ax.plot(k_Mpc_full[ii], p1d_Mpc_sim_seed[jj]/psm-1, "C1-", lw=2, label="seed")
+ax.plot(k_Mpc_full[ii], p1d_Mpc_sm[ii]/psm-1, "C0--", lw=2, label="smooth central")
+ax.plot(k_Mpc_full[ii], p1d_Mpc_sm_seed[jj]/psm-1, "C1--", lw=2, label="smooth seed")
+
+
 ax.axhline(color="k", linestyle=":")
-ax.set_ylim(-0.022, 0.022)
+ax.axhline(0.01, color="k", linestyle="--")
+ax.axhline(-0.01, color="k", linestyle="--")
+ax.set_ylim(-0.022, 0.028)
+
+# ax.set_ylim(-0.06, 0.1)
 
 ax.set_xscale("log")
-ax.set_ylabel(r"$P_\mathrm{1D}^\mathrm{smooth}/P_\mathrm{1D}^\mathrm{sim}-1$", fontsize=ftsize)
+ax.set_ylabel(r"$P_\mathrm{1D}^\mathrm{x}/P_\mathrm{1D}^\mathrm{smooth}-1$", fontsize=ftsize)
 ax.set_xlabel(r"$k\,\left[\mathrm{Mpc}^{-1}\right]$", fontsize=ftsize)
 ax.tick_params(axis="both", which="major", labelsize=ftsize)
-plt.legend(fontsize=ftsize-2)
+plt.legend(fontsize=ftsize-4, loc="upper right", ncol=2)
 plt.tight_layout()
-plt.savefig("figs/smooth_cen_seed.png")
-plt.savefig("figs/smooth_cen_seed.pdf")
+# plt.savefig("figs/smooth_cen_seed.png")
+# plt.savefig("figs/smooth_cen_seed.pdf")
+# plt.savefig("figs/smooth_cen_seed_nyx.png")
+# plt.savefig("figs/smooth_cen_seed_nyx.pdf")
 # -
+zz_full.shape
 
-
-
-
+p1d_Mpc_emu1 = p1d_Mpc_emu.copy()
 
 for ii in range(nz):
-    plt.plot(k_Mpc_full[ii], p1d_Mpc_emu[ii]/p1d_Mpc_sm[ii])
+    plt.plot(k_Mpc_full[ii], p1d_Mpc_emu1[ii]/p1d_Mpc_emu[ii], label=zz_full[ii,0 ])
+plt.legend()
+
+for ii in range(nz):
+    plt.plot(k_Mpc_full[ii], p1d_Mpc_emu[ii]/p1d_Mpc_sm[ii], label=zz_full[ii,0 ])
+plt.legend()
 
 # +
 # train = False
@@ -181,9 +205,9 @@ train = True
 
 # emulator_label = "CH24_mpg_gp"
 # emulator_label = "CH24_nyx_gpr"
-# emulator_label = "CH24_nyxcen_gpr"
+emulator_label = "CH24_nyxcen_gpr"
 # emulator_label = "CH24_mpgcen_gpr"
-emulator_label = "CH24_mpg_gpr"
+# emulator_label = "CH24_mpg_gpr"
 if train:
     for ii, isim in enumerate(archive.list_sim_cube):
         if (ii >= 14) & ("nyx" in emulator_label):
@@ -201,8 +225,8 @@ if train:
 
 from lace.emulator.covariance import data_for_l10
 
-# suite = "mpg"
-suite = "nyx"
+suite = "mpg"
+# suite = "nyx"
 emulator_label = "CH24_"+suite+"cen_gpr"
 zz, k_Mpc, p1d_Mpc_sm, p1d_Mpc_emu, mask = data_for_l10(archive, emulator_label, suite=suite)
 
@@ -222,6 +246,13 @@ cov = np.cov(rel_diff.reshape(-1, rel_diff.shape[-1]).T)
 plt.imshow(cov)
 
 # #### mpg
+
+corr = np.zeros_like(cov)
+for ii in range(cov.shape[0]):
+    for jj in range(cov.shape[0]):
+        corr[ii, jj] = cov[ii, jj]/np.sqrt(cov[ii, ii] * cov[jj, jj])
+plt.imshow(corr)
+plt.colorbar()
 
 corr = np.zeros_like(cov)
 for ii in range(cov.shape[0]):
@@ -255,6 +286,16 @@ plt.tight_layout()
 plt.savefig("figs/err_CH24_mpgcen_gpr.png")
 plt.savefig("figs/err_CH24_mpgcen_gpr.pdf")
 
+
+# +
+
+plt.plot(k_Mpc, np.sqrt(np.diag(cov)))
+plt.xlabel(r"$k$[1/Mpc]")
+plt.ylabel(r"Relative error")
+# bias = np.mean(rel_diff, axis=(0, 1))
+# plt.plot(k_Mpc, bias)
+plt.xscale("log")
+plt.tight_layout()
 # -
 
 # #### nyx

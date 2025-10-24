@@ -273,6 +273,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         metadata["kp_Mpc"] = self.kp_Mpc
         metadata["list_sim_cube"] = self.list_sim_cube
         metadata["bin_mF_cen"] = self.bin_mF_cen
+        metadata["bin_mF_bot"] = self.bin_mF_bot
+        metadata["bin_mF_top"] = self.bin_mF_top
         if self.emu_type == "gkbin":
             metadata["k_Mpc_emu"] = self.k_Mpc_emu
         np.save(self.path_save_meta, metadata)
@@ -287,8 +289,9 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.tscalings_std = metadata["tscalings_std"]
         self.kp_Mpc = metadata["kp_Mpc"]
         self.list_sim_cube = metadata["list_sim_cube"]
-        # XXX delete
         self.bin_mF_cen = metadata["bin_mF_cen"]
+        self.bin_mF_bot = metadata["bin_mF_bot"]
+        self.bin_mF_top = metadata["bin_mF_top"]
         n_emus = metadata["n_emus"]
         if self.emu_type == "gkbin":
             self.k_Mpc_emu = metadata["k_Mpc_emu"]
@@ -405,36 +408,37 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.tpoints = (self.tpoints - self.tscalings_mean) / self.tscalings_std
 
         nelem = self.xpoints.shape[0]
-        nn_gps = int(np.ceil(nelem / self.nelem_max * 2))
+        nn_gps = int(np.ceil(nelem / self.nelem_max))
 
-        # overlap
+        # bin data into percentiles
         list_percen = np.linspace(0, 100, nn_gps)
-        list_percen_bot = list_percen - 0.5 * (list_percen[1] - list_percen[0])
+        df_percen = list_percen[1] - list_percen[0]
+        list_percen_bot = list_percen - 0.5 * df_percen
         list_percen_bot[list_percen_bot < 0] = 0
-        list_percen_top = list_percen + 0.5 * (list_percen[1] - list_percen[0])
+        list_percen_top = list_percen + 0.5 * df_percen
         list_percen_top[list_percen_top > 100] = 100
 
-        # XXX change to make overlap
+        # impose some overlap
+        list_percen_bot[1:] -= df_percen * 0.1
+        list_percen_top[:-1] += df_percen * 0.1
+
         self.bin_mF_bot = np.percentile(
             self.xpoints[:, self.ind_mF], list_percen_bot
         )
         self.bin_mF_top = np.percentile(
             self.xpoints[:, self.ind_mF], list_percen_top
         )
-        self.bin_mF_cen = 0.5 * (self.bin_mF_bot[:-1] + self.bin_mF_top[1:])
+        self.bin_mF_cen = 0.5 * (self.bin_mF_bot + self.bin_mF_top)
 
         self.gp = []
         start = time.time()
-        for ii in range(nn_gps - 1):
+        for ii in range(nn_gps):
             ## Rescaling data
 
-            if ii == nn_gps - 1:
-                mask = self.xpoints[:, self.ind_mF] >= self.bin_mF_bot[ii]
-            else:
-                mask = (self.xpoints[:, self.ind_mF] >= self.bin_mF_bot[ii]) & (
-                    self.xpoints[:, self.ind_mF] < self.bin_mF_top[ii + 1]
-                )
-            print(ii, mask.sum(), self.bin_mF_bot[ii], self.bin_mF_top[ii + 1])
+            mask = (self.xpoints[:, self.ind_mF] >= self.bin_mF_bot[ii]) & (
+                self.xpoints[:, self.ind_mF] <= self.bin_mF_top[ii]
+            )
+            print(ii, mask.sum(), self.bin_mF_bot[ii], self.bin_mF_top[ii])
 
             self.gp.append(
                 GaussianProcessRegressor(
@@ -484,9 +488,31 @@ class GPEmulator(base_emulator.BaseEmulator):
         # output
         out_pred = np.zeros((length, len(self.tscalings_mean)))
         for ii in range(length):
-            jj = np.argmin(np.abs(emu_call[ii, self.ind_mF] - self.bin_mF_cen))
+            mF = emu_call[ii, self.ind_mF]
+            jj = np.argmin(np.abs(mF - self.bin_mF_cen))
+            # print(mF, self.bin_mF_cen, self.bin_mF_cen[jj])
+
+            # average emulator predictions if mF in overlapping range
+            num = 1.0
             pred = self.gp[jj].predict(np.atleast_2d(emu_call[ii]))[0]
-            out_pred[ii] = pred * self.tscalings_std + self.tscalings_mean
+            if jj != 0:
+                if mF < self.bin_mF_top[jj - 1]:
+                    num += 1.0
+                    pred += self.gp[jj - 1].predict(
+                        np.atleast_2d(emu_call[ii])
+                    )[0]
+            if jj != (len(self.bin_mF_cen) - 1):
+                if mF > self.bin_mF_bot[jj + 1]:
+                    num += 1.0
+                    pred += self.gp[jj + 1].predict(
+                        np.atleast_2d(emu_call[ii])
+                    )[0]
+
+            # print(ii, jj, num, mF, self.bin_mF_bot[jj], self.bin_mF_top[jj])
+
+            out_pred[ii] = (
+                pred / num
+            ) * self.tscalings_std + self.tscalings_mean
 
         return out_pred
 
