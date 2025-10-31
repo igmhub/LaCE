@@ -52,21 +52,26 @@ archive = nyx_archive.NyxArchive(nyx_version="models_Nyx_Sept2025_include_Nyx_fi
 
 train = True
 # train = False
-# emulator_label = "CH24_mpgcen_gpr"
+emulator_label = "CH24_mpgcen_gpr"
 # emulator_label = "CH24_mpg_gpr"
-emulator_label = "CH24_nyxcen_gpr"
+# emulator_label = "CH24_nyxcen_gpr"
 emulator = GPEmulator(emulator_label=emulator_label, archive=archive, train=train, drop_sim=None)
 
-emulator_load = GPEmulator(
-    emulator_label="CH24_nyxcen_gpr", 
+# +
+
+# emulator_label = "CH24_mpgcen_gpr"
+emulator_label = "CH24_nyxcen_gpr"
+
+emulator = GPEmulator(
+    emulator_label=emulator_label, 
     train=False,
 )
-emulator = emulator_load
 # emulator = GPEmulator(
 #     emulator_label=emulator_label, 
 #     train=False, 
 #     drop_sim="nyx_0"
 # )
+# -
 
 emulator = emulator_keep
 
@@ -119,10 +124,10 @@ for ii in range(nz):
     k_Mpc_full[ii] = k_Mpc_0
 
     p1d_Mpc_sim[ii] = testing_data[ii]['p1d_Mpc'][ind]
-    p1d_Mpc_emu[ii] = emulator.emulate_p1d_Mpc(
-        testing_data[ii], 
-        k_Mpc
-    )
+    # p1d_Mpc_emu[ii] = emulator.emulate_p1d_Mpc(
+    #     testing_data[ii], 
+    #     k_Mpc
+    # )
     norm = np.interp(
         k_Mpc, emulator.input_norm["k_Mpc"], emulator.norm_imF(testing_data[ii]["mF"])
     )
@@ -165,21 +170,19 @@ ax.axhline(0.01, color="k", linestyle="--")
 ax.axhline(-0.01, color="k", linestyle="--")
 ax.set_ylim(-0.022, 0.028)
 
-# ax.set_ylim(-0.06, 0.1)
+ax.set_ylim(-0.06, 0.1)
 
 ax.set_xscale("log")
 ax.set_ylabel(r"$P_\mathrm{1D}^\mathrm{x}/P_\mathrm{1D}^\mathrm{smooth}-1$", fontsize=ftsize)
-ax.set_xlabel(r"$k\,\left[\mathrm{Mpc}^{-1}\right]$", fontsize=ftsize)
+ax.set_xlabel(r"$k_\parallel\,\left[\mathrm{Mpc}^{-1}\right]$", fontsize=ftsize)
 ax.tick_params(axis="both", which="major", labelsize=ftsize)
-plt.legend(fontsize=ftsize-4, loc="upper right", ncol=2)
+plt.legend(fontsize=ftsize-2, loc="upper right", ncol=2)
 plt.tight_layout()
 # plt.savefig("figs/smooth_cen_seed.png")
 # plt.savefig("figs/smooth_cen_seed.pdf")
-# plt.savefig("figs/smooth_cen_seed_nyx.png")
-# plt.savefig("figs/smooth_cen_seed_nyx.pdf")
+plt.savefig("figs/smooth_cen_seed_nyx.png")
+plt.savefig("figs/smooth_cen_seed_nyx.pdf")
 # -
-zz_full.shape
-
 p1d_Mpc_emu1 = p1d_Mpc_emu.copy()
 
 for ii in range(nz):
@@ -225,92 +228,131 @@ if train:
 
 from lace.emulator.covariance import data_for_l10
 
-suite = "mpg"
-# suite = "nyx"
+# suite = "mpg"
+suite = "nyx"
 emulator_label = "CH24_"+suite+"cen_gpr"
 zz, k_Mpc, p1d_Mpc_sm, p1d_Mpc_emu, mask = data_for_l10(archive, emulator_label, suite=suite)
 
-# #### mpg
+# +
+arr_zz = np.zeros_like(p1d_Mpc_emu)
+arr_k_Mpc = np.zeros_like(p1d_Mpc_emu)
 
-rel_diff = p1d_Mpc_emu/p1d_Mpc_sm - 1
-cov = np.cov(rel_diff.reshape(-1, rel_diff.shape[-1]).T)
-plt.imshow(cov)
-
-# #### nyx
-
-rel_diff = p1d_Mpc_emu/p1d_Mpc_sm - 1
-rel_diff = rel_diff[mask, :]
-mask2 = np.any(np.isfinite(rel_diff), axis=1)
-rel_diff = rel_diff[mask2, :]
-cov = np.cov(rel_diff.reshape(-1, rel_diff.shape[-1]).T)
-plt.imshow(cov)
-
-# #### mpg
-
-corr = np.zeros_like(cov)
-for ii in range(cov.shape[0]):
-    for jj in range(cov.shape[0]):
-        corr[ii, jj] = cov[ii, jj]/np.sqrt(cov[ii, ii] * cov[jj, jj])
-plt.imshow(corr)
-plt.colorbar()
-
-corr = np.zeros_like(cov)
-for ii in range(cov.shape[0]):
-    for jj in range(cov.shape[0]):
-        corr[ii, jj] = cov[ii, jj]/np.sqrt(cov[ii, ii] * cov[jj, jj])
-plt.imshow(corr)
-plt.colorbar()
-
-# #### nyx
-
-corr = np.zeros_like(cov)
-for ii in range(cov.shape[0]):
-    for jj in range(cov.shape[0]):
-        corr[ii, jj] = cov[ii, jj]/np.sqrt(cov[ii, ii] * cov[jj, jj])
-plt.imshow(corr)
-plt.colorbar()
-
-
-
-# #### mpg
+for ii in range(arr_zz.shape[1]):
+    arr_zz[:, ii, :] = zz[ii]
+    
+for ii in range(arr_k_Mpc.shape[2]):
+    arr_k_Mpc[:, :, ii] = k_Mpc[ii]
 
 # +
+rel_diff = p1d_Mpc_emu/p1d_Mpc_sm - 1
+# cov z-k
+rel_diff_zk = rel_diff.reshape(rel_diff.shape[0], -1)
+zz_zk = arr_zz.reshape(arr_zz.shape[0], -1)[0]
+k_Mpc_zk = arr_k_Mpc.reshape(arr_k_Mpc.shape[0], -1)[0]
+# cov k
+rel_diff_k = rel_diff.reshape(-1, rel_diff.shape[-1])
+k_Mpc_k = arr_k_Mpc.reshape(-1, arr_k_Mpc.shape[-1])[0]
 
-plt.plot(k_Mpc, np.sqrt(np.diag(cov)))
-plt.xlabel(r"$k$[1/Mpc]")
-plt.ylabel(r"Relative error")
-# bias = np.mean(rel_diff, axis=(0, 1))
-# plt.plot(k_Mpc, bias)
-plt.xscale("log")
-plt.tight_layout()
-plt.savefig("figs/err_CH24_mpgcen_gpr.png")
-plt.savefig("figs/err_CH24_mpgcen_gpr.pdf")
-
-
-# +
-
-plt.plot(k_Mpc, np.sqrt(np.diag(cov)))
-plt.xlabel(r"$k$[1/Mpc]")
-plt.ylabel(r"Relative error")
-# bias = np.mean(rel_diff, axis=(0, 1))
-# plt.plot(k_Mpc, bias)
-plt.xscale("log")
-plt.tight_layout()
+cov_zk = np.cov(rel_diff_zk.T)
+cov_k = np.cov(rel_diff_k.T)
+print(cov_zk.shape, cov_k.shape)
 # -
 
+# #### massage ONLY nyx data
+
+# +
+_ = (np.isnan(rel_diff_zk) | (rel_diff_zk == 0))
+rel_diff_zk[_] = 0
+cov_zk = np.cov(rel_diff_zk.T)
+
+_ = (np.isnan(rel_diff_k) | (rel_diff_k == 0))
+rel_diff_k[_] = 0
+cov_k = np.cov(rel_diff_k.T)
+# -
+
+
+
+# #### mpg
+
+plt.imshow(cov_zk)
+
 # #### nyx
 
-bias = np.mean(rel_diff, axis=0)
-plt.plot(k_Mpc, np.sqrt(np.diag(cov)))
-plt.plot(k_Mpc, bias)
+plt.imshow(cov_zk)
 
+# #### mpg
+
+cov = cov_zk
+corr = np.zeros_like(cov)
+for ii in range(cov.shape[0]):
+    for jj in range(cov.shape[0]):
+        corr[ii, jj] = cov[ii, jj]/np.sqrt(cov[ii, ii] * cov[jj, jj])
+plt.imshow(corr)
+plt.colorbar()
+
+# #### nyx
+
+cov = cov_zk
+corr = np.zeros_like(cov)
+for ii in range(cov.shape[0]):
+    for jj in range(cov.shape[0]):
+        corr[ii, jj] = cov[ii, jj]/np.sqrt(cov[ii, ii] * cov[jj, jj])
+plt.imshow(corr)
+plt.colorbar()
+
+# #### mpg
+
+# +
+
+for ii in range(len(zz)):
+    _ = zz_zk == zz[ii]
+    plt.plot(k_Mpc_zk[_], np.sqrt(np.diag(cov_zk))[_], label=str(zz[ii]))
+
+plt.legend()
+plt.xlabel(r"$k$[1/Mpc]")
+plt.ylabel(r"Relative error")
+# bias = np.mean(rel_diff, axis=(0, 1))
+# plt.plot(k_Mpc, bias)
+plt.xscale("log")
+plt.tight_layout()
+# plt.savefig("figs/err_CH24_mpgcen_gpr.png")
+# plt.savefig("figs/err_CH24_mpgcen_gpr.pdf")
+# -
+
+
+# ### nyx
+
+# +
+
+for ii in range(len(zz)):
+    _ = zz_zk == zz[ii]
+    plt.plot(k_Mpc_zk[_], np.sqrt(np.diag(cov_zk))[_], label=str(zz[ii]))
+
+plt.legend()
+plt.xlabel(r"$k$[1/Mpc]")
+plt.ylabel(r"Relative error")
+# bias = np.mean(rel_diff, axis=(0, 1))
+# plt.plot(k_Mpc, bias)
+plt.xscale("log")
+plt.tight_layout()
+# plt.savefig("figs/err_CH24_mpgcen_gpr.png")
+# plt.savefig("figs/err_CH24_mpgcen_gpr.pdf")
+
+# +
 filename = "l1O_cov_" + emulator_label + ".npy"
 full_path = os.path.join(os.path.dirname(lace.__path__[0]), "data", "covariance", filename)
 dict_save = {}
-dict_save["cov"] = cov
 dict_save["zz"] = zz
 dict_save["k_Mpc"] = k_Mpc
+
+dict_save["k_Mpc_k"] = k_Mpc_k
+dict_save["cov_k"] = cov_k
+
+dict_save["zz_zk"] = zz_zk
+dict_save["k_Mpc_zk"] = k_Mpc_zk
+dict_save["cov_zk"] = cov_zk
 np.save(full_path, dict_save)
+# -
 
 # #### Load data
 
