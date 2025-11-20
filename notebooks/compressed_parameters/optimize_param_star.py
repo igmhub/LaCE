@@ -326,7 +326,7 @@ ax.tick_params(
 
 z_star = 3.0
 # kp_kms = 0.00493 # best
-kp_kms = 0.023 # simple
+kp_kms = 0.019 # simple
 
 cosmo_camb = camb_cosmo.get_cosmology(
     H0=67.66,
@@ -375,32 +375,59 @@ for ii in range(dat_Asns.shape[0]):
     Asns_star_opt[ii, 0] = res["Delta2_star"]
     Asns_star_opt[ii, 1] = res["n_star"]
 
-percen = np.percentile(Asns_star_opt, [5, 50, 95], axis=0)
-_ = (
-    (Asns_star_opt[:,0] > percen[0, 0]) 
-    & (Asns_star_opt[:,0] < percen[2, 0]) 
-    & (Asns_star_opt[:,1] > percen[0, 1]) 
-    & (Asns_star_opt[:,1] < percen[2, 1])
-)
-corr = np.corrcoef(Asns_star_opt[_, 0], Asns_star_opt[_, 1])[0,1]
+# percen = np.percentile(Asns_star_opt, [5, 50, 95], axis=0)
+# _ = (
+#     (Asns_star_opt[:,0] > percen[0, 0]) 
+#     & (Asns_star_opt[:,0] < percen[2, 0]) 
+#     & (Asns_star_opt[:,1] > percen[0, 1]) 
+#     & (Asns_star_opt[:,1] < percen[2, 1])
+# )
+# corr = np.corrcoef(Asns_star_opt[_, 0], Asns_star_opt[_, 1])[0,1]
+corr = np.corrcoef(Asns_star_opt[:, 0], Asns_star_opt[:, 1])[0,1]
 percen = np.percentile(Asns_star_opt, [16, 50, 84], axis=0)
 
 print("corr", np.round(corr, 3))
 print(
     "Delta2star err, err/val",
+    np.round(percen[1, 0], 3), np.round(percen[1, 0] - percen[0, 0], 3), np.round(percen[2, 0] - percen[1, 0], 3),
     np.round(0.5 * (percen[2, 0] - percen[0, 0]), 3), 
     np.round(0.5 * (percen[2, 0] - percen[0, 0])/percen[1, 0], 5),
-    np.round(percen[1, 0]/(percen[1, 0] - percen[0, 0]), 5)
+    np.round(percen[1, 0]/(0.5 * (percen[2, 0] - percen[0, 0])), 5)
 )
 print(
     "nstar2star err, err/val",
+    np.round(percen[1, 1], 3), np.round(percen[1, 1] - percen[0, 1], 3), np.round(percen[2, 1] - percen[1, 1], 3),
     np.round(0.5 * (percen[2, 1] - percen[0, 1]), 3), 
     np.round(0.5 * (percen[2, 1] - percen[0, 1])/np.abs(percen[1, 1]), 5),
-    np.round(np.abs(percen[1, 1])/(percen[1, 1] - percen[0, 1]), 5)
+    np.round(np.abs(percen[1, 1])/(0.5 * (percen[2, 1] - percen[0, 1])), 5)
 )
+# +
+def subsample_correlations(ds, ns, A=2, nrepeat=2000, seed=0):
+    """
+    subsample without replacement: select n//A indices per repeat by permutation.
+    If the chain has weights, warn and use weighted bootstrap instead.
+    method: 'pearson' or 'spearman'
+    winsorize_frac: fraction to winsorize for Pearson (e.g. 0.05), or None.
+    Returns: array of correlation estimates (length nrepeat)
+    """
+    rng = np.random.default_rng(seed)
+    n = len(ds)
+    subsz = max(2, n // A)   # ensure at least 2
+    corr_vals = np.empty(nrepeat)
+    # Unweighted: do permutation + take first subsz (no repeats inside each subsample)
+    for i in range(nrepeat):
+        idx = rng.permutation(n)[:subsz]
+        xs = ds[idx]
+        ys = ns[idx]
+        corr_vals[i] = np.corrcoef(xs, ys)[0, 1]
+    return corr_vals
+
+corr_samps = subsample_correlations(Asns_star_opt[:, 0], Asns_star_opt[:, 1], nrepeat=100, A=2)
+percen = np.percentile(corr_samps, [16, 50, 84])
+print(np.round(percen[1], 4), np.round(percen[1]-percen[0], 4), np.round(percen[2]-percen[1], 4))
 # -
 
-
+-0.0011 0.0007 0.0006
 
 from corner import corner
 
