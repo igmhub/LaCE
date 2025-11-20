@@ -81,6 +81,9 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
     elif "cosmomc_theta" in params:  ## If theta is provided, override H0
         cosmomc_theta = params["cosmomc_theta"]
         H0 = None
+    elif "theta_MC_100" in params:  ## If theta is provided, override H0
+        cosmomc_theta = params["theta_MC_100"] / 100
+        H0 = None
     elif "H0" in params:
         H0 = params["H0"]
         cosmomc_theta = None
