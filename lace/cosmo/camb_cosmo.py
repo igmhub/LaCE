@@ -382,7 +382,9 @@ def get_linP_Mpc(pars, zs, camb_results=None, fluid=camb_fluid, kmax_Mpc=None):
     return k_Mpc, zs_out, P_Mpc
 
 
-def get_linP_kms(pars, zs=[3], camb_results=None, fluid=camb_fluid):
+def get_linP_kms(
+    pars, zs=[3], camb_results=None, fluid=camb_fluid, kmax_Mpc=None
+):
     """Given a CAMB cosmology, and a set of redshifts, compute the linear
     power spectrum for CDM+baryons, in units of s/km.
     - camb_results: if provided, use that to speed things up.
@@ -395,7 +397,7 @@ def get_linP_kms(pars, zs=[3], camb_results=None, fluid=camb_fluid):
 
     # get linear power in units of Mpc/h
     k_hMpc, zs_out, P_hMpc = get_linP_hMpc(
-        pars, zs, camb_results=camb_results, fluid=fluid
+        pars, zs, camb_results=camb_results, fluid=fluid, kmax_Mpc=kmax_Mpc
     )
 
     # each redshift will now have a different set of wavenumbers

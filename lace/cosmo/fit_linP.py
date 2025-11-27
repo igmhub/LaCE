@@ -150,10 +150,10 @@ def fit_linP_kms(
     camb_interp = camb_results.get_matter_power_interpolator(
         var1=8, var2=8, nonlinear=False
     )
+    # print("Power spectrum at z=0.5, k/h=0.1/Mpc is %s (Mpc/h)^3 " % (PK.P(0.5, 0.1)))
 
-    k_hMpc = dvdX * k_kms
     P_hMpc = camb_interp.P(z_star, k_hMpc)
-    P_kms = P_hMpc * (dvdX**3)
+    P_kms = P_hMpc * dvdX**3
 
     # specify wavenumber range to fit
     kmin_kms = fit_min * kp_kms
@@ -162,6 +162,14 @@ def fit_linP_kms(
     P_fit = fit_polynomial(
         kmin_kms / kp_kms, kmax_kms / kp_kms, k_kms / kp_kms, P_kms, deg=deg
     )
+
+    # ind = np.argmin(np.abs(k_kms - kp_kms))
+    # print(
+    #     kp_kms,
+    #     k_kms[ind],
+    #     P_kms[ind] * k_kms[ind] ** 3 / 2.0 / np.pi**2,
+    #     np.exp(P_fit[0]) * kp_kms**3 / 2.0 / np.pi**2,
+    # )
 
     return P_fit
 
@@ -203,8 +211,7 @@ def parameterize_cosmology_kms(
     )
 
     # translate the polynomial to our parameters
-    ln_A_star = linP_kms[0]
-    Delta2_star = np.exp(ln_A_star) * kp_kms**3 / (2 * np.pi**2)
+    Delta2_star = np.exp(linP_kms[0]) * kp_kms**3 / (2.0 * np.pi**2)
     n_star = linP_kms[1]
     # note that the curvature is alpha/2
     alpha_star = 2.0 * linP_kms[2]
