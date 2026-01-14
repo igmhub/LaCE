@@ -386,7 +386,7 @@ for ii in range(dat_Asns.shape[0]):
 corr = np.corrcoef(Asns_star_opt[:, 0], Asns_star_opt[:, 1])[0,1]
 percen = np.percentile(Asns_star_opt, [16, 50, 84], axis=0)
 
-print("corr", np.round(corr, 3))
+print("corr", np.round(corr, 4))
 print(
     "Delta2star err, err/val",
     np.round(percen[1, 0], 3), np.round(percen[1, 0] - percen[0, 0], 3), np.round(percen[2, 0] - percen[1, 0], 3),

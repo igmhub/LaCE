@@ -29,7 +29,7 @@ from scipy.optimize import curve_fit
 import lace
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator.gp_emulator_multi import GPEmulator
-
+from matplotlib.ticker import FormatStrFormatter
 # -
 
 # ### Set archive
@@ -72,8 +72,6 @@ emulator = GPEmulator(
 #     drop_sim="nyx_0"
 # )
 # -
-
-emulator = emulator_keep
 
 # Validate central!
 
@@ -159,23 +157,27 @@ jj = np.argwhere(zz_full_seed == ztar)[0,0]
 psm = 0.5 * (p1d_Mpc_sm_seed[jj] + p1d_Mpc_sm[ii])
 # ax.plot(k_Mpc_full[ii], p1d_Mpc_sm[ii]/p1d_Mpc_sim[ii]-1, "C0-", lw=2, label="mpg-central")
 # ax.plot(k_Mpc_full[ii], p1d_Mpc_sim_seed[ii]/p1d_Mpc_sm_seed[ii]-1, "C1--", lw=2, label="mpg-seed")
-ax.plot(k_Mpc_full[ii], p1d_Mpc_sim[ii]/psm-1, "C0-", lw=2, label="central")
-ax.plot(k_Mpc_full[ii], p1d_Mpc_sim_seed[jj]/psm-1, "C1-", lw=2, label="seed")
-ax.plot(k_Mpc_full[ii], p1d_Mpc_sm[ii]/psm-1, "C0--", lw=2, label="smooth central")
-ax.plot(k_Mpc_full[ii], p1d_Mpc_sm_seed[jj]/psm-1, "C1--", lw=2, label="smooth seed")
+ax.plot(k_Mpc_full[ii], p1d_Mpc_sim[ii]/psm-1, "C0-", lw=2, label=r"$P_\mathrm{1D}^x=P_\mathrm{1D}^\mathrm{central}$")
+ax.plot(k_Mpc_full[ii], p1d_Mpc_sim_seed[jj]/psm-1, "C1-", lw=2, label=r"$P_\mathrm{1D}^x=P_\mathrm{1D}^\mathrm{seed}$")
+ax.plot(k_Mpc_full[ii], p1d_Mpc_sm[ii]/psm-1, "C0--", lw=2, label=r"$P_\mathrm{1D}^x=P_\mathrm{1D}^\mathrm{sm,\,central}$")
+ax.plot(k_Mpc_full[ii], p1d_Mpc_sm_seed[jj]/psm-1, "C1--", lw=2, label=r"$P_\mathrm{1D}^x=P_\mathrm{1D}^\mathrm{sm,\,seed}$")
 
 
 ax.axhline(color="k", linestyle=":")
 ax.axhline(0.01, color="k", linestyle="--")
 ax.axhline(-0.01, color="k", linestyle="--")
-ax.set_ylim(-0.022, 0.028)
 
+
+# ax.set_ylim(-0.022, 0.028)
 ax.set_ylim(-0.06, 0.1)
 
+
 ax.set_xscale("log")
-ax.set_ylabel(r"$P_\mathrm{1D}^\mathrm{x}/P_\mathrm{1D}^\mathrm{smooth}-1$", fontsize=ftsize)
+ax.set_ylabel(r"$P_\mathrm{1D}^x/P_\mathrm{1D}^\mathrm{sm, average}-1$", fontsize=ftsize)
 ax.set_xlabel(r"$k_\parallel\,\left[\mathrm{Mpc}^{-1}\right]$", fontsize=ftsize)
 ax.tick_params(axis="both", which="major", labelsize=ftsize)
+
+ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 plt.legend(fontsize=ftsize-2, loc="upper right", ncol=2)
 plt.tight_layout()
 # plt.savefig("figs/smooth_cen_seed.png")
