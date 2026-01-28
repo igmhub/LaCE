@@ -147,6 +147,8 @@ rcParams["font.family"] = "STIXGeneral"
 
 
 # +
+store_data = {}
+
 fig, ax = plt.subplots(1, figsize=(8, 6))
 ftsize = 24
 
@@ -161,6 +163,12 @@ ax.plot(k_Mpc_full[ii], p1d_Mpc_sim[ii]/psm-1, "C0-", lw=2, label=r"$P_\mathrm{1
 ax.plot(k_Mpc_full[ii], p1d_Mpc_sim_seed[jj]/psm-1, "C1-", lw=2, label=r"$P_\mathrm{1D}^x=P_\mathrm{1D}^\mathrm{seed}$")
 ax.plot(k_Mpc_full[ii], p1d_Mpc_sm[ii]/psm-1, "C0--", lw=2, label=r"$P_\mathrm{1D}^x=P_\mathrm{1D}^\mathrm{sm,\,central}$")
 ax.plot(k_Mpc_full[ii], p1d_Mpc_sm_seed[jj]/psm-1, "C1--", lw=2, label=r"$P_\mathrm{1D}^x=P_\mathrm{1D}^\mathrm{sm,\,seed}$")
+
+store_data["x"] = k_Mpc_full[ii]
+store_data["y_blue_solid"] = p1d_Mpc_sim[ii]/psm-1
+store_data["y_orange_solid"] = p1d_Mpc_sim_seed[ii]/psm-1
+store_data["y_blue_dashed"] = p1d_Mpc_sm[ii]/psm-1
+store_data["y_orange_dashed"] = p1d_Mpc_sm_seed[ii]/psm-1
 
 
 ax.axhline(color="k", linestyle=":")
@@ -182,9 +190,25 @@ plt.legend(fontsize=ftsize-2, loc="upper right", ncol=2)
 plt.tight_layout()
 # plt.savefig("figs/smooth_cen_seed.png")
 # plt.savefig("figs/smooth_cen_seed.pdf")
-plt.savefig("figs/smooth_cen_seed_nyx.png")
-plt.savefig("figs/smooth_cen_seed_nyx.pdf")
+# plt.savefig("figs/smooth_cen_seed_nyx.png")
+# plt.savefig("figs/smooth_cen_seed_nyx.pdf")
+# +
+import cup1d, os
+
+path_out = os.path.join(os.path.dirname(cup1d.__path__[0]), "data", "zenodo")
+fname = os.path.join(path_out, "fig_3a.npy")
+np.save(fname, store_data)
+
+# +
+import cup1d, os
+
+path_out = os.path.join(os.path.dirname(cup1d.__path__[0]), "data", "zenodo")
+fname = os.path.join(path_out, "fig_B1a.npy")
+np.save(fname, store_data)
 # -
+
+
+
 p1d_Mpc_emu1 = p1d_Mpc_emu.copy()
 
 for ii in range(nz):
