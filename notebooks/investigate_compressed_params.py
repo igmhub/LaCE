@@ -171,7 +171,6 @@ def P1D_kms(
     p1d = _P1D_lnkperp(ln_k_perp_kms, k_par_kms, k_pk_kms, pk_kms * damp)
 
     return p1d
-# -
 
 
 # +
@@ -365,6 +364,8 @@ for ii in range(nn):
 # +
 cmap = plt.get_cmap("turbo")
 
+store_data = {}
+
 
 fig, ax = plt.subplots(3, figsize=(8,8), sharex=True)
 ftsize = 20
@@ -388,6 +389,11 @@ for ii in range(nn):
     ax[1].plot(k_par_kms, list_P1D_ds[ii]/fid_p1d_kms-1, color=col, label=lab2)          
     ax[2].plot(k_par_kms, list_P1D_dsa[ii]/fid_p1d_kms-1, color=col, label=lab3)
 
+    store_data["x"] = k_par_kms
+    store_data["y0_"+str(ii)] = list_P1D_no[ii]/fid_p1d_kms-1
+    store_data["y1_"+str(ii)] = list_P1D_ds[ii]/fid_p1d_kms-1
+    store_data["y2_"+str(ii)] = list_P1D_dsa[ii]/fid_p1d_kms-1
+
 for ii in range(len(ax)):
     ax[ii].axhline(color="k", ls=":")
     ax[ii].legend(loc="upper left", fontsize=ftsize-5, ncol=3)
@@ -408,8 +414,19 @@ plt.savefig("figs/scalings_omh2_DN_DNA.pdf", bbox_inches='tight')
 plt.savefig("figs/scalings_omh2_DN_DNA.png", bbox_inches='tight')
 
 # +
+import cup1d, os
+
+path_out = os.path.join(os.path.dirname(cup1d.__path__[0]), "data", "zenodo")
+fname = os.path.join(path_out, "fig_A3b.npy")
+np.save(fname, store_data)
+# -
+
+
+
+# +
 cmap = plt.get_cmap("turbo")
 
+store_data = {}
 
 fig, ax = plt.subplots(3, figsize=(8,8), sharex=True)
 ftsize = 20
@@ -431,10 +448,17 @@ for ii in range(nn):
 
     yy = np.interp(fid_k_kms, list_k_no[ii], list_Pk_no[ii])
     ax[0].plot(fid_k_kms, yy/fid_P_kms-1, color=col, label=lab1)
+    store_data["y0_"+str(ii)] = yy/fid_P_kms-1
+    
     yy = np.interp(fid_k_kms, list_k_ds[ii], list_Pk_ds[ii])
     ax[1].plot(fid_k_kms, yy/fid_P_kms-1, color=col, label=lab2)
+    store_data["y1_"+str(ii)] = yy/fid_P_kms-1
+    
     yy = np.interp(fid_k_kms, list_k_dsa[ii], list_Pk_dsa[ii])
     ax[2].plot(fid_k_kms, yy/fid_P_kms-1, color=col, label=lab3)
+    store_data["y2_"+str(ii)] = yy/fid_P_kms-1
+    
+    store_data["x"] = k_par_kms
 
 for ii in range(len(ax)):
     ax[ii].axhline(color="k", ls=":")
@@ -459,6 +483,13 @@ plt.tight_layout()
 plt.savefig("figs/p3dscalings_omh2_DN_DNA.pdf", bbox_inches='tight')
 plt.savefig("figs/p3dscalings_omh2_DN_DNA.png", bbox_inches='tight')
 # -
+
+import cup1d, os
+path_out = os.path.join(os.path.dirname(cup1d.__path__[0]), "data", "zenodo")
+fname = os.path.join(path_out, "fig_A3a.npy")
+np.save(fname, store_data)
+
+
 
 h0 - 67.66
 
@@ -620,6 +651,7 @@ plt.xlim(0.004, 0.02)
 # +
 cmap = plt.get_cmap("turbo")
 
+store_data = {}
 
 fig, ax = plt.subplots(3, figsize=(8,8), sharex=True)
 ftsize = 20
@@ -644,6 +676,11 @@ for ii in range(nn):
     ax[1].plot(k_par_kms, list_P1D_ds[ii]/fid_p1d_kms-1, color=col, label=lab2)          
     ax[2].plot(k_par_kms, list_P1D_dsa[ii]/fid_p1d_kms-1, color=col, label=lab3)
 
+    store_data["x"] = k_par_kms
+    store_data["y0_"+str(ii)] = list_P1D_no[ii]/fid_p1d_kms-1
+    store_data["y1_"+str(ii)] = list_P1D_ds[ii]/fid_p1d_kms-1
+    store_data["y2_"+str(ii)] = list_P1D_dsa[ii]/fid_p1d_kms-1
+
 for ii in range(len(ax)):
     ax[ii].axhline(color="k", ls=":")
     ax[ii].legend(loc="upper left", fontsize=ftsize-5, ncol=3)
@@ -662,10 +699,19 @@ fig.supxlabel(r"$k_\parallel\,\left[\mathrm{km}^{-1}\mathrm{s}\right]$", fontsiz
 plt.tight_layout()
 plt.savefig("figs/scalings_h_DN_DNA.pdf", bbox_inches='tight')
 plt.savefig("figs/scalings_h_DN_DNA.png", bbox_inches='tight')
+# -
+
+import cup1d, os
+path_out = os.path.join(os.path.dirname(cup1d.__path__[0]), "data", "zenodo")
+fname = os.path.join(path_out, "fig_A1b.npy")
+np.save(fname, store_data)
+
+
 
 # +
 cmap = plt.get_cmap("turbo")
 
+store_data = {}
 
 fig, ax = plt.subplots(3, figsize=(8,8), sharex=True)
 ftsize = 20
@@ -688,10 +734,15 @@ for ii in range(nn):
 
     yy = np.interp(fid_k_kms, list_k_no[ii], list_Pk_no[ii])
     ax[0].plot(fid_k_kms, yy/fid_P_kms-1, color=col, label=lab1)
+    store_data["y0_"+str(ii)] = yy/fid_P_kms-1
+    
     yy = np.interp(fid_k_kms, list_k_ds[ii], list_Pk_ds[ii])
     ax[1].plot(fid_k_kms, yy/fid_P_kms-1, color=col, label=lab2)
+    store_data["y1_"+str(ii)] = yy/fid_P_kms-1
+    
     yy = np.interp(fid_k_kms, list_k_dsa[ii], list_Pk_dsa[ii])
     ax[2].plot(fid_k_kms, yy/fid_P_kms-1, color=col, label=lab3)
+    store_data["y2_"+str(ii)] = yy/fid_P_kms-1
 
 for ii in range(len(ax)):
     ax[ii].axhline(color="k", ls=":")
@@ -716,6 +767,13 @@ plt.tight_layout()
 plt.savefig("figs/p3dscalings_h_DN_DNA.pdf", bbox_inches='tight')
 plt.savefig("figs/p3dscalings_h_DN_DNA.png", bbox_inches='tight')
 # -
+import cup1d, os
+path_out = os.path.join(os.path.dirname(cup1d.__path__[0]), "data", "zenodo")
+fname = os.path.join(path_out, "fig_A1a.npy")
+np.save(fname, store_data)
+
+
+
 
 
 
@@ -878,6 +936,7 @@ plt.ylim(-0.01, 0.01)
 # +
 cmap = plt.get_cmap("turbo")
 
+store_data = {}
 
 fig, ax = plt.subplots(3, figsize=(8,8), sharex=True)
 ftsize = 20
@@ -903,6 +962,11 @@ for ii in range(nn):
     ax[1].plot(k_par_kms, list_P1D_ds[ii]/fid_p1d_kms-1, color=col, label=lab2)          
     ax[2].plot(k_par_kms, list_P1D_dsa[ii]/fid_p1d_kms-1, color=col, label=lab3)
 
+    store_data["x"] = k_par_kms
+    store_data["y0_"+str(ii)] = list_P1D_no[ii]/fid_p1d_kms-1
+    store_data["y1_"+str(ii)] = list_P1D_ds[ii]/fid_p1d_kms-1
+    store_data["y2_"+str(ii)] = list_P1D_dsa[ii]/fid_p1d_kms-1
+
 for ii in range(len(ax)):
     ax[ii].axhline(color="k", ls=":")
     ax[ii].legend(loc="upper left", fontsize=ftsize-5, ncol=3)
@@ -921,10 +985,17 @@ fig.supxlabel(r"$k_\parallel\,\left[\mathrm{km}^{-1}\mathrm{s}\right]$", fontsiz
 plt.tight_layout()
 plt.savefig("figs/scalings_mnu_DN_DNA.pdf", bbox_inches='tight')
 plt.savefig("figs/scalings_mnu_DN_DNA.png", bbox_inches='tight')
+# -
+
+import cup1d, os
+path_out = os.path.join(os.path.dirname(cup1d.__path__[0]), "data", "zenodo")
+fname = os.path.join(path_out, "fig_A2b.npy")
+np.save(fname, store_data)
 
 # +
 cmap = plt.get_cmap("turbo")
 
+store_data = {}
 
 fig, ax = plt.subplots(3, figsize=(8,8), sharex=True)
 ftsize = 20
@@ -946,12 +1017,18 @@ for ii in range(nn):
         lab2 = None
         lab3 = lab
 
+
     yy = np.interp(fid_k_kms, list_k_no[ii], list_Pk_no[ii])
     ax[0].plot(fid_k_kms, yy/fid_P_kms-1, color=col, label=lab1)
+    store_data["y0_"+str(ii)] = yy/fid_P_kms-1
+    
     yy = np.interp(fid_k_kms, list_k_ds[ii], list_Pk_ds[ii])
     ax[1].plot(fid_k_kms, yy/fid_P_kms-1, color=col, label=lab2)
+    store_data["y1_"+str(ii)] = yy/fid_P_kms-1
+    
     yy = np.interp(fid_k_kms, list_k_dsa[ii], list_Pk_dsa[ii])
     ax[2].plot(fid_k_kms, yy/fid_P_kms-1, color=col, label=lab3)
+    store_data["y2_"+str(ii)] = yy/fid_P_kms-1
 
 for ii in range(len(ax)):
     ax[ii].axhline(color="k", ls=":")
@@ -976,7 +1053,10 @@ plt.tight_layout()
 plt.savefig("figs/p3dscalings_mnu_DN_DNA.pdf", bbox_inches='tight')
 plt.savefig("figs/p3dscalings_mnu_DN_DNA.png", bbox_inches='tight')
 # -
-
+import cup1d, os
+path_out = os.path.join(os.path.dirname(cup1d.__path__[0]), "data", "zenodo")
+fname = os.path.join(path_out, "fig_A2a.npy")
+np.save(fname, store_data)
 
 
 
