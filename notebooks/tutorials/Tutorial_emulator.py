@@ -14,7 +14,12 @@
 # ---
 
 # %% [markdown]
-# # Tutorial explaining how to use emulators
+# # Emulator tutorial
+#
+# This notebook explain how to:
+# - Load an emulator
+# - Use the emulator
+# - Train a new emulator
 
 # %% [markdown]
 # ## For normal users
