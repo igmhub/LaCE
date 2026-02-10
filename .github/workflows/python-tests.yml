@@ -3,7 +3,8 @@ name: LaCE automated testing
 
 on:
   push:
-    branches: 'main'
+    #branches: 'main'
+    branches: 'disabled-branch'
   workflow_dispatch:
 
 jobs:
