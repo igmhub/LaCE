@@ -26,7 +26,7 @@
 # %%
 import numpy as np
 from matplotlib import pyplot as plt
-from lace.cosmo import cosmology
+from lace.cosmo import cosmology, rescale_cosmology
 
 # %%
 cosmos = []
@@ -36,7 +36,7 @@ cosmos.append(cosmology.Cosmology(cosmo_params_dict={'H0':74.0}))
 
 # %%
 for cosmo in cosmos:
-    cosmo.print_info()
+    cosmo.get_background_params()
 
 # %%
 z = 2.33
@@ -50,8 +50,15 @@ for cosmo in cosmos:
 
 # %%
 zs = [2.0, 0.0]
+k_Mpc = np.linspace(0.01, 1.0, 100)
 for cosmo in cosmos:
-    _=cosmo.get_linP_hMpc(zs=zs)
+    _=cosmo.get_linP_Mpc(zs, k_Mpc)
+
+# %%
+test = rescale_cosmology.RescaledCosmology(fid_cosmo=cosmos[0], new_params={'ns':0.96})
+
+# %%
+test = rescale_cosmology.RescaledCosmology(fid_cosmo=cosmos[0], new_params={'H0':74})
 
 # %%
 
