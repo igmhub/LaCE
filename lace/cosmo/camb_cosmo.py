@@ -217,8 +217,8 @@ def print_info(pars, simulation=False):
         Omh2 = pars.omch2 + pars.ombh2
         Om = Omh2 / (pars.H0 / 100.0) ** 2
         print(
-            "H0 = {:.4E}, Omega_bc = {:.4E}, A_s = {:.4E}, n_s = {:.4E},"
-            + " alpha_s = {:.4E}".format(
+            "H0 = {:.4E}, Omega_bc = {:.4E}, A_s = {:.4E}, n_s = {:.4E}, \
+            alpha_s = {:.4E}".format(
                 pars.H0,
                 Om,
                 pars.InitPower.As,
@@ -228,9 +228,9 @@ def print_info(pars, simulation=False):
         )
     else:
         print(
-            "H0 = {:.4E}, Omega_b h^2 = {:.4E}, Omega_c h^2 = {:.4E},"
-            + " Omega_k = {:.4E}, Omega_nu h^2 = {:.4E}, A_s = {:.4E},"
-            + " n_s = {:.4E}, alpha_s = {:.4E}".format(
+            "H0 = {:.4E}, Omega_b h^2 = {:.4E}, Omega_c h^2 = {:.4E}, \
+            Omega_k = {:.4E}, Omega_nu h^2 = {:.4E}, A_s = {:.4E}, \
+            n_s = {:.4E}, alpha_s = {:.4E}".format(
                 pars.H0,
                 pars.ombh2,
                 pars.omch2,
