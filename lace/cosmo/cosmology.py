@@ -123,41 +123,41 @@ class Cosmology(object):
         return
 
 
-    def get_linP_Mpc(self, zs, k_Mpc):
+    def get_linP_Mpc(self, z, k_Mpc):
         """Compute linear power (will call CAMB if needed)"""
 
         # make sure that you have set the interpolator
         self._call_camb_results_full_if_needed()
 
-        if (zs < self.linP_Mpc_interp.zmin) or (zs > self.linP_Mpc_interp.zmax):
+        if (z < self.linP_Mpc_interp.zmin) or (z > self.linP_Mpc_interp.zmax):
             raise ValueError(
-                f"Requested z={zs} is outside interpolation range [{self._linP_interp.zmin}, {self.linP_Mpc_interp.zmax}]"
+                f"Requested z={z} is outside interpolation range [{self._linP_interp.zmin}, {self.linP_Mpc_interp.zmax}]"
             )
         elif k_Mpc.max() > self.linP_Mpc_interp.kmax:
             raise ValueError(
                 f"Requested k_Mpc={k_Mpc.max()} exceeds interpolation range kmax_Mpc={self.linP_Mpc_interp.kmax}"
             )
 
-        return self.linP_Mpc_interp.P(zs, k_Mpc)
+        return self.linP_Mpc_interp.P(z, k_Mpc)
 
 
-    def get_linP_hMpc(self, zs, k_hMpc):
+    def get_linP_hMpc(self, z, k_hMpc):
         """Compute linear power (will call CAMB if needed)"""
 
         h = self.CAMBparams.H0 / 100
         k_Mpc = k_hMpc * h
-        pk_Mpc = self.get_linP_Mpc(zs, k_Mpc)
+        pk_Mpc = self.get_linP_Mpc(z, k_Mpc)
         pk_hMpc = pk_Mpc * h**3
 
         return pk_hMpc
 
 
-    def get_linP_kms(self, zs, k_kms):
+    def get_linP_kms(self, z, k_kms):
         """Compute linear power in velocity units (will call CAMB if needed)"""
 
-        k_Mpc = k_kms * self.dkms_dMpc(zs)
-        pk_Mpc = self.get_linP_Mpc(zs, k_Mpc)
-        pk_kms = pk_Mpc * self.dkms_dMpc(zs)**3
+        k_Mpc = k_kms * self.dkms_dMpc(z)
+        pk_Mpc = self.get_linP_Mpc(z, k_Mpc)
+        pk_kms = pk_Mpc * self.dkms_dMpc(z)**3
 
         return pk_kms
 

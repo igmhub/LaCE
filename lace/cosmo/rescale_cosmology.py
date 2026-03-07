@@ -27,18 +27,18 @@ class RescaledCosmology(object):
         return self.fid_cosmo.dkms_dhMpc(z)
 
     def dAA_dMpc(self, z, lambda_AA):
-        return self.fid_cosmo.dAA_dMpc(z)
+        return self.fid_cosmo.dAA_dMpc(z, lambda_AA)
 
-    def get_linP_hMpc(self, zs, kmax_Mpc=None):
-        fid_linP_hMpc = self.fid_cosmo.get_linP_hMpc(zs, kmax_Mpc)
+    def get_linP_hMpc(self, z, k_hMpc=None):
+        fid_linP_hMpc = self.fid_cosmo.get_linP_hMpc(z, k_hMpc)
         raise ValueError('implement rescaling')
 
-    def get_linP_Mpc(self, zs, kmax_Mpc=None):
-        fid_linP_Mpc = self.fid_cosmo.get_linP_Mpc(zs, kmax_Mpc)
+    def get_linP_Mpc(self, z, k_Mpc):
+        fid_linP_Mpc = self.fid_cosmo.get_linP_Mpc(z, k_Mpc)
         raise ValueError('implement rescaling')
 
-    def get_linP_kms(self, zs, kmax_Mpc=None):
-        fid_linP_kms = self.fid_cosmo.get_linP_kms(zs, kmax_Mpc)
+    def get_linP_kms(self, z, k_kms):
+        fid_linP_kms = self.fid_cosmo.get_linP_kms(z, k_kms)
         raise ValueError('implement rescaling')
 
 
