@@ -37,7 +37,7 @@ cosmos.append(cosmology.Cosmology(cosmo_params_dict={'H0':74.0}, verbose=verbose
 
 # %%
 for cosmo in cosmos:
-    cosmo.get_background_params()
+    print(cosmo.get_background_params())
 
 # %%
 z = 2.33

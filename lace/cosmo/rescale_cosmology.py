@@ -17,7 +17,10 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         assert fid_cosmo.same_background(new_params_dict), "background not fixed"
 
         self.fid_cosmo = fid_cosmo
-        self.new_params = new_params_dict
+        if new_params_dict is None:
+            self.new_params = {}
+        else:
+            self.new_params = new_params_dict
 
         # initialize BaseClass cosmo (should be a formality)
         super().__init__(verbose)
