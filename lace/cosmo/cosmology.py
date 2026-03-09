@@ -1,15 +1,18 @@
 import os
 import numpy as np
-from lace.cosmo import camb_cosmo
+from lace.cosmo import base_cosmology, camb_cosmo
 import lace.cosmo.labeled_cosmologies as lab_cosmo
 
 
-class Cosmology(object):
+class Cosmology(base_cosmology.BaseCosmology):
     """
     Class to interact with CAMB parameters, results, and others.
     """
 
-    def __init__(self, cosmo_params_dict=None, cosmo_label=None, camb_kmax_Mpc=200.0):
+    def __init__(self, cosmo_params_dict=None, cosmo_label=None,
+                 camb_kmax_Mpc=200.0, verbose=False):
+
+        if verbose: print('inside Cosmology.__ini__')
 
         if (cosmo_params_dict is not None) and (cosmo_label is not None):
             raise ValueError("You cannot provide both cosmo params and label")
@@ -35,7 +38,48 @@ class Cosmology(object):
         self.linP_Mpc_interp = None
         self.camb_kmax_Mpc=camb_kmax_Mpc
 
+        # initialize BaseClass cosmo (should be a formality)
+        super().__init__(verbose)
+
         return
+
+    # overwrite virtual functions in base class
+
+    def compute_hubble_parameter(self, z):
+        """Return H(z) in units of km/s/Mpc"""
+
+        # make sure that you have computed CAMB results
+        self._call_camb_results_background_if_needed()
+        return self.CAMBdata.hubble_parameter(z)
+
+
+    def compute_angular_diameter_distance(self, z):
+        """Return angular diameter distance (not comoving) in Mpc"""
+
+        # make sure that you have computed CAMB results
+        self._call_camb_results_background_if_needed()
+        return self.CAMBdata.angular_diameter_distance(z)
+
+
+    def compute_linP_Mpc(self, z, k_Mpc):
+        """Return linear power at (z, k_Mpc) (will call CAMB if needed)"""
+
+        # make sure that you have set the interpolator
+        self._call_camb_results_full_if_needed()
+
+        if (z < self.linP_Mpc_interp.zmin) or (z > self.linP_Mpc_interp.zmax):
+            raise ValueError(
+                f"Requested z={z} is outside interpolation range [{self._linP_interp.zmin}, {self.linP_Mpc_interp.zmax}]"
+            )
+        elif k_Mpc.max() > self.linP_Mpc_interp.kmax:
+            raise ValueError(
+                f"Requested k_Mpc={k_Mpc.max()} exceeds interpolation range kmax_Mpc={self.linP_Mpc_interp.kmax}"
+            )
+
+        return self.linP_Mpc_interp.P(z, k_Mpc)
+
+
+    # other functions specific to this class below
 
 
     def get_background_params(self):
@@ -60,11 +104,12 @@ class Cosmology(object):
 
         # look for parameters that would change background
         back_params = self.get_background_params()
-        print('back params', back_params)
+        if self.verbose: print('back params', back_params)
         for name, value in back_params.items():
             if name in cosmo_params:
                 if value != cosmo_params[name]:
-                    print('background parameter differ', value, cosmo_params[name])
+                    if self.verbose: 
+                        print('background parameter differ', value, cosmo_params[name])
                     return False
 
         return True
@@ -123,70 +168,3 @@ class Cosmology(object):
         return
 
 
-    def get_linP_Mpc(self, z, k_Mpc):
-        """Compute linear power (will call CAMB if needed)"""
-
-        # make sure that you have set the interpolator
-        self._call_camb_results_full_if_needed()
-
-        if (z < self.linP_Mpc_interp.zmin) or (z > self.linP_Mpc_interp.zmax):
-            raise ValueError(
-                f"Requested z={z} is outside interpolation range [{self._linP_interp.zmin}, {self.linP_Mpc_interp.zmax}]"
-            )
-        elif k_Mpc.max() > self.linP_Mpc_interp.kmax:
-            raise ValueError(
-                f"Requested k_Mpc={k_Mpc.max()} exceeds interpolation range kmax_Mpc={self.linP_Mpc_interp.kmax}"
-            )
-
-        return self.linP_Mpc_interp.P(z, k_Mpc)
-
-
-    def get_linP_hMpc(self, z, k_hMpc):
-        """Compute linear power (will call CAMB if needed)"""
-
-        h = self.CAMBparams.H0 / 100
-        k_Mpc = k_hMpc * h
-        pk_Mpc = self.get_linP_Mpc(z, k_Mpc)
-        pk_hMpc = pk_Mpc * h**3
-
-        return pk_hMpc
-
-
-    def get_linP_kms(self, z, k_kms):
-        """Compute linear power in velocity units (will call CAMB if needed)"""
-
-        k_Mpc = k_kms * self.dkms_dMpc(z)
-        pk_Mpc = self.get_linP_Mpc(z, k_Mpc)
-        pk_kms = pk_Mpc * self.dkms_dMpc(z)**3
-
-        return pk_kms
-
-
-    def dkms_dMpc(self, z):
-        """Compute factor to translate velocity separations (in km/s) to comoving
-        separations (in Mpc). At z=3 it should return roughly 70."""
-
-        # make sure that you have computed CAMB results
-        self._call_camb_results_background_if_needed()
-
-        return camb_cosmo.dkms_dMpc(self.CAMBparams, z, self.CAMBdata)
-
-
-    def dkms_dhMpc(self, z):
-        """Compute factor to translate velocity separations (in km/s) to comoving
-        separations (in Mpc/h). At z=3 it should return roughly 100."""
-
-        # make sure that you have computed CAMB results
-        self._call_camb_results_background_if_needed()
-
-        return camb_cosmo.dkms_dhMpc(self.CAMBparams, z, self.CAMBdata)
-
-
-    def dAA_dMpc(self, z, lambda_AA):
-        """Compute factor to translate wavelength separations (in AA) to comoving
-        separations (in Mpc)."""
-
-        # make sure that you have computed CAMB results
-        self._call_camb_results_background_if_needed()
-
-        return camb_cosmo.dAA_dMpc(self.CAMBparams, z, lambda_AA, self.CAMBdata)

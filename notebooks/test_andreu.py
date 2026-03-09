@@ -29,10 +29,11 @@ from matplotlib import pyplot as plt
 from lace.cosmo import cosmology, rescale_cosmology
 
 # %%
+verbose = True
 cosmos = []
-cosmos.append(cosmology.Cosmology())
-cosmos.append(cosmology.Cosmology(cosmo_label="Planck18"))
-cosmos.append(cosmology.Cosmology(cosmo_params_dict={'H0':74.0}))
+cosmos.append(cosmology.Cosmology(verbose=verbose))
+cosmos.append(cosmology.Cosmology(cosmo_label="Planck18", verbose=verbose))
+cosmos.append(cosmology.Cosmology(cosmo_params_dict={'H0':74.0}, verbose=verbose))
 
 # %%
 for cosmo in cosmos:
@@ -42,7 +43,7 @@ for cosmo in cosmos:
 z = 2.33
 lambda_AA = 4000.0
 for cosmo in cosmos:
-    print(cosmo.dkms_dMpc(z), cosmo.dAA_dMpc(z, lambda_AA))
+    print(cosmo.get_dkms_dMpc(z), cosmo.get_dAA_dMpc(z, lambda_AA))
 
 # %%
 z = 2.0
@@ -56,7 +57,7 @@ for cosmo in cosmos:
 # %%
 
 # %%
-test = rescale_cosmology.RescaledCosmology(fid_cosmo=cosmos[0], new_params_dict={'ns':0.96})
+test = rescale_cosmology.RescaledCosmology(fid_cosmo=cosmos[0], new_params_dict={'ns':0.96}, verbose=True)
 
 # %%
 try:
