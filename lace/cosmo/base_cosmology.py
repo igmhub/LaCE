@@ -38,6 +38,17 @@ class BaseCosmology(object):
 
     # below here, no need to overwrite
 
+    def get_H0(self):
+        """Hubble constant in km/s/Mpc"""
+
+        return self.compute_hubble_parameter(z=0)
+
+
+    def get_h(self):
+        """H0 / 100 km/s/Mpc """
+
+        return self.get_H0() / 100.0
+
 
     def get_linP_Mpc(self, z, k_Mpc):
         """Return linear density power spectrum at (z, k_Mpc)"""
@@ -48,7 +59,7 @@ class BaseCosmology(object):
     def get_linP_hMpc(self, z, k_hMpc):
         """Return linear density power spectrum at (z, k_Mpc)"""
 
-        h = self.compute_hubble_parameter(z=0) / 100
+        h = self.get_h()
         k_Mpc = k_hMpc * h
         pk_Mpc = self.compute_linP_Mpc(z, k_Mpc)
         pk_hMpc = pk_Mpc * h**3
@@ -80,7 +91,7 @@ class BaseCosmology(object):
         separations (in Mpc/h). At z=3 it should return roughly 100."""
 
         dvdX_Mpc = self.get_dkms_dMpc(z)
-        h = self.compute_hubble_parameter(z=0) / 100.0
+        h = self.get_h()
         dvdX_hMpc = dvdX_Mpc / h
         return dvdX_hMpc
 
