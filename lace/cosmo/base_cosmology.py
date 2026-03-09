@@ -132,7 +132,7 @@ class BaseCosmology(object):
 
 
     def get_linP_Mpc_params(self, z, kp_Mpc):
-        """Parameters describing the lienar power around kp_Mpc"""
+        """Parameters describing the linear power around kp_Mpc"""
 
         # specify wavenumber range to fit
         kmin_over_kp = 0.5
@@ -162,4 +162,23 @@ class BaseCosmology(object):
         }
 
         return linP_params
+
+
+    def get_linP_kms_params(self, z, kp_kms):
+        """Parameters describing the linear power around kp_kms"""
+
+        # translate the pivot point to Mpc
+        kp_Mpc = kp_kms * self.get_dkms_dMpc(z)
+
+        # get the parameters in Mpc
+        linP_Mpc_params = self.get_linP_Mpc_params(z, kp_Mpc)
+
+        # modify the names
+        linP_kms_params = {
+            "Delta2_star": linP_Mpc_params["Delta2_p"],
+            "n_star": linP_Mpc_params["n_p"],
+            "alpha_star": linP_Mpc_params["alpha_p"]
+        }
+
+        return linP_kms_params
 
