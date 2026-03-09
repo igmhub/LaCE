@@ -46,15 +46,12 @@ for cosmo in cosmos:
     print(cosmo.get_dkms_dMpc(z), cosmo.get_dAA_dMpc(z, lambda_AA))
 
 # %%
-z = 2.0
-k_Mpc = np.linspace(0.01, 1.0, 100)
+kp_Mpc = 0.7
 for cosmo in cosmos:
-    linP_Mpc=cosmo.get_linP_Mpc(z, k_Mpc)
-    linP_hMpc=cosmo.get_linP_hMpc(z, k_Mpc/0.7)
-    linP_kms=cosmo.get_linP_kms(z, k_Mpc/100)
-    print(linP_Mpc[0], linP_hMpc[0], linP_kms[0])
+    print(cosmo.get_linP_Mpc_params(z=z,kp_Mpc=kp_Mpc))
 
-# %%
+# %% [markdown]
+# ### Test RescaledCosmology
 
 # %%
 test = rescale_cosmology.RescaledCosmology(fid_cosmo=cosmos[0], new_params_dict={'ns':0.96}, verbose=True)
@@ -66,9 +63,9 @@ except AssertionError as error:
     print(error)
 
 # %%
-print(test.dkms_dMpc(z), test.dAA_dMpc(z, lambda_AA))
+print(test.get_dkms_dMpc(z), test.get_dAA_dMpc(z, lambda_AA))
 
 # %%
-test.get_linP_Mpc(z, k_Mpc)
+print(test.get_linP_Mpc_params(z=z,kp_Mpc=kp_Mpc))
 
 # %%
