@@ -96,12 +96,12 @@ class BaseCosmology(object):
         return dvdX_hMpc
 
 
-    def get_dAA_dMpc(self, z, lambda_AA):
+    def get_dAA_dMpc(self, z, lambda_rest_AA=1215.67):
         """Factor to translate wavelength separations (in AA) to comoving
         separations (in Mpc)."""
 
         dkms_dMpc = self.get_dkms_dMpc(z)
-        dAA_dkms = (1.0 + z) * lambda_AA / c_kms
+        dAA_dkms = (1.0 + z) * lambda_rest_AA / c_kms
         return dkms_dMpc * dAA_dkms
 
 
