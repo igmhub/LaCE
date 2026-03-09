@@ -102,6 +102,8 @@ class Cosmology(base_cosmology.BaseCosmology):
         """Check if any of the input cosmological parameters would change
         the background expansion of the cosmology"""
 
+        if cosmo_params is None: return True
+
         # look for parameters that would change background
         back_params = self.get_background_params()
         if self.verbose: print('back params', back_params)
