@@ -120,3 +120,35 @@ class BaseCosmology(object):
         return 180.0 / np.pi * 60.0 * drad_dMpc
 
 
+    def get_linP_Mpc_params(self, z, kp_Mpc):
+        """Parameters describing the lienar power around kp_Mpc"""
+
+        # specify wavenumber range to fit
+        kmin_over_kp = 0.5
+        kmax_over_kp = 2.0
+        k_over_kp = np.logspace(np.log10(kmin_over_kp), 
+                                np.log10(kmax_over_kp), 100)
+        k_Mpc = kp_Mpc * k_over_kp
+
+        # get power spectrum in this range
+        linP_Mpc = self.get_linP_Mpc(z, k_Mpc)
+
+        # fit a 2nd-order polynomial to the log power 
+        poly_fit = np.polyfit(np.log(k_over_kp), np.log(linP_Mpc), deg=2)
+        linP_Mpc_poly = np.poly1d(poly_fit)
+
+        # translate the polynomial to linP params
+        ln_A_p = linP_Mpc_poly[0]
+        Delta2_p = np.exp(ln_A_p) * kp_Mpc**3 / (2 * np.pi**2)
+        n_p = linP_Mpc_poly[1]
+        # note that the curvature is alpha/2
+        alpha_p = 2.0 * linP_Mpc_poly[2]
+
+        linP_params = {
+            "Delta2_p": Delta2_p,
+            "n_p": n_p,
+            "alpha_p": alpha_p
+        }
+
+        return linP_params
+
