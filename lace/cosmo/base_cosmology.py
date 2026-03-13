@@ -39,6 +39,10 @@ class BaseCosmology(object):
         """Return growth rate at z"""
         raise NotImplementedError()
 
+    def compute_sigma8(self, z):
+        """Return sigma8 at z"""
+        raise NotImplementedError()
+
     # below here, no need to overwrite
 
     def get_H0(self):
@@ -55,6 +59,10 @@ class BaseCosmology(object):
         """Return logarithmic growth rate (f) at z"""
         return self.compute_growth_rate(z)
 
+    def get_sigma8(self, z):
+        """Return sigma8 at z"""
+        return self.compute_sigma8(z)
+
     def get_linP_Mpc(self, z, k_Mpc):
         """Return linear density power spectrum at (z, k_Mpc)"""
 
@@ -70,20 +78,31 @@ class BaseCosmology(object):
 
         return pk_hMpc
 
-    def get_sigma8(self, z):
-        """Return sigma8 at z"""
+    def get_sigma8_cb(self, z):
+        """Return sigma8 at z
+
+        It computes the integral of the linear power spectrum of CDM+baryons
+        over a top-hat filter of radius 8 Mpc/h. Note that the result of this
+        function is different from the one expected for a cosmology with massive
+        neutrinos. Please use get_sigma8 right now
+
+        """
 
         def fft_top_hat(k_hMpc, R_hMpc=8.0):
             """Top-hat filter"""
             x = k_hMpc * R_hMpc
-            return 3 / x**3 * (np.sin(x) - x * np.cos(x))
+            win = np.zeros_like(k_hMpc)
+            # CAMB implementation https://github.com/cmbant/CAMB/blob/master/fortran/results.f90
+            _ = np.argwhere(x < 1e-2)[:, 0]
+            win[_] = 1 - x[_] ** 2 / 10
+            _ = np.argwhere(x >= 1e-2)[:, 0]
+            win[_] = 3 / x[_] ** 3 * (np.sin(x[_]) - x[_] * np.cos(x[_]))
+            return win
 
         k_hMpc = np.logspace(-4, 2, 1000)
         linP_hMpc = self.get_linP_hMpc(z, k_hMpc)
-        inside_integral = (k_hMpc**3 * linP_hMpc / 2 / np.pi**2) * fft_top_hat(
-            k_hMpc
-        ) ** 2
-        return np.sqrt(simpson(inside_integral, x=np.log(k_hMpc)))
+        integrand = (k_hMpc**3 * linP_hMpc / 2 / np.pi**2) * fft_top_hat(k_hMpc) ** 2
+        return np.sqrt(simpson(integrand, x=np.log(k_hMpc)))
 
     def get_linP_kms(self, z, k_kms):
         """Return linear power in velocity units"""

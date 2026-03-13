@@ -91,8 +91,22 @@ class Cosmology(base_cosmology.BaseCosmology):
         fsig8 = np.array(self.CAMBdata.get_fsigma8())
         sig8 = np.array(self.CAMBdata.get_sigma8())
         f = fsig8 / sig8
+        # need to sort to interpolate
+        ind_sort = np.argsort(z_transfer)
 
-        return np.interp(z, f, z_transfer)
+        return np.interp(z, z_transfer[ind_sort], f[ind_sort])
+
+    def compute_sigma8(self, z):
+        """Return sigma8 at z"""
+
+        self._call_camb_results_full_if_needed()
+
+        z_transfer = np.array(self.CAMBdata.transfer_redshifts)
+        sig8 = np.array(self.CAMBdata.get_sigma8())
+        # need to sort to interpolate
+        ind_sort = np.argsort(z_transfer)
+
+        return np.interp(z, z_transfer[ind_sort], sig8[ind_sort])
 
     # other functions specific to this class below
 
@@ -135,6 +149,11 @@ class Cosmology(base_cosmology.BaseCosmology):
         """Print relevant parameters"""
 
         camb_cosmo.print_info(self.CAMBparams)
+        return
+
+    def get_CAMBdata(self):
+        """Set CAMBdata object"""
+        self._call_camb_results_full_if_needed()
         return
 
     def _call_camb_results_background(self):

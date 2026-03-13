@@ -52,6 +52,13 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
 
         return self.fid_cosmo.compute_growth_rate(z)
 
+    def compute_sigma8(self, z):
+        """Return sigma8 at z"""
+        sigma8 = self.fid_cosmo.compute_sigma8(z)
+        scaling = self.get_sigma8_scaling()
+
+        return sigma8 * scaling
+
     # other functions specific to this class below
 
     def get_linP_Mpc_scaling(self, k_Mpc):
@@ -81,3 +88,13 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         ln_scaling += 0.5 * delta_nrun * k_over_k_s**2
 
         return np.exp(ln_scaling)
+
+    def get_sigma8_scaling(self):
+        """Multiplicative correction to fiducial sigma8"""
+
+        fid_As = self.fid_cosmo.CAMBparams.InitPower.As
+        new_As = self.new_params.get("As", fid_As)
+
+        ratio_As = new_As / fid_As
+
+        return np.sqrt(ratio_As)
