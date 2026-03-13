@@ -1,5 +1,10 @@
 .ipynb_checkpoints
 *.ipynb
+*.pkl
+*.npy
+*.png
+*.pdf
+*.pt
 lace.egg-info/
 __pycache__
 .github/workflows/.python-tests.yml.swn
