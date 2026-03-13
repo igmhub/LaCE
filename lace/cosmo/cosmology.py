@@ -1,4 +1,3 @@
-import os
 import numpy as np
 from lace.cosmo import base_cosmology, camb_cosmo
 import lace.cosmo.labeled_cosmologies as lab_cosmo
@@ -41,7 +40,8 @@ class Cosmology(base_cosmology.BaseCosmology):
 
         # call CAMB only later when needed
         self.CAMBdata = None
-        self.linP_Mpc_interp = None
+        self.linP_Mpc_bc_interp = None
+        self.linP_Mpc_bcnu_interp = None
         self.camb_kmax_Mpc = camb_kmax_Mpc
 
         # initialize BaseClass cosmo (should be a formality)
@@ -65,22 +65,29 @@ class Cosmology(base_cosmology.BaseCosmology):
         self._call_camb_results_background_if_needed()
         return self.CAMBdata.angular_diameter_distance(z)
 
-    def compute_linP_Mpc(self, z, k_Mpc):
+    def compute_linP_Mpc(self, z, k_Mpc, species="bc"):
         """Return linear power at (z, k_Mpc) (will call CAMB if needed)"""
 
         # make sure that you have set the interpolator
         self._call_camb_results_full_if_needed()
 
-        if (z < self.linP_Mpc_interp.zmin) or (z > self.linP_Mpc_interp.zmax):
+        if species == "bc":
+            interp = self.linP_Mpc_bc_interp
+        elif species == "bcnu":
+            interp = self.linP_Mpc_bcnu_interp
+        else:
+            raise ValueError("species must be 'bc' or 'bcnu'")
+
+        if (z < interp.zmin) or (z > interp.zmax):
             raise ValueError(
-                f"Requested z={z} is outside interpolation range [{self._linP_interp.zmin}, {self.linP_Mpc_interp.zmax}]"
+                f"Requested z={z} is outside interpolation range [{interp.zmin}, {interp.zmax}]"
             )
-        elif k_Mpc.max() > self.linP_Mpc_interp.kmax:
+        elif k_Mpc.max() > interp.kmax:
             raise ValueError(
-                f"Requested k_Mpc={k_Mpc.max()} exceeds interpolation range kmax_Mpc={self.linP_Mpc_interp.kmax}"
+                f"Requested k_Mpc={k_Mpc.max()} exceeds interpolation range kmax_Mpc={interp.kmax}"
             )
 
-        return self.linP_Mpc_interp.P(z, k_Mpc)
+        return interp.P(z, k_Mpc)
 
     def compute_growth_rate(self, z):
         """Return logarithmic growth rate (f) at z"""
@@ -95,18 +102,6 @@ class Cosmology(base_cosmology.BaseCosmology):
         ind_sort = np.argsort(z_transfer)
 
         return np.interp(z, z_transfer[ind_sort], f[ind_sort])
-
-    def compute_sigma8(self, z):
-        """Return sigma8 at z"""
-
-        self._call_camb_results_full_if_needed()
-
-        z_transfer = np.array(self.CAMBdata.transfer_redshifts)
-        sig8 = np.array(self.CAMBdata.get_sigma8())
-        # need to sort to interpolate
-        ind_sort = np.argsort(z_transfer)
-
-        return np.interp(z, z_transfer[ind_sort], sig8[ind_sort])
 
     # other functions specific to this class below
 
@@ -138,10 +133,21 @@ class Cosmology(base_cosmology.BaseCosmology):
             print("back params", back_params)
         for name, value in back_params.items():
             if name in cosmo_params:
-                if value != cosmo_params[name]:
-                    if self.verbose:
-                        print("background parameter differ", value, cosmo_params[name])
-                    return False
+                # this is needed for mnu because for some crazy reason CAMB slightly changes mnu
+                if name == "mnu":
+                    if np.abs(value - cosmo_params[name]) > 1e-4:
+                        if self.verbose:
+                            print(
+                                "background parameter differ", value, cosmo_params[name]
+                            )
+                        return False
+                else:
+                    if value != cosmo_params[name]:
+                        if self.verbose:
+                            print(
+                                "background parameter differ", value, cosmo_params[name]
+                            )
+                        return False
 
         return True
 
@@ -179,10 +185,22 @@ class Cosmology(base_cosmology.BaseCosmology):
         self.CAMBdata = camb_cosmo.get_camb_results(
             self.CAMBparams, zs=zs, camb_kmax_Mpc=self.camb_kmax_Mpc
         )
-        self.linP_Mpc_interp = self.CAMBdata.get_matter_power_interpolator(
+        # https://camb.readthedocs.io/en/latest/transfer_variables.html#transfer-variables
+        # for more information on var1 and var2
+
+        self.linP_Mpc_bc_interp = self.CAMBdata.get_matter_power_interpolator(
             nonlinear=False,
             var1=8,
             var2=8,
+            hubble_units=False,
+            k_hunit=False,
+            log_interp=True,
+        )
+
+        self.linP_Mpc_bcnu_interp = self.CAMBdata.get_matter_power_interpolator(
+            nonlinear=False,
+            var1=7,
+            var2=7,
             hubble_units=False,
             k_hunit=False,
             log_interp=True,
@@ -193,7 +211,7 @@ class Cosmology(base_cosmology.BaseCosmology):
     def _call_camb_results_full_if_needed(self):
         """Check if linear power is already computed"""
 
-        if self.linP_Mpc_interp is None:
+        if (self.linP_Mpc_bc_interp is None) | (self.linP_Mpc_bcnu_interp is None):
             self._call_camb_results_full()
 
         return

@@ -1,9 +1,4 @@
 import numpy as np
-import scipy.constants
-from scipy.integrate import simpson
-
-# speed of light in km/s
-c_kms = scipy.constants.c / 1e3
 
 
 class BaseCosmology(object):
@@ -23,7 +18,7 @@ class BaseCosmology(object):
 
     # four functions that other cosmo classes should implement
 
-    def compute_linP_Mpc(self, z, k_Mpc):
+    def compute_linP_Mpc(self, z, k_Mpc, species="bc"):
         """Return linear power at (z, k_Mpc)"""
         raise NotImplementedError()
 
@@ -37,10 +32,6 @@ class BaseCosmology(object):
 
     def compute_growth_rate(self, z):
         """Return growth rate at z"""
-        raise NotImplementedError()
-
-    def compute_sigma8(self, z):
-        """Return sigma8 at z"""
         raise NotImplementedError()
 
     # below here, no need to overwrite
@@ -59,34 +50,24 @@ class BaseCosmology(object):
         """Return logarithmic growth rate (f) at z"""
         return self.compute_growth_rate(z)
 
-    def get_sigma8(self, z):
-        """Return sigma8 at z"""
-        return self.compute_sigma8(z)
-
-    def get_linP_Mpc(self, z, k_Mpc):
+    def get_linP_Mpc(self, z, k_Mpc, species="bc"):
         """Return linear density power spectrum at (z, k_Mpc)"""
 
-        return self.compute_linP_Mpc(z, k_Mpc)
+        return self.compute_linP_Mpc(z, k_Mpc, species=species)
 
-    def get_linP_hMpc(self, z, k_hMpc):
+    def get_linP_hMpc(self, z, k_hMpc, species="bc"):
         """Return linear density power spectrum at (z, k_Mpc)"""
 
         h = self.get_h()
         k_Mpc = k_hMpc * h
-        pk_Mpc = self.compute_linP_Mpc(z, k_Mpc)
+        pk_Mpc = self.compute_linP_Mpc(z, k_Mpc, species=species)
         pk_hMpc = pk_Mpc * h**3
 
         return pk_hMpc
 
-    def get_sigma8_cb(self, z):
-        """Return sigma8 at z
-
-        It computes the integral of the linear power spectrum of CDM+baryons
-        over a top-hat filter of radius 8 Mpc/h. Note that the result of this
-        function is different from the one expected for a cosmology with massive
-        neutrinos. Please use get_sigma8 right now
-
-        """
+    def get_sigma8(self, z, species="bcnu"):
+        """Return sigma8 at z"""
+        from scipy.integrate import simpson
 
         def fft_top_hat(k_hMpc, R_hMpc=8.0):
             """Top-hat filter"""
@@ -100,15 +81,16 @@ class BaseCosmology(object):
             return win
 
         k_hMpc = np.logspace(-4, 2, 1000)
-        linP_hMpc = self.get_linP_hMpc(z, k_hMpc)
+        linP_hMpc = self.get_linP_hMpc(z, k_hMpc, species=species)
         integrand = (k_hMpc**3 * linP_hMpc / 2 / np.pi**2) * fft_top_hat(k_hMpc) ** 2
-        return np.sqrt(simpson(integrand, x=np.log(k_hMpc)))
+        sig8 = np.sqrt(simpson(integrand, x=np.log(k_hMpc)))
+        return sig8
 
-    def get_linP_kms(self, z, k_kms):
+    def get_linP_kms(self, z, k_kms, species="bc"):
         """Return linear power in velocity units"""
 
         k_Mpc = k_kms * self.get_dkms_dMpc(z)
-        pk_Mpc = self.get_linP_Mpc(z, k_Mpc)
+        pk_Mpc = self.get_linP_Mpc(z, k_Mpc, species=species)
         pk_kms = pk_Mpc * self.get_dkms_dMpc(z) ** 3
 
         return pk_kms
@@ -133,6 +115,11 @@ class BaseCosmology(object):
     def get_dAA_dMpc(self, z, lambda_rest_AA=1215.67):
         """Factor to translate wavelength separations (in AA) to comoving
         separations (in Mpc)."""
+
+        import scipy.constants
+
+        # speed of light in km/s
+        c_kms = scipy.constants.c / 1e3
 
         dkms_dMpc = self.get_dkms_dMpc(z)
         dAA_dkms = (1.0 + z) * lambda_rest_AA / c_kms
@@ -161,7 +148,7 @@ class BaseCosmology(object):
         drad_dMpc = self.get_drad_dMpc(z)
         return 180.0 / np.pi * 60.0 * drad_dMpc
 
-    def get_linP_Mpc_params(self, z, kp_Mpc):
+    def get_linP_Mpc_params(self, z, kp_Mpc, species="bc"):
         """Parameters describing the linear power around kp_Mpc"""
 
         # specify wavenumber range to fit
@@ -171,7 +158,7 @@ class BaseCosmology(object):
         k_Mpc = kp_Mpc * k_over_kp
 
         # get power spectrum in this range
-        linP_Mpc = self.get_linP_Mpc(z, k_Mpc)
+        linP_Mpc = self.get_linP_Mpc(z, k_Mpc, species=species)
 
         # fit a 2nd-order polynomial to the log power
         poly_fit = np.polyfit(np.log(k_over_kp), np.log(linP_Mpc), deg=2)
@@ -188,14 +175,14 @@ class BaseCosmology(object):
 
         return linP_params
 
-    def get_linP_kms_params(self, z, kp_kms):
+    def get_linP_kms_params(self, z, kp_kms, species="bc"):
         """Parameters describing the linear power around kp_kms"""
 
         # translate the pivot point to Mpc
         kp_Mpc = kp_kms * self.get_dkms_dMpc(z)
 
         # get the parameters in Mpc
-        linP_Mpc_params = self.get_linP_Mpc_params(z, kp_Mpc)
+        linP_Mpc_params = self.get_linP_Mpc_params(z, kp_Mpc, species=species)
 
         # modify the names
         linP_kms_params = {

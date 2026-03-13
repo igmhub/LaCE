@@ -1,6 +1,5 @@
-import os
 import numpy as np
-from lace.cosmo import camb_cosmo, base_cosmology, cosmology
+from lace.cosmo import base_cosmology
 
 
 class RescaledCosmology(base_cosmology.BaseCosmology):
@@ -40,10 +39,10 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
 
         return self.fid_cosmo.compute_angular_diameter_distance(z)
 
-    def compute_linP_Mpc(self, z, k_Mpc):
+    def compute_linP_Mpc(self, z, k_Mpc, species="bc"):
         """Return linear power at (z, k_Mpc) (will call CAMB if needed)"""
 
-        linP_Mpc = self.fid_cosmo.compute_linP_Mpc(z, k_Mpc)
+        linP_Mpc = self.fid_cosmo.compute_linP_Mpc(z, k_Mpc, species=species)
         scaling = self.get_linP_Mpc_scaling(k_Mpc)
         return linP_Mpc * scaling
 
@@ -51,13 +50,6 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         """Return logarithmic growth rate (f) at z"""
 
         return self.fid_cosmo.compute_growth_rate(z)
-
-    def compute_sigma8(self, z):
-        """Return sigma8 at z"""
-        sigma8 = self.fid_cosmo.compute_sigma8(z)
-        scaling = self.get_sigma8_scaling()
-
-        return sigma8 * scaling
 
     # other functions specific to this class below
 
@@ -88,13 +80,3 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         ln_scaling += 0.5 * delta_nrun * k_over_k_s**2
 
         return np.exp(ln_scaling)
-
-    def get_sigma8_scaling(self):
-        """Multiplicative correction to fiducial sigma8"""
-
-        fid_As = self.fid_cosmo.CAMBparams.InitPower.As
-        new_As = self.new_params.get("As", fid_As)
-
-        ratio_As = new_As / fid_As
-
-        return np.sqrt(ratio_As)
