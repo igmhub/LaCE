@@ -90,7 +90,10 @@ class Cosmology(base_cosmology.BaseCosmology):
         return interp.P(z, k_Mpc)
 
     def compute_growth_rate(self, z):
-        """Return logarithmic growth rate (f) at z"""
+        """Return logarithmic growth rate (f) at z
+
+        It returns the same results as CAMB by default (baryons+CDM+neutrinos)
+        """
 
         self._call_camb_results_full_if_needed()
 
@@ -159,8 +162,9 @@ class Cosmology(base_cosmology.BaseCosmology):
 
     def get_CAMBdata(self):
         """Set CAMBdata object"""
+
         self._call_camb_results_full_if_needed()
-        return
+        return self.CAMBdata
 
     def _call_camb_results_background(self):
         """Call camb.get_results, but only for background expansion"""
