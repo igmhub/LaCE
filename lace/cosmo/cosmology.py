@@ -92,7 +92,7 @@ class Cosmology(base_cosmology.BaseCosmology):
         sig8 = np.array(self.CAMBdata.get_sigma8())
         f = fsig8 / sig8
 
-        return np.interp(z_transfer, f, z_transfer)
+        return np.interp(z, f, z_transfer)
 
     # other functions specific to this class below
 
