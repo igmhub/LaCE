@@ -62,9 +62,9 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         fid_nrun = self.fid_cosmo.CAMBparams.InitPower.nrun
 
         # assume standard pivot point
-        assert self.fid_cosmo.CAMBparams.InitPower.pivot_scalar == 0.05
         k_s = self.fid_cosmo.CAMBparams.InitPower.pivot_scalar
-        k_over_k_s = k_Mpc / k_s
+        assert k_s == 0.05
+        ln_k_over_k_s = np.log(k_Mpc / k_s)
 
         # modifications in this cosmology
         new_As = self.new_params.get("As", fid_As)
@@ -76,7 +76,7 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         delta_ns = new_ns - fid_ns
         delta_nrun = new_nrun - fid_nrun
 
-        ln_scaling = np.log(ratio_As) + delta_ns * k_over_k_s
-        ln_scaling += 0.5 * delta_nrun * k_over_k_s**2
+        ln_scaling = np.log(ratio_As) + delta_ns * ln_k_over_k_s
+        ln_scaling += 0.5 * delta_nrun * ln_k_over_k_s**2
 
         return np.exp(ln_scaling)
