@@ -18,10 +18,10 @@ clight_kms = 299792.458
 def get_cosmology(
     H0=67.66,
     mnu=0.0,
-    omch2=0.119,
-    ombh2=0.0224,
+    omch2=0.11933,
+    ombh2=0.02242,
     omk=0.0,
-    As=2.105e-09,
+    As=np.exp(3.047) * 1e-10,
     ns=0.9665,
     nrun=0.0,
     nrunrun=0.0,
@@ -37,17 +37,13 @@ def get_cosmology(
 
     pars = camb.CAMBparams()
     # set background cosmology
-    pars.set_cosmology(
-        H0=H0, ombh2=ombh2, omch2=omch2, omk=omk, mnu=mnu, nnu=nnu
-    )
+    pars.set_cosmology(H0=H0, ombh2=ombh2, omch2=omch2, omk=omk, mnu=mnu, nnu=nnu)
     # set DE (fluid or ppf from https://camb.readthedocs.io/en/latest/_modules/camb/dark_energy.html)
     if ((w + 1) < -1e-6) or ((1 + w + wa) < -1e-6):
         dark_energy_model = "ppf"
     else:
         dark_energy_model = "fluid"
-    pars.set_dark_energy(
-        w=w, wa=wa, cs2=1.0, dark_energy_model=dark_energy_model
-    )
+    pars.set_dark_energy(w=w, wa=wa, cs2=1.0, dark_energy_model=dark_energy_model)
     # set primordial power
     pars.InitPower.set_params(
         As=As, ns=ns, nrun=nrun, nrunrun=nrunrun, pivot_scalar=pivot_scalar
@@ -382,9 +378,7 @@ def get_linP_Mpc(pars, zs, camb_results=None, fluid=camb_fluid, kmax_Mpc=None):
     return k_Mpc, zs_out, P_Mpc
 
 
-def get_linP_kms(
-    pars, zs=[3], camb_results=None, fluid=camb_fluid, kmax_Mpc=None
-):
+def get_linP_kms(pars, zs=[3], camb_results=None, fluid=camb_fluid, kmax_Mpc=None):
     """Given a CAMB cosmology, and a set of redshifts, compute the linear
     power spectrum for CDM+baryons, in units of s/km.
     - camb_results: if provided, use that to speed things up.
@@ -475,9 +469,7 @@ def ddeg_dMpc(cosmo, z, camb_results=None):
     dm = camb_results.angular_diameter_distance(z) * (
         1 + z
     )  # transverse distance in cMpc for one radian
-    return (
-        180.0 / np.pi
-    ) / dm  # 180/pi [deg/rad] / dm [Mpc/rad] = dtheta/dm [deg/Mpc]
+    return (180.0 / np.pi) / dm  # 180/pi [deg/rad] / dm [Mpc/rad] = dtheta/dm [deg/Mpc]
 
 
 def shift_primordial_pivot(cosmo_dict, pivot_scalar):
@@ -505,9 +497,7 @@ def shift_primordial_pivot(cosmo_dict, pivot_scalar):
     assert "nrun" not in cosmo_dict, "update shift_primordial_pivot"
 
     # compute new amplitude of primordial power
-    new_As = cosmo_dict["As"] * (pivot_scalar / pivot_old) ** (
-        cosmo_dict["ns"] - 1
-    )
+    new_As = cosmo_dict["As"] * (pivot_scalar / pivot_old) ** (cosmo_dict["ns"] - 1)
 
     ## Update dictionary with new As and pivot
     cosmo_dict["As"] = new_As
