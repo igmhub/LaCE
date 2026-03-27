@@ -36,6 +36,7 @@ def data_for_l10(archive, emulator_label, suite="nyx", type_ana="cen"):
     k_fit = k_Mpc / emulator.kmax_Mpc
 
     # smooth simulation data and evaluate emulator
+    p1d_Mpc_orig = np.zeros((nsam, nz, k_Mpc.shape[0]))
     p1d_Mpc_sm = np.zeros((nsam, nz, k_Mpc.shape[0]))
     p1d_Mpc_emu = np.zeros((nsam, nz, k_Mpc.shape[0]))
     mask = np.ones((nsam, nz), dtype=bool)
@@ -79,9 +80,8 @@ def data_for_l10(archive, emulator_label, suite="nyx", type_ana="cen"):
             )
             yfit = np.log(testing_data[iz]["p1d_Mpc"][ind] / norm)
             popt, _ = curve_fit(emulator.func_poly, k_fit, yfit)
-            p1d_Mpc_sm[isim, iiz] = norm * np.exp(
-                emulator.func_poly(k_fit, *popt)
-            )
+            p1d_Mpc_sm[isim, iiz] = norm * np.exp(emulator.func_poly(k_fit, *popt))
+            p1d_Mpc_orig[isim, iiz] = testing_data[iz]["p1d_Mpc"][ind]
 
             if suite == "nyx":
                 int_data = testing_data[iz].copy()
@@ -100,10 +100,8 @@ def data_for_l10(archive, emulator_label, suite="nyx", type_ana="cen"):
                     use_data = False
 
             if use_data:
-                p1d_Mpc_emu[isim, iiz] = emulator.emulate_p1d_Mpc(
-                    int_data, k_Mpc
-                )
+                p1d_Mpc_emu[isim, iiz] = emulator.emulate_p1d_Mpc(int_data, k_Mpc)
             else:
                 mask[isim, iiz] = False
 
-    return zz, k_Mpc, p1d_Mpc_sm, p1d_Mpc_emu, mask
+    return zz, k_Mpc, p1d_Mpc_orig, p1d_Mpc_sm, p1d_Mpc_emu, mask
