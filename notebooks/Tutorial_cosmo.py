@@ -23,6 +23,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from lace.cosmo import cosmology, rescale_cosmology
+from camb import model
 
 # %% [markdown]
 # ### Define three different cosmologies
@@ -103,5 +104,82 @@ print(test.get_dkms_dMpc(z), test.get_dAA_dMpc(z, lambda_AA))
 
 # %%
 print(test.get_linP_Mpc_params(z=z,kp_Mpc=kp_Mpc))
+
+# %% [markdown]
+# ### Check out Transfer function and expansion history
+
+# %%
+cosmos = []
+# Planck18
+cosmos.append(cosmology.Cosmology(cosmo_label="Planck18"))
+params = cosmos[0].get_background_params()
+
+# Planck18 with H0=74 while holding fixed Omh2
+hnew = 0.74
+cosmos.append(cosmology.Cosmology(cosmo_params_dict={'H0':hnew * 100}))
+
+# Planck18 changing Omh2 while holding fixed H0
+omch2new = params['omch2'] + 0.086/100
+cosmos.append(cosmology.Cosmology(cosmo_params_dict={'omch2':omch2new}))
+
+
+# %%
+for ii in range(len(cosmos)):
+    print(cosmos[ii].get_background_params())
+    # compute CAMB object
+    cosmos[ii].get_CAMBdata()
+
+# %% [markdown]
+# Plot transfer functions
+
+# %%
+plot_ratio = True
+
+zz = np.array(cosmos[0].CAMBdata.transfer_redshifts)
+
+ls = ["-", "--", "-.", ":"]
+for kk, zuse in enumerate([2.2, 10.]):
+    ii = np.argmin(np.abs(zz-zuse))
+    zuse = zz[ii]
+
+    for jj, cosmo in enumerate(cosmos):
+        trans = cosmo.CAMBdata.get_matter_transfer_data()
+        kh = trans.transfer_data[0, :, 0]
+        k = kh * cosmo.CAMBdata.Params.h
+        delta = trans.transfer_data[model.Transfer_cdm - 1, :, ii]
+        if jj == 0:
+            delta0 = delta.copy()
+            k0 = k.copy()
+            
+
+        if plot_ratio:
+            if jj != 0:
+                yy = np.exp(np.interp(np.log(k0), np.log(k), np.log(delta)))
+                plt.plot(k0, yy/delta0, label="Cosmo {}, z={}".format(jj, np.round(zuse,2)), ls=ls[jj], color="C"+str(kk))
+        else:
+            plt.plot(k, delta, label="Cosmo {}, z={}".format(jj, np.round(zuse,2)), ls=ls[jj], color="C"+str(kk))
+    
+
+plt.xscale("log")
+plt.xlim([1e-3, 1])
+plt.legend()
+
+# %% [markdown]
+# Plot expansion history
+
+# %%
+plot_ratio = True
+
+zz = np.linspace(2, 10, 100)
+for jj, cosmo in enumerate(cosmos):
+    hz = cosmo.compute_hubble_parameter(zz)
+    if jj == 0:
+        hz0 = hz.copy()
+
+    if plot_ratio:
+        plt.plot(zz, hz/hz0, label="Cosmo {}".format(jj))
+    else:
+        plt.plot(zz, hz, label="Cosmo {}".format(jj))
+plt.legend()
 
 # %%
