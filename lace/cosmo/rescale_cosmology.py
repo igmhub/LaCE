@@ -27,7 +27,13 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
 
         return
 
+
     # overwrite virtual functions in base class
+
+    def get_kmax_linP_Mpc(self):
+        """Return highest k for which we trust linear power"""
+        return self.fid_cosmo.get_kmax_linP_Mpc()
+
 
     def compute_hubble_parameter(self, z):
         """Return H(z) in units of km/s/Mpc"""
