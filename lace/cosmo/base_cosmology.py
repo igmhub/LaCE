@@ -16,7 +16,12 @@ class BaseCosmology(object):
 
         return
 
-    # four functions that other cosmo classes should implement
+
+    # five functions that other cosmo classes should implement
+
+    def get_kmax_linP_Mpc(self):
+        """Return highest k for which we trust linear power"""
+        raise NotImplementedError()
 
     def compute_linP_Mpc(self, z, k_Mpc, species="bc"):
         """Return linear power at (z, k_Mpc)"""
@@ -33,6 +38,7 @@ class BaseCosmology(object):
     def compute_growth_rate(self, z):
         """Return growth rate at z"""
         raise NotImplementedError()
+
 
     # below here, no need to overwrite
 
