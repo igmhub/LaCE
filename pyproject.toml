@@ -6,18 +6,18 @@ build-backend = "setuptools.build_meta"
 name="lace"
 version="2024.0.0"
 authors = [
+    { name="Jonas Chaves-Montero", email="jchaves@ifae.es" },
     { name="Andreu Font-Ribera", email="afont@ifae.es" },
     { name="Chris Pedersen" },
-    { name="Jonas Chaves-Montero", email="jchaves@ifae.es" },
     { name="Laura Cabayol-Garcia", email="lcabayol@pic.es" },
 ]
 maintainers = [
+    { name="Jonas Chaves-Montero", email="jchaves@ifae.es" },  
     { name="Andreu Font-Ribera", email="afont@ifae.es" },
-    { name="Jonas Chaves-Montero", email="jchaves@ifae.es" },   
-    { name="Laura Cabayol-Garcia", email="lcabayol@pic.es" },
 ]
 description = "Emulator for Lyman-alpha 1D power spectrum"
 readme = "README.md"
+license = { text = "MIT" }
 keywords = [
     "Lyman-alpha", "Cosmology", "Power Spectrum", "Emulator",
 ]
@@ -35,7 +35,6 @@ dependencies = [
     "scikit-fda==0.4",
     "fdasrsf==2.3.10",
     "strenum",
-    "pathlib"
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -54,7 +53,7 @@ test = [
 ]
 
 gpy = [
-    "GPy==1.13.1",
+    "GPy==1.13.2",
 ]
 explicit = [
     "numpy==1.24.3",
@@ -68,8 +67,8 @@ explicit = [
     "torch==2.0",
     "scikit-fda==0.4",
     "fdasrsf==2.3.10",
-    "GPy==1.13.2"
-    ]
+    "GPy==1.13.2",
+]
 
 [tool.setuptools.packages.find]
 include = ["lace","lace.*"]
