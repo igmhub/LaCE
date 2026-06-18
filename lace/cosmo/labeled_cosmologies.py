@@ -5,6 +5,7 @@ def get_cosmo_params_dict_from_label(label):
 
     if label == "Planck18":
         # Table 2 of https://arxiv.org/abs/1807.06209.pdf (T&E+lensing+BAO) w/ mnu=0
+        # Used as baseline cosmology in the DESI Lya P1D analysis
         cosmo_params = {
             "H0": 67.66,
             "mnu": 0,
@@ -19,6 +20,7 @@ def get_cosmo_params_dict_from_label(label):
         }
     elif label == "Planck18_mnu":
         # Table 2 of https://arxiv.org/abs/1807.06209.pdf (T&E+lensing+BAO) w/ mnu=0.06
+        # Used in on the of the variations of the DESI Lya P1D analysis
         cosmo_params = {
             "H0": 67.66,
             "mnu": 0.06,
@@ -33,6 +35,7 @@ def get_cosmo_params_dict_from_label(label):
         }
     elif label == "Planck18_noBAO":
         # Table 2 of https://arxiv.org/abs/1807.06209.pdf (T&E+lensing) w/ mnu=0.06
+        # Used as baseline cosmology in the DESI Lya BAO analysis
         cosmo_params = {
             "H0": 67.36,
             "mnu": 0.06,
