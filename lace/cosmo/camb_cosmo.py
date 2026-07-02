@@ -26,18 +26,40 @@ def get_cosmology(
     nrun=0.0,
     nrunrun=0.0,
     pivot_scalar=0.05,
-    nnu=3.046,
+    nnu=camb.constants.default_nnu,
     w=-1,
     wa=0,
+    YHe=None,
+    TCMB=camb.constants.COBE_CMBTemp,
+    standard_neutrino_neff=camb.constants.default_nnu,
 ):
     """Given set of cosmological parameters, return CAMB cosmology object.
 
     Fiducial values for Planck 2018
     """
 
+    if YHe is None:
+        # use BBN prediction
+        bbn_predictor = camb.bbn.get_predictor()
+        YHe = bbn_predictor.Y_He(
+            ombh2 * (camb.constants.COBE_CMBTemp / TCMB) ** 3,
+            nnu - standard_neutrino_neff,
+        )
+        YHe = YHe.item()
+
     pars = camb.CAMBparams()
     # set background cosmology
-    pars.set_cosmology(H0=H0, ombh2=ombh2, omch2=omch2, omk=omk, mnu=mnu, nnu=nnu)
+    pars.set_cosmology(
+        H0=H0,
+        ombh2=ombh2,
+        omch2=omch2,
+        omk=omk,
+        mnu=mnu,
+        nnu=nnu,
+        YHe=YHe,
+        standard_neutrino_neff=standard_neutrino_neff,
+        TCMB=TCMB,
+    )
     # set DE (fluid or ppf from https://camb.readthedocs.io/en/latest/_modules/camb/dark_energy.html)
     if ((w + 1) < -1e-6) or ((1 + w + wa) < -1e-6):
         dark_energy_model = "ppf"
@@ -123,6 +145,11 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
     else:
         tau = cosmo_fid.Reion.optical_depth
 
+    if "YHe" in params:
+        YHe = params["YHe"]
+    else:
+        YHe = cosmo_fid.YHe
+
     # update cosmology object
     pars.set_cosmology(
         H0=H0,
@@ -133,6 +160,7 @@ def get_cosmology_from_dictionary(params, cosmo_fid=None):
         mnu=mnu,
         nnu=nnu,
         tau=tau,
+        YHe=YHe,
     )
 
     # set DE
