@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.1
+#       jupytext_version: 1.19.1
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: test_lace
 #     language: python
 #     name: python3
 # ---
@@ -21,7 +21,6 @@
 # %%
 # %load_ext autoreload
 # %autoreload 2
-
 
 from lace.archive.gadget_archive import GadgetArchive
 from lace.archive.nyx_archive import NyxArchive
@@ -39,6 +38,9 @@ pedersen21_archive = GadgetArchive(postproc='Pedersen21')
 # %%
 # %%time
 cabayol23_archive = GadgetArchive(postproc='Cabayol23')
+
+# %% [markdown]
+# Nyx simulations are not publicly available
 
 # %%
 # %%time
@@ -95,17 +97,6 @@ n_av_phases = 30 * 1 * 3 * 5 * 11
 n_av_axes   = 30 * 2 * 1 * 5 * 11
 n_av_all    = 30 * 1 * 1 * 5 * 11
 print(len(archive_training), n_av_phases + n_av_axes + n_av_all)
-
-# %%
-import numpy as np
-
-# %%
-a = np.arange(10)
-b = [5]
-mask = ~np.isin(a, b)
-
-# %%
-mask
 
 # %% [markdown]
 # #### Nyx

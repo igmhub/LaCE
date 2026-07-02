@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import os, sys
 import json
 import random
@@ -11,13 +10,12 @@ from scipy.interpolate import interp1d
 
 # Torch related modules
 import torch
-from torch.utils.data import DataLoader, dataset, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset
 from torch import nn, optim
 from torch.optim import lr_scheduler
 
 # LaCE modules
 import lace
-from lace.archive import gadget_archive, nyx_archive
 from lace.emulator import nn_architecture, base_emulator
 from lace.utils import poly_p1d
 from lace.emulator.constants import (
@@ -166,9 +164,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         np.random.seed(seed)
         random.seed(seed)
 
-        self.device = torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         training_set_all = list(TrainingSet)
         emulator_label_all = list(EmulatorLabel)
         self.GADGET_LABELS = GADGET_LABELS
@@ -186,9 +182,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
         if emulator_label in EMULATOR_PARAMS:
             self.print(
-                EMULATOR_DESCRIPTIONS.get(
-                    emulator_label, "No description available."
-                )
+                EMULATOR_DESCRIPTIONS.get(emulator_label, "No description available.")
             )
 
             params = EMULATOR_PARAMS[emulator_label]
@@ -217,9 +211,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         else:
             self.pred_error = True
 
-        if (emulator_label[:4] != "CH24") | (
-            (emulator_label[:4] == "CH24") & train
-        ):
+        if (emulator_label[:4] != "CH24") | ((emulator_label[:4] == "CH24") & train):
             archive, training_data = select_training(
                 archive=archive,
                 training_set=training_set,
@@ -398,8 +390,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         ]
 
         k_Mpc_train = [
-            training_data[i]["k_Mpc"][self.k_mask[i]]
-            for i in range(len(training_data))
+            training_data[i]["k_Mpc"][self.k_mask[i]] for i in range(len(training_data))
         ]
         self.kmin_Mpc = k_Mpc_train[0][0]
         Nk = len(k_Mpc_train[0])
@@ -427,9 +418,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             pass
         else:
             for ii, p1d in enumerate(training_label):
-                fit_p1d = poly_p1d.PolyP1D(
-                    self.k_Mpc[ii], p1d, deg=self.ndeg - 1
-                )
+                fit_p1d = poly_p1d.PolyP1D(self.k_Mpc[ii], p1d, deg=self.ndeg - 1)
                 training_label[ii] = fit_p1d.P_Mpc(self.k_Mpc[ii])
             self.yscalings = np.median(np.log(training_label))
 
@@ -465,9 +454,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 elif param in entry:
                     train_emu_params[ii, jj] = entry[param]
                 else:
-                    raise ValueError(
-                        f"Parameter '{param}' not found in training data"
-                    )
+                    raise ValueError(f"Parameter '{param}' not found in training data")
             # extract y data
             k_Mpc = entry["k_Mpc"]
             mask = (k_Mpc > 0) & (k_Mpc < self.kmax_Mpc)
@@ -505,9 +492,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         else:
             fit_p1d = np.zeros((len(training_data), len(x_fit)))
             for ii in range(len(train_p1d)):
-                fit = poly_p1d.PolyP1D(
-                    k_Mpc_mask, train_p1d[ii], deg=self.ndeg - 1
-                )
+                fit = poly_p1d.PolyP1D(k_Mpc_mask, train_p1d[ii], deg=self.ndeg - 1)
                 fit_p1d[ii] = fit.P_Mpc(k_Mpc_mask)
             self.yscalings = np.median(np.log(fit_p1d))
             train_p1d = np.log(train_p1d) / self.yscalings[None, :] ** 2
@@ -515,9 +500,7 @@ class NNEmulator(base_emulator.BaseEmulator):
         # normalize x between -0.5 and 0.5
         self.xscalings_mean = np.mean(train_emu_params, axis=0)
         self.xscalings_std = np.std(train_emu_params, axis=0)
-        train_emu_params = (
-            train_emu_params - self.xscalings_mean
-        ) / self.xscalings_std
+        train_emu_params = (train_emu_params - self.xscalings_mean) / self.xscalings_std
 
         # k_Mpc tensor
         if self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
@@ -561,10 +544,7 @@ class NNEmulator(base_emulator.BaseEmulator):
             weights_rescalings[
                 np.where(
                     [
-                        (
-                            d["ind_rescaling"] not in [0, 1]
-                            and d["z"] in [3, 3.2]
-                        )
+                        (d["ind_rescaling"] not in [0, 1] and d["z"] in [3, 3.2])
                         for d in training_data
                     ]
                 )
@@ -574,13 +554,10 @@ class NNEmulator(base_emulator.BaseEmulator):
         return torch.Tensor(weights_rescalings)
 
     def _load_DESIY1_err(self):
-        with open(
-            self.models_dir / "DESI_cov/rerr_DESI_Y1.json", "r"
-        ) as json_file:
+        with open(self.models_dir / "DESI_cov/rerr_DESI_Y1.json", "r") as json_file:
             z_to_rel = json.load(json_file)
         z_to_rel = {
-            np.round(float(z), 2): rel_error
-            for z, rel_error in z_to_rel.items()
+            np.round(float(z), 2): rel_error for z, rel_error in z_to_rel.items()
         }
 
         return z_to_rel
@@ -698,9 +675,7 @@ class NNEmulator(base_emulator.BaseEmulator):
 
                 # transform back from coeff to P1D
                 if self.emulator_label[:4] == "CH24":
-                    coeffsPred2 = (
-                        coeffsPred * self.tscalings_std + self.tscalings_mean
-                    )
+                    coeffsPred2 = coeffsPred * self.tscalings_std + self.tscalings_mean
                     P1Dpred = yscalings * torch.exp(
                         self.func_poly_train(x_P1Ds, coeffsPred2)
                     )
@@ -715,9 +690,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 if self.pred_error:
                     coeffs_logerr = torch.clamp(coeffs_logerr, -10, 5)
                     coeffserr = torch.exp(coeffs_logerr) ** 2
-                    powers_err = torch.arange(0, self.ndeg * 2, 2).to(
-                        self.device
-                    )
+                    powers_err = torch.arange(0, self.ndeg * 2, 2).to(self.device)
                     P1Derr = torch.sqrt(
                         torch.sum(
                             coeffserr[:, powers, None]
@@ -727,23 +700,19 @@ class NNEmulator(base_emulator.BaseEmulator):
                     )
                     P1Dlogerr = torch.log(
                         torch.sqrt(
-                            P1Derr**2
-                            + P1D_desi_err.to(self.device) ** 2 * p1D_true**2
+                            P1Derr**2 + P1D_desi_err.to(self.device) ** 2 * p1D_true**2
                         )
                     )
 
                     log_prob = (P1Dpred - p1D_true.to(self.device)).pow(2) / (
-                        P1Derr**2
-                        + P1D_desi_err.to(self.device) ** 2 * p1D_true**2
+                        P1Derr**2 + P1D_desi_err.to(self.device) ** 2 * p1D_true**2
                     ) + 2 * P1Dlogerr
 
                 else:
                     log_prob = (P1Dpred - p1D_true).pow(2)
 
                 if self.emulator_label == "Nyx_alphap_cov":
-                    log_prob = (
-                        weights_rescalings.to(self.device)[:, None] * log_prob
-                    )
+                    log_prob = weights_rescalings.to(self.device)[:, None] * log_prob
                 else:
                     log_prob = loss_function_weights[None, :] * log_prob
 
@@ -870,9 +839,9 @@ class NNEmulator(base_emulator.BaseEmulator):
                 if param == "mF":
                     mF = emu_call[:, ii]
 
-            emu_call = (
-                emu_call - self.xscalings_mean[None, :]
-            ) / self.xscalings_std[None, :]
+            emu_call = (emu_call - self.xscalings_mean[None, :]) / self.xscalings_std[
+                None, :
+            ]
 
             emu_call = torch.Tensor(emu_call).unsqueeze(0)
 
@@ -902,9 +871,7 @@ class NNEmulator(base_emulator.BaseEmulator):
                 x_P1Ds = torch.log10(torch.Tensor(k_Mpc)).to(self.device)
 
             if self.emulator_label[:4] == "CH24":
-                coeffsPred2 = (
-                    coeffsPred[0] * self.tscalings_std + self.tscalings_mean
-                )
+                coeffsPred2 = coeffsPred[0] * self.tscalings_std + self.tscalings_mean
                 emu_p1d = self.func_poly_evaluate(x_P1Ds, coeffsPred2)
             else:
                 powers = torch.arange(0, self.ndeg, 1).to(self.device)
@@ -942,14 +909,10 @@ class NNEmulator(base_emulator.BaseEmulator):
 
             emu_p1derr = emu_p1derr.detach().cpu().numpy()
             if self.emulator_label in ["Cabayol23", "Cabayol23_extended"]:
-                emu_p1derr = (
-                    10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
-                )
+                emu_p1derr = 10 ** (emu_p1d) * np.log(10) * emu_p1derr * self.yscalings
             else:
                 emu_p1derr = (
-                    np.exp(emu_p1d * self.yscalings**2)
-                    * self.yscalings**2
-                    * emu_p1derr
+                    np.exp(emu_p1d * self.yscalings**2) * self.yscalings**2 * emu_p1derr
                 )
             if emu_p1derr.shape[0] == 1:
                 emu_p1derr = emu_p1derr[0, :]
@@ -973,12 +936,8 @@ class NNEmulator(base_emulator.BaseEmulator):
         Side Effects:
             - Sets the `self.hull` attribute to the computed Delaunay triangulation of the training data.
         """
-        training_points = [
-            d for d in training_data if d["ind_axis"] == "average"
-        ]
-        training_points = [
-            d for d in training_points if d["ind_phase"] == "average"
-        ]
+        training_points = [d for d in training_data if d["ind_axis"] == "average"]
+        training_points = [d for d in training_points if d["ind_phase"] == "average"]
 
         training_points = [
             {
@@ -988,12 +947,9 @@ class NNEmulator(base_emulator.BaseEmulator):
             }
             for i in range(len(training_points))
         ]
-        training_points = NNEmulator._sort_dict(
-            training_points, self.emu_params
-        )
+        training_points = NNEmulator._sort_dict(training_points, self.emu_params)
         training_points = [
-            list(training_points[i].values())
-            for i in range(len(training_points))
+            list(training_points[i].values()) for i in range(len(training_points))
         ]
         training_points = np.array(training_points)
 

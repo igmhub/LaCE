@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import h5py
 
 from lace.cosmo.thermal_broadening import thermal_broadening_kms
 from lace.archive.base_archive import BaseArchive
@@ -194,9 +193,7 @@ class NyxArchive(BaseArchive):
             dict_params[ipar] = h5py_data.attrs[ipar]
         return dict_params
 
-    def _get_emu_cosmo(
-        self, nyx_data, sim_label, force_recompute_linP_params=False
-    ):
+    def _get_emu_cosmo(self, nyx_data, sim_label, force_recompute_linP_params=False):
         """
         Get the cosmology and parameters describing linear power spectrum from simulation.
 
@@ -306,6 +303,9 @@ class NyxArchive(BaseArchive):
         return cosmo_params, linP_params, star_params
 
     def _load_data(self, nyx_file=None, force_recompute_linP_params=False):
+
+        import h5py
+
         # set nyx_file if not provided
         if nyx_file is None:
             if "NYX_PATH" not in os.environ:
@@ -322,10 +322,7 @@ class NyxArchive(BaseArchive):
                 )
             else:
                 nyx_file = (
-                    os.environ["NYX_PATH"]
-                    + "/models_Nyx_"
-                    + self.nyx_version
-                    + ".hdf5"
+                    os.environ["NYX_PATH"] + "/models_Nyx_" + self.nyx_version + ".hdf5"
                 )
 
         print(nyx_file)
@@ -340,9 +337,7 @@ class NyxArchive(BaseArchive):
                 folder = os.path.dirname(nyx_file)
             else:
                 folder = os.environ["NYX_PATH"]
-            self.file_cosmo = (
-                folder + "/nyx_emu_cosmo_" + self.nyx_version + ".npy"
-            )
+            self.file_cosmo = folder + "/nyx_emu_cosmo_" + self.nyx_version + ".npy"
 
         # store each measurement as an entry of the following list
         # each entry is a dictionary containing all relevant info
@@ -372,9 +367,9 @@ class NyxArchive(BaseArchive):
 
                 # find redshift index to read linear power parameters
                 try:
-                    ind_z = np.where(
-                        np.isclose(self.list_sim_redshifts, zval, 1e-10)
-                    )[0][0]
+                    ind_z = np.where(np.isclose(self.list_sim_redshifts, zval, 1e-10))[
+                        0
+                    ][0]
                 except IndexError:
                     print("Could not find redshift", zval, "in ", isim)
                     continue
@@ -385,9 +380,7 @@ class NyxArchive(BaseArchive):
                     if iscaling == "full_box_stats":
                         continue
                     # loop over axes
-                    axes_avail = list(
-                        ff[isim][iz][iscaling]["individual_axes"].keys()
-                    )
+                    axes_avail = list(ff[isim][iz][iscaling]["individual_axes"].keys())
                     for iaxis in axes_avail:
                         # dictionary containing measurements and relevant info
                         _arch = {}
@@ -437,9 +430,7 @@ class NyxArchive(BaseArchive):
                         _pressure = self._get_attrs(ff[isim][iz])
                         key = "lambda_P"
                         if key in _pressure.keys():
-                            _arch[self.key_conv[key]] = 1 / (
-                                1e-3 * _pressure[key]
-                            )
+                            _arch[self.key_conv[key]] = 1 / (1e-3 * _pressure[key])
                         else:
                             _arch[self.key_conv[key]] = np.nan
                         ## done store IGM parameters
@@ -451,9 +442,7 @@ class NyxArchive(BaseArchive):
                         _arch["p1d_Mpc"] = p1d["Pk1d"]
                         if "3d power kmu" in _data:
                             if "fine binning" in _data["3d power kmu"]:
-                                p3d = np.array(
-                                    _data["3d power kmu"]["fine binning"]
-                                )
+                                p3d = np.array(_data["3d power kmu"]["fine binning"])
                                 _arch["k3d_Mpc"] = p3d["k"].reshape(
                                     self.kbins, self.mubins
                                 )
