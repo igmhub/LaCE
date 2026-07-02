@@ -1,6 +1,4 @@
-import numpy as np
 import torch
-from torch import nn
 
 
 class MDNemulator_polyfit(torch.nn.Module):
@@ -14,9 +12,10 @@ class MDNemulator_polyfit(torch.nn.Module):
         ninput (int, optional): Number of input features. Defaults to 6.
     """
 
-    def __init__(
-        self, nhidden, ndeg, max_neurons=100, ninput=6, pred_error=False
-    ):
+    def __init__(self, nhidden, ndeg, max_neurons=100, ninput=6, pred_error=False):
+
+        from torch import nn
+
         super().__init__()
         self.pred_error = pred_error
         self.inputlay = torch.nn.Sequential(

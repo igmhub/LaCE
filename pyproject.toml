@@ -9,7 +9,7 @@ authors = [
     { name="Jonas Chaves-Montero", email="jchaves@ifae.es" },
     { name="Andreu Font-Ribera", email="afont@ifae.es" },
     { name="Chris Pedersen" },
-    { name="Laura Cabayol-Garcia", email="lcabayol@pic.es" },
+    { name="Laura Cabayol-Garcia" },
 ]
 maintainers = [
     { name="Jonas Chaves-Montero", email="jchaves@ifae.es" },  
@@ -21,20 +21,18 @@ license = { text = "MIT" }
 keywords = [
     "Lyman-alpha", "Cosmology", "Power Spectrum", "Emulator",
 ]
-requires-python = ">= 3.10"
+requires-python = ">= 3.12"
 dependencies = [
     "numpy",
-    "pandas",
     "scipy",
-    "h5py",
-    "scikit-learn",
+    "scikit-learn==1.5.2",
     "matplotlib",
     "configobj",
     "camb",
-    "torch==2.0",
-    "scikit-fda==0.4",
-    "fdasrsf==2.3.10",
+    "torch",
     "strenum",
+    "jupytext",
+    "corner",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -43,31 +41,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-]
-
-[project.optional-dependencies]
-test = [
-  "pytest",
-]
-
-gpy = [
-    "GPy==1.13.2",
-]
-explicit = [
-    "numpy==1.24.3",
-    "pandas==2.2.3",
-    "scipy==1.12",
-    "h5py==3.12.1",
-    "scikit-learn==1.5.2",
-    "matplotlib==3.9.2",
-    "configobj==5.0.9",
-    "camb==1.5.8",
-    "torch==2.0",
-    "scikit-fda==0.4",
-    "fdasrsf==2.3.10",
-    "GPy==1.13.2",
+    "Programming Language :: Python :: 3.12",
 ]
 
 [tool.setuptools.packages.find]
