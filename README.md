@@ -30,11 +30,6 @@ cd LaCE
 pip install -e .
 ``` 
 
-## Tests
-
-Please check out the Tutorial notebooks to see that everything works out (see below)
-
-
 #### Nyx users:
 
 - You may need to add the Nyx path as an environment variable in your notebook kernel. The first is done by writing in the kernel.json file:
@@ -68,11 +63,6 @@ These are the parameters that describe each individual P1D(kpar) power spectrum.
 
 `n_p` is the slope of the linear power spectrum at k_p
 
-`alpha_p` is the running of the linear power spectrum at k_p
-
-`f_p` is the (scale-independent) logarithmic growth rate
-
-The current version of the emulator, relased in this repo, does not emulate `alpha_p` and `f_p`. However, these parameters are stored in the P1D archive.
 
 #### IGM parameters:
 
