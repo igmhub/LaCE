@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.19.1
+#       jupytext_version: 1.19.4
 #   kernelspec:
 #     display_name: test_lace
 #     language: python
@@ -43,8 +43,6 @@ archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
 # #### Load Emulator
 
 # %%
-# pip install scikit-learn==1.5.2 or retune emulator in version scikit-learn==1.9.0
-
 emulator = set_emulator("CH24_mpgcen_gpr")
 
 # %% [markdown]

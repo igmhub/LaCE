@@ -31,6 +31,9 @@ import lace
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator.gp_emulator_multi import GPEmulator
 
+from cup1d.likelihood.interface_emu import P1D_emulator
+from lace.cosmo import cosmology
+
 # %% [markdown]
 # ### Set archive
 
@@ -39,6 +42,10 @@ archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
 
 # %%
 archive = nyx_archive.NyxArchive(nyx_version="models_Nyx_Sept2025_include_Nyx_fid_rseed")
+
+# %%
+from forestflow.archive import GadgetArchive3D
+archive = GadgetArchive3D(addcentral=True)
 
 # %%
 # train = True
@@ -59,14 +66,18 @@ emulator_label = "CH24_mpgcen_gpr"
 emulator = GPEmulator(emulator_label=emulator_label, archive=archive, train=train, drop_sim=None)
 
 # %%
-
 emulator_label = "CH24_mpgcen_gpr"
 # emulator_label = "CH24_nyxcen_gpr"
 
-emulator = GPEmulator(
-    emulator_label=emulator_label, 
-    train=False,
-)
+emulator = GPEmulator(emulator_label=emulator_label)
+
+# %%
+emulator = P1D_emulator()
+cosmo = cosmology.Cosmology()
+emulator.set_cosmo(cosmo.input_cosmo_params_dict)
+
+# %%
+archive.data[0]["cosmo_params"]
 
 # %% [markdown]
 # ## L10
@@ -98,9 +109,17 @@ from lace.emulator.covariance import data_for_l10
 suite = "mpg"
 # suite = "nyx"
 emulator_label = "CH24_" + suite + "cen_gpr"
-zz, k_Mpc, p1d_Mpc_orig, p1d_Mpc_sm, p1d_Mpc_emu, mask = data_for_l10(
+
+zz, k_Mpc, p1d_Mpc_orig, p1d_Mpc_sm, p1d_Mpc_emu, mask = data_for_l10_lace(
     archive, emulator_label, suite=suite
 )
+
+# %%
+from lace.emulator.covariance import data_for_l10_forest
+
+# %%
+res = data_for_l10_forest(archive)
+zz, k_Mpc, p1d_Mpc_orig, p1d_Mpc_sm, p1d_Mpc_emu, mask = res
 
 # %%
 arr_zz = np.zeros_like(p1d_Mpc_emu)
@@ -198,8 +217,11 @@ plt.yticks(ticks, labs)
 plt.colorbar(label="Correlation")
 plt.tight_layout()
 
-plt.savefig("correlation_matrix.pdf")
-plt.savefig("correlation_matrix.png")
+# plt.savefig("correlation_matrix.pdf")
+# plt.savefig("correlation_matrix.png")
+
+plt.savefig("correlation_matrix_forest.pdf")
+plt.savefig("correlation_matrix_forest.png")
 
 # %% [markdown]
 # #### nyx
@@ -237,6 +259,26 @@ plt.tight_layout()
 # plt.savefig("figs/err_CH24_mpgcen_gpr.pdf")
 
 
+# %%
+
+for ii in range(1, len(zz)-1):
+    _ = zz_zk == zz[ii]
+    plt.plot(k_Mpc_zk[_], np.sqrt(np.diag(cov_zk))[_], "C"+str(ii), label=str(zz[ii]))
+
+    bias = np.mean(rel_diff[:, ii, :], axis=(0))
+    plt.plot(k_Mpc_zk[_], np.abs(bias), "C"+str(ii)+"--")
+
+    # plt.plot(k_Mpc_zk[_], np.sqrt(np.diag(cov_sm_zk))[_], "C"+str(ii)+"-.")
+
+plt.legend()
+plt.xlabel(r"$k$[1/Mpc]")
+plt.ylabel(r"Relative error")
+
+plt.xscale("log")
+plt.tight_layout()
+# plt.savefig("figs/err_CH24_mpgcen_gpr.png")
+# plt.savefig("figs/err_CH24_mpgcen_gpr.pdf")
+
 # %% [markdown]
 # Compare errors with bias
 
@@ -253,6 +295,28 @@ for ii in range(1, len(zz)-1):
     bias = np.mean(rel_diff[:, ii, :], axis=(0))
     plt.plot(k_Mpc_zk[_], bias/std, "C"+str(ii)+":")
     plt.plot(k_Mpc_zk[_], std2/std, "C"+str(ii)+"--")
+    print(np.round(np.mean(bias/std), 2), np.round(np.mean(std2/std), 2))
+
+plt.legend()
+plt.xlabel(r"$k$[1/Mpc]")
+plt.ylabel(r"Bias / Relative error ")
+
+plt.xscale("log")
+plt.tight_layout()
+
+# %%
+
+for ii in range(1, len(zz)-1):
+    _ = zz_zk == zz[ii]
+    std = np.sqrt(np.diag(cov_zk))[_]
+    std2 = np.sqrt(np.diag(cov_sm_zk))[_]
+
+    bias = np.median(rel_diff[:, ii, :], axis=(0))
+    plt.plot(k_Mpc_zk[_], bias/std, "C"+str(ii)+"-", label=str(zz[ii]))
+
+    bias = np.mean(rel_diff[:, ii, :], axis=(0))
+    plt.plot(k_Mpc_zk[_], bias/std, "C"+str(ii)+":")
+    # plt.plot(k_Mpc_zk[_], std2/std, "C"+str(ii)+"--")
     print(np.round(np.mean(bias/std), 2), np.round(np.mean(std2/std), 2))
 
 plt.legend()
@@ -295,7 +359,6 @@ plt.tight_layout()
 # ### nyx
 
 # %%
-
 for ii in range(len(zz)):
     _ = zz_zk == zz[ii]
     plt.plot(k_Mpc_zk[_], np.sqrt(np.diag(cov_zk))[_], label=str(zz[ii]))
@@ -311,8 +374,12 @@ plt.tight_layout()
 # plt.savefig("figs/err_CH24_mpgcen_gpr.pdf")
 
 # %%
+emulator_label = "forest_mpg"
+
 filename = "l1O_cov_" + emulator_label + ".npy"
-full_path = os.path.join(os.path.dirname(lace.__path__[0]), "data", "covariance", filename)
+full_path = os.path.join(
+    os.path.dirname(lace.__path__[0]), "data", "covariance", filename
+)
 dict_save = {}
 dict_save["zz"] = zz
 dict_save["k_Mpc"] = k_Mpc
@@ -331,13 +398,14 @@ np.save(full_path, dict_save)
 # %%
 suite = "mpg"
 # suite = "nyx"
-emulator_label = "CH24_"+suite+"cen_gpr"
-filename = "l1O_cov_" + emulator_label + ".npy"
-full_path = os.path.join(os.path.dirname(lace.__path__[0]), "data", "covariance", filename)
-dat = np.load(full_path, allow_pickle=True).item()
+emulator_label = "CH24_" + suite + "cen_gpr"
 
-# %%
-cov = dat["cov"]
-k_Mpc = dat["k_Mpc"]
+emulator_label = "forest_mpg"
+
+filename = "l1O_cov_" + emulator_label + ".npy"
+full_path = os.path.join(
+    os.path.dirname(lace.__path__[0]), "data", "covariance", filename
+)
+dat = np.load(full_path, allow_pickle=True).item()
 
 # %%

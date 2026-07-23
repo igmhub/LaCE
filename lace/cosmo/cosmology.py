@@ -22,15 +22,15 @@ class Cosmology(base_cosmology.BaseCosmology):
         if (cosmo_params_dict is not None) and (cosmo_label is not None):
             raise ValueError("You cannot provide both cosmo params and label")
 
-        # store these just in case (note this is really just the input)
-        self.input_cosmo_label = cosmo_label
-        self.input_cosmo_params_dict = cosmo_params_dict
-
         if cosmo_params_dict is None:
             # if no cosmo params provided, use label or Planck18
             if cosmo_label is None:
                 cosmo_label = "Planck18"
             cosmo_params_dict = lab_cosmo.get_cosmo_params_dict_from_label(cosmo_label)
+
+        # store these just in case (note this is really just the input)
+        self.input_cosmo_label = cosmo_label
+        self.input_cosmo_params_dict = cosmo_params_dict
 
         # get CAMBparams object
         self.CAMBparams = camb_cosmo.get_cosmology_from_dictionary(cosmo_params_dict)
@@ -49,13 +49,11 @@ class Cosmology(base_cosmology.BaseCosmology):
 
         return
 
-
     # overwrite virtual functions in base class
 
     def get_kmax_linP_Mpc(self):
         """Return highest k for which we trust linear power"""
         return self.camb_kmax_Mpc
-
 
     def compute_hubble_parameter(self, z):
         """Return H(z) in units of km/s/Mpc"""
