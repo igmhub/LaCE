@@ -82,16 +82,24 @@ class Cosmology(base_cosmology.BaseCosmology):
         else:
             raise ValueError("species must be 'bc' or 'bcnu'")
 
-        if (z < interp.zmin) or (z > interp.zmax):
+        z = np.asarray(z)
+        k_Mpc = np.asarray(k_Mpc)
+        if z.min() < interp.zmin or z.max() > interp.zmax:
             raise ValueError(
-                f"Requested z={z} is outside interpolation range [{interp.zmin}, {interp.zmax}]"
+                f"Requested z range [{z.min()}, {z.max()}] is outside "
+                f"interpolation range [{interp.zmin}, {interp.zmax}]"
             )
         elif k_Mpc.max() > interp.kmax:
             raise ValueError(
                 f"Requested k_Mpc={k_Mpc.max()} exceeds interpolation range kmax_Mpc={interp.kmax}"
             )
 
-        return interp.P(z, k_Mpc)
+        if z.ndim == 0:
+            return interp.P(z.item(), k_Mpc)
+        elif z.ndim == 1 and k_Mpc.ndim == 1:
+            return interp.P(z, k_Mpc, grid=True)
+        else:
+            raise ValueError("z and k_Mpc must be 0D or 1D arrays")
 
     def compute_growth_rate(self, z):
         """Return logarithmic growth rate (f) at z
