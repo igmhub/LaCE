@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name="lace"
-version="2024.0.0"
+dynamic = ["version"]
 authors = [
     { name="Jonas Chaves-Montero", email="jchaves@ifae.es" },
     { name="Andreu Font-Ribera", email="afont@ifae.es" },
@@ -43,6 +43,11 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.12",
 ]
+
+[tool.setuptools_scm]
+version_scheme = "lace.version:version_scheme"
+local_scheme = "no-local-version"
+
 
 [tool.setuptools.packages.find]
 include = ["lace","lace.*"]
