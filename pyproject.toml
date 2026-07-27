@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "setuptools-scm"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -44,9 +44,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
-[tool.setuptools_scm]
-version_scheme = "lace.version:version_scheme"
-local_scheme = "no-local-version"
+[tool.setuptools.dynamic]
+version = {attr = "lace.__version__"}
 
 
 [tool.setuptools.packages.find]

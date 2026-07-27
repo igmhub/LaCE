@@ -12,7 +12,7 @@ Please cite at least https://arxiv.org/abs/2601.21432 if you use this emulator i
 There is a documentation website with installation instructions and relevant descriptions at [here](https://igmhub.github.io/LaCE/
 
 ## Installation
-(Last updated: Jul 2 2026)
+(Last updated: Jul 27 2026)
 
 - Create a new conda environment
 
@@ -27,7 +27,7 @@ pip install --upgrade pip
 ```
 git clone https://github.com/igmhub/LaCE.git
 cd LaCE
-pip install -e .
+make install
 ``` 
 
 #### Nyx users:
