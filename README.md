@@ -9,7 +9,20 @@ LaCE contains a set of emulators for the one-dimensional flux power spectrum of 
 
 Please cite at least https://arxiv.org/abs/2601.21432 if you use this emulator in your research.
 
-There is a documentation website with installation instructions and relevant descriptions [here](https://igmhub.github.io/LaCE/).
+The documentation covers installation, cosmology, archives, emulators, and
+the package API:
+
+- [Online documentation](https://igmhublace.readthedocs.io/en/latest/)
+- [Documentation source](https://github.com/igmhub/LaCE/tree/main/docs)
+
+Build it locally with:
+
+```bash
+python -m pip install -e ".[docs]"
+make docs
+```
+
+Open `docs/_build/html/index.html` after the build completes.
 
 ## Installation
 (Last updated: Jul 27 2026)
