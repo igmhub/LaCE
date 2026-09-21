@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.19.1
+#       jupytext_version: 1.19.5
 #   kernelspec:
 #     display_name: lace
 #     language: python
@@ -31,8 +31,6 @@ import lace
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator.gp_emulator_multi import GPEmulator
 
-from cup1d.likelihood.interface_emu import P1D_emulator
-from lace.cosmo import cosmology
 
 # %% [markdown]
 # ### Set archive
@@ -44,9 +42,6 @@ archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
 archive = nyx_archive.NyxArchive(nyx_version="models_Nyx_Sept2025_include_Nyx_fid_rseed")
 
 # %%
-from forestflow.archive import GadgetArchive3D
-archive = GadgetArchive3D(addcentral=True)
-
 # %%
 # train = True
 # # train = True
@@ -72,13 +67,6 @@ emulator_label = "CH24_mpgcen_gpr"
 emulator = GPEmulator(emulator_label=emulator_label)
 
 # %%
-emulator = P1D_emulator()
-cosmo = cosmology.Cosmology()
-emulator.set_cosmo(cosmo.input_cosmo_params_dict)
-
-# %%
-archive.data[0]["cosmo_params"]
-
 # %% [markdown]
 # ## L10
 
@@ -103,7 +91,7 @@ if train:
 # ## Compute covariance matrix
 
 # %%
-from lace.emulator.covariance import data_for_l10
+from lace.emulator.covariance import data_for_l10_lace
 
 # %%
 suite = "mpg"
@@ -115,12 +103,6 @@ zz, k_Mpc, p1d_Mpc_orig, p1d_Mpc_sm, p1d_Mpc_emu, mask = data_for_l10_lace(
 )
 
 # %%
-from lace.emulator.covariance import data_for_l10_forest
-
-# %%
-res = data_for_l10_forest(archive)
-zz, k_Mpc, p1d_Mpc_orig, p1d_Mpc_sm, p1d_Mpc_emu, mask = res
-
 # %%
 arr_zz = np.zeros_like(p1d_Mpc_emu)
 arr_k_Mpc = np.zeros_like(p1d_Mpc_emu)

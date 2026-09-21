@@ -9,7 +9,7 @@ LaCE contains a set of emulators for the one-dimensional flux power spectrum of 
 
 Please cite at least https://arxiv.org/abs/2601.21432 if you use this emulator in your research.
 
-There is a documentation website with installation instructions and relevant descriptions at [here](https://igmhub.github.io/LaCE/
+There is a documentation website with installation instructions and relevant descriptions [here](https://igmhub.github.io/LaCE/).
 
 ## Installation
 (Last updated: Jul 27 2026)
