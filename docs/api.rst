@@ -15,6 +15,14 @@ Cosmology
    lace.cosmo.fit_linP
    lace.cosmo.thermal_broadening
 
+Local configuration
+-------------------
+
+.. autosummary::
+   :toctree: generated
+
+   lace.configuration.paths
+
 Archives
 --------
 

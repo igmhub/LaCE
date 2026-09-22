@@ -23,11 +23,9 @@ LaCE uses ``/global/cfs/cdirs/desi/science/lya/y1-p1d/likelihood_files/nyx_files
 as its default Nyx directory at NERSC. On another machine, configure the local
 directory once from Python:
 
-.. code-block:: python
+.. code-block:: bash
 
-   from lace.configuration import set_nyx_path
-
-   set_nyx_path("/path/to/nyx_files")
+   set_nyx_path /path/to/nyx_files
 
 This stores the path in ``~/.config/lace/paths.toml``. A one-off archive can
 instead receive ``nyx_path="/path/to/nyx_files"`` directly.

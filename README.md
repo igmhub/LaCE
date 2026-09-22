@@ -47,16 +47,15 @@ make install
 
 LaCE uses `/global/cfs/cdirs/desi/science/lya/y1-p1d/likelihood_files/nyx_files/`
 as its default Nyx directory at NERSC. On another machine, set your local
-directory once from Python:
+directory once from the command line:
 
-```python
-from lace.configuration import set_nyx_path
-
-set_nyx_path("/path/to/nyx_files")
+```bash
+set_nyx_path /path/to/nyx_files
 ```
 
 This writes `~/.config/lace/paths.toml`. You can also pass `nyx_path=`
-directly to `NyxArchive` for a one-off location.
+directly to `NyxArchive` for a one-off location. The equivalent Python call is
+`lace.configuration.set_nyx_path("/path/to/nyx_files")`.
 
 - Before running LaCE, please precompute all cosmological information needed using CAMB and save IGM histories. This is done by running the following scripts. You do not need to do it if you are in NERSC.
 
