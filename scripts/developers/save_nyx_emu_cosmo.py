@@ -1,6 +1,7 @@
 import numpy as np
 import h5py
 from lace.archive.nyx_archive import NyxArchive
+from lace.configuration import get_nyx_path
 from lace.cosmo import camb_cosmo, fit_linP
 import os
 
@@ -9,17 +10,18 @@ def main():
     """Runs script to speed up the reading of Nyx data"""
 
     labels = ["z", "dkms_dMpc", "Delta2_p", "n_p", "alpha_p", "f_p"]
-    # os.environ["NYX_PATH"] = # path to the Nyx files in your local computer
+    # Use set_nyx_path("/path/to/nyx_files") on a non-NERSC machine.
 
     # file containing Nyx data
     # nyx_version = "Oct2023"
     # nyx_version = "Jul2024"
     # nyx_version = "models_Nyx_Mar2025_with_CGAN_val_3axes"
     nyx_version = "models_Nyx_Sept2025_include_Nyx_fid_rseed"
-    nyx_fname = os.environ["NYX_PATH"] + "/" + nyx_version + ".hdf5"
+    nyx_path = get_nyx_path()
+    nyx_fname = nyx_path / (nyx_version + ".hdf5")
     # file that will be written containing cosmo data for Nyx file
     cosmo_fname = (
-        os.environ["NYX_PATH"] + "/nyx_emu_cosmo_" + nyx_version + ".npy"
+        nyx_path / ("nyx_emu_cosmo_" + nyx_version + ".npy")
     )
 
     nyx_archive = NyxArchive(

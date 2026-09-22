@@ -45,19 +45,18 @@ make install
 
 #### Nyx users:
 
-- You may need to add the Nyx path as an environment variable in your notebook kernel. The first is done by writing in the kernel.json file:
+LaCE uses `/global/cfs/cdirs/desi/science/lya/y1-p1d/likelihood_files/nyx_files/`
+as its default Nyx directory at NERSC. On another machine, set your local
+directory once from Python:
 
-```
- "env": {
-  "NYX_PATH":"path_to_Nyx"
- }
+```python
+from lace.configuration import set_nyx_path
+
+set_nyx_path("/path/to/nyx_files")
 ```
 
-You also need to add the Nyx path as an environment variable. The Nyx data is located at NERSC in 
-
-```
-NYX_PATH="/global/cfs/cdirs/desi/science/lya/y1-p1d/likelihood_files/nyx_files/"
-```
+This writes `~/.config/lace/paths.toml`. You can also pass `nyx_path=`
+directly to `NyxArchive` for a one-off location.
 
 - Before running LaCE, please precompute all cosmological information needed using CAMB and save IGM histories. This is done by running the following scripts. You do not need to do it if you are in NERSC.
 
