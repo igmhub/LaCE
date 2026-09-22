@@ -8,5 +8,6 @@
 
    .. autosummary::
    
+      data_for_l10_forest
       data_for_l10_lace
    

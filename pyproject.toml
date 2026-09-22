@@ -30,6 +30,7 @@ dependencies = [
     "configobj",
     "camb",
     "torch",
+    "tqdm",
     "strenum",
     "jupytext",
     "corner",
