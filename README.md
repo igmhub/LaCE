@@ -74,6 +74,10 @@ python -m pip install -e ".[test]"
 pytest -q
 ```
 
+The suite checks the Pedersen21 archive, default cosmology reference values,
+the packaged MP-Gadget emulator, and star parameters from
+`RescaledCosmology` against fresh CAMB calculations.
+
 ## Emulator parameters:
 
 These are the parameters that describe each individual P1D(kpar) power spectrum. We have detached these from redshift and traditional cosmology parameters.

@@ -13,6 +13,9 @@ notebooks. The main practical examples are in ``notebooks``:
 ``notebooks/compressed_parameters/Tutorial_compressedParams.py``
    Compute compressed linear-power parameters from a cosmology.
 
+``notebooks/cosmology/compare_rescaled_cosmology.py``
+   Compare fixed-background rescaling with fresh CAMB star parameters.
+
 ``notebooks/archive/compute_covariance.py``
    Train leave-one-out GP emulators and inspect their covariance behavior.
 
