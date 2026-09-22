@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.19.1
+#       jupytext_version: 1.19.5
 #   kernelspec:
-#     display_name: test_lace
+#     display_name: lace
 #     language: python
 #     name: python3
 # ---
@@ -43,10 +43,11 @@ cabayol23_archive = GadgetArchive(postproc='Cabayol23')
 # Nyx simulations are not publicly available
 
 # %%
-# %%time
-# os.environ["NYX_PATH"] = # path to the Nyx files in your local computer
-nyx_version = "Oct2023"
-nyx_archive = NyxArchive(nyx_version=nyx_version, verbose=True)
+# # %%time
+# On a non-NERSC machine, configure the local Nyx directory once:
+# set_nyx_path("/path/to/nyx_files")
+nyx_version = "Sept2025_include_Nyx_fid_rseed"
+nyx_archive = NyxArchive(nyx_version="models_Nyx_" + nyx_version, verbose=True)
 
 # %% [markdown]
 # ### Access training data
