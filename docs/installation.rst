@@ -19,9 +19,16 @@ Install the documentation tools and build the site locally with:
    python -m pip install -e ".[docs]"
    make docs
 
+Run the local regression tests with:
+
+.. code-block:: console
+
+   python -m pip install -e ".[test]"
+   pytest -q
+
 LaCE uses ``/global/cfs/cdirs/desi/science/lya/y1-p1d/likelihood_files/nyx_files``
 as its default Nyx directory at NERSC. On another machine, configure the local
-directory once from Python:
+directory once from the command line:
 
 .. code-block:: bash
 

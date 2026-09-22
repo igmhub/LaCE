@@ -64,6 +64,16 @@ python scripts/developers/save_nyx_emu_cosmo.py
 python scripts/developers/save_nyx_IGM.py
 ```
 
+### Running tests
+
+Install the test dependencies and run the complete suite without specifying
+individual files:
+
+```bash
+python -m pip install -e ".[test]"
+pytest -q
+```
+
 ## Emulator parameters:
 
 These are the parameters that describe each individual P1D(kpar) power spectrum. We have detached these from redshift and traditional cosmology parameters.

@@ -46,11 +46,15 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+test = ["pytest>=9"]
 docs = [
     "sphinx>=7",
     "numpydoc>=1.6",
     "pydata-sphinx-theme>=0.15",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [project.scripts]
 set_nyx_path = "lace.configuration.cli:set_nyx_path_command"
