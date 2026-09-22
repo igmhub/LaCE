@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+import re
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -363,8 +364,15 @@ class ArchivePlotter:
         return figure, flat_axes
 
     @staticmethod
-    def compare_igm_histories(history_sets: Mapping[str, Mapping[str, Mapping[str, Any]]], *, dataset_labels: Sequence[str] | None = None, parameters: Sequence[str] | None = None, parameter_labels: Mapping[str, str] | None = None, colors: Sequence[str] | None = None, alphas: Sequence[float] | None = None, excluded_simulations: Sequence[str] | None = None, axes: Any = None, save_path: str | Path | None = None) -> tuple[plt.Figure, np.ndarray]:
-        """Compare IGM histories from named data sets, masking unavailable zeros."""
+    def compare_igm_histories(history_sets: Mapping[str, Mapping[str, Mapping[str, Any]]], *, dataset_labels: Sequence[str] | None = None, parameters: Sequence[str] | None = None, parameter_labels: Mapping[str, str] | None = None, colors: Sequence[str] | None = None, alphas: Sequence[float] | None = None, excluded_simulations: Sequence[str] | None = None, rescaling_datasets: Sequence[str] = ("Nyx",), base_rescaling_index: int = 0, axes: Any = None, save_path: str | Path | None = None) -> tuple[plt.Figure, np.ndarray]:
+        """Compare IGM histories from named data sets, masking unavailable zeros.
+
+        For data sets listed in ``rescaling_datasets``, simulation labels that
+        end in an integer rescaling index are interpreted using
+        ``base_rescaling_index``. The base histories and named test simulations
+        are drawn as lines; other rescalings are shown as unconnected dots to
+        avoid overcrowding.
+        """
         parameters = list(parameters or ["tau_eff", "gamma", "sigT_kms", "kF_kms"])
         names, sets = list(history_sets), list(history_sets.values())
         if dataset_labels is not None:
@@ -376,24 +384,48 @@ class ArchivePlotter:
         if len(colors) != len(sets) or len(alphas) != len(sets):
             raise ValueError("colors and alphas must match the number of history sets")
         excluded = set(excluded_simulations or [])
+        rescaling_names = {name.casefold() for name in rescaling_datasets}
         figure, flat_axes = _axes_grid(len(parameters), 2, axes)
         for name, histories, color, alpha in zip(names, sets, colors, alphas, strict=True):
             for simulation, history in histories.items():
                 if simulation in excluded:
                     continue
+                match = re.search(r"_(\d+)$", simulation)
+                is_rescaling = (
+                    name.casefold() in rescaling_names
+                    and match is not None
+                    and int(match.group(1)) != base_rescaling_index
+                )
                 redshift = np.asarray(history["z"])
                 for axis, parameter in zip(flat_axes, parameters, strict=True):
                     values = np.asarray(history[parameter])
                     mask = np.isfinite(redshift) & np.isfinite(values) & (values != 0)
-                    axis.plot(redshift[mask], values[mask], color=color, alpha=alpha, label=name)
+                    if is_rescaling:
+                        axis.plot(
+                            redshift[mask],
+                            values[mask],
+                            linestyle="none",
+                            marker=".",
+                            markersize=2,
+                            color=color,
+                            alpha=alpha,
+                        )
+                    else:
+                        axis.plot(
+                            redshift[mask],
+                            values[mask],
+                            color=color,
+                            alpha=alpha,
+                        )
         for index, axis in enumerate(flat_axes[:len(parameters)]):
             axis.set_ylabel(_label(parameters[index], parameter_labels))
             if index >= len(parameters) - 2:
                 axis.set_xlabel(_label("z", parameter_labels))
-        handles, labels = flat_axes[0].get_legend_handles_labels()
-        unique = dict(zip(labels, handles, strict=True))
-        if unique:
-            flat_axes[0].legend(unique.values(), unique.keys())
+        legend_handles = [
+            plt.Line2D([], [], color=color, label=name)
+            for name, color in zip(names, colors, strict=True)
+        ]
+        flat_axes[0].legend(handles=legend_handles)
         for axis in flat_axes[len(parameters):]:
             axis.set_visible(False)
         figure.tight_layout()

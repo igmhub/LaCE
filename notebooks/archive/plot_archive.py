@@ -125,7 +125,7 @@ gadget_plotter.plot_parameter_sequence(
 # $0 < k_\parallel < 10\,\mathrm{Mpc}^{-1}$ is displayed.
 
 # %%
-for parameter in ["mF", "sigT_Mpc", "gamma", "kF_Mpc"]:
+for parameter in ["mF"]:
     gadget_plotter.plot_p1d_dependence(
         parameter, data=gadget_training_data, max_curves=None
     )
@@ -209,7 +209,5 @@ ArchivePlotter.compare_igm_histories(
     alphas=[0.2, 0.2],
     excluded_simulations=["nyx_14"],
 )
-
-# %%
 
 # %%
