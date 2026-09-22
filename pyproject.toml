@@ -44,6 +44,13 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
+[project.optional-dependencies]
+docs = [
+    "sphinx>=7",
+    "numpydoc>=1.6",
+    "pydata-sphinx-theme>=0.15",
+]
+
 [tool.setuptools.dynamic]
 version = {attr = "lace.__version__"}
 
@@ -57,4 +64,3 @@ namespaces = false
 Homepage="https://github.com/igmhub/LaCE"
 Repository="https://github.com/igmhub/LaCE.git"
 Issues="https://github.com/igmhub/LaCE/issues"
-
