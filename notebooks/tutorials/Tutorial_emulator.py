@@ -29,9 +29,9 @@
 # %autoreload 2
 
 import numpy as np
-from matplotlib import pyplot as plt
 from lace.emulator.emulator_manager import set_emulator
 from lace.archive import gadget_archive
+from lace.plotting import plot_emulator_predictions, plot_parameter_corner
 
 # %% [markdown]
 # #### Load mpg simulations (Pedersen+21; Cabayol-Garcia+23)
@@ -64,14 +64,12 @@ for snap in testing_data:
     p1d_all.append(p1d[0])
 
 # %%
-for ii in range(len(p1d_all)):
-    plt.plot(k_Mpc, k_Mpc * p1d_all[ii]/np.pi, label=f'z={testing_data[ii]["z"]:.2f}')
-    
-plt.xlabel(r'$k_\parallel$ [1/Mpc]')
-plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
-plt.yscale('log')
-plt.xscale('log')
-plt.legend(ncol=2)
+plot_emulator_predictions(
+    k_Mpc,
+    np.asarray(p1d_all),
+    labels=[f"z={entry['z']:.2f}" for entry in testing_data],
+    divide_by_pi=True,
+)
 
 # %% [markdown]
 # ### For some random parameters
@@ -92,19 +90,10 @@ input_params = {
 }
 p1d = emulator.emulate_p1d_Mpc(input_params, k_Mpc)
 
-for ii in range(p1d.shape[0]):
-    plt.plot(k_Mpc, k_Mpc * p1d[ii]/np.pi)
-    
-plt.xlabel(r'$k_\parallel$ [1/Mpc]')
-plt.ylabel(r'$\pi^{-1} \, k_\parallel \, P_\mathrm{1D}$')
-plt.xscale('log')
-plt.yscale('log')
+plot_emulator_predictions(k_Mpc, p1d, divide_by_pi=True)
 
 # %% [markdown]
 # To check the range of values of the parameters in the training set, we can do:
-
-# %%
-from corner import corner
 
 # %%
 emu_params = ['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
@@ -120,19 +109,6 @@ samples = np.array([
     for sample in training_data
 ])
 
-# Create corner plot
-fig = corner(
-    samples,
-    labels=emu_params,
-    plot_density=False,
-    plot_contours=False,
-    no_fill_contours=True,
-    data_kwargs={
-        "alpha": 0.5
-    },
-    hist_kwargs={
-        "density": True
-    }
-);
+plot_parameter_corner(samples, labels=emu_params)
 
 # %%

@@ -25,11 +25,11 @@
 # `pytest -q tests/test_rescaled_cosmology.py`.
 
 # %%
-import matplotlib.pyplot as plt
 import numpy as np
 
 from lace.cosmo.cosmology import Cosmology
 from lace.cosmo.rescale_cosmology import RescaledCosmology
+from lace.plotting.cosmology import plot_ratio_curves
 
 z_target = 2.33  # example target redshift for emulator parameters
 z_star = 3.0  # fixed redshift for cup1d star parameters
@@ -47,18 +47,19 @@ fiducial = Cosmology()
 # `rtol=1e-4` (0.01%); this permits small CAMB interpolation differences.
 
 # %%
-fig, ax = plt.subplots(figsize=(7, 4))
+power_ratios = {}
 for name, parameters in changes.items():
     rescaled = RescaledCosmology(fiducial, parameters)
     fresh = Cosmology(cosmo_params_dict=parameters)
     ratio = rescaled.get_linP_Mpc(z_target, k_Mpc) / fresh.get_linP_Mpc(z_target, k_Mpc)
     np.testing.assert_allclose(ratio, 1.0, rtol=1e-4)
     print(f"{name}: maximum |P_rescaled/P_CAMB - 1| = {np.max(np.abs(ratio - 1)):.3g}")
-    ax.plot(k_Mpc, ratio - 1, label=name)
-ax.axhline(0, color="black", lw=0.8)
-ax.set(xscale="log", xlabel=r"$k\ [\mathrm{Mpc}^{-1}]$", ylabel=r"$P_\mathrm{rescaled}/P_\mathrm{CAMB}-1$")
-ax.legend()
-plt.show()
+    power_ratios[name] = ratio - 1
+plot_ratio_curves(
+    k_Mpc,
+    power_ratios,
+    ylabel=r"$P_\mathrm{rescaled}/P_\mathrm{CAMB}-1$",
+)
 
 # %% [markdown]
 # ## Emulator parameters at the target redshift

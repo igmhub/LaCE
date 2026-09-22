@@ -311,13 +311,8 @@ class NyxArchive(BaseArchive):
 
         # Set nyx_file from the configured local Nyx directory if needed.
         if nyx_file is None:
-            if ("CGAN" in self.nyx_version) | ("fid_rseed" in self.nyx_version):
-                nyx_file = self.nyx_path / (self.nyx_version + ".hdf5")
-            else:
-                nyx_file = self.nyx_path / (
-                    "models_Nyx_" + self.nyx_version + ".hdf5"
-                )
-        nyx_file = Path(nyx_file).expanduser()
+            nyx_file = self.nyx_path / f"models_Nyx_{self.nyx_version}.hdf5"
+            nyx_file = Path(nyx_file).expanduser()
         if not nyx_file.is_file():
             raise FileNotFoundError(
                 f"Nyx data file not found: {nyx_file}. Set a local path with "
@@ -327,8 +322,8 @@ class NyxArchive(BaseArchive):
 
         print("Reading", nyx_file)
         ff = h5py.File(nyx_file, "r")
-        self.file_cosmo = str(
-            nyx_file.parent / ("nyx_emu_cosmo_" + self.nyx_version + ".npy")
+        self.file_cosmo = (
+            nyx_file.parent / f"nyx_emu_cosmo_models_Nyx_{self.nyx_version}.npy"
         )
 
         # store each measurement as an entry of the following list

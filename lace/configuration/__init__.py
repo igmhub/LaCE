@@ -3,6 +3,7 @@
 from lace.configuration.paths import (
     DEFAULT_NYX_PATH,
     get_nyx_path,
+    get_path_repo,
     get_paths_config_path,
     set_nyx_path,
 )
@@ -10,6 +11,7 @@ from lace.configuration.paths import (
 __all__ = [
     "DEFAULT_NYX_PATH",
     "get_nyx_path",
+    "get_path_repo",
     "get_paths_config_path",
     "set_nyx_path",
 ]

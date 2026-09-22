@@ -1,9 +1,10 @@
 import argparse
-import os, sys
+import sys
 import torch
 import numpy as np
 from lace.emulator.nn_emulator import NNEmulator
 from lace.archive import nyx_archive, gadget_archive
+from lace.configuration import get_path_repo
 
 
 def str_to_bool(s):
@@ -17,12 +18,7 @@ def str_to_bool(s):
 def save_emu(model, label_training_set, emulator_label, drop_sim, drop_z):
     """Save the emulator model in a file"""
     # set folder name
-    folder = (
-        os.environ["LACE_REPO"]
-        + "/src/lace/data/NNmodels/"
-        + label_training_set
-        + "/"
-    )
+    folder = get_path_repo() / "data" / "NNmodels" / label_training_set
 
     # set file name
     fname = emulator_label
@@ -53,7 +49,7 @@ def save_emu(model, label_training_set, emulator_label, drop_sim, drop_z):
 
     model_data = {"metadata": metadata, "emulator": model}
 
-    torch.save(model_data, folder + fname)
+    torch.save(model_data, folder / fname)
 
 
 def main():
