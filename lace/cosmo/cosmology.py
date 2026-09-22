@@ -34,6 +34,7 @@ class Cosmology(base_cosmology.BaseCosmology):
 
         # get CAMBparams object
         self.CAMBparams = camb_cosmo.get_cosmology_from_dictionary(cosmo_params_dict)
+        self.ks_Mpc = self.CAMBparams.InitPower.pivot_scalar
 
         # store background parameters (dictionary)
         self.background_params = self.get_background_params()
