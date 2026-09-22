@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.19.1
+#       jupytext_version: 1.19.5
 #   kernelspec:
-#     display_name: test_lace
+#     display_name: lace
 #     language: python
 #     name: python3
 # ---
@@ -56,7 +56,7 @@ for cosmo in cosmos:
 # %%
 z = 2.33
 for cosmo in cosmos:
-    print(cosmo.get_sigma8(z), cosmo.get_growth_rate(z))
+    print("z", z, "sig8(z)", cosmo.get_sigma8(z), "f(z)", cosmo.get_growth_rate(z))
 
 
 # %%

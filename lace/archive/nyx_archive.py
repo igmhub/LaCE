@@ -1,7 +1,8 @@
 import numpy as np
-import os
+from pathlib import Path
 
 from lace.cosmo.thermal_broadening import thermal_broadening_kms
+from lace.configuration import get_nyx_path
 from lace.archive.base_archive import BaseArchive
 from lace.utils.misc import split_string
 
@@ -13,8 +14,9 @@ class NyxArchive(BaseArchive):
 
     def __init__(
         self,
-        nyx_version="Oct2023",
+        nyx_version="Sept2025_include_Nyx_fid_rseed",
         nyx_file=None,
+        nyx_path=None,
         include_central=False,
         kp_Mpc=None,
         force_recompute_linP_params=False,
@@ -28,8 +30,9 @@ class NyxArchive(BaseArchive):
             raise TypeError("nyx_version must be a string")
         self.nyx_version = nyx_version
 
-        if isinstance(nyx_file, (str, type(None))) == False:
-            raise TypeError("nyx_file must be a string or None")
+        if not isinstance(nyx_file, (str, Path, type(None))):
+            raise TypeError("nyx_file must be a path or None")
+        self.nyx_path = get_nyx_path(nyx_path)
 
         if isinstance(force_recompute_linP_params, bool) == False:
             raise TypeError("update_kp must be boolean")
@@ -306,38 +309,27 @@ class NyxArchive(BaseArchive):
 
         import h5py
 
-        # set nyx_file if not provided
+        # Set nyx_file from the configured local Nyx directory if needed.
         if nyx_file is None:
-            if "NYX_PATH" not in os.environ:
-                error_text = (
-                    "If nyx_file is not provided, you must define"
-                    + "the environ variable NYX_PATH pointing to the folder containing"
-                    + "the hdf5 file containing Nyx data"
-                )
-                raise ValueError(error_text)
-
             if ("CGAN" in self.nyx_version) | ("fid_rseed" in self.nyx_version):
-                nyx_file = os.path.join(
-                    os.environ["NYX_PATH"], self.nyx_version + ".hdf5"
-                )
+                nyx_file = self.nyx_path / (self.nyx_version + ".hdf5")
             else:
-                nyx_file = (
-                    os.environ["NYX_PATH"] + "/models_Nyx_" + self.nyx_version + ".hdf5"
+                nyx_file = self.nyx_path / (
+                    "models_Nyx_" + self.nyx_version + ".hdf5"
                 )
+        nyx_file = Path(nyx_file).expanduser()
+        if not nyx_file.is_file():
+            raise FileNotFoundError(
+                f"Nyx data file not found: {nyx_file}. Set a local path with "
+                "lace.configuration.set_nyx_path('/path/to/nyx_files') or "
+                "pass nyx_path= when constructing NyxArchive."
+            )
 
-        print(nyx_file)
-        try:
-            ff = h5py.File(nyx_file, "r")
-        except Exception as e:
-            ff.close()
-            raise e
-        else:
-            # set self.file_cosmo
-            if "NYX_PATH" not in os.environ:
-                folder = os.path.dirname(nyx_file)
-            else:
-                folder = os.environ["NYX_PATH"]
-            self.file_cosmo = folder + "/nyx_emu_cosmo_" + self.nyx_version + ".npy"
+        print("Reading", nyx_file)
+        ff = h5py.File(nyx_file, "r")
+        self.file_cosmo = str(
+            nyx_file.parent / ("nyx_emu_cosmo_" + self.nyx_version + ".npy")
+        )
 
         # store each measurement as an entry of the following list
         # each entry is a dictionary containing all relevant info

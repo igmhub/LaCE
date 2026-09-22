@@ -19,6 +19,20 @@ Install the documentation tools and build the site locally with:
    python -m pip install -e ".[docs]"
    make docs
 
-Nyx archive users must set ``NYX_PATH`` to the directory containing the Nyx
-data files. The repository README describes the NERSC location and the helper
-scripts used to prepare cosmology and IGM assets.
+Run the local regression tests with:
+
+.. code-block:: console
+
+   python -m pip install -e ".[test]"
+   pytest -q
+
+LaCE uses ``/global/cfs/cdirs/desi/science/lya/y1-p1d/likelihood_files/nyx_files``
+as its default Nyx directory at NERSC. On another machine, configure the local
+directory once from the command line:
+
+.. code-block:: bash
+
+   set_nyx_path /path/to/nyx_files
+
+This stores the path in ``~/.config/lace/paths.toml``. A one-off archive can
+instead receive ``nyx_path="/path/to/nyx_files"`` directly.
