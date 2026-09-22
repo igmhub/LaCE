@@ -22,12 +22,13 @@ import os
 from loguru import logger
 
 from lace.archive import nyx_archive
+from lace.configuration import get_nyx_path
 from lace.emulator.nn_emulator import NNEmulator
 from lace.utils import poly_p1d
 from lace.emulator.constants import PROJ_ROOT
-os.environ["NYX_PATH"]="/Users/lauracabayol/Documents/DESI/nyx"
+nyx_path = "/Users/lauracabayol/Documents/DESI/nyx"
 
-archive = nyx_archive.NyxArchive(verbose=True)
+archive = nyx_archive.NyxArchive(nyx_path=nyx_path, verbose=True)
 
 emu_params=['Delta2_p', 'n_p','alpha_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
 training_data=archive.get_training_data(emu_params=emu_params)
@@ -86,7 +87,7 @@ plt.tight_layout()
 
 # ## REDSHIFT EVOLUTION
 
-igm_nyx = np.load(os.environ["NYX_PATH"] + "/IGM_histories.npy", allow_pickle=True).item()
+igm_nyx = np.load(get_nyx_path(nyx_path) / "IGM_histories.npy", allow_pickle=True).item()
 
 # +
 fig, ax = plt.subplots(2, 2, sharex=True)
