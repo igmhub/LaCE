@@ -66,12 +66,10 @@ python scripts/developers/save_nyx_IGM.py
 
 ### Running tests
 
-Install the test dependencies and run the complete suite without specifying
-individual files:
+Run the complete test suite with:
 
 ```bash
-python -m pip install -e ".[test]"
-pytest -q
+make test
 ```
 
 The suite checks the Pedersen21 archive, default cosmology reference values,
