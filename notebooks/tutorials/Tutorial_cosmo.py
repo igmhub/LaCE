@@ -21,9 +21,9 @@
 # %autoreload 2
 
 import numpy as np
-from matplotlib import pyplot as plt
 from lace.cosmo import cosmology, rescale_cosmology
 from camb import model
+from lace.plotting.cosmology import plot_expansion_history, plot_ratio_curves
 
 # %% [markdown]
 # ### Define three different cosmologies
@@ -61,14 +61,13 @@ for cosmo in cosmos:
 
 # %%
 k_Mpc = np.logspace(-3, 1, 100)
+power_ratios = {}
 for ii, cosmo in enumerate(cosmos):
     pk_Mpc = cosmo.get_linP_Mpc(z=z, k_Mpc=k_Mpc)
     if ii == 0:
         pk0_Mpc = pk_Mpc.copy()
-    plt.plot(k_Mpc, pk_Mpc/pk0_Mpc-1, label="cosmo {}".format(ii))
-plt.xlabel(r"$k [\mathrm{Mpc}^{-1}]$")
-plt.ylabel(r"$\frac{P(k)}{P_0(k)}-1$")
-plt.legend()
+    power_ratios[f"cosmo {ii}"] = pk_Mpc / pk0_Mpc - 1
+plot_ratio_curves(k_Mpc, power_ratios, ylabel=r"$P(k)/P_0(k)-1$")
 
 # %% [markdown]
 # Change units
@@ -96,7 +95,7 @@ test = rescale_cosmology.RescaledCosmology(fid_cosmo=cosmos[0], new_params_dict=
 # %%
 try:
     bad_test = rescale_cosmology.RescaledCosmology(fid_cosmo=cosmos[0], new_params_dict={'H0':74})
-except AssertionError as error:
+except rescale_cosmology.IncompatibleBackgroundError as error:
     print(error)
 
 # %%
@@ -134,6 +133,7 @@ for ii in range(len(cosmos)):
 
 # %%
 plot_ratio = True
+transfer_ratios = {}
 
 zz = np.array(cosmos[0].CAMBdata.transfer_redshifts)
 
@@ -155,31 +155,20 @@ for kk, zuse in enumerate([2.2, 10.]):
         if plot_ratio:
             if jj != 0:
                 yy = np.exp(np.interp(np.log(k0), np.log(k), np.log(delta)))
-                plt.plot(k0, yy/delta0, label="Cosmo {}, z={}".format(jj, np.round(zuse,2)), ls=ls[jj], color="C"+str(kk))
+                transfer_ratios[f"Cosmo {jj}, z={zuse:.2f}"] = yy / delta0 - 1
         else:
-            plt.plot(k, delta, label="Cosmo {}, z={}".format(jj, np.round(zuse,2)), ls=ls[jj], color="C"+str(kk))
-    
-
-plt.xscale("log")
-plt.xlim([1e-3, 1])
-plt.legend()
+            transfer_ratios[f"Cosmo {jj}, z={zuse:.2f}"] = delta
+plot_ratio_curves(k0, transfer_ratios, ylabel="Transfer-function ratio - 1" if plot_ratio else "Transfer function")
 
 # %% [markdown]
 # Plot expansion history
 
 # %%
-plot_ratio = True
-
 zz = np.linspace(2, 10, 100)
+history = []
 for jj, cosmo in enumerate(cosmos):
     hz = cosmo.compute_hubble_parameter(zz)
-    if jj == 0:
-        hz0 = hz.copy()
-
-    if plot_ratio:
-        plt.plot(zz, hz/hz0, label="Cosmo {}".format(jj))
-    else:
-        plt.plot(zz, hz, label="Cosmo {}".format(jj))
-plt.legend()
+    history.append(hz)
+plot_expansion_history(zz, history, [f"Cosmo {ii}" for ii in range(len(cosmos))])
 
 # %%

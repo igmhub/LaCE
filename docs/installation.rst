@@ -26,6 +26,10 @@ Run the local regression tests with:
    python -m pip install -e ".[test]"
    pytest -q
 
+The suite covers the Pedersen21 archive, default cosmology reference values,
+the packaged MP-Gadget emulator, and ``RescaledCosmology`` star parameters
+compared with fresh CAMB calculations.
+
 LaCE uses ``/global/cfs/cdirs/desi/science/lya/y1-p1d/likelihood_files/nyx_files``
 as its default Nyx directory at NERSC. On another machine, configure the local
 directory once from the command line:

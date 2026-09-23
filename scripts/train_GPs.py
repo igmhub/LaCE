@@ -1,7 +1,6 @@
 import numpy as np
-from lace.emulator.emulator_manager import set_emulator
 from lace.archive import gadget_archive, nyx_archive
-from lace.emulator.gp_emulator_new import GPEmulator
+from lace.emulator.old_gp_emulator.gp_emulator_new import GPEmulator
 
 
 def main():

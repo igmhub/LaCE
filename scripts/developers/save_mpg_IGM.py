@@ -1,7 +1,7 @@
 from lace.archive.gadget_archive import GadgetArchive
 from lace.cosmo.thermal_broadening import thermal_broadening_kms
+from lace.configuration import get_path_repo
 import numpy as np
-import os
 
 
 def main():
@@ -149,10 +149,9 @@ def main():
                     )
                     dict_index[sim_label]["kF_kms"][ind_snap] = _
 
-    folder = os.environ["LACE_REPO"] + "/data/sim_suites/Australia20/"
-    np.save(folder + "IGM_histories.npy", dict_index)
-    folder = os.environ["LACE_REPO"] + "/data/sim_suites/post_768/"
-    np.save(folder + "IGM_histories.npy", dict_index)
+    data_path = get_path_repo() / "data" / "sim_suites"
+    np.save(data_path / "Australia20" / "IGM_histories.npy", dict_index)
+    np.save(data_path / "post_768" / "IGM_histories.npy", dict_index)
 
 
 if __name__ == "__main__":

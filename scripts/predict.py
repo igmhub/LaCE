@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 from matplotlib import pyplot as plt
 import logging
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 from tqdm import tqdm
 import json
 
@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 # our modules
 from lace.archive import (gadget_archive, 
                           nyx_archive)
-from lace.emulator.nn_emulator import NNEmulator
-from lace.emulator.gp_emulator import GPEmulator
-from lace.emulator.emulator_manager import set_emulator    
+from lace.emulator import set_emulator
 from lace.utils import poly_p1d
 from lace.emulator.constants import PROJ_ROOT
 
@@ -41,7 +39,7 @@ def create_archive(archive_config: Dict) -> Union[nyx_archive.NyxArchive, gadget
     else:
         raise ValueError(f"Archive {archive_config['file']} not supported")
     
-def predict_p1d(emulator: Union[NNEmulator, GPEmulator], test_data: List[Dict]) -> Tuple[np.ndarray, np.ndarray]:
+def predict_p1d(emulator: Any, test_data: List[Dict]) -> Tuple[np.ndarray, np.ndarray]:
     zs = [d['z'] for d in test_data if d['z'] < 4.8]
     Nz = len(zs)
     Nk = len(test_data[0]['p1d_Mpc'][(test_data[0]['k_Mpc'] > 0) & (test_data[0]['k_Mpc'] < 4)])
@@ -128,17 +126,9 @@ def main():
         archive = create_archive(config["archive"])
     
     logger.info("Setting up emulator")
-    if config["emulator_label"] is not None:
-        emulator = set_emulator(
-            emulator_label=config["emulator_label"],
-            archive=archive,
-                drop_sim=config["drop_sim"])
-    else:
-        emulator = NNEmulator(
-            archive=archive,
-            train=False,
-            models_dir=config["model_path"],
-            **hyperparameters)
+    if config["emulator_label"] is None:
+        raise ValueError("A supported emulator_label is required for prediction.")
+    emulator = set_emulator(config["emulator_label"])
     
     logger.info("Getting testing data")
     test_data = archive.get_testing_data(sim_label=config["sim_test"])
