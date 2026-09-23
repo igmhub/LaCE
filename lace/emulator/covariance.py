@@ -2,8 +2,6 @@ import numpy as np
 from scipy.optimize import curve_fit
 from lace.emulator.gp_emulator_multi import GPEmulator
 
-# from cup1d.likelihood.interface_emu import P1D_emulator
-
 
 def data_for_l10_lace(archive, emulator_label, suite="nyx"):
     """
