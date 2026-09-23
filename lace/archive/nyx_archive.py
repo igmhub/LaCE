@@ -223,13 +223,14 @@ class NyxArchive(BaseArchive):
             # open file with precomputed values to check kp_Mpc
             try:
                 file_cosmo = np.load(self.file_cosmo, allow_pickle=True).item()
-            except:
-                raise IOError(
-                    "The file "
-                    + self.file_cosmo
-                    + " does not exist. "
-                    + "Need to run the LaCE script save_nyx_emu_cosmo.py first."
-                )
+            except FileNotFoundError as error:
+                raise FileNotFoundError(
+                    f"Missing Nyx cosmology cache {self.file_cosmo}. Run save_nyx_emu_cosmo.py first."
+                ) from error
+            except PermissionError as error:
+                raise PermissionError(f"Cannot read Nyx cosmology cache {self.file_cosmo}") from error
+            except (OSError, ValueError, EOFError) as error:
+                raise IOError(f"Corrupt Nyx cosmology cache {self.file_cosmo}: {error}") from error
 
             if isim not in file_cosmo:
                 file_error = (

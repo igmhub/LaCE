@@ -5,6 +5,7 @@ import os
 import json
 
 import lace
+from lace.configuration import get_data_path
 from lace.setup_simulations import read_genic, read_gadget
 from lace.archive.base_archive import BaseArchive
 from lace.utils.exceptions import ExceptionList
@@ -32,6 +33,7 @@ class GadgetArchive(BaseArchive):
         verbose=False,
         z_star=3,
         kp_kms=0.009,
+        data_path=None,
     ):
         """
         Initialize the archive object.
@@ -71,6 +73,7 @@ class GadgetArchive(BaseArchive):
         self.kp_Mpc = kp_Mpc
         self.z_star = z_star
         self.kp_kms = kp_kms
+        self.data_path = get_data_path(data_path)
 
         if isinstance(verbose, bool) == False:
             raise TypeError("verbose must be boolean")
@@ -199,11 +202,9 @@ class GadgetArchive(BaseArchive):
             self.testing_z_min = 0
             self.testing_z_max = 10
 
-        ## get path of the repo
-        repo = os.path.dirname(lace.__path__[0]) + "/"
-
-        self.fulldir = repo + self.basedir
-        self.fulldir_param = repo + self.basedir_params
+        # ``data_path`` contains ``sim_suites`` and can be external to a wheel.
+        self.fulldir = str(self.data_path / self.basedir.lstrip("/").removeprefix("data/")) + "/"
+        self.fulldir_param = str(self.data_path / self.basedir_params.lstrip("/").removeprefix("data/")) + "/"
 
         self.key_conv = {
             "mF": "mF",
@@ -313,8 +314,12 @@ class GadgetArchive(BaseArchive):
             fname = self.fulldir + "mpg_emu_cosmo.npy"
             try:
                 file_cosmo = np.load(fname, allow_pickle=True).item()
-            except:
-                raise IOError("The file " + fname + " does not exist")
+            except FileNotFoundError as error:
+                raise FileNotFoundError(f"Missing Gadget cosmology cache {fname}. Run save_mpg_emu_cosmo.py or configure data_path.") from error
+            except PermissionError as error:
+                raise PermissionError(f"Cannot read Gadget cosmology cache {fname}") from error
+            except (OSError, ValueError, EOFError) as error:
+                raise IOError(f"Corrupt Gadget cosmology cache {fname}: {error}") from error
 
             if sim_label not in file_cosmo:
                 file_error = (

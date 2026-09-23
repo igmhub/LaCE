@@ -2,16 +2,20 @@
 
 from lace.configuration.paths import (
     DEFAULT_NYX_PATH,
+    get_data_path,
     get_nyx_path,
     get_path_repo,
     get_paths_config_path,
+    set_data_path,
     set_nyx_path,
 )
 
 __all__ = [
     "DEFAULT_NYX_PATH",
+    "get_data_path",
     "get_nyx_path",
     "get_path_repo",
     "get_paths_config_path",
+    "set_data_path",
     "set_nyx_path",
 ]

@@ -41,3 +41,21 @@ def test_ch24_mpgcen_gpr_emulation():
         rtol=1.0e-6,
     )
     assert np.all(np.diff(p1d_Mpc[:, 0]) > 0)
+
+
+def test_ch24_nyxcen_gpr_prediction():
+    emulator = set_emulator("CH24_nyxcen_gpr")
+    model = {
+        "Delta2_p": [0.35], "n_p": [-2.3], "alpha_p": [-0.215],
+        "mF": [0.66], "gamma": [1.5], "sigT_Mpc": [0.128], "kF_Mpc": [10.5],
+    }
+    result = emulator.emulate_p1d_Mpc(model, np.array([0.1, 1.0, 4.0]))
+    np.testing.assert_allclose(result, [[0.54896665, 0.22852632, 0.03803230]], rtol=1e-6)
+
+
+def test_malformed_parameter_shapes_are_rejected():
+    emulator = set_emulator("CH24_mpgcen_gpr")
+    model = {"Delta2_p": [0.3, 0.4], "n_p": [-2.3], "mF": [0.66, 0.66],
+             "gamma": [1.5, 1.5], "sigT_Mpc": [0.128, 0.128], "kF_Mpc": [10.5, 10.5]}
+    with pytest.raises(ValueError, match="same length"):
+        emulator.predict(model)

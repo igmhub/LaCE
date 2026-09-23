@@ -28,6 +28,7 @@ dependencies = [
     "scikit-learn==1.5.2",
     "matplotlib",
     "configobj",
+    "h5py",
     "camb",
     "torch",
     "tqdm",

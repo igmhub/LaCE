@@ -60,9 +60,10 @@ emulator = GPEmulator(
 # first 14 simulations.
 
 # %%
-l1o_models_root = Path(
-    input("Root directory in which to save L1O emulator directories: ")
-).expanduser()
+l1o_models_root_text = input("Root directory in which to save L1O emulator directories: ").strip()
+if not l1o_models_root_text:
+    raise ValueError("An explicit non-blank L1O model root is required; L1O models are not distributed with LaCE.")
+l1o_models_root = Path(l1o_models_root_text).expanduser()
 l1o_model_path = l1o_models_root / emulator_label
 l1o_model_path.mkdir(parents=True, exist_ok=True)
 
