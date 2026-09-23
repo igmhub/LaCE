@@ -28,7 +28,12 @@ import lace
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator.covariance import data_for_l10_lace
 from lace.emulator.gp_emulator_multi import GPEmulator
-from lace.plotting import plot_l1o_correlation, plot_l1o_errors
+from lace.plotting import (
+    plot_l1o_bias,
+    plot_l1o_correlation,
+    plot_l1o_covariance_robustness,
+    plot_l1o_errors,
+)
 
 # %% [markdown]
 # ## Load the emulator and matching archive
@@ -119,3 +124,27 @@ if save_data:
         mask=mask,
     )
     print(f"Saved {output_path}")
+
+# %% [markdown]
+# ## Check the emulator bias
+#
+# The mean leave-one-out residual is divided by the standard deviation inferred
+# from the emulator covariance. Values close to zero indicate negligible bias;
+# values approaching unity would mean that the mean offset is comparable to the
+# assigned emulator uncertainty.
+
+# %%
+plot_l1o_bias(zz, k_Mpc, rel_diff, cov_zk)
+
+# %% [markdown]
+# ## Check covariance robustness
+#
+# We remove each simulation in turn and recompute the diagonal covariance
+# errors. The curves show the scatter of the fractional change relative to the
+# full-sample error. Small values mean that no individual simulation strongly
+# controls the estimated covariance amplitude.
+
+# %%
+plot_l1o_covariance_robustness(zz, k_Mpc, rel_diff, cov_zk)
+
+# %%
