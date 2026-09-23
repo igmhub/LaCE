@@ -34,8 +34,8 @@ from lace.plotting import plot_l1o_correlation, plot_l1o_errors
 # ## Load the emulator and matching archive
 
 # %%
-emulator_label = "CH24_mpgcen_gpr"
-# emulator_label = "CH24_nyxcen_gpr"
+# emulator_label = "CH24_mpgcen_gpr"
+emulator_label = "CH24_nyxcen_gpr"
 
 if emulator_label == "CH24_mpgcen_gpr":
     suite = "mpg"
@@ -50,6 +50,11 @@ emulator = GPEmulator(emulator_label=emulator_label)
 
 # %% [markdown]
 # ## Run the leave-one-out calculation
+#
+# The Nyx emulator covariance is restricted to $z \leq 4.2$, including the
+# $z=4.2$ bin. Higher-redshift Nyx spectra are excluded before constructing
+# the covariance, rather than retained as zero-valued masked entries. The MPG
+# calculation continues to use every available redshift.
 
 # %%
 zz, k_Mpc, p1d_Mpc_orig, p1d_Mpc_sm, p1d_Mpc_emu, mask = data_for_l10_lace(
@@ -57,6 +62,16 @@ zz, k_Mpc, p1d_Mpc_orig, p1d_Mpc_sm, p1d_Mpc_emu, mask = data_for_l10_lace(
     emulator_label,
     suite=suite,
 )
+
+redshift_mask = np.ones_like(zz, dtype=bool)
+if suite == "nyx":
+    redshift_mask = zz <= 4.2
+
+zz = zz[redshift_mask]
+p1d_Mpc_orig = p1d_Mpc_orig[:, redshift_mask]
+p1d_Mpc_sm = p1d_Mpc_sm[:, redshift_mask]
+p1d_Mpc_emu = p1d_Mpc_emu[:, redshift_mask]
+mask = mask[:, redshift_mask]
 
 rel_diff = p1d_Mpc_emu / p1d_Mpc_sm - 1
 rel_diff[~mask] = 0

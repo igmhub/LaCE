@@ -37,8 +37,8 @@ rcParams["font.family"] = "STIXGeneral"
 # suite and therefore the central/seed samples and training-data convention.
 
 # %%
-emulator_label = "CH24_mpgcen_gpr"
-# emulator_label = "CH24_nyxcen_gpr"
+# emulator_label = "CH24_mpgcen_gpr"
+emulator_label = "CH24_nyxcen_gpr"
 emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
 
 if emulator_label == "CH24_mpgcen_gpr":
