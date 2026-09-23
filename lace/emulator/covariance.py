@@ -3,9 +3,15 @@ from scipy.optimize import curve_fit
 from lace.emulator.gp_emulator_multi import GPEmulator
 
 
-def data_for_l10_lace(archive, emulator_label, suite="nyx"):
+def data_for_l10_lace(archive, emulator_label, model_path, suite="nyx"):
     """
-    Compute the covariance matrix of the emulator
+    Compute emulator covariance using externally stored L1O models.
+
+    Parameters
+    ----------
+    model_path
+        Directory containing the leave-one-out model and metadata files for
+        ``emulator_label``.
     """
 
     # number of simulations
@@ -62,6 +68,7 @@ def data_for_l10_lace(archive, emulator_label, suite="nyx"):
             emulator_label=emulator_label,
             train=False,
             drop_sim=suite + "_" + str(isim),
+            model_path=model_path,
         )
 
         for iz in range(len(testing_data)):

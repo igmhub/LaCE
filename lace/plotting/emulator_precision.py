@@ -164,10 +164,11 @@ class EmulatorPrecisionPlotter:
     def compute_leave_one_out_precision(
         self,
         *,
+        model_path: str | Path,
         testing_prefix: str | None = None,
         stop_simulation: str | None = None,
     ) -> dict[str, np.ndarray | str]:
-        """Compute L1O percentile bands using one emulator for each excluded simulation."""
+        """Compute L1O precision using models from ``model_path``."""
         if self.archive is None or self.emulator_label is None:
             raise ValueError("archive and emulator_label are required for leave-one-out precision.")
         prefix = testing_prefix or ("nyx" if self.emulator_label.startswith("CH24_nyx") else "mpg")
@@ -180,7 +181,11 @@ class EmulatorPrecisionPlotter:
                 break
             testing_data = self.archive.get_testing_data(simulation)
             left_out_emulator = GPEmulator(
-                emulator_label=self.emulator_label, archive=self.archive, train=False, drop_sim=simulation
+                emulator_label=self.emulator_label,
+                archive=self.archive,
+                train=False,
+                drop_sim=simulation,
+                model_path=model_path,
             )
             for entry in testing_data:
                 required = ("kF_Mpc", "sigT_Mpc", "gamma")
@@ -260,7 +265,7 @@ class EmulatorPrecisionPlotter:
         data = self.compute_smoothing_precision(training_data, kmax_Mpc=kmax_Mpc)
         return self._plot_percentile_precision(data, ylabel=r"$P_\mathrm{1D}^\mathrm{sim}/P_\mathrm{1D}^\mathrm{smooth}-1$", xlim=None, ax=ax, fontsize=fontsize, save_zenodo=save_zenodo, zenodo_filename=zenodo_filename, zenodo_directory=zenodo_directory)
 
-    def plot_leave_one_out_precision(self, *, testing_prefix: str | None = None, stop_simulation: str | None = None, ax: plt.Axes | None = None, fontsize: int = 24, save_zenodo: bool = False, zenodo_filename: str | None = None, zenodo_directory: str | Path | None = None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]:
+    def plot_leave_one_out_precision(self, *, model_path: str | Path, testing_prefix: str | None = None, stop_simulation: str | None = None, ax: plt.Axes | None = None, fontsize: int = 24, save_zenodo: bool = False, zenodo_filename: str | None = None, zenodo_directory: str | Path | None = None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]:
         """Plot leave-one-out percentile precision and optionally export its data."""
-        data = self.compute_leave_one_out_precision(testing_prefix=testing_prefix, stop_simulation=stop_simulation)
+        data = self.compute_leave_one_out_precision(model_path=model_path, testing_prefix=testing_prefix, stop_simulation=stop_simulation)
         return self._plot_percentile_precision(data, ylabel=r"$P_\mathrm{1D}^\mathrm{emu}/P_\mathrm{1D}^\mathrm{smooth}-1$", xlim=(0.08, 4.0), ax=ax, fontsize=fontsize, save_zenodo=save_zenodo, zenodo_filename=zenodo_filename, zenodo_directory=zenodo_directory)
