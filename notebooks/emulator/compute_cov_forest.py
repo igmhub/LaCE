@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.19.1
+#       jupytext_version: 1.19.5
 #   kernelspec:
 #     display_name: lace
 #     language: python
@@ -31,17 +31,17 @@ import lace
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator.gp_emulator_multi import GPEmulator
 
-from cup1d.likelihood.interface_emu import P1D_emulator
+# from cup1d.likelihood.interface_emu import P1D_emulator
 from lace.cosmo import cosmology
 
 # %% [markdown]
 # ### Set archive
 
 # %%
-archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
+archive = gadget_archive.GadgetArchive()
 
 # %%
-archive = nyx_archive.NyxArchive(nyx_version="models_Nyx_Sept2025_include_Nyx_fid_rseed")
+archive = nyx_archive.NyxArchive()
 
 # %%
 from forestflow.archive import GadgetArchive3D

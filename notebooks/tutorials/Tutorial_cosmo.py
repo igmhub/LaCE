@@ -95,7 +95,7 @@ test = rescale_cosmology.RescaledCosmology(fid_cosmo=cosmos[0], new_params_dict=
 # %%
 try:
     bad_test = rescale_cosmology.RescaledCosmology(fid_cosmo=cosmos[0], new_params_dict={'H0':74})
-except AssertionError as error:
+except rescale_cosmology.IncompatibleBackgroundError as error:
     print(error)
 
 # %%

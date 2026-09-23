@@ -28,7 +28,10 @@
 import numpy as np
 
 from lace.cosmo.cosmology import Cosmology
-from lace.cosmo.rescale_cosmology import RescaledCosmology
+from lace.cosmo.rescale_cosmology import (
+    IncompatibleBackgroundError,
+    RescaledCosmology,
+)
 from lace.plotting.cosmology import plot_ratio_curves
 
 z_target = 2.33  # example target redshift for emulator parameters
@@ -134,8 +137,8 @@ background_change = {"H0": 74.0}
 assert not fiducial.same_background(background_change)
 try:
     RescaledCosmology(fiducial, background_change)
-except AssertionError as error:
-    assert str(error) == "background not fixed"
+except IncompatibleBackgroundError as error:
+    print(error)
 else:
     raise AssertionError("RescaledCosmology accepted a changed background")
 
