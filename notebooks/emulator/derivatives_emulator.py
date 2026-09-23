@@ -28,7 +28,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from lace.emulator.emulator_manager import set_emulator
+from lace.emulator import set_emulator
 from lace.emulator.central_parameters import get_central_parameters_z3
 
 # %% [markdown]

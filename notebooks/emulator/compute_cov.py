@@ -27,7 +27,7 @@ import numpy as np
 import lace
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator.covariance import data_for_l10_lace
-from lace.emulator.gp_emulator_multi import GPEmulator
+from lace.emulator import set_emulator
 from lace.plotting import (
     plot_l1o_bias,
     plot_l1o_correlation,
@@ -51,7 +51,7 @@ elif emulator_label == "CH24_nyxcen_gpr":
 else:
     raise ValueError("Use CH24_mpgcen_gpr or CH24_nyxcen_gpr.")
 
-emulator = GPEmulator(emulator_label=emulator_label)
+emulator = set_emulator(emulator_label)
 
 # %% [markdown]
 # ## Run the leave-one-out calculation

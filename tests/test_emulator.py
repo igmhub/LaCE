@@ -1,8 +1,14 @@
 """Regression tests for the packaged P1D emulator."""
 
 import numpy as np
+import pytest
 
-from lace.emulator.emulator_manager import set_emulator
+from lace.emulator import set_emulator
+
+
+def test_unsupported_emulator_label_is_rejected():
+    with pytest.raises(ValueError, match="Supported emulators"):
+        set_emulator("CH24_mpg_gpr")
 
 
 def test_ch24_mpgcen_gpr_emulation():

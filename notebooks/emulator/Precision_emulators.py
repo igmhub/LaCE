@@ -22,7 +22,7 @@
 # %load_ext autoreload
 # %autoreload 2
 from lace.archive import gadget_archive, nyx_archive
-from lace.emulator.gp_emulator_multi import GPEmulator
+from lace.emulator import set_emulator
 from lace.plotting import EmulatorPrecisionPlotter, complete_igm_parameters
 
 from matplotlib import rcParams
@@ -54,7 +54,7 @@ elif emulator_label == "CH24_nyxcen_gpr":
 else:
     raise ValueError("Precision_emulators supports CH24_mpgcen_gpr or CH24_nyxcen_gpr.")
 
-emulator = GPEmulator(emulator_label=emulator_label)
+emulator = set_emulator(emulator_label)
 
 # %% [markdown]
 # ## Testing-simulation precision

@@ -16,7 +16,8 @@ from torch.optim import lr_scheduler
 
 # LaCE modules
 import lace
-from lace.emulator import nn_architecture, base_emulator
+from lace.emulator import base_emulator
+from . import nn_architecture
 from lace.utils import poly_p1d
 from lace.emulator.constants import (
     TrainingSet,

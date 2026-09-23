@@ -8,8 +8,8 @@ from pathlib import Path
 # our modules
 from lace.archive import (gadget_archive, 
                           nyx_archive)
-from lace.emulator.nn_emulator import NNEmulator
-from lace.emulator.gp_emulator import GPEmulator
+from lace.emulator.old_nn_emulator.nn_emulator import NNEmulator
+from lace.emulator.old_gp_emulator.gp_emulator import GPEmulator
 from lace.emulator.constants import PROJ_ROOT
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

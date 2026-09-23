@@ -8,7 +8,7 @@ import argparse  # Used for parsing command-line arguments
 
 ## LaCE specific modules
 import lace
-from lace.emulator.nn_emulator import NNEmulator
+from lace.emulator.old_nn_emulator.nn_emulator import NNEmulator
 from lace.archive import nyx_archive, gadget_archive
 from lace.utils import poly_p1d
 from lace.plotting.emulator import plot_p1d_vs_emulator

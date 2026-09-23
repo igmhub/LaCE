@@ -29,7 +29,7 @@
 # %autoreload 2
 
 import numpy as np
-from lace.emulator.emulator_manager import set_emulator
+from lace.emulator import set_emulator
 from lace.archive import gadget_archive
 from lace.plotting import plot_emulator_predictions, plot_parameter_corner
 

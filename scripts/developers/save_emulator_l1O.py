@@ -2,7 +2,7 @@ import argparse
 import sys
 import torch
 import numpy as np
-from lace.emulator.nn_emulator import NNEmulator
+from lace.emulator.old_nn_emulator.nn_emulator import NNEmulator
 from lace.archive import nyx_archive, gadget_archive
 from lace.configuration import get_path_repo
 
