@@ -56,15 +56,30 @@ emulator = set_emulator(emulator_label)
 # %% [markdown]
 # ## Run the leave-one-out calculation
 #
+# The L1O models are not distributed with LaCE. When prompted, provide their
+# external root directory, such as
+# ``/home/jchaves/Proyectos/projects/lya/data/lace/GPmodels_l10``. The selected
+# emulator label must be a subdirectory of that root.
+#
 # The Nyx emulator covariance is restricted to $z \leq 4.2$, including the
 # $z=4.2$ bin. Higher-redshift Nyx spectra are excluded before constructing
 # the covariance, rather than retained as zero-valued masked entries. The MPG
 # calculation continues to use every available redshift.
 
 # %%
+l1o_models_root = Path(
+    input("Root directory containing the L1O emulator directories: ")
+).expanduser()
+l1o_model_path = l1o_models_root / emulator_label
+if not l1o_model_path.is_dir():
+    raise FileNotFoundError(
+        f"L1O model directory does not exist: {l1o_model_path}"
+    )
+
 zz, k_Mpc, p1d_Mpc_orig, p1d_Mpc_sm, p1d_Mpc_emu, mask = data_for_l10_lace(
     archive,
     emulator_label,
+    l1o_model_path,
     suite=suite,
 )
 

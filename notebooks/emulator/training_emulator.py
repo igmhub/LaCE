@@ -20,6 +20,8 @@
 # %load_ext autoreload
 # %autoreload 2
 
+from pathlib import Path
+
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator.gp_emulator_multi import GPEmulator
 
@@ -51,9 +53,19 @@ emulator = GPEmulator(
 # ## Train leave-one-out (L1O) emulators
 #
 # This trains one emulator per simulation after removing that simulation from
-# the training set.  Nyx training is limited to its first 14 simulations.
+# the training set. These large L1O models are intentionally stored outside
+# the LaCE repository. When prompted, provide their root directory, such as
+# ``/home/jchaves/Proyectos/projects/lya/data/lace/GPmodels_l10``. The selected
+# emulator label is created below that root. Nyx training is limited to its
+# first 14 simulations.
 
 # %%
+l1o_models_root = Path(
+    input("Root directory in which to save L1O emulator directories: ")
+).expanduser()
+l1o_model_path = l1o_models_root / emulator_label
+l1o_model_path.mkdir(parents=True, exist_ok=True)
+
 for ii, isim in enumerate(archive.list_sim_cube):
     if (ii >= 14) & ("nyx" in emulator_label):
         continue
@@ -63,4 +75,5 @@ for ii, isim in enumerate(archive.list_sim_cube):
         archive=archive,
         train=True,
         drop_sim=isim,
+        model_path=l1o_model_path,
     )

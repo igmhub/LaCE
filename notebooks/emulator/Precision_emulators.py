@@ -96,12 +96,28 @@ _, _, smoothing_plot_data = precision_plotter.plot_smoothing_precision(
 #
 # One emulator is trained without each simulation and compared with that
 # simulation. The bands show $P_\mathrm{1D}^\mathrm{emu}/P_\mathrm{1D}^
-# \mathrm{smooth}-1$. The Nyx calculation keeps its historical stopping point.
+# \mathrm{smooth}-1$. The L1O models are not distributed with LaCE. When
+# prompted, provide their external root directory, such as
+# ``/home/jchaves/Proyectos/projects/lya/data/lace/GPmodels_l10``. The selected
+# emulator label must be a subdirectory of that root. The Nyx calculation keeps
+# its historical stopping point.
 
 # %%
+from pathlib import Path
+
+l1o_models_root = Path(
+    input("Root directory containing the L1O emulator directories: ")
+).expanduser()
+l1o_model_path = l1o_models_root / emulator_label
+if not l1o_model_path.is_dir():
+    raise FileNotFoundError(
+        f"L1O model directory does not exist: {l1o_model_path}"
+    )
+
 leave_one_out_stop = "nyx_14" if emulator_label.startswith("CH24_nyx") else None
 
 _, _, leave_one_out_plot_data = precision_plotter.plot_leave_one_out_precision(
+    model_path=l1o_model_path,
     testing_prefix="nyx" if emulator_label.startswith("CH24_nyx") else "mpg",
     stop_simulation=leave_one_out_stop,
     save_zenodo=False,
