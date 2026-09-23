@@ -8,264 +8,206 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.19.5
 #   kernelspec:
-#     display_name: emulators2
+#     display_name: lace
 #     language: python
-#     name: emulators2
+#     name: python3
 # ---
 
 # %% [markdown]
-# # Load archive and plot P1D as a function of parameters
+# # Explore LaCE simulation archives
+#
+# This tutorial loads the Gadget and Nyx simulation archives, visualizes their
+# emulator training domains, and compares their saved IGM histories. Reusable
+# figures are implemented in `lace.plotting.ArchivePlotter`; this notebook only
+# selects the data and interprets the resulting plots.
+
+# %% [markdown]
+# ## Imports and plotting API
+#
+# The archive classes load simulation entries. `ArchivePlotter` converts their
+# scalar parameters into consistently labelled Matplotlib figures without
+# writing files unless an explicit `save_path` is supplied.
 
 # %%
 # %matplotlib inline
 # %load_ext autoreload
 # %autoreload 2
+
 import numpy as np
-import matplotlib.pyplot as plt
-import os
+
 from lace.archive.gadget_archive import GadgetArchive
 from lace.archive.nyx_archive import NyxArchive
-from lace.configuration import get_nyx_path
+from lace.configuration import get_nyx_path, get_path_repo
+from lace.plotting import ArchivePlotter, PARAMETER_LABELS
 
 
 # %% [markdown]
-# ### Load archive
-
-# %%
-plot_archive='Gadget'
-
-# %%
-if plot_archive=='Gadget':
-    archive = GadgetArchive(postproc='Cabayol23')
-elif plot_archive=='Nyx':
-    nyx_path = '/pscratch/sd/l/lcabayol/P1D/Nyx_files/'
-    nyx_version = "Oct2023"
-    archive = NyxArchive(nyx_version=nyx_version, nyx_path=nyx_path, verbose=True)
-
-# %%
-for sim in archive.list_sim:
-    if sim in archive.list_sim_test:
-        print(sim)
-
-# %%
-emu_params=['Delta2_p', 'n_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
-training_data=archive.get_training_data(emu_params=emu_params)
-
-# %% [markdown]
-# ### Plot linear power parameters for all entries in archive
+# ## Load the Gadget archive
 #
-# For a given simulation, the slope ($n_p$) is constant accross redshifts, but the amplitude ($\Delta_p^2$) increases with time.
+# The Cabayol23 post-processing supplies the MPG simulations. We construct the
+# archive and its plotter once and reuse both throughout the notebook.
 
 # %%
-archive.plot_samples('n_p','Delta2_p')
+gadget_archive = GadgetArchive(postproc="Cabayol23")
+gadget_plotter = ArchivePlotter(gadget_archive)
+
 
 # %% [markdown]
-# Because all simulations in the emulator have the same background cosmology, the logarithmic growth rate ($f_p$) is only a function of redshift.
-
-# %%
-archive.plot_samples('z','f_p')
-
-# %% [markdown]
-# ### Plot IGM parameters for all entries in archive
+# ## Inspect simulations and construct the training sample
 #
-# Mean flux as a function of redshift
+# Each archive simulation contributes snapshots and post-processing variants.
+# The training sample combines the archive entries according to the archive's
+# existing selection rules. These seven parameters span the emulator domain.
 
 # %%
-archive.plot_samples('z','mF')
-
-# %% [markdown]
-# Temperature - density relation described as a power law ($T_0$, $\gamma$)
-
-# %%
-archive.plot_samples('T0','gamma')
-
-# %% [markdown]
-# Internally, the emulator uses the thermal broadening length ($\sigma_T$, in units of Mpc). Because of the conversion from km/s to Mpc, the relation between $T_0$ and $\sigma_T$ depends on redshift.
-
-# %%
-archive.plot_samples('T0','sigT_Mpc')
-
-# %% [markdown]
-# Gas pressure is parameterised as the filteringh length ($k_F$, in inverse Mpc), and it is also correlated with temperature
-
-# %%
-archive.plot_samples('sigT_Mpc','kF_Mpc')
-
-# %% [markdown]
-# ### All projections together
-
-# %%
-take_pars = ['Delta2_p', 'n_p', 'alpha_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
-nelem = len(training_data)
-pars_all = np.zeros((nelem, len(take_pars)))
-for ii in range(nelem):
-    for jj in range(len(take_pars)):
-        pars_all[ii, jj] = training_data[ii][take_pars[jj]]
-
-# %%
-data = pars_all
-
-# %%
-take_pars2 = [r'$\Delta^2_p$', r'$n_p$', r'$\alpha_p$', r'$\bar{F}$', r'$\sigma_T$', r'$\gamma$', r'$k_F$']
-
-# %%
-# Get the number of dimensions (columns in the data)
-num_dimensions = data.shape[1]
-
-# Determine the layout for subplots
-num_rows = 3  # You can adjust the number of rows and columns based on your preference
-num_cols = (num_dimensions + 1) // num_rows
-
-# Create subplots
-fig, axs = plt.subplots(num_rows, num_cols, figsize=(8, 8))
-# fig.suptitle('Scatter Plots of Data Projections Along the Second Axis', fontsize=16)
-
-# Flatten axs if it's a 2D array
-if num_rows > 1:
-    axs = axs.flatten()
-
-# Create scatter plots for all pairs of dimensions
-for i in range(num_dimensions-1):
-    axs[i].scatter(data[:, i], data[:, i+1],  s=1)
-#     axs[i].set_title(f'Dimension {i} vs Dimension {j}')
-    axs[i].set_xlabel(take_pars2[i])
-    axs[i].set_ylabel(take_pars2[i+1])
-axs[-1].axis('off')
-# Adjust layout and show the plot
-plt.tight_layout()
-plt.savefig('project_lace.pdf', dpi=800)
-
-# %%
-nyx_path = '/pscratch/sd/l/lcabayol/P1D/Nyx_files/'
-nyx_version = "Oct2023"
-nyx_archive = NyxArchive(nyx_version=nyx_version, nyx_path=nyx_path, verbose=True)
-
-# %%
-emu_params=['Delta2_p', 'n_p','alpha_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
-training_data_nyx=nyx_archive.get_training_data(emu_params=emu_params)
-
-# %%
-take_pars = ['Delta2_p', 'n_p','alpha_p','mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']
-training_data_nyx= nyx_archive.get_training_data(emu_params=emu_params)
-nelem = len(training_data_nyx)
-pars_all_nyx = np.zeros((nelem, len(take_pars)))
-for ii in range(nelem):
-    for jj in range(len(take_pars)):
-        pars_all_nyx[ii, jj] = training_data_nyx[ii][take_pars[jj]]
-
-# %%
-data_nyx = pars_all_nyx.copy()
-
-# %%
-# Get the number of dimensions (columns in the data)
-num_dimensions = data.shape[1]
-
-# Determine the layout for subplots
-num_rows = 3  # You can adjust the number of rows and columns based on your preference
-num_cols = (num_dimensions + 1) // num_rows
-# Create subplots
-fig, axs = plt.subplots(num_rows, num_cols, figsize=(8, 8))
-# fig.suptitle('Scatter Plots of Data Projections Along the Second Axis', fontsize=16)
-
-# Flatten axs if it's a 2D array
-if num_rows > 1:
-    axs = axs.flatten()
-
-# Create scatter plots for all pairs of dimensions
-for i in range(num_dimensions-1):
-    axs[i].scatter(data_nyx[:, i], data_nyx[:, i+1],  s=1,color='goldenrod', alpha=0.3)
-    axs[i].scatter(data[:, i], data[:, i+1],  s=1, color='salmon')
-
-
-#     axs[i].set_title(f'Dimension {i} vs Dimension {j}')
-    axs[i].set_xlabel(take_pars2[i])
-    axs[i].set_ylabel(take_pars2[i+1])
-#axs[-1].axis('off')
-# Adjust layout and show the plot
-plt.tight_layout()
-plt.savefig('project_lace_comparison.pdf', dpi=800)
-# %%
-
-# %%
+print("Test simulations:", gadget_archive.list_sim_test)
+training_parameters = [
+    "Delta2_p",
+    "n_p",
+    "alpha_p",
+    "mF",
+    "sigT_Mpc",
+    "gamma",
+    "kF_Mpc",
+]
+gadget_training_data = gadget_plotter.get_training_data(
+    training_parameters, average="both"
+)
+print(f"Averaged training entries: {len(gadget_training_data)}")
 
 
 # %% [markdown]
-# ### IGM histories
+# ## Individual relationships in the selected training domain
+#
+# These projections show how the linear-power and IGM parameters populate the
+# selected archive. Points are coloured by redshift, so redshift evolution can
+# be distinguished from variation across simulations.
 
 # %%
-os.environ["LACE_REPO"] = '/global/homes/l/lcabayol/P1D/LaCE'
+parameter_pairs = [
+    ("n_p", "Delta2_p"),
+    ("z", "f_p"),
+    ("z", "mF"),
+    ("T0", "gamma"),
+    ("T0", "sigT_Mpc"),
+    ("sigT_Mpc", "kF_Mpc"),
+]
+for x_parameter, y_parameter in parameter_pairs:
+    gadget_plotter.plot_parameter_pair(
+        x_parameter, y_parameter, data=gadget_training_data
+    )
 
-# %%
-folder = os.environ["LACE_REPO"] + "/data/sim_suites/Australia20/"
-igm_lace = np.load(folder + "IGM_histories.npy", allow_pickle=True).item()
-igm_nyx = np.load(get_nyx_path(nyx_path) / "IGM_histories.npy", allow_pickle=True).item()
 
 # %% [markdown]
-# Plot lace
+# ## Adjacent projections through the full emulator domain
+#
+# The panels join neighbouring parameters in the emulator input order. They
+# provide a compact view of correlations between linear power, mean flux,
+# thermal broadening, the temperature-density slope, and filtering length.
 
 # %%
-fig, ax = plt.subplots(2, 2, sharex=True)
-ax = ax.reshape(-1)
-for sim in igm_lace.keys():
-    if(sim == "nyx_14"):
-        continue
-    if((sim == 'nyx_central') | (sim == 'mpg_reio')):
-        col = 'r'
-        alpha = 1
-    else:
-        col = 'k'
-        alpha = 0.2
-        
-    par = ['tau_eff', 'gamma', 'sigT_kms', 'kF_kms']
-    for jj in range(len(par)):
-        _ = igm_lace[sim][par[jj]] != 0
-        ax[jj].plot(igm_lace[sim]['z'][_], igm_lace[sim][par[jj]][_], col, alpha=alpha)
+parameter_labels = {
+    parameter: PARAMETER_LABELS[parameter] for parameter in training_parameters
+}
+gadget_plotter.plot_parameter_sequence(
+    training_parameters, data=gadget_training_data, labels=parameter_labels
+)
 
-xlabs = [None, None, r'$z$', r'$z$']
-ylabs = [r'$\tau_\mathrm{eff}$', r'$\gamma$', r'$\sigma_T$', r'$k_F$']
-for ii in range(4):
-    ax[ii].set_xlabel(xlabs[ii])
-    ax[ii].set_ylabel(ylabs[ii])
-plt.tight_layout()
-# plt.savefig('/home/jchaves/Proyectos/projects/lya/data/nyx/IGM_histories.png')
-# plt.savefig('/home/jchaves/Proyectos/projects/lya/data/nyx/IGM_histories.pdf')
 
 # %% [markdown]
-# ### Compare Nyx and LaCE
+# ## Dependence of the one-dimensional power spectrum on IGM parameters
+#
+# Each figure uses training data averaged over phase and line-of-sight-axis
+# repetitions. Those repetitions are useful for emulator training but obscure
+# this diagnostic plot. The averaged spectra expose how mean flux, thermal
+# broadening, the temperature-density slope, and filtering length change the
+# scale dependence of $k_\parallel P_{\rm 1D}$. Only
+# $0 < k_\parallel < 10\,\mathrm{Mpc}^{-1}$ is displayed.
 
 # %%
-fig, ax = plt.subplots(2, 2, sharex=True)
-ax = ax.reshape(-1)
+for parameter in ["mF"]:
+    gadget_plotter.plot_p1d_dependence(
+        parameter, data=gadget_training_data, max_curves=None
+    )
 
-for sim in igm_lace.keys():
-    res = igm_lace
-    col = 'k'
-    alpha = 0.2
-        
-    par = ['tau_eff', 'gamma', 'sigT_kms', 'kF_kms']
-    for jj in range(len(par)):
-        _ = res[sim][par[jj]] != 0
-        ax[jj].plot(res[sim]['z'][_], res[sim][par[jj]][_], col, alpha=alpha)
 
-for sim in igm_nyx.keys():
-    res = igm_nyx
-    if(sim == "nyx_14"):
-        continue
-    col = 'r'
-    alpha = 0.2
-        
-    par = ['tau_eff', 'gamma', 'sigT_kms', 'kF_kms']
-    for jj in range(len(par)):
-        _ = res[sim][par[jj]] != 0
-        ax[jj].plot(res[sim]['z'][_], res[sim][par[jj]][_], col, alpha=alpha)
+# %% [markdown]
+# ## Load the Nyx archive for a training-domain comparison
+#
+# The comparison uses the same emulator parameters for both data sets. This
+# makes differences in their coverage visible without changing the axes or the
+# archive selection rules.
 
-xlabs = [None, None, r'$z$', r'$z$']
-ylabs = [r'$\tau_\mathrm{eff}$', r'$\gamma$', r'$\sigma_T$', r'$k_F$']
-for ii in range(4):
-    ax[ii].set_xlabel(xlabs[ii])
-    ax[ii].set_ylabel(ylabs[ii])
-plt.tight_layout()
-plt.savefig('igm_histories.pdf', bbox_inches='tight')
-# plt.savefig('/home/jchaves/Proyectos/projects/lya/data/nyx/IGM_histories_lace_nyx.png')
-# plt.savefig('/home/jchaves/Proyectos/projects/lya/data/nyx/IGM_histories_lace_nyx.pdf')
+# %%
+nyx_archive = NyxArchive()
+nyx_plotter = ArchivePlotter(nyx_archive)
+nyx_training_data = nyx_plotter.get_training_data(
+    training_parameters, average="both"
+)
+
+
+# %% [markdown]
+# ## Compare Gadget and Nyx emulator domains
+#
+# Each panel overlays the same adjacent parameter projection for both archives.
+# The colours identify the simulation suite; they do not encode redshift in
+# this figure.
+
+# %%
+gadget_plotter.compare_parameter_sequences(
+    {"Gadget": gadget_training_data, "Nyx": nyx_training_data},
+    training_parameters,
+    parameter_labels=parameter_labels,
+    colors=["salmon", "goldenrod"],
+    alphas=[0.5, 0.3],
+)
+
+
+# %% [markdown]
+# ## Load saved IGM histories
+#
+# The Gadget histories are versioned with the LaCE repository. Nyx histories
+# are read from the configured Nyx directory. A zero entry in these files marks
+# an unavailable quantity and is masked by the plotting routines.
+
+# %%
+gadget_history_path = (
+    get_path_repo() / "data" / "sim_suites" / "Australia20" / "IGM_histories.npy"
+)
+nyx_history_path = get_nyx_path() / "IGM_histories.npy"
+gadget_histories = np.load(gadget_history_path, allow_pickle=True).item()
+nyx_histories = np.load(nyx_history_path, allow_pickle=True).item()
+
+
+# %% [markdown]
+# ## Plot Gadget IGM histories
+#
+# The figure shows redshift evolution of effective optical depth, the
+# temperature-density slope, thermal broadening, and filtering length. The
+# `nyx_central` and `mpg_reio` histories are highlighted when they are present;
+# `nyx_14` is excluded to retain the original notebook selection.
+
+# %%
+ArchivePlotter.plot_igm_histories(
+    gadget_histories,
+    highlighted_simulations=["nyx_central", "mpg_reio"],
+    excluded_simulations=["nyx_14"],
+)
+
+
+# %% [markdown]
+# ## Compare Gadget and Nyx IGM histories
+#
+# This overlays the available histories from each suite. The same physical
+# quantities and redshift axes are used in every panel, allowing direct visual
+# comparison of the thermal and ionization histories.
+
+# %%
+ArchivePlotter.compare_igm_histories(
+    {"Gadget": gadget_histories, "Nyx": nyx_histories},
+    colors=["black", "red"],
+    alphas=[0.2, 0.2],
+    excluded_simulations=["nyx_14"],
+)
+
 # %%

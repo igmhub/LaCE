@@ -2,6 +2,21 @@ import numpy as np
 from lace.cosmo import base_cosmology
 
 
+class IncompatibleBackgroundError(ValueError):
+    """Raised when primordial rescaling cannot represent a cosmology."""
+
+    def __init__(self, changes):
+        self.changes = changes
+        details = "; ".join(
+            f"{name}: fiducial={old_value!r}, requested={new_value!r}"
+            for name, (old_value, new_value) in changes.items()
+        )
+        super().__init__(
+            "RescaledCosmology requires unchanged background parameters; "
+            + details
+        )
+
+
 class RescaledCosmology(base_cosmology.BaseCosmology):
     """
     Given a fiducial cosmology, make predictions for other cosmologies
@@ -13,8 +28,16 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         if verbose:
             print("inside RescaledCosmology.__ini__")
 
-        # make sure that you are not modifying the background
-        assert fid_cosmo.same_background(new_params_dict), "background not fixed"
+        changes = self._get_background_changes(fid_cosmo, new_params_dict)
+        if changes:
+            raise IncompatibleBackgroundError(changes)
+
+        pivot_scalar = fid_cosmo.CAMBparams.InitPower.pivot_scalar
+        if not np.isclose(pivot_scalar, 0.05, rtol=0.0, atol=1e-12):
+            raise ValueError(
+                "RescaledCosmology requires pivot_scalar=0.05 1/Mpc; "
+                f"fiducial pivot_scalar={pivot_scalar!r} 1/Mpc"
+            )
 
         self.fid_cosmo = fid_cosmo
         if new_params_dict is None:
@@ -26,6 +49,22 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         super().__init__(verbose)
 
         return
+
+    @staticmethod
+    def _get_background_changes(fid_cosmo, new_params_dict):
+        """Return requested background changes as old/new value pairs."""
+
+        if new_params_dict is None:
+            return {}
+        changes = {}
+        for name, old_value in fid_cosmo.get_background_params().items():
+            if name not in new_params_dict:
+                continue
+            new_value = new_params_dict[name]
+            tolerance = 1e-4 if name == "mnu" else 0.0
+            if not np.isclose(old_value, new_value, rtol=0.0, atol=tolerance):
+                changes[name] = (old_value, new_value)
+        return changes
 
 
     # overwrite virtual functions in base class
@@ -69,7 +108,6 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
 
         # assume standard pivot point
         k_s = self.fid_cosmo.CAMBparams.InitPower.pivot_scalar
-        assert k_s == 0.05
         ln_k_over_k_s = np.log(k_Mpc / k_s)
 
         # modifications in this cosmology

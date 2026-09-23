@@ -39,14 +39,8 @@ Emulators
 
 .. autosummary::
    :toctree: generated
-   :recursive:
 
-   lace.emulator.base_emulator
-   lace.emulator.emulator_manager
-   lace.emulator.gp_emulator_multi
-   lace.emulator.gp_emulator
-   lace.emulator.nn_emulator
-   lace.emulator.covariance
+   lace.emulator.set_emulator
 
 Utilities
 ---------

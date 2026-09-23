@@ -45,6 +45,7 @@ class GPEmulator(base_emulator.BaseEmulator):
         train=False,
         save=False,
         n_restarts_optimizer=0,
+        model_path=None,
     ):
         self.emulator_label = emulator_label
         self.drop_sim = drop_sim
@@ -67,7 +68,10 @@ class GPEmulator(base_emulator.BaseEmulator):
             )
 
         repo = os.path.dirname(lace.__path__[0])
-        folder_save = os.path.join(repo, "data", "GPmodels", emulator_label)
+        if model_path is None:
+            folder_save = os.path.join(repo, "data", "GPmodels", emulator_label)
+        else:
+            folder_save = os.path.abspath(os.path.expanduser(os.fspath(model_path)))
         os.makedirs(folder_save, exist_ok=True)
         if train:
             print("Storing emulator in " + folder_save)

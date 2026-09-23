@@ -11,6 +11,19 @@ DEFAULT_NYX_PATH = Path(
 )
 
 
+def get_path_repo() -> Path:
+    """Return the LaCE repository root inferred from the installed package.
+
+    This is useful for developer scripts and notebooks that operate on the
+    repository's ``data`` directory.  It works naturally for an editable
+    installation, without requiring a ``LACE_REPO`` environment variable.
+    """
+
+    import lace
+
+    return Path(lace.__path__[0]).parent
+
+
 def get_paths_config_path() -> Path:
     """Return the user-level file that stores local LaCE data paths."""
 
