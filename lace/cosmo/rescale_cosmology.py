@@ -96,15 +96,28 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
 
         return self.fid_cosmo.compute_growth_rate(z)
 
+    def get_mnu(self):
+        """Return the fiducial cosmology's neutrino mass in eV."""
+
+        return self.fid_cosmo.get_mnu()
+
     # other functions specific to this class below
+
+    def get_primordial_params(self):
+        """Return primordial parameters after applying the rescaling."""
+
+        params = self.fid_cosmo.get_primordial_params()
+        params.update(self.new_params)
+        return params
 
     def get_linP_Mpc_scaling(self, k_Mpc):
         """Multiplicative correction to fiducial primordial power"""
 
         # primordial power in fiducial cosmology
-        fid_As = self.fid_cosmo.CAMBparams.InitPower.As
-        fid_ns = self.fid_cosmo.CAMBparams.InitPower.ns
-        fid_nrun = self.fid_cosmo.CAMBparams.InitPower.nrun
+        fid_params = self.fid_cosmo.get_primordial_params()
+        fid_As = fid_params["As"]
+        fid_ns = fid_params["ns"]
+        fid_nrun = fid_params["nrun"]
 
         # assume standard pivot point
         k_s = self.fid_cosmo.CAMBparams.InitPower.pivot_scalar

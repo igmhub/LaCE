@@ -105,11 +105,13 @@ These are the parameters that describe each individual P1D(kpar) power spectrum.
 ## Notebooks / tutorials
 
 
-- All notebooks in the repository are in .py format. To generate the .ipynb version, run:
+- Notebook sources are maintained as Jupytext Python files. After `make install`, generate or refresh every notebook with:
 
 ```
-jupytext --to ipynb notebooks/*.py
+make notebooks
 ```
+
+Run this from the LaCE repository root. The target searches only `LaCE/notebooks/`, recursively, and skips Jupyter checkpoint files.
 
 - If you want to use notebooks via JupyterHub, you'll also need to download `ipykernel`:
 

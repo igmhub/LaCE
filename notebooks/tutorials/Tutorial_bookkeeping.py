@@ -46,8 +46,8 @@ cabayol23_archive = GadgetArchive(postproc='Cabayol23')
 # # %%time
 # On a non-NERSC machine, configure the local Nyx directory once:
 # set_nyx_path("/path/to/nyx_files")
-nyx_version = "Sept2025_include_Nyx_fid_rseed"
-nyx_archive = NyxArchive(nyx_version="models_Nyx_" + nyx_version, verbose=True)
+# nyx_version = "models_Nyx_Sept2025_include_Nyx_fid_rseed"
+nyx_archive = NyxArchive()
 
 # %% [markdown]
 # ### Access training data
