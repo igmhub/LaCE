@@ -354,7 +354,7 @@ class GadgetArchive(BaseArchive):
 
         if compute_linP_params == True:
             # this is the only place you actually need CAMB
-            from lace.cosmo import camb_cosmo, fit_linP
+            from lace.cosmo.cosmology import Cosmology
 
             _, sim_name_param, tag_param = self._sim2file_name(sim_label)
             pair_dir = self.fulldir_param + "/" + sim_name_param
@@ -369,17 +369,21 @@ class GadgetArchive(BaseArchive):
             cosmo_params = read_genic.camb_from_genic(genic_fname)
 
             # setup CAMB object
-            sim_cosmo = camb_cosmo.get_cosmology_from_dictionary(cosmo_params)
+            sim_cosmo = Cosmology(cosmo_params_dict=cosmo_params)
 
             # compute linear power parameters at each z (in Mpc units)
-            linP_zs = fit_linP.get_linP_Mpc_zs(sim_cosmo, zs, self.kp_Mpc)
+            linP_zs = [
+                {
+                    **sim_cosmo.get_linP_Mpc_params(z, self.kp_Mpc),
+                    "f_p": sim_cosmo.get_growth_rate(z),
+                }
+                for z in zs
+            ]
 
             # compute linear power parameters (in kms units)
-            star_params = fit_linP.parameterize_cosmology_kms(
-                sim_cosmo, None, self.z_star, self.kp_kms
-            )
+            star_params = sim_cosmo.get_linP_kms_params(self.z_star, self.kp_kms)
             # compute conversion from Mpc to km/s using cosmology
-            dkms_dMpc_zs = camb_cosmo.dkms_dMpc(sim_cosmo, z=np.array(zs))
+            dkms_dMpc_zs = sim_cosmo.get_dkms_dMpc(np.array(zs))
 
             linP_params = {}
             linP_params["kp_Mpc"] = self.kp_Mpc

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 from lace.archive import gadget_archive
-from lace.cosmo.fit_linP_cosmopower import linPCosmologyCosmopower
+from lace.old_code.fit_linP_cosmopower import linPCosmologyCosmopower  # legacy experiment
 from lace.emulator.constants import PROJ_ROOT
 
 # -

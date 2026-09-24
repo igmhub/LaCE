@@ -260,7 +260,7 @@ class NyxArchive(BaseArchive):
             # this is the only place where you need CAMB
             if self.verbose:
                 print("We are using CAMB")
-            from lace.cosmo import camb_cosmo, fit_linP
+            from lace.cosmo.cosmology import Cosmology
 
             cosmo_params = self._get_attrs(nyx_data[sim_label])
             if "h" not in cosmo_params:
@@ -274,18 +274,30 @@ class NyxArchive(BaseArchive):
             #     cosmo_params["n_s"] = 0.96
 
             # setup CAMB object
-            sim_cosmo = camb_cosmo.get_Nyx_cosmology(cosmo_params)
+            sim_cosmo = Cosmology(
+                cosmo_params_dict={
+                    "H0": cosmo_params["H_0"],
+                    "ombh2": 0.02233,
+                    "omch2": cosmo_params["omega_m"] - 0.02233,
+                    "mnu": 0.0,
+                    "As": cosmo_params["A_s"],
+                    "ns": cosmo_params["n_s"],
+                    "nrun": cosmo_params.get("nrun", 0.0),
+                }
+            )
 
             # compute linear power parameters at each z (in Mpc units)
-            linP_zs = fit_linP.get_linP_Mpc_zs(
-                sim_cosmo, self.list_sim_redshifts, self.kp_Mpc
-            )
-            star_params = fit_linP.parameterize_cosmology_kms(
-                sim_cosmo, None, self.z_star, self.kp_kms
-            )
+            linP_zs = [
+                {
+                    **sim_cosmo.get_linP_Mpc_params(z, self.kp_Mpc),
+                    "f_p": sim_cosmo.get_growth_rate(z),
+                }
+                for z in self.list_sim_redshifts
+            ]
+            star_params = sim_cosmo.get_linP_kms_params(self.z_star, self.kp_kms)
             zs = np.array(self.list_sim_redshifts)
             # compute conversion from Mpc to km/s using cosmology
-            dkms_dMpc_zs = camb_cosmo.dkms_dMpc(sim_cosmo, z=zs)
+            dkms_dMpc_zs = sim_cosmo.get_dkms_dMpc(zs)
 
             linP_params = {}
             linP_params["kp_Mpc"] = self.kp_Mpc

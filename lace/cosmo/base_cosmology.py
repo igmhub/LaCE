@@ -39,6 +39,14 @@ class BaseCosmology(object):
         """Return growth rate at z"""
         raise NotImplementedError()
 
+    def get_mnu(self):
+        """Return the total neutrino mass in eV."""
+        raise NotImplementedError()
+
+    def get_primordial_params(self):
+        """Return public primordial-spectrum parameters."""
+        raise NotImplementedError()
+
 
     # below here, no need to overwrite
 
