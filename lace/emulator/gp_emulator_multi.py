@@ -1,4 +1,5 @@
 import pickle, os, time
+from pathlib import Path
 import numpy as np
 from warnings import warn
 from scipy.interpolate import interp1d
@@ -7,6 +8,8 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern, RBF, WhiteKernel
 import lace
 from lace.emulator import base_emulator
+from lace.configuration import get_data_path
+from lace.emulator.model_manifest import ModelBundleError, load_manifest, write_manifest
 
 
 def func_poly(x, a, b, c, d, e):
@@ -46,10 +49,14 @@ class GPEmulator(base_emulator.BaseEmulator):
         save=False,
         n_restarts_optimizer=0,
         model_path=None,
+        data_path=None,
+        normalization_path=None,
     ):
         self.emulator_label = emulator_label
         self.drop_sim = drop_sim
         self.n_restarts_optimizer = n_restarts_optimizer
+        self.archive = archive
+        self.archive2 = archive2
 
         # check emulator
         emulator_label_all = [
@@ -67,14 +74,21 @@ class GPEmulator(base_emulator.BaseEmulator):
                 emulator_label_all,
             )
 
-        repo = os.path.dirname(lace.__path__[0])
+        self.data_path = get_data_path(data_path)
         if model_path is None:
-            folder_save = os.path.join(repo, "data", "GPmodels", emulator_label)
+            folder_save = self.data_path / "GPmodels" / emulator_label
         else:
-            folder_save = os.path.abspath(os.path.expanduser(os.fspath(model_path)))
-        os.makedirs(folder_save, exist_ok=True)
+            if isinstance(model_path, str) and not model_path.strip():
+                raise ValueError("model_path must not be blank")
+            folder_save = Path(model_path).expanduser()
         if train:
-            print("Storing emulator in " + folder_save)
+            folder_save.mkdir(parents=True, exist_ok=True)
+            print("Storing emulator in " + str(folder_save))
+        elif not folder_save.is_dir():
+            raise FileNotFoundError(
+                f"Model directory does not exist: {folder_save}. Pass model_path, "
+                "configure paths.data_path, or install a trusted external model bundle."
+            )
         if drop_sim is None:
             label = "full.pkl"
             label_meta = "meta.npy"
@@ -82,9 +96,20 @@ class GPEmulator(base_emulator.BaseEmulator):
             label = "drop_" + self.drop_sim + ".pkl"
             label_meta = "meta_" + self.drop_sim + ".npy"
 
-        self.folder_save = folder_save
+        self.folder_save = str(folder_save)
         self.label = label
         self.path_save_meta = os.path.join(folder_save, label_meta)
+        self.normalization_path = self._normalization_path(normalization_path, folder_save)
+        if not train:
+            self.manifest = load_manifest(
+                self.folder_save, self.emulator_label, self.label, self.normalization_path
+            )
+            if self.manifest is None:
+                warn(
+                    f"Loading legacy model bundle at {self.folder_save} without a manifest. "
+                    "Only use model files from a trusted source; provenance and compatibility are unknown.",
+                    UserWarning,
+                )
 
         if (self.emulator_label == "CH24_mpg_gpr") | (
             self.emulator_label == "CH24_mpgcen_gpr"
@@ -115,8 +140,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.func_poly = func_poly
             self.ndeg = 5
             # normalization
-            fname = os.path.join(repo, "data", "ff_mpgcen.npy")
-            self.input_norm = np.load(fname, allow_pickle=True).item()
+            self.input_norm = self._load_normalization(self.normalization_path)
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
@@ -157,8 +181,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.func_poly = func_poly
             self.ndeg = 5
             # normalization
-            fname = os.path.join(repo, "data", "ff_mpgcen.npy")
-            self.input_norm = np.load(fname, allow_pickle=True).item()
+            self.input_norm = self._load_normalization(self.normalization_path)
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
@@ -203,8 +226,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.func_poly = func_poly
             self.ndeg = 5
             # normalization
-            fname = os.path.join(repo, "data", "ff_mpgcen.npy")
-            self.input_norm = np.load(fname, allow_pickle=True).item()
+            self.input_norm = self._load_normalization(self.normalization_path)
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
@@ -257,6 +279,30 @@ class GPEmulator(base_emulator.BaseEmulator):
             self._initialize(training_data)
             self._save_emu()
 
+    def _normalization_path(self, normalization_path, folder_save):
+        if normalization_path is not None:
+            if isinstance(normalization_path, str) and not normalization_path.strip():
+                raise ValueError("normalization_path must not be blank")
+            return Path(normalization_path).expanduser()
+        # A self-contained external model root may keep ff_mpgcen.npy beside GPmodels.
+        inferred = Path(folder_save).parent.parent / "ff_mpgcen.npy"
+        return inferred if inferred.is_file() else self.data_path / "ff_mpgcen.npy"
+
+    @staticmethod
+    def _load_normalization(path):
+        path = Path(path)
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"Normalization file is missing: {path}. Provide normalization_path or "
+                "configure a data_path containing ff_mpgcen.npy."
+            )
+        try:
+            return np.load(path, allow_pickle=True).item()
+        except PermissionError as error:
+            raise PermissionError(f"Cannot read normalization file {path}") from error
+        except (OSError, ValueError, EOFError, pickle.UnpicklingError) as error:
+            raise ModelBundleError(f"Corrupt normalization file {path}: {error}") from error
+
     def _save_emu(self):
         # save emulator
         for ii in range(len(self.gp)):
@@ -282,10 +328,35 @@ class GPEmulator(base_emulator.BaseEmulator):
         if self.emu_type == "gkbin":
             metadata["k_Mpc_emu"] = self.k_Mpc_emu
         np.save(self.path_save_meta, metadata)
+        files = [Path(self.path_save_meta)] + [
+            Path(self.folder_save) / ("n" + str(ii) + "_" + self.label)
+            for ii in range(len(self.gp))
+        ]
+        provenance = {
+            "archive_class": type(self.archive).__name__,
+            "postproc": getattr(self.archive, "postproc", None),
+            "nyx_version": getattr(self.archive, "nyx_version", None),
+            "kp_Mpc": self.kp_Mpc,
+            "average": self.average,
+            "val_scaling": self.val_scaling,
+            "z_max": self.z_max,
+        }
+        write_manifest(
+            self.folder_save, self.emulator_label, self.label, files,
+            self.normalization_path, self.drop_sim, provenance,
+        )
 
     def _load_emu(self):
-        # load metadata
-        metadata = np.load(self.path_save_meta, allow_pickle=True).item()
+        # The manifest was validated before normalization and model deserialization.
+        path_meta = Path(self.path_save_meta)
+        if not path_meta.is_file():
+            raise FileNotFoundError(f"Model metadata is missing: {path_meta}. Restore a complete trusted model bundle.")
+        try:
+            metadata = np.load(path_meta, allow_pickle=True).item()
+        except PermissionError as error:
+            raise PermissionError(f"Cannot read model metadata {path_meta}") from error
+        except (OSError, ValueError, EOFError, pickle.UnpicklingError) as error:
+            raise ModelBundleError(f"Corrupt model metadata {path_meta}: {error}") from error
         self.kmin_Mpc = metadata["kmin_Mpc"]
         self.xscalings_mean = metadata["xscalings_mean"]
         self.xscalings_std = metadata["xscalings_std"]
@@ -306,8 +377,15 @@ class GPEmulator(base_emulator.BaseEmulator):
             path_save_gp = os.path.join(
                 self.folder_save, "n" + str(ii) + "_" + self.label
             )
-            with open(path_save_gp, "rb") as f:
-                self.gp.append(pickle.load(f))
+            try:
+                with open(path_save_gp, "rb") as f:
+                    self.gp.append(pickle.load(f))
+            except FileNotFoundError as error:
+                raise FileNotFoundError(f"Model checkpoint is missing: {path_save_gp}. Restore a complete trusted bundle.") from error
+            except PermissionError as error:
+                raise PermissionError(f"Cannot read model checkpoint {path_save_gp}") from error
+            except (OSError, EOFError, pickle.UnpicklingError, AttributeError, ImportError) as error:
+                raise ModelBundleError(f"Cannot load model checkpoint {path_save_gp}: {error}") from error
 
     def _training_points_gpolyfit(self, training_data):
         """
@@ -459,6 +537,30 @@ class GPEmulator(base_emulator.BaseEmulator):
         end = time.time()
         print("GPs optimised in {0:.2f} seconds".format(end - start))
 
+    def _prepare_model_input(self, model):
+        """Return a validated two-dimensional emulator input array and row count."""
+        if not isinstance(model, dict):
+            raise TypeError("model must be a dictionary of emulator parameters")
+        values = []
+        length = None
+        for param in self.emu_params:
+            if param not in model:
+                raise ValueError(f"{param} not in input model")
+            value = np.asarray(model[param])
+            if value.ndim == 0:
+                value = value.reshape(1)
+            elif value.ndim != 1:
+                raise ValueError(f"{param} must be a scalar or one-dimensional array, not shape {value.shape}")
+            if length is None:
+                length = value.size
+            elif value.size != length:
+                raise ValueError(f"All emulator parameter arrays must have the same length; {param} has {value.size}, expected {length}")
+            values.append(value)
+        try:
+            return np.column_stack(values).astype(float), length
+        except (TypeError, ValueError) as error:
+            raise ValueError("Emulator parameters must be numeric scalars or one-dimensional arrays") from error
+
     def predict(self, model):
         """
         Return P1D or polynomial fit coefficients for a given parameter set.
@@ -478,16 +580,11 @@ class GPEmulator(base_emulator.BaseEmulator):
             - numpy.ndarray: Error estimates for the predictions.
         """
 
-        try:
-            length = len(model[self.emu_params[0]])
-        except:
-            length = 1
-
-        # input
-        emu_call = np.zeros((length, len(self.emu_params)))
-        for ii, param in enumerate(self.emu_params):
-            emu_call[:, ii] = model[param]
-        emu_call = (emu_call - self.xscalings_mean) / (self.xscalings_std)
+        # Input validation is intentionally explicit: malformed arrays must not
+        # be mistaken for a one-row scalar call.
+        emu_call, _ = self._prepare_model_input(model)
+        emu_call = (emu_call - self.xscalings_mean) / self.xscalings_std
+        length = emu_call.shape[0]
 
         # output
         out_pred = np.zeros((length, len(self.tscalings_mean)))
@@ -556,13 +653,12 @@ class GPEmulator(base_emulator.BaseEmulator):
                     f"Some of the requested k's are lower than the minimum training value k={self.kmin_Mpc}"
                 )
 
-        try:
-            length = len(model[self.emu_params[0]])
-        except:
-            length = 1
-
+        _, length = self._prepare_model_input(model)
+        k_Mpc = np.asarray(k_Mpc)
         if k_Mpc.ndim == 1:
             k_Mpc = np.repeat(k_Mpc[None, :], length, axis=0)
+        elif k_Mpc.ndim != 2 or k_Mpc.shape[0] != length:
+            raise ValueError(f"k_Mpc must be one-dimensional or have {length} rows; got shape {k_Mpc.shape}")
 
         # get raw prediction from GP object
         gp_pred = self.predict(model)
@@ -570,10 +666,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         p1d = np.zeros((gp_pred.shape[0], k_Mpc.shape[1]))
 
         for ii in range(gp_pred.shape[0]):
-            try:
-                mF = model["mF"][ii]
-            except:
-                mF = model["mF"]
+            mF_values = np.asarray(model["mF"])
+            mF = mF_values.item() if mF_values.ndim == 0 else mF_values[ii]
 
             norm = np.interp(
                 k_Mpc[ii], self.input_norm["k_Mpc"], self.norm_imF(mF)

@@ -23,8 +23,7 @@ Run the local regression tests with:
 
 .. code-block:: console
 
-   python -m pip install -e ".[test]"
-   pytest -q
+   make test
 
 The suite covers the Pedersen21 archive, default cosmology reference values,
 the packaged MP-Gadget emulator, and ``RescaledCosmology`` star parameters
@@ -40,3 +39,22 @@ directory once from the command line:
 
 This stores the path in ``~/.config/lace/paths.toml``. A one-off archive can
 instead receive ``nyx_path="/path/to/nyx_files"`` directly.
+
+
+External assets and installed wheels
+------------------------------------
+
+Simulation suites and model bundles are intentionally external assets. This
+keeps a normal wheel small and avoids distributing obsolete and L1O weights.
+Set a persistent data root once (it must contain ``GPmodels/``,
+``ff_mpgcen.npy``, and, if needed, ``sim_suites/``):
+
+.. code-block:: python
+
+   from lace.configuration import set_data_path
+   set_data_path("/path/to/lace-data")
+
+An explicit ``data_path`` takes precedence over this setting; an explicit
+``model_path`` takes precedence for a single emulator. The NERSC Nyx default
+and ``set_nyx_path`` interface are unchanged. ``h5py`` is installed with LaCE
+for Nyx HDF5 archives.

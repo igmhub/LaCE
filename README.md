@@ -76,6 +76,10 @@ The suite checks the Pedersen21 archive, default cosmology reference values,
 the packaged MP-Gadget emulator, and star parameters from
 `RescaledCosmology` against fresh CAMB calculations.
 
+### External model and archive assets
+
+LaCE keeps simulation suites and L1O weights outside the package. Configure an external root containing `GPmodels`, `ff_mpgcen.npy`, and optionally `sim_suites` with `lace.configuration.set_data_path("/path/to/lace-data")`, or pass `data_path`/`model_path` to the archive or supported emulator factory. Explicit arguments take precedence over persistent configuration. See the emulator documentation for trusted-pickle, manifest, compatibility, and L1O guidance.
+
 ## Emulator parameters:
 
 These are the parameters that describe each individual P1D(kpar) power spectrum. We have detached these from redshift and traditional cosmology parameters.
@@ -118,3 +122,7 @@ In the `Notebooks` folder, there are several tutorials one can run to learn how 
 - Archive tutorial: notebooks/Tutorial_bookkeeping.py
 - Emulator tutorial: notebooks/Tutorial_emulator.py
 - Emulating compressed parameters tutorial: notebooks/Tutorial_compressedParams.ipynb
+
+### Versioning
+
+Package versions are derived from Git. Tagged releases use the tag; development builds include the commit distance and short SHA (for example, `1.2.0.dev4+gabc1234`). A dirty working tree adds `.dirty`. Source archives without Git metadata report `0+unknown`.

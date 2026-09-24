@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -28,6 +28,7 @@ dependencies = [
     "scikit-learn==1.5.2",
     "matplotlib",
     "configobj",
+    "h5py",
     "camb",
     "torch",
     "tqdm",
@@ -58,9 +59,6 @@ testpaths = ["tests"]
 
 [project.scripts]
 set_nyx_path = "lace.configuration.cli:set_nyx_path_command"
-
-[tool.setuptools.dynamic]
-version = {attr = "lace.__version__"}
 
 
 [tool.setuptools.packages.find]

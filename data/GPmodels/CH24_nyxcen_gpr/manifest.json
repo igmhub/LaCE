@@ -1,0 +1,34 @@
+{
+  "dependencies": {
+    "numpy": "2.5.1",
+    "python": "3.12.13",
+    "scikit-learn": "1.5.2",
+    "scipy": "1.18.0"
+  },
+  "emulator_label": "CH24_nyxcen_gpr",
+  "excluded_simulation": null,
+  "files": {
+    "meta.npy": "86e78eadc693eb9be1265111281b5db51136954346e4c5b1a3a6622ab348e213",
+    "n0_full.pkl": "c0d8dc451535ff7ce40fa75afb94157ef940e55296c31672a6645c1365838adc",
+    "n1_full.pkl": "959fef9a9f9d95ec2cb749afc811130021ac20cd53760e20a91f288b77199510",
+    "n2_full.pkl": "8c93c914991810371e92cc47209fbede13bd5908d29c15dff0af5dda75f1416e",
+    "n3_full.pkl": "b74a2bae1335599418efb088400d5c84ff2e4af53ac7c0f12d09116f858ae855"
+  },
+  "lace_version": "0.0.dev494+unknown.ge920a0afccaf58ee3807393901079d3456edecc9.dirty",
+  "model_label": "full.pkl",
+  "n_emulators": 4,
+  "normalization": {
+    "filename": "ff_mpgcen.npy",
+    "sha256": "7948bae5b5699ae08a75691a191c1fbccd12cb212a43c9c61c7a70b6f572ea30"
+  },
+  "schema_version": 1,
+  "training_provenance": {
+    "archive_class": "NyxArchive",
+    "average": "both",
+    "kp_Mpc": 0.7,
+    "nyx_version": "Sept2025_include_Nyx_fid_rseed",
+    "postproc": null,
+    "val_scaling": null,
+    "z_max": 5.5
+  }
+}
