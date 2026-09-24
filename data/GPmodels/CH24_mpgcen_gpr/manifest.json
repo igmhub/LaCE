@@ -1,0 +1,32 @@
+{
+  "dependencies": {
+    "numpy": "2.5.1",
+    "python": "3.12.13",
+    "scikit-learn": "1.5.2",
+    "scipy": "1.18.0"
+  },
+  "emulator_label": "CH24_mpgcen_gpr",
+  "excluded_simulation": null,
+  "files": {
+    "meta.npy": "e58646a28c2fc0cf324e19128959c7f3cc5d1197d9706c241b4799b0dc1cc452",
+    "n0_full.pkl": "6350321b77012b0cbf89ced70099ca9983cd04d70e753c5aa2cc5ce641e60b02",
+    "n1_full.pkl": "768ebd4e2d395e23bbc4f8b594b2b9a512180ddb61a401de49d2dfa1f4bc4641"
+  },
+  "lace_version": "0.0.dev494+unknown.ge920a0afccaf58ee3807393901079d3456edecc9.dirty",
+  "model_label": "full.pkl",
+  "n_emulators": 2,
+  "normalization": {
+    "filename": "ff_mpgcen.npy",
+    "sha256": "7948bae5b5699ae08a75691a191c1fbccd12cb212a43c9c61c7a70b6f572ea30"
+  },
+  "schema_version": 1,
+  "training_provenance": {
+    "archive_class": "GadgetArchive",
+    "average": "both",
+    "kp_Mpc": 0.7,
+    "nyx_version": null,
+    "postproc": "Cabayol23",
+    "val_scaling": null,
+    "z_max": 5.5
+  }
+}

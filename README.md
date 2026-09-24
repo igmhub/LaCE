@@ -122,3 +122,7 @@ In the `Notebooks` folder, there are several tutorials one can run to learn how 
 - Archive tutorial: notebooks/Tutorial_bookkeeping.py
 - Emulator tutorial: notebooks/Tutorial_emulator.py
 - Emulating compressed parameters tutorial: notebooks/Tutorial_compressedParams.ipynb
+
+### Versioning
+
+Package versions are derived from Git. Tagged releases use the tag; development builds include the commit distance and short SHA (for example, `1.2.0.dev4+gabc1234`). A dirty working tree adds `.dirty`. Source archives without Git metadata report `0+unknown`.

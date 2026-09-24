@@ -32,8 +32,8 @@ from lace.emulator.gp_emulator_multi import GPEmulator
 # match the emulator label.
 
 # %%
-emulator_label = "CH24_mpgcen_gpr"
-# emulator_label = "CH24_nyxcen_gpr"
+# emulator_label = "CH24_mpgcen_gpr"
+emulator_label = "CH24_nyxcen_gpr"
 
 if emulator_label == "CH24_mpgcen_gpr":
     archive = gadget_archive.GadgetArchive()

@@ -42,7 +42,7 @@ from lace.emulator.central_parameters import get_central_parameters_z3
 
 # %%
 emulator_label = "CH24_mpgcen_gpr"
-# emulator_label = "CH24_nyxcen_gpr"
+emulator_label = "CH24_nyxcen_gpr"
 
 fiducial_parameters = get_central_parameters_z3(emulator_label)
 emulator = set_emulator(emulator_label)
@@ -61,15 +61,15 @@ len_max = 100
 k_Mpc = np.logspace(np.log10(0.05), np.log10(5.0), len_max)
 
 parameter_steps = {
-    "Delta2_p": 0.05,
-    "n_p": 0.05,
-    "mF": 0.05,
-    "gamma": 0.10,
-    "sigT_Mpc": 0.02,
-    "kF_Mpc": 2.0,
+    "Delta2_p": 0.01,
+    "n_p": 0.01,
+    "mF": 0.01,
+    "gamma": 0.01,
+    "sigT_Mpc": 0.01,
+    "kF_Mpc": 1.0,
 }
 if emulator_label == "CH24_nyxcen_gpr":
-    parameter_steps["alpha_p"] = 0.02
+    parameter_steps["alpha_p"] = 0.01
 
 # %% [markdown]
 # ## Compute one-at-a-time P1D responses
