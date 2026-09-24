@@ -59,3 +59,10 @@ def test_malformed_parameter_shapes_are_rejected():
              "gamma": [1.5, 1.5], "sigT_Mpc": [0.128, 0.128], "kF_Mpc": [10.5, 10.5]}
     with pytest.raises(ValueError, match="same length"):
         emulator.predict(model)
+
+
+def test_loading_missing_explicit_model_path_does_not_create_directory(tmp_path):
+    model_path = tmp_path / "does-not-exist"
+    with pytest.raises(FileNotFoundError, match="Model directory"):
+        set_emulator("CH24_mpgcen_gpr", model_path=model_path)
+    assert not model_path.exists()

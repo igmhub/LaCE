@@ -18,3 +18,11 @@ def test_blank_data_path_rejected():
     import pytest
     with pytest.raises(ValueError, match="blank"):
         get_data_path("   ")
+
+
+def test_paths_configuration_preserves_commented_sections(tmp_path):
+    config = tmp_path / "paths.toml"
+    config.write_text("[other] # retain this\nvalue = 2\n[paths] # local paths\n")
+    set_data_path("/assets", config)
+    assert get_data_path(config_path=config) == Path("/assets")
+    assert "[other] # retain this" in config.read_text()

@@ -234,13 +234,9 @@ class NyxArchive(BaseArchive):
 
             if isim not in file_cosmo:
                 file_error = (
-                    "The file "
-                    + self.file_cosmo
-                    + " does not contain "
-                    + isim
-                    + ". To speed up calculations, "
-                    + " you can recompute the file by running "
-                    + "lace/scripts/developers/compute_nyx_emu_cosmo.py"
+                    f"The file {self.file_cosmo} does not contain {isim}. To speed up "
+                    "calculations, you can recompute the file by running "
+                    "lace/scripts/developers/compute_nyx_emu_cosmo.py"
                 )
                 if self.verbose:
                     print(file_error)

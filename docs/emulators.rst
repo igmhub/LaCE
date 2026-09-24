@@ -29,9 +29,10 @@ never creates directories; training creates its requested output directory.
 L1O weights are historical validation assets and are never distributed: the
 training and validation notebooks require an explicit, non-blank path.
 
-Newly trained bundles include a JSON manifest, checked before NumPy object
-arrays and pickle checkpoints are read. It records schema, identity, excluded
-simulation, provenance, LaCE/Python/dependency versions, and checksums.
+Newly trained bundles include one JSON manifest per full or leave-one-out
+model, checked before normalization data, NumPy object arrays, and pickle
+checkpoints are read. It records schema, identity, excluded simulation,
+provenance, LaCE/Python/dependency versions, and checksums.
 Checksums detect damaged trusted bundles; they do not make arbitrary pickles
 safe. Load weights only from a trusted source. Existing full CH24 bundles use
 the documented legacy policy: they remain usable but their historical training

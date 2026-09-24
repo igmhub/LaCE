@@ -55,6 +55,8 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.emulator_label = emulator_label
         self.drop_sim = drop_sim
         self.n_restarts_optimizer = n_restarts_optimizer
+        self.archive = archive
+        self.archive2 = archive2
 
         # check emulator
         emulator_label_all = [
@@ -97,6 +99,17 @@ class GPEmulator(base_emulator.BaseEmulator):
         self.folder_save = str(folder_save)
         self.label = label
         self.path_save_meta = os.path.join(folder_save, label_meta)
+        self.normalization_path = self._normalization_path(normalization_path, folder_save)
+        if not train:
+            self.manifest = load_manifest(
+                self.folder_save, self.emulator_label, self.label, self.normalization_path
+            )
+            if self.manifest is None:
+                warn(
+                    f"Loading legacy model bundle at {self.folder_save} without a manifest. "
+                    "Only use model files from a trusted source; provenance and compatibility are unknown.",
+                    UserWarning,
+                )
 
         if (self.emulator_label == "CH24_mpg_gpr") | (
             self.emulator_label == "CH24_mpgcen_gpr"
@@ -127,8 +140,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.func_poly = func_poly
             self.ndeg = 5
             # normalization
-            fname = self._normalization_path(normalization_path, folder_save)
-            self.input_norm = self._load_normalization(fname)
+            self.input_norm = self._load_normalization(self.normalization_path)
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
@@ -169,8 +181,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.func_poly = func_poly
             self.ndeg = 5
             # normalization
-            fname = self._normalization_path(normalization_path, folder_save)
-            self.input_norm = self._load_normalization(fname)
+            self.input_norm = self._load_normalization(self.normalization_path)
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
@@ -215,8 +226,7 @@ class GPEmulator(base_emulator.BaseEmulator):
             self.func_poly = func_poly
             self.ndeg = 5
             # normalization
-            fname = self._normalization_path(normalization_path, folder_save)
-            self.input_norm = self._load_normalization(fname)
+            self.input_norm = self._load_normalization(self.normalization_path)
             self.norm_imF = interp1d(
                 self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
             )
@@ -322,20 +332,22 @@ class GPEmulator(base_emulator.BaseEmulator):
             Path(self.folder_save) / ("n" + str(ii) + "_" + self.label)
             for ii in range(len(self.gp))
         ]
+        provenance = {
+            "archive_class": type(self.archive).__name__,
+            "postproc": getattr(self.archive, "postproc", None),
+            "nyx_version": getattr(self.archive, "nyx_version", None),
+            "kp_Mpc": self.kp_Mpc,
+            "average": self.average,
+            "val_scaling": self.val_scaling,
+            "z_max": self.z_max,
+        }
         write_manifest(
-            self.folder_save, self.emulator_label, self.label, files, self.drop_sim,
-            {"archive": type(getattr(self, "archive", None)).__name__},
+            self.folder_save, self.emulator_label, self.label, files,
+            self.normalization_path, self.drop_sim, provenance,
         )
 
     def _load_emu(self):
-        # Validate a JSON inventory before loading unsafe legacy NumPy/pickle payloads.
-        manifest = load_manifest(self.folder_save, self.emulator_label, self.label)
-        if manifest is None:
-            warn(
-                f"Loading legacy model bundle at {self.folder_save} without a manifest. "
-                "Only use model files from a trusted source; provenance and compatibility are unknown.",
-                UserWarning,
-            )
+        # The manifest was validated before normalization and model deserialization.
         path_meta = Path(self.path_save_meta)
         if not path_meta.is_file():
             raise FileNotFoundError(f"Model metadata is missing: {path_meta}. Restore a complete trusted model bundle.")

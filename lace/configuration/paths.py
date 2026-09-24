@@ -42,12 +42,12 @@ def _set_configured_path(key: str, path: Path, config_path: str | Path | None) -
     path_config.parent.mkdir(parents=True, exist_ok=True)
     text = path_config.read_text(encoding="utf-8") if path_config.exists() else ""
     value_line = f"{key} = {json.dumps(str(path))}"
-    section = re.search(r"(?m)^\[paths\]\s*$", text)
+    section = re.search(r"(?m)^\[paths\][ \t]*(?:#.*)?$", text)
     if section is None:
         separator = "" if not text or text.endswith("\n") else "\n"
         text = f"{text}{separator}[paths]\n{value_line}\n"
     else:
-        next_section = re.search(r"(?m)^\[[^]]+\]\s*$", text[section.end():])
+        next_section = re.search(r"(?m)^\[[^]]+\][ \t]*(?:#.*)?$", text[section.end():])
         end = section.end() + (next_section.start() if next_section else len(text[section.end():]))
         body = text[section.end():end]
         if body and not body.startswith("\n"):
