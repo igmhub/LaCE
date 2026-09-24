@@ -6,6 +6,7 @@
 *.pdf
 *.pt
 lace.egg-info/
+lace/_version.py
 __pycache__
 .github/workflows/.python-tests.yml.swn
 .github/workflows/.python-tests.yml.swo
