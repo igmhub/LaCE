@@ -24,6 +24,15 @@ make docs
 
 Open `docs/_build/html/index.html` after the build completes.
 
+## Relationship between the three packages
+
+The supported installation order is LaCE, ForestFlow, then cup1d. LaCE has no
+dependency on the other two. ForestFlow uses LaCE for cosmology and simulation
+archives. cup1d uses LaCE for P1D emulation and uses ForestFlow only for its
+P3D-emulator workflows. These sibling projects are installed explicitly from
+their IGMHub repositories rather than declared as ambiguous PyPI dependencies;
+the continuous-integration workflows follow the same policy.
+
 ## Installation
 (Last updated: Jul 27 2026)
 

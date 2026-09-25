@@ -47,7 +47,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=9"]
+test = ["pytest>=8"]
 docs = [
     "sphinx>=7",
     "numpydoc>=1.6",
@@ -68,5 +68,6 @@ namespaces = false
 
 [project.urls]
 Homepage="https://github.com/igmhub/LaCE"
+Documentation="https://igmhublace.readthedocs.io/en/latest/"
 Repository="https://github.com/igmhub/LaCE.git"
 Issues="https://github.com/igmhub/LaCE/issues"
