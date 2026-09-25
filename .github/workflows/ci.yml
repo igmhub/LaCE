@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-and-docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install Graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+      - name: Install package
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[test,docs]"
+      - name: Test
+        run: pytest -q
+      - name: Build documentation
+        run: python -m sphinx -W --keep-going -b html docs docs/_build/html
