@@ -12,7 +12,7 @@ class BaseEmulator(ABC):
 
         Args:
             model (dict): Dictionary containing the model parameters.
-            k_Mpc (np.ndarray): Array of k values in Mpc units.
+            k_Mpc (np.ndarray): Wavenumbers in Mpc^-1 (legacy argument name).
             return_covar (bool, optional): Whether to return covariance. Defaults to False.
             z (float, optional): Redshift value. Defaults to None.
 
@@ -20,3 +20,7 @@ class BaseEmulator(ABC):
             np.ndarray: Emulated P1D values.
         """
         pass
+
+    def emulate_P1D_Mpc(self, model, k_iMpc, return_covar=False, z=None):
+        """Emulate P1D in Mpc using wavenumbers in inverse Mpc."""
+        return self.emulate_p1d_Mpc(model, k_iMpc, return_covar, z)

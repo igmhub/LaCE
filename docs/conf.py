@@ -22,6 +22,7 @@ except importlib.metadata.PackageNotFoundError:
     release = "development"
 
 extensions = [
+    "sphinx.ext.graphviz",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",

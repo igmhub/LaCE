@@ -24,6 +24,15 @@ make docs
 
 Open `docs/_build/html/index.html` after the build completes.
 
+## Relationship between the three packages
+
+The supported installation order is LaCE, ForestFlow, then cup1d. LaCE has no
+dependency on the other two. ForestFlow uses LaCE for cosmology and simulation
+archives. cup1d uses LaCE for P1D emulation and uses ForestFlow only for its
+P3D-emulator workflows. These sibling projects are installed explicitly from
+their IGMHub repositories rather than declared as ambiguous PyPI dependencies;
+the continuous-integration workflows follow the same policy.
+
 ## Installation
 (Last updated: Jul 27 2026)
 
@@ -121,9 +130,12 @@ python -m ipykernel install --user --name lace --display-name lace
 ```
 In the `Notebooks` folder, there are several tutorials one can run to learn how to use the archives and emulators.
 
-- Archive tutorial: notebooks/Tutorial_bookkeeping.py
-- Emulator tutorial: notebooks/Tutorial_emulator.py
-- Emulating compressed parameters tutorial: notebooks/Tutorial_compressedParams.ipynb
+- [Archive tutorial](notebooks/tutorials/Tutorial_bookkeeping.ipynb)
+- [Emulator tutorial](notebooks/tutorials/Tutorial_emulator.ipynb)
+- [Compressed-parameter tutorial](notebooks/cosmology/cosmopower/Tutorial_compressedParams.ipynb)
+
+For a complete archive-to-prediction example, see the
+[end-to-end workflow](https://igmhublace.readthedocs.io/en/latest/workflow.html).
 
 ### Versioning
 

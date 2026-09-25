@@ -11,6 +11,8 @@ emulator predictions.
    :caption: User guide
 
    installation
+   conventions
+   workflow
    cosmology
    archives
    emulators
