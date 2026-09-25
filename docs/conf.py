@@ -55,7 +55,7 @@ html_theme = (
     if importlib.util.find_spec("pydata_sphinx_theme") is not None
     else "alabaster"
 )
-html_title = f"LaCE {release}"
+html_title = "LaCE"
 html_theme_options = (
     {"show_toc_level": 2, "navigation_with_keys": True}
     if html_theme == "pydata_sphinx_theme"
