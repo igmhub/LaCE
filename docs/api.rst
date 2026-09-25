@@ -11,8 +11,6 @@ Cosmology
    lace.cosmo.base_cosmology
    lace.cosmo.cosmology
    lace.cosmo.rescale_cosmology
-   lace.cosmo.camb_cosmo
-   lace.cosmo.fit_linP
    lace.cosmo.thermal_broadening
 
 Local configuration

@@ -10,13 +10,13 @@ notebooks. The main practical examples are in ``notebooks``:
 ``notebooks/tutorials/Tutorial_emulator.py``
    Load and evaluate a P1D emulator.
 
-``notebooks/compressed_parameters/Tutorial_compressedParams.py``
+``notebooks/cosmology/cosmopower/Tutorial_compressedParams.py``
    Compute compressed linear-power parameters from a cosmology.
 
 ``notebooks/cosmology/compare_rescaled_cosmology.py``
    Compare fixed-background rescaling with fresh CAMB star parameters.
 
-``notebooks/archive/compute_covariance.py``
+``notebooks/emulator/compute_cov.py``
    Train leave-one-out GP emulators and inspect their covariance behavior.
 
 Synchronize a paired notebook after editing its Python source with:

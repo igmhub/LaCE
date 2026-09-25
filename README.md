@@ -121,9 +121,12 @@ python -m ipykernel install --user --name lace --display-name lace
 ```
 In the `Notebooks` folder, there are several tutorials one can run to learn how to use the archives and emulators.
 
-- Archive tutorial: notebooks/Tutorial_bookkeeping.py
-- Emulator tutorial: notebooks/Tutorial_emulator.py
-- Emulating compressed parameters tutorial: notebooks/Tutorial_compressedParams.ipynb
+- [Archive tutorial](notebooks/tutorials/Tutorial_bookkeeping.ipynb)
+- [Emulator tutorial](notebooks/tutorials/Tutorial_emulator.ipynb)
+- [Compressed-parameter tutorial](notebooks/cosmology/cosmopower/Tutorial_compressedParams.ipynb)
+
+For a complete archive-to-prediction example, see the
+[end-to-end workflow](https://igmhublace.readthedocs.io/en/latest/workflow.html).
 
 ### Versioning
 

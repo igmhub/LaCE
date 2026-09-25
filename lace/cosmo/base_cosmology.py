@@ -109,13 +109,17 @@ class BaseCosmology(object):
 
         return pk_kms
 
-    def get_dkms_dMpc(self, z):
+    def get_dkms_diMpc(self, z):
         """Factor to translate velocity separations (in km/s) to comoving
         separations (in Mpc). At z=3 it should return roughly 70."""
 
         H_z = self.compute_hubble_parameter(z)
         dvdX = H_z / (1 + z)
         return dvdX
+
+    def get_dkms_dMpc(self, z):
+        """Compatibility alias for :meth:`get_dkms_diMpc`."""
+        return self.get_dkms_diMpc(z)
 
     def get_dkms_dhMpc(self, z):
         """Factor to translate velocity separations (in km/s) to comoving
