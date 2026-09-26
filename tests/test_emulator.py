@@ -66,3 +66,27 @@ def test_loading_missing_explicit_model_path_does_not_create_directory(tmp_path)
     with pytest.raises(FileNotFoundError, match="Model directory"):
         set_emulator("CH24_mpgcen_gpr", model_path=model_path)
     assert not model_path.exists()
+
+
+def test_batched_gp_cache_matches_independent_predictions():
+    emulator = set_emulator("CH24_mpgcen_gpr")
+    calls = []
+    for offset in (0.0, 0.01):
+        calls.append({
+            "Delta2_p": np.array([0.34, 0.35, 0.36]) + offset,
+            "n_p": np.full(3, -2.3),
+            "mF": np.array([0.62, 0.66, 0.70]),
+            "gamma": np.full(3, 1.5),
+            "sigT_Mpc": np.full(3, 0.128),
+            "kF_Mpc": np.full(3, 10.5),
+        })
+
+    expected = [emulator.predict(call) for call in calls]
+    emulator.prime_prediction_cache(calls)
+    try:
+        actual = [emulator.predict(call) for call in calls]
+    finally:
+        emulator.clear_prediction_cache()
+
+    for predicted, reference in zip(actual, expected):
+        np.testing.assert_allclose(predicted, reference, rtol=2.0e-10, atol=3.0e-12)

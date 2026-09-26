@@ -75,3 +75,40 @@ def test_nonstandard_pivot_is_rejected():
     fiducial.CAMBparams.InitPower.pivot_scalar = 0.04
     with pytest.raises(ValueError, match="pivot_scalar=0.05"):
         RescaledCosmology(fiducial, {"ns": 0.96})
+
+
+def test_batch_cosmology_accessors_match_scalar(fiducial_cosmology):
+    """Batch summaries preserve the scalar Cosmology/RescaledCosmology API."""
+
+    cosmologies = [
+        fiducial_cosmology,
+        RescaledCosmology(fiducial_cosmology, {"ns": 0.96}),
+    ]
+    zs = np.array([2.5, 3.0])
+    # The same public accessors dispatch to scalar-shaped output for one
+    # cosmology and leading-batch output for a cosmology sequence.
+    np.testing.assert_allclose(
+        fiducial_cosmology.get_dkms_dMpc_for_cosmologies(fiducial_cosmology, zs),
+        fiducial_cosmology.get_dkms_dMpc(zs),
+    )
+    scalar_summary = fiducial_cosmology.get_linP_Mpc_params_for_cosmologies(
+        fiducial_cosmology, Z_STAR, 0.7
+    )
+    assert scalar_summary == fiducial_cosmology.get_linP_Mpc_params(Z_STAR, 0.7)
+
+    dkms = fiducial_cosmology.get_dkms_dMpc_for_cosmologies(cosmologies, zs)
+    mpc = fiducial_cosmology.get_linP_Mpc_params_for_cosmologies(
+        cosmologies, zs, 0.7
+    )
+    kms = fiducial_cosmology.get_linP_kms_params_for_cosmologies(
+        cosmologies, zs, KP_KMS
+    )
+    for index, cosmo in enumerate(cosmologies):
+        np.testing.assert_allclose(dkms[index], cosmo.get_dkms_dMpc(zs))
+        for redshift_index, redshift in enumerate(zs):
+            scalar_mpc = cosmo.get_linP_Mpc_params(redshift, 0.7)
+            scalar_kms = cosmo.get_linP_kms_params(redshift, KP_KMS)
+            for name, value in scalar_mpc.items():
+                np.testing.assert_allclose(mpc[name][index, redshift_index], value)
+            for name, value in scalar_kms.items():
+                np.testing.assert_allclose(kms[name][index, redshift_index], value)

@@ -279,6 +279,8 @@ class GPEmulator(base_emulator.BaseEmulator):
             self._initialize(training_data)
             self._save_emu()
 
+        self._prediction_cache = None
+
     def _normalization_path(self, normalization_path, folder_save):
         if normalization_path is not None:
             if isinstance(normalization_path, str) and not normalization_path.strip():
@@ -561,61 +563,79 @@ class GPEmulator(base_emulator.BaseEmulator):
         except (TypeError, ValueError) as error:
             raise ValueError("Emulator parameters must be numeric scalars or one-dimensional arrays") from error
 
-    def predict(self, model):
-        """
-        Return P1D or polynomial fit coefficients for a given parameter set.
+    def _prediction_key(self, values):
+        """Return a stable cache key for one physical emulator input row."""
 
-        This method provides predictions of P1D values or polynomial coefficients based on
-        the provided model parameters. It can also return error estimates if required.
+        return tuple(float(value) for value in values)
 
-        :param model: Dictionary containing parameter values with keys as parameter names.
-        :type model: dict
-        :param z: Optional parameter for rescaling, not fully tested.
-        :type z: optional
-        :return: Tuple containing:
-            - Predicted P1D values.
-            - Error estimates for the predictions.
-        :rtype: tuple
-            - numpy.ndarray: Predicted P1D values.
-            - numpy.ndarray: Error estimates for the predictions.
-        """
+    def _predict_rows(self, physical_rows):
+        """Predict many rows, grouping calls to each mean-flux GP expert."""
 
-        # Input validation is intentionally explicit: malformed arrays must not
-        # be mistaken for a one-row scalar call.
-        emu_call, _ = self._prepare_model_input(model)
-        emu_call = (emu_call - self.xscalings_mean) / self.xscalings_std
+        emu_call = (physical_rows - self.xscalings_mean) / self.xscalings_std
         length = emu_call.shape[0]
+        scaled_prediction = np.zeros((length, len(self.tscalings_mean)))
+        counts = np.zeros(length)
+        mean_flux = emu_call[:, self.ind_mF]
+        central_expert = np.argmin(
+            np.abs(mean_flux[:, None] - self.bin_mF_cen[None, :]), axis=1
+        )
 
-        # output
-        out_pred = np.zeros((length, len(self.tscalings_mean)))
-        for ii in range(length):
-            mF = emu_call[ii, self.ind_mF]
-            jj = np.argmin(np.abs(mF - self.bin_mF_cen))
-            # print(mF, self.bin_mF_cen, self.bin_mF_cen[jj])
+        rows_by_expert = [[] for _ in self.gp]
+        for row, expert in enumerate(central_expert):
+            rows_by_expert[expert].append(row)
+            if expert != 0 and mean_flux[row] < self.bin_mF_top[expert - 1]:
+                rows_by_expert[expert - 1].append(row)
+            if (
+                expert != len(self.bin_mF_cen) - 1
+                and mean_flux[row] > self.bin_mF_bot[expert + 1]
+            ):
+                rows_by_expert[expert + 1].append(row)
 
-            # average emulator predictions if mF in overlapping range
-            num = 1.0
-            pred = self.gp[jj].predict(np.atleast_2d(emu_call[ii]))[0]
-            if jj != 0:
-                if mF < self.bin_mF_top[jj - 1]:
-                    num += 1.0
-                    pred += self.gp[jj - 1].predict(
-                        np.atleast_2d(emu_call[ii])
-                    )[0]
-            if jj != (len(self.bin_mF_cen) - 1):
-                if mF > self.bin_mF_bot[jj + 1]:
-                    num += 1.0
-                    pred += self.gp[jj + 1].predict(
-                        np.atleast_2d(emu_call[ii])
-                    )[0]
+        for expert, rows in enumerate(rows_by_expert):
+            if not rows:
+                continue
+            rows = np.asarray(rows, dtype=int)
+            scaled_prediction[rows] += self.gp[expert].predict(emu_call[rows])
+            counts[rows] += 1
 
-            # print(ii, jj, num, mF, self.bin_mF_bot[jj], self.bin_mF_top[jj])
+        return (
+            scaled_prediction / counts[:, None]
+        ) * self.tscalings_std + self.tscalings_mean
 
-            out_pred[ii] = (
-                pred / num
-            ) * self.tscalings_std + self.tscalings_mean
+    def prime_prediction_cache(self, emulator_calls):
+        """Predict all unique rows required by one batched likelihood call."""
 
-        return out_pred
+        unique_rows = {}
+        for model in emulator_calls:
+            rows, _ = self._prepare_model_input(model)
+            for row in rows:
+                unique_rows.setdefault(self._prediction_key(row), row)
+        if not unique_rows:
+            self._prediction_cache = {}
+            return
+        keys = list(unique_rows)
+        predictions = self._predict_rows(np.asarray([unique_rows[key] for key in keys]))
+        self._prediction_cache = {
+            key: predictions[index] for index, key in enumerate(keys)
+        }
+
+    def clear_prediction_cache(self):
+        """Discard predictions retained for one batched likelihood call."""
+
+        self._prediction_cache = None
+
+    def predict(self, model):
+        """Return polynomial or k-bin predictions for one or more inputs."""
+
+        physical_rows, _ = self._prepare_model_input(model)
+        if self._prediction_cache is None:
+            return self._predict_rows(physical_rows)
+        return np.asarray(
+            [
+                self._prediction_cache[self._prediction_key(row)]
+                for row in physical_rows
+            ]
+        )
 
     def emulate_p1d_Mpc(self, model, k_Mpc, verbose=False, return_coeff=False):
         """
