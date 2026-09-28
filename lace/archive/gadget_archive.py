@@ -40,7 +40,9 @@ class GadgetArchive(BaseArchive):
 
         Args:
             postproc (str): Specify post-processing run. Default is "Cabayol23".
-                Raises a ValueError if the postproc is not available
+                Use "Cabayol23_fixp3d" for corrected training P3D files while
+                retaining the legacy test-simulation files. Raises a ValueError
+                if the postproc is not available.
             kp_Mpc (None or float): Optional. Pivot point used in linear power parameters.
                 If specified, the parameters will be recomputed in the archive. Default is None.
             fore_recompute_linP_params (boolean). If set, it will recompute linear power parameters even if kp_Mpc match. Default is False.
@@ -54,7 +56,7 @@ class GadgetArchive(BaseArchive):
 
         if isinstance(postproc, str) == False:
             raise TypeError("postproc must be a string")
-        postproc_all = ["Pedersen21", "Cabayol23", "768_768"]
+        postproc_all = ["Pedersen21", "Cabayol23", "Cabayol23_fixp3d", "768_768"]
         if postproc not in postproc_all:
             msg = "Invalid postproc value. Available options:"
             raise ExceptionList(msg, postproc_all)
@@ -105,7 +107,7 @@ class GadgetArchive(BaseArchive):
         # list all axes
         if postproc == "Pedersen21":
             self.list_sim_axes = [0]
-        elif postproc == "Cabayol23":
+        elif postproc in ["Cabayol23", "Cabayol23_fixp3d"]:
             self.list_sim_axes = [0, 1, 2]
         elif postproc == "768_768":
             self.list_sim_axes = [0, 1, 2]
@@ -163,7 +165,7 @@ class GadgetArchive(BaseArchive):
             self.testing_ind_rescaling = 0
             self.testing_z_min = 0
             self.testing_z_max = 10
-        elif postproc == "Cabayol23":
+        elif postproc in ["Cabayol23", "Cabayol23_fixp3d"]:
             self.basedir = "/data/sim_suites/post_768/"
             self.n_phases = 2
             self.n_axes = 3
@@ -247,7 +249,7 @@ class GadgetArchive(BaseArchive):
                 "mpg_reio": "P18_sim",
             }
             dict_conv_params = dict_conv
-        elif self.postproc == "Cabayol23":
+        elif self.postproc in ["Cabayol23", "Cabayol23_fixp3d"]:
             dict_conv = {
                 "mpg_central": "sim_pair_30",
                 "mpg_seed": "diffSeed",
@@ -436,7 +438,7 @@ class GadgetArchive(BaseArchive):
             n_it_files = 1
         else:
             _sk_label_data = self.sk_label + "_axis" + str(ind_axis + 1)
-            if self.postproc == "Cabayol23":
+            if self.postproc in ["Cabayol23", "Cabayol23_fixp3d"]:
                 _sk_label_params = self.sk_label_params
             else:
                 _sk_label_params = (
@@ -449,28 +451,35 @@ class GadgetArchive(BaseArchive):
             else:
                 n_it_files = 2
 
-        # path to measurements
-        data_json = []
+        # Path to measurements.  The corrected Cabayol23 post-processing is
+        # available only for training simulations: its fiducial and rescaled
+        # tau records are respectively stored in p1d_reshaped and
+        # p1d_reshaped_stau. Test simulations retain their legacy files.
+        if (
+            self.postproc == "Cabayol23_fixp3d"
+            and sim_label not in self.list_sim_test
+        ):
+            p1d_labels = ["p1d_reshaped", "p1d_reshaped_stau"]
+        elif n_it_files == 1:
+            p1d_labels = [self.p1d_label]
+        else:
+            p1d_labels = [self.p1d_label, "p1d_setau"]
 
-        for it in range(n_it_files):
-            if it == 0:
-                p1d_label = self.p1d_label
-            else:
-                p1d_label = "p1d_setau"
-            data_json.append(
-                self.fulldir
-                + "/"
-                + sim_name
-                + "/"
-                + tag_phase
-                + "/"
-                + p1d_label
-                + "_"
-                + str(ind_z)
-                + "_"
-                + _sk_label_data
-                + ".json"
-            )
+        data_json = [
+            self.fulldir
+            + "/"
+            + sim_name
+            + "/"
+            + tag_phase
+            + "/"
+            + p1d_label
+            + "_"
+            + str(ind_z)
+            + "_"
+            + _sk_label_data
+            + ".json"
+            for p1d_label in p1d_labels
+        ]
 
         # path to parameters
         param_json = (
