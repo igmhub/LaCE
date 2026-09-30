@@ -1,6 +1,4 @@
 import numpy as np
-import os
-import camb
 from lace.cosmo import camb_cosmo
 from lace.utils.poly_p1d import fit_polynomial
 

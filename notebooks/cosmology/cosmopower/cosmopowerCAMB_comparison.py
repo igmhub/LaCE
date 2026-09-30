@@ -20,7 +20,6 @@
 # +
 import numpy as np
 import cosmopower as cp
-import pandas as pd
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

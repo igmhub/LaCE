@@ -1,7 +1,6 @@
 """Read MP-Gadget configuration file. File addapted from code by Simeon Bird."""
 
 import numpy as np
-import argparse
 import configobj
 import validate
 

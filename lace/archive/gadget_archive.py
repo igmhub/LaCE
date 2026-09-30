@@ -1,11 +1,12 @@
 import numpy as np
 import copy
-import sys
-import os
 import json
+from pathlib import Path
 
-import lace
 from lace.configuration import get_data_path
+
+# Canonical redshifts of the MP-Gadget simulation archive.
+MPG_SIM_REDSHIFTS = np.arange(2.0, 4.6, 0.25)
 from lace.setup_simulations import read_genic, read_gadget
 from lace.archive.base_archive import BaseArchive
 from lace.utils.exceptions import ExceptionList
@@ -102,7 +103,7 @@ class GadgetArchive(BaseArchive):
         ## done set simulation list
 
         # list all redshifts
-        self.list_sim_redshifts = np.arange(2, 4.6, 0.25)
+        self.list_sim_redshifts = MPG_SIM_REDSHIFTS.copy()
 
         # list all axes
         if postproc == "Pedersen21":
@@ -205,8 +206,13 @@ class GadgetArchive(BaseArchive):
             self.testing_z_max = 10
 
         # ``data_path`` contains ``sim_suites`` and can be external to a wheel.
-        self.fulldir = str(self.data_path / self.basedir.lstrip("/").removeprefix("data/")) + "/"
-        self.fulldir_param = str(self.data_path / self.basedir_params.lstrip("/").removeprefix("data/")) + "/"
+        self.fulldir = (
+            str(self.data_path / self.basedir.lstrip("/").removeprefix("data/")) + "/"
+        )
+        self.fulldir_param = (
+            str(self.data_path / self.basedir_params.lstrip("/").removeprefix("data/"))
+            + "/"
+        )
 
         self.key_conv = {
             "mF": "mF",
@@ -317,11 +323,17 @@ class GadgetArchive(BaseArchive):
             try:
                 file_cosmo = np.load(fname, allow_pickle=True).item()
             except FileNotFoundError as error:
-                raise FileNotFoundError(f"Missing Gadget cosmology cache {fname}. Run save_mpg_emu_cosmo.py or configure data_path.") from error
+                raise FileNotFoundError(
+                    f"Missing Gadget cosmology cache {fname}. Run save_mpg_emu_cosmo.py or configure data_path."
+                ) from error
             except PermissionError as error:
-                raise PermissionError(f"Cannot read Gadget cosmology cache {fname}") from error
+                raise PermissionError(
+                    f"Cannot read Gadget cosmology cache {fname}"
+                ) from error
             except (OSError, ValueError, EOFError) as error:
-                raise IOError(f"Corrupt Gadget cosmology cache {fname}: {error}") from error
+                raise IOError(
+                    f"Corrupt Gadget cosmology cache {fname}: {error}"
+                ) from error
 
             if sim_label not in file_cosmo:
                 file_error = (
@@ -342,10 +354,7 @@ class GadgetArchive(BaseArchive):
                     self.kp_Mpc = file_cosmo[sim_label]["linP_params"]["kp_Mpc"]
 
                 # if kp_Mpc different from precomputed value, compute
-                if (
-                    self.kp_Mpc
-                    != file_cosmo[sim_label]["linP_params"]["kp_Mpc"]
-                ):
+                if self.kp_Mpc != file_cosmo[sim_label]["linP_params"]["kp_Mpc"]:
                     if self.verbose:
                         print("Recomputing kp_Mpc at " + str(self.kp_Mpc))
                     compute_linP_params = True
@@ -441,9 +450,7 @@ class GadgetArchive(BaseArchive):
             if self.postproc in ["Cabayol23", "Cabayol23_fixp3d"]:
                 _sk_label_params = self.sk_label_params
             else:
-                _sk_label_params = (
-                    self.sk_label_params + "_axis" + str(ind_axis + 1)
-                )
+                _sk_label_params = self.sk_label_params + "_axis" + str(ind_axis + 1)
             # for these simulations with have one file with all scalings, for others 2
             sim_one_scaling = ["diffSeed", "P18", "running", "curved_003"]
             if sim_name in sim_one_scaling:
@@ -451,35 +458,42 @@ class GadgetArchive(BaseArchive):
             else:
                 n_it_files = 2
 
-        # Path to measurements.  The corrected Cabayol23 post-processing is
-        # available only for training simulations: its fiducial and rescaled
-        # tau records are respectively stored in p1d_reshaped and
-        # p1d_reshaped_stau. Test simulations retain their legacy files.
-        if (
-            self.postproc == "Cabayol23_fixp3d"
-            and sim_label not in self.list_sim_test
-        ):
-            p1d_labels = ["p1d_reshaped", "p1d_reshaped_stau"]
-        elif n_it_files == 1:
-            p1d_labels = [self.p1d_label]
-        else:
-            p1d_labels = [self.p1d_label, "p1d_setau"]
+        # Corrected P3D files exist for every training simulation and are
+        # progressively becoming available for selected test simulations.  The
+        # central simulation uses them as soon as its complete pair exists;
+        # mpg_seed will switch automatically when its files are installed.
+        legacy_labels = (
+            [self.p1d_label] if n_it_files == 1 else [self.p1d_label, "p1d_setau"]
+        )
+        corrected_labels = ["p1d_reshaped", "p1d_reshaped_stau"]
 
-        data_json = [
-            self.fulldir
-            + "/"
-            + sim_name
-            + "/"
-            + tag_phase
-            + "/"
-            + p1d_label
-            + "_"
-            + str(ind_z)
-            + "_"
-            + _sk_label_data
-            + ".json"
-            for p1d_label in p1d_labels
-        ]
+        def data_paths(labels):
+            return [
+                self.fulldir
+                + "/"
+                + sim_name
+                + "/"
+                + tag_phase
+                + "/"
+                + label
+                + "_"
+                + str(ind_z)
+                + "_"
+                + _sk_label_data
+                + ".json"
+                for label in labels
+            ]
+
+        corrected_candidate = data_paths(corrected_labels)
+        corrected_test_simulations = {"mpg_central", "mpg_seed"}
+        use_corrected = self.postproc == "Cabayol23_fixp3d" and (
+            sim_label not in self.list_sim_test
+            or (
+                sim_label in corrected_test_simulations
+                and all(Path(path).is_file() for path in corrected_candidate)
+            )
+        )
+        data_json = corrected_candidate if use_corrected else data_paths(legacy_labels)
 
         # path to parameters
         param_json = (
@@ -633,12 +647,8 @@ class GadgetArchive(BaseArchive):
                                 key_out = self.key_conv[key_in]
                                 if (key_in == "mF") | (key_in == "scale_tau"):
                                     sim_data[key_out] = temp_data[key_in]
-                                elif (key_in == "p1d_Mpc") | (
-                                    key_in == "k_Mpc"
-                                ):
-                                    sim_data[key_out] = np.array(
-                                        temp_data[key_in]
-                                    )
+                                elif (key_in == "p1d_Mpc") | (key_in == "k_Mpc"):
+                                    sim_data[key_out] = np.array(temp_data[key_in])
                                 else:
                                     sim_data[key_out] = temp_param[key_in]
 

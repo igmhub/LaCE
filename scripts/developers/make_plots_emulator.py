@@ -1,8 +1,5 @@
 # Import necessary modules
 ## General python modules
-import numpy as np
-from matplotlib import pyplot as plt
-import matplotlib.cm as cm
 import os
 import argparse  # Used for parsing command-line arguments
 
@@ -10,7 +7,6 @@ import argparse  # Used for parsing command-line arguments
 import lace
 from lace.emulator.old_nn_emulator.nn_emulator import NNEmulator
 from lace.archive import nyx_archive, gadget_archive
-from lace.utils import poly_p1d
 from lace.plotting.emulator import plot_p1d_vs_emulator
 
 

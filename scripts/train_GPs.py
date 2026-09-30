@@ -1,4 +1,3 @@
-import numpy as np
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator.old_gp_emulator.gp_emulator_new import GPEmulator
 

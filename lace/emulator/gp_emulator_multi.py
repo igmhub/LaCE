@@ -5,8 +5,7 @@ from warnings import warn
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit, minimize
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern, RBF, WhiteKernel
-import lace
+from sklearn.gaussian_process.kernels import Matern
 from lace.emulator import base_emulator
 from lace.configuration import get_data_path
 from lace.emulator.model_manifest import ModelBundleError, load_manifest, write_manifest

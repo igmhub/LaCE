@@ -24,21 +24,26 @@ def test_pedersen21_test_simulations():
     assert archive.list_sim_test == EXPECTED_PEDERSEN21_TEST_SIMULATIONS
 
 
-def test_cabayol23_fixp3d_uses_corrected_training_files_and_legacy_tests():
+def test_cabayol23_fixp3d_uses_corrected_training_files_and_available_tests():
     """The corrected archive keeps five training rescalings and legacy tests."""
     archive = GadgetArchive(postproc="Cabayol23_fixp3d")
 
     training_files, _ = archive._get_file_names("mpg_0", 0, 0, 0)
-    testing_files, _ = archive._get_file_names("mpg_central", 0, 0, 0)
+    central_files, _ = archive._get_file_names("mpg_central", 0, 0, 0)
+    seed_files, _ = archive._get_file_names("mpg_seed", 0, 0, 0)
 
     assert [Path(name).name.split("_0_")[0] for name in training_files] == [
         "p1d_reshaped",
         "p1d_reshaped_stau",
     ]
-    assert [Path(name).name.split("_0_")[0] for name in testing_files] == [
-        "p1d_stau",
-        "p1d_setau",
-    ]
+    assert [Path(name).name.split("_0_")[0] for name in central_files] in (
+        ["p1d_reshaped", "p1d_reshaped_stau"],
+        ["p1d_stau", "p1d_setau"],
+    )
+    assert [Path(name).name.split("_0_")[0] for name in seed_files] in (
+        ["p1d_reshaped", "p1d_reshaped_stau"],
+        ["p1d_stau"],
+    )
 
     training = [
         item

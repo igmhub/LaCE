@@ -1,6 +1,5 @@
 """Setup CAMB cosmology objects, and compute linear power and similar."""
 
-import os
 import numpy as np
 import camb
 

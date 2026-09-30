@@ -1,7 +1,4 @@
 import numpy as np
-import pickle
-import os
-import json
 import time
 from warnings import warn
 from scipy.spatial import Delaunay
@@ -13,7 +10,6 @@ from lace.utils import poly_p1d
 from lace.utils.nonlinear_smoothing_p1d import Nonlinear_Smoothing
 
 from scipy.optimize import curve_fit
-import lace
 
 
 class GPEmulator(base_emulator.BaseEmulator):
@@ -67,7 +63,6 @@ class GPEmulator(base_emulator.BaseEmulator):
         smoothing_bn=None,
         smoothing_krange=None,
     ):
-        import GPy
 
         self.kmax_Mpc = kmax_Mpc
         self.emu_type = emu_type

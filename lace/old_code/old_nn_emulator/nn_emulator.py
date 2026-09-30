@@ -1,5 +1,5 @@
 import numpy as np
-import os, sys
+import os
 import json
 import random
 import time
@@ -11,7 +11,7 @@ from scipy.interpolate import interp1d
 # Torch related modules
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from torch import nn, optim
+from torch import optim
 from torch.optim import lr_scheduler
 
 # LaCE modules

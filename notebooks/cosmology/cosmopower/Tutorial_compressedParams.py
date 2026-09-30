@@ -28,7 +28,6 @@
 #
 
 # +
-import numpy as np
 import cosmopower as cp
 import pandas as pd
 import logging
