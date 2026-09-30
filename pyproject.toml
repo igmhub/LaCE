@@ -30,11 +30,10 @@ dependencies = [
     "configobj",
     "h5py",
     "camb",
-    "torch",
     "tqdm",
     "strenum",
+    "PyYAML",
     "jupytext",
-    "corner",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -47,6 +46,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+# Torch is only used by developer scripts for legacy neural-emulator products;
+# the supported GP emulator does not require it.
+extended = ["torch", "corner"]
 test = ["pytest>=8"]
 docs = [
     "sphinx>=7",

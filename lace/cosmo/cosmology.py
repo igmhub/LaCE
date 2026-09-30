@@ -157,10 +157,10 @@ class Cosmology(base_cosmology.BaseCosmology):
                 f"Requested z range [{z.min()}, {z.max()}] is outside "
                 f"interpolation range [{interp.zmin}, {interp.zmax}]"
             )
-        if k_Mpc.max() > interp.kmax:
+        if k_Mpc.min() < interp.kmin or k_Mpc.max() > interp.kmax:
             raise ValueError(
-                f"Requested k_Mpc={k_Mpc.max()} exceeds "
-                f"interpolation range kmax_Mpc={interp.kmax}"
+                f"Requested k_Mpc range [{k_Mpc.min()}, {k_Mpc.max()}] is outside "
+                f"interpolation range [{interp.kmin}, {interp.kmax}]"
             )
 
         if z.ndim == 0:
@@ -178,7 +178,14 @@ class Cosmology(base_cosmology.BaseCosmology):
         sig8 = np.asarray(self.CAMBdata.get_sigma8())
         f = fsig8 / sig8
         ind_sort = np.argsort(z_transfer)
-        return np.interp(z, z_transfer[ind_sort], f[ind_sort])
+        z = np.asarray(z, dtype=float)
+        z_grid = z_transfer[ind_sort]
+        if not np.all(np.isfinite(z)) or np.any(z < z_grid.min()) or np.any(z > z_grid.max()):
+            raise ValueError(
+                f"Requested z range [{z.min()}, {z.max()}] is outside "
+                f"growth-rate interpolation range [{z_grid.min()}, {z_grid.max()}]"
+            )
+        return np.interp(z, z_grid, f[ind_sort])
 
     def get_mnu(self):
         """Return the total neutrino mass in eV."""

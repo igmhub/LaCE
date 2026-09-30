@@ -24,3 +24,6 @@ data/DESI_cov/
 *.DS_Store
 build/
 data/NNmodels/testing_models/
+# Large, generated per-simulation post-processing products.
+data/sim_suites/post_768/*/sim_*/skewers_*/
+data/sim_suites/post_768/*/sim_*/bispectrum/
