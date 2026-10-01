@@ -16,7 +16,6 @@ from torch.optim import lr_scheduler
 
 # LaCE modules
 import lace
-from lace.emulator import base_emulator
 from . import nn_architecture
 from lace.utils import poly_p1d
 from lace.emulator.constants import (
@@ -76,7 +75,7 @@ def init_xavier(m):
         m.bias.data.fill_(0.01)
 
 
-class NNEmulator(base_emulator.BaseEmulator):
+class NNEmulator:
     """A class for training an emulator.
 
     Args:

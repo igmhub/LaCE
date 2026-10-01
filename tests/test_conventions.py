@@ -2,12 +2,7 @@ import numpy as np
 import pytest
 
 from lace.conventions import canonicalize_unit_keys, validate_wavenumber
-from lace.emulator.base_emulator import BaseEmulator
-
-
-class _Emulator(BaseEmulator):
-    def emulate_p1d_Mpc(self, model, k_Mpc, return_covar=False, z=None):
-        return np.asarray(k_Mpc) * model["amplitude"]
+from lace.emulator.gp_emulator_multi import GPEmulator
 
 
 def test_legacy_archive_keys_are_canonicalized():
@@ -27,9 +22,32 @@ def test_wavenumber_contract():
         validate_wavenumber([0.0, 1], name="k_iMpc")
 
 
-def test_canonical_emulator_method_delegates_to_legacy_implementation():
-    emulator = _Emulator()
+def test_canonical_gp_method_uses_the_active_gp_contract(monkeypatch):
+    emulator = object.__new__(GPEmulator)
+    calls = {}
+
+    def emulate_p1d(model, k_iMpc, verbose=False, return_coeff=False):
+        calls.update(
+            model=model,
+            k_iMpc=k_iMpc,
+            verbose=verbose,
+            return_coeff=return_coeff,
+        )
+        return np.asarray(k_iMpc) * model["amplitude"]
+
+    monkeypatch.setattr(emulator, "emulate_p1d_Mpc", emulate_p1d)
     np.testing.assert_equal(
-        emulator.emulate_P1D_Mpc({"amplitude": 2}, [1, 2]),
+        emulator.emulate_P1D_Mpc(
+            {"amplitude": 2}, [1, 2], verbose=True, return_coeff=True
+        ),
         [2, 4],
     )
+    assert calls["verbose"] is True
+    assert calls["return_coeff"] is True
+
+
+@pytest.mark.parametrize("kwargs", [{"return_covar": True}, {"z": 3.0}])
+def test_canonical_gp_method_rejects_retired_options(kwargs):
+    emulator = object.__new__(GPEmulator)
+    with pytest.raises(NotImplementedError):
+        emulator.emulate_P1D_Mpc({}, [1.0], **kwargs)

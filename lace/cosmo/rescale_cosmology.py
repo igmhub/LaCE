@@ -64,6 +64,14 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
             tolerance = 1e-4 if name == "mnu" else 0.0
             if not np.isclose(old_value, new_value, rtol=0.0, atol=tolerance):
                 changes[name] = (old_value, new_value)
+        if "pivot_scalar" in new_params_dict:
+            old_value = fid_cosmo.CAMBparams.InitPower.pivot_scalar
+            new_value = new_params_dict["pivot_scalar"]
+            if not np.isclose(old_value, new_value, rtol=0.0, atol=1e-12):
+                changes["pivot_scalar"] = (old_value, new_value)
+        for name in ("theta", "cosmomc_theta", "theta_MC_100"):
+            if name in new_params_dict:
+                changes[name] = ("requires a CAMB angular-size solve", new_params_dict[name])
         return changes
 
 
@@ -118,6 +126,7 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         fid_As = fid_params["As"]
         fid_ns = fid_params["ns"]
         fid_nrun = fid_params["nrun"]
+        fid_nrunrun = fid_params["nrunrun"]
 
         # assume standard pivot point
         k_s = self.fid_cosmo.CAMBparams.InitPower.pivot_scalar
@@ -127,13 +136,16 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         new_As = self.new_params.get("As", fid_As)
         new_ns = self.new_params.get("ns", fid_ns)
         new_nrun = self.new_params.get("nrun", fid_nrun)
+        new_nrunrun = self.new_params.get("nrunrun", fid_nrunrun)
 
         # compute scaling
         ratio_As = new_As / fid_As
         delta_ns = new_ns - fid_ns
         delta_nrun = new_nrun - fid_nrun
+        delta_nrunrun = new_nrunrun - fid_nrunrun
 
         ln_scaling = np.log(ratio_As) + delta_ns * ln_k_over_k_s
         ln_scaling += 0.5 * delta_nrun * ln_k_over_k_s**2
+        ln_scaling += (delta_nrunrun / 6.0) * ln_k_over_k_s**3
 
         return np.exp(ln_scaling)

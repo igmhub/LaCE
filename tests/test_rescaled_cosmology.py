@@ -29,8 +29,9 @@ def fiducial_cosmology():
         {"As": 2.2e-9},
         {"ns": 0.96},
         {"nrun": -0.01},
+        {"nrunrun": 0.002},
     ],
-    ids=["As", "ns", "nrun"],
+    ids=["As", "ns", "nrun", "nrunrun"],
 )
 def test_rescaled_star_parameters_match_fresh_camb(
     fiducial_cosmology, changed_params
@@ -66,6 +67,29 @@ def test_changed_background_reports_parameter_values(fiducial_cosmology):
         assert name in str(error)
         assert repr(fiducial_value) in str(error)
         assert repr(requested_value) in str(error)
+
+
+@pytest.mark.parametrize(
+    "name, value",
+    [
+        ("nnu", 4.0),
+        ("YHe", 0.24),
+        ("TCMB", 2.73),
+        ("standard_neutrino_neff", 4.0),
+        ("tau", 0.06),
+        ("pivot_scalar", 0.04),
+    ],
+)
+def test_transfer_or_background_changes_cannot_use_primordial_rescaling(
+    fiducial_cosmology, name, value
+):
+    """CAMB transfer inputs must not silently take the rescaling route."""
+
+    assert name in fiducial_cosmology.get_background_params() or name == "pivot_scalar"
+    assert not fiducial_cosmology.same_background({name: value})
+    with pytest.raises(IncompatibleBackgroundError) as caught:
+        RescaledCosmology(fiducial_cosmology, {name: value})
+    assert set(caught.value.changes) == {name}
 
 
 def test_nonstandard_pivot_is_rejected():

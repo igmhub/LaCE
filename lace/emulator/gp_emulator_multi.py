@@ -6,7 +6,6 @@ from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit, minimize
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
-from lace.emulator import base_emulator
 from lace.configuration import get_data_path
 from lace.emulator.model_manifest import ModelBundleError, load_manifest, write_manifest
 
@@ -33,7 +32,7 @@ def optimizer(obj_func, x0, bounds):
     return res.x, res.fun
 
 
-class GPEmulator(base_emulator.BaseEmulator):
+class GPEmulator:
     """
     Initialize the Gaussian Process emulator.
     """
@@ -640,22 +639,14 @@ class GPEmulator(base_emulator.BaseEmulator):
         """
         Return the trained P(k) for an arbitrary set of k bins by interpolating the trained data.
 
-        Optionally compute covariance if `return_covar` is True.
-
         :param model: Dictionary containing parameter values with keys as parameter names.
         :type model: dict
         :param k_Mpc: Array of k values in Mpc^-1 for which to predict P(k).
         :type k_Mpc: numpy.ndarray
-        :param return_covar: Whether to return the covariance matrix. Defaults to False.
-        :type return_covar: bool, optional
-        :param z: Optional parameter for rescaling, not fully tested.
-        :type z: optional
-        :return: Tuple containing:
-            - Predicted P1D values.
-            - Covariance matrix if `return_covar` is True.
-        :rtype: tuple
-            - numpy.ndarray: Predicted P1D values.
-            - numpy.ndarray (optional): Covariance matrix if `return_covar` is True.
+        :param verbose: Emit warnings for requested wavenumbers outside the
+            training range.
+        :param return_coeff: Also return the GP polynomial/bin coefficients.
+        :return: Predicted P1D values, optionally with GP coefficients.
         """
 
         for param in self.emu_params:
@@ -705,3 +696,31 @@ class GPEmulator(base_emulator.BaseEmulator):
             return p1d, gp_pred
         else:
             return p1d
+
+    def emulate_P1D_Mpc(
+        self,
+        model,
+        k_iMpc,
+        verbose=False,
+        return_coeff=False,
+        return_covar=False,
+        z=None,
+    ):
+        """Evaluate P1D at ``k_iMpc`` using the canonical unit-bearing API.
+
+        ``return_covar`` and ``z`` belonged to a retired generic interface.
+        This GP emulator does not implement either feature, so accepting them
+        would silently change the meaning of other arguments.
+        """
+
+        if return_covar:
+            raise NotImplementedError(
+                "GPEmulator does not provide P1D covariance predictions"
+            )
+        if z is not None:
+            raise NotImplementedError(
+                "GPEmulator does not support redshift overrides in P1D predictions"
+            )
+        return self.emulate_p1d_Mpc(
+            model, k_iMpc, verbose=verbose, return_coeff=return_coeff
+        )
