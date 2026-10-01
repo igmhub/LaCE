@@ -5,7 +5,6 @@ from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 
 import lace
-from lace.emulator import base_emulator
 
 
 def func_poly(x, a, b, c, d, e):
@@ -18,7 +17,7 @@ def func_poly(x, a, b, c, d, e):
     )
 
 
-class GPEmulator(base_emulator.BaseEmulator):
+class GPEmulator:
     """
     Initialize the Gaussian Process emulator.
     """
