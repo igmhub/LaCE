@@ -44,11 +44,11 @@ from lace.plotting import ArchivePlotter, PARAMETER_LABELS
 # %% [markdown]
 # ## Load the Gadget archive
 #
-# The Cabayol23 post-processing supplies the MPG simulations. We construct the
+# The corrected Cabayol23_fixp3d post-processing supplies the MPG simulations. We construct the
 # archive and its plotter once and reuse both throughout the notebook.
 
 # %%
-gadget_archive = GadgetArchive(postproc="Cabayol23")
+gadget_archive = GadgetArchive(postproc="Cabayol23_fixp3d")
 gadget_plotter = ArchivePlotter(gadget_archive)
 
 

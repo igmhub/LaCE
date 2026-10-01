@@ -44,7 +44,7 @@ emulator_label = "CH24_nyxcen_gpr"
 
 if emulator_label == "CH24_mpgcen_gpr":
     suite = "mpg"
-    archive = gadget_archive.GadgetArchive()
+    archive = gadget_archive.GadgetArchive(postproc="Cabayol23_fixp3d")
 elif emulator_label == "CH24_nyxcen_gpr":
     suite = "nyx"
     archive = nyx_archive.NyxArchive()

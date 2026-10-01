@@ -43,7 +43,7 @@ from lace.archive.gadget_archive import GadgetArchive
 # archive wrapper or package-relative path is needed.
 
 # %%
-archive = GadgetArchive(postproc="Cabayol23")
+archive = GadgetArchive(postproc="Cabayol23_fixp3d")
 print(f"Loaded {len(archive.data)} Cabayol23 archive entries")
 
 # %% [markdown]

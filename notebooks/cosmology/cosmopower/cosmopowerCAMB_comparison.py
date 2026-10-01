@@ -36,7 +36,7 @@ test_sim = "mpg_central"
 z_star=3
 
 
-archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
+archive = gadget_archive.GadgetArchive(postproc="Cabayol23_fixp3d")
 
 testing_data = archive.get_testing_data(sim_label=test_sim)
 
@@ -185,5 +185,4 @@ ax2.axhline(y=1, color='k', linestyle='--', alpha=0.5)
 plt.tight_layout()
 plt.show()
 # -
-
 

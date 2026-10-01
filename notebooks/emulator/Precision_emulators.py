@@ -42,7 +42,7 @@ emulator_label = "CH24_nyxcen_gpr"
 emu_params = ["Delta2_p", "n_p", "mF", "sigT_Mpc", "gamma", "kF_Mpc"]
 
 if emulator_label == "CH24_mpgcen_gpr":
-    archive = gadget_archive.GadgetArchive()
+    archive = gadget_archive.GadgetArchive(postproc="Cabayol23_fixp3d")
     central = archive.get_testing_data("mpg_central")
     seed = archive.get_testing_data("mpg_seed")
     training_data = archive.get_training_data(emu_params=emu_params, average="both")

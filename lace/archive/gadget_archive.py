@@ -28,7 +28,7 @@ class GadgetArchive(BaseArchive):
 
     def __init__(
         self,
-        postproc="Cabayol23",
+        postproc="Cabayol23_fixp3d",
         kp_Mpc=None,
         force_recompute_linP_params=False,
         verbose=False,
@@ -40,10 +40,10 @@ class GadgetArchive(BaseArchive):
         Initialize the archive object.
 
         Args:
-            postproc (str): Specify post-processing run. Default is "Cabayol23".
-                Use "Cabayol23_fixp3d" for corrected training P3D files while
-                retaining the legacy test-simulation files. Raises a ValueError
-                if the postproc is not available.
+            postproc (str): Specify post-processing run. Defaults to
+                "Cabayol23_fixp3d", which uses corrected training P3D files
+                while retaining the legacy test-simulation files. Raises a
+                ValueError if the postproc is not available.
             kp_Mpc (None or float): Optional. Pivot point used in linear power parameters.
                 If specified, the parameters will be recomputed in the archive. Default is None.
             fore_recompute_linP_params (boolean). If set, it will recompute linear power parameters even if kp_Mpc match. Default is False.

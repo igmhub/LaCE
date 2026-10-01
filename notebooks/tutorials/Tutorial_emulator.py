@@ -37,7 +37,7 @@ from lace.plotting import plot_emulator_predictions, plot_parameter_corner
 # #### Load mpg simulations (Pedersen+21; Cabayol-Garcia+23)
 
 # %%
-archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
+archive = gadget_archive.GadgetArchive(postproc="Cabayol23_fixp3d")
 
 # %% [markdown]
 # #### Load Emulator

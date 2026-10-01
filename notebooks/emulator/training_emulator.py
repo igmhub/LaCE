@@ -36,7 +36,7 @@ from lace.emulator.gp_emulator_multi import GPEmulator
 emulator_label = "CH24_nyxcen_gpr"
 
 if emulator_label == "CH24_mpgcen_gpr":
-    archive = gadget_archive.GadgetArchive()
+    archive = gadget_archive.GadgetArchive(postproc="Cabayol23_fixp3d")
 elif emulator_label == "CH24_nyxcen_gpr":
     archive = nyx_archive.NyxArchive()
 else:
