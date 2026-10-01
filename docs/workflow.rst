@@ -77,7 +77,9 @@ by the matching emulator:
    P1D_Mpc = emulator.emulate_P1D_Mpc(testing[0], k_iMpc)
 
 For a batch, pass arrays under each emulator-parameter key. The returned power
-has wavenumber on the final axis. Production GP covariance is distributed as
+has wavenumber on the final axis. GP inputs are grouped by their mean-flux
+expert so each scikit-learn GP receives all matching rows in one prediction
+call; this is the preferred interface for likelihood walkers and redshifts. Production GP covariance is distributed as
 a separate leave-one-out validation product rather than inferred from this
 prediction call.
 

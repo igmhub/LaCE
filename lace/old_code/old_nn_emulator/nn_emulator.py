@@ -1,5 +1,5 @@
 import numpy as np
-import os, sys
+import os
 import json
 import random
 import time
@@ -11,12 +11,11 @@ from scipy.interpolate import interp1d
 # Torch related modules
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from torch import nn, optim
+from torch import optim
 from torch.optim import lr_scheduler
 
 # LaCE modules
 import lace
-from lace.emulator import base_emulator
 from . import nn_architecture
 from lace.utils import poly_p1d
 from lace.emulator.constants import (
@@ -76,7 +75,7 @@ def init_xavier(m):
         m.bias.data.fill_(0.01)
 
 
-class NNEmulator(base_emulator.BaseEmulator):
+class NNEmulator:
     """A class for training an emulator.
 
     Args:

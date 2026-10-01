@@ -1,22 +1,17 @@
 import numpy as np
-import pickle
-import os
-import json
 import time
 from warnings import warn
 from scipy.spatial import Delaunay
 from scipy.interpolate import interp1d
 
 from lace.archive import gadget_archive
-from lace.emulator import base_emulator
 from lace.utils import poly_p1d
 from lace.utils.nonlinear_smoothing_p1d import Nonlinear_Smoothing
 
 from scipy.optimize import curve_fit
-import lace
 
 
-class GPEmulator(base_emulator.BaseEmulator):
+class GPEmulator:
     """
     Initialize the Gaussian Process emulator.
 
@@ -67,7 +62,6 @@ class GPEmulator(base_emulator.BaseEmulator):
         smoothing_bn=None,
         smoothing_krange=None,
     ):
-        import GPy
 
         self.kmax_Mpc = kmax_Mpc
         self.emu_type = emu_type

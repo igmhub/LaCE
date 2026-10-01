@@ -166,6 +166,73 @@ class BaseCosmology(object):
         drad_dMpc = self.get_drad_dMpc(z)
         return 180.0 / np.pi * 60.0 * drad_dMpc
 
+    @staticmethod
+    def get_dkms_dMpc_for_cosmologies(cosmologies, zs):
+        """Return velocity conversions for one cosmology or a cosmology batch.
+
+        A single ``Cosmology``/``RescaledCosmology`` returns the usual scalar
+        or redshift-array result. A sequence returns an array with leading
+        ``(n_cosmologies, n_z)`` axes. This is the shape-dispatching public
+        interface used by cup1d.
+        """
+
+        if isinstance(cosmologies, BaseCosmology):
+            return cosmologies.get_dkms_dMpc(zs)
+        zs = np.atleast_1d(np.asarray(zs, dtype=float))
+        return np.asarray([cosmo.get_dkms_dMpc(zs) for cosmo in cosmologies])
+
+    @staticmethod
+    def get_linP_Mpc_params_for_cosmologies(cosmologies, zs, kp_Mpc, species="bc"):
+        """Return Mpc-pivot summaries for one cosmology or a batch.
+
+        A single cosmology returns the scalar dictionary for scalar ``zs`` or
+        a dictionary of ``(n_z,)`` arrays for redshift arrays. A sequence
+        returns dictionary values shaped ``(n_cosmologies, n_z)``.
+        """
+
+        if isinstance(cosmologies, BaseCosmology):
+            if np.asarray(zs).ndim == 0:
+                return cosmologies.get_linP_Mpc_params(zs, kp_Mpc, species=species)
+            values = [
+                cosmologies.get_linP_Mpc_params(z, kp_Mpc, species=species)
+                for z in np.asarray(zs)
+            ]
+            return {name: np.asarray([row[name] for row in values]) for name in values[0]}
+        zs = np.atleast_1d(np.asarray(zs, dtype=float))
+        values = [
+            [cosmo.get_linP_Mpc_params(z, kp_Mpc, species=species) for z in zs]
+            for cosmo in cosmologies
+        ]
+        return {
+            name: np.asarray([[row[name] for row in result] for result in values])
+            for name in ("Delta2_p", "n_p", "alpha_p")
+        }
+
+    @staticmethod
+    def get_linP_kms_params_for_cosmologies(cosmologies, zs, kp_kms, species="bc"):
+        """Return km/s-pivot summaries for one cosmology or a batch.
+
+        Return shapes follow :meth:`get_linP_Mpc_params_for_cosmologies`.
+        """
+
+        if isinstance(cosmologies, BaseCosmology):
+            if np.asarray(zs).ndim == 0:
+                return cosmologies.get_linP_kms_params(zs, kp_kms, species=species)
+            values = [
+                cosmologies.get_linP_kms_params(z, kp_kms, species=species)
+                for z in np.asarray(zs)
+            ]
+            return {name: np.asarray([row[name] for row in values]) for name in values[0]}
+        zs = np.atleast_1d(np.asarray(zs, dtype=float))
+        values = [
+            [cosmo.get_linP_kms_params(z, kp_kms, species=species) for z in zs]
+            for cosmo in cosmologies
+        ]
+        return {
+            name: np.asarray([[row[name] for row in result] for result in values])
+            for name in ("Delta2_star", "n_star", "alpha_star")
+        }
+
     def get_linP_Mpc_params(self, z, kp_Mpc, species="bc"):
         """Parameters describing the linear power around kp_Mpc"""
 

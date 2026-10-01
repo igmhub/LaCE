@@ -2,7 +2,6 @@
 ## General python modules
 import numpy as np
 from matplotlib import pyplot as plt
-import matplotlib.cm as cm
 import os
 import argparse  
 from loguru import logger
@@ -13,7 +12,6 @@ import lace
 from lace.emulator.old_nn_emulator.nn_emulator import NNEmulator
 from lace.archive import nyx_archive, gadget_archive
 from lace.utils import poly_p1d
-from lace.plotting.emulator import plot_p1d_vs_emulator
 
 
 def make_p1d_err_plot(p1ds_err, kMpc_test):

@@ -12,6 +12,15 @@ scientific dependencies in a dedicated environment:
    cd LaCE
    python -m pip install -e .
 
+This installs the supported GP emulators and their cosmology/archive and
+notebook dependencies without PyTorch. Developer scripts that create legacy
+neural-emulator products, and optional corner plots, require the extended
+extra:
+
+.. code-block:: console
+
+   python -m pip install -e ".[extended]"
+
 Install the documentation tools and build the site locally with:
 
 .. code-block:: console

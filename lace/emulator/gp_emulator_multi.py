@@ -5,9 +5,7 @@ from warnings import warn
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit, minimize
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern, RBF, WhiteKernel
-import lace
-from lace.emulator import base_emulator
+from sklearn.gaussian_process.kernels import Matern
 from lace.configuration import get_data_path
 from lace.emulator.model_manifest import ModelBundleError, load_manifest, write_manifest
 
@@ -34,7 +32,7 @@ def optimizer(obj_func, x0, bounds):
     return res.x, res.fun
 
 
-class GPEmulator(base_emulator.BaseEmulator):
+class GPEmulator:
     """
     Initialize the Gaussian Process emulator.
     """
@@ -278,6 +276,8 @@ class GPEmulator(base_emulator.BaseEmulator):
 
             self._initialize(training_data)
             self._save_emu()
+
+        self._prediction_cache = None
 
     def _normalization_path(self, normalization_path, folder_save):
         if normalization_path is not None:
@@ -561,82 +561,92 @@ class GPEmulator(base_emulator.BaseEmulator):
         except (TypeError, ValueError) as error:
             raise ValueError("Emulator parameters must be numeric scalars or one-dimensional arrays") from error
 
-    def predict(self, model):
-        """
-        Return P1D or polynomial fit coefficients for a given parameter set.
+    def _prediction_key(self, values):
+        """Return a stable cache key for one physical emulator input row."""
 
-        This method provides predictions of P1D values or polynomial coefficients based on
-        the provided model parameters. It can also return error estimates if required.
+        return tuple(float(value) for value in values)
 
-        :param model: Dictionary containing parameter values with keys as parameter names.
-        :type model: dict
-        :param z: Optional parameter for rescaling, not fully tested.
-        :type z: optional
-        :return: Tuple containing:
-            - Predicted P1D values.
-            - Error estimates for the predictions.
-        :rtype: tuple
-            - numpy.ndarray: Predicted P1D values.
-            - numpy.ndarray: Error estimates for the predictions.
-        """
+    def _predict_rows(self, physical_rows):
+        """Predict many rows, grouping calls to each mean-flux GP expert."""
 
-        # Input validation is intentionally explicit: malformed arrays must not
-        # be mistaken for a one-row scalar call.
-        emu_call, _ = self._prepare_model_input(model)
-        emu_call = (emu_call - self.xscalings_mean) / self.xscalings_std
+        emu_call = (physical_rows - self.xscalings_mean) / self.xscalings_std
         length = emu_call.shape[0]
+        scaled_prediction = np.zeros((length, len(self.tscalings_mean)))
+        counts = np.zeros(length)
+        mean_flux = emu_call[:, self.ind_mF]
+        central_expert = np.argmin(
+            np.abs(mean_flux[:, None] - self.bin_mF_cen[None, :]), axis=1
+        )
 
-        # output
-        out_pred = np.zeros((length, len(self.tscalings_mean)))
-        for ii in range(length):
-            mF = emu_call[ii, self.ind_mF]
-            jj = np.argmin(np.abs(mF - self.bin_mF_cen))
-            # print(mF, self.bin_mF_cen, self.bin_mF_cen[jj])
+        rows_by_expert = [[] for _ in self.gp]
+        for row, expert in enumerate(central_expert):
+            rows_by_expert[expert].append(row)
+            if expert != 0 and mean_flux[row] < self.bin_mF_top[expert - 1]:
+                rows_by_expert[expert - 1].append(row)
+            if (
+                expert != len(self.bin_mF_cen) - 1
+                and mean_flux[row] > self.bin_mF_bot[expert + 1]
+            ):
+                rows_by_expert[expert + 1].append(row)
 
-            # average emulator predictions if mF in overlapping range
-            num = 1.0
-            pred = self.gp[jj].predict(np.atleast_2d(emu_call[ii]))[0]
-            if jj != 0:
-                if mF < self.bin_mF_top[jj - 1]:
-                    num += 1.0
-                    pred += self.gp[jj - 1].predict(
-                        np.atleast_2d(emu_call[ii])
-                    )[0]
-            if jj != (len(self.bin_mF_cen) - 1):
-                if mF > self.bin_mF_bot[jj + 1]:
-                    num += 1.0
-                    pred += self.gp[jj + 1].predict(
-                        np.atleast_2d(emu_call[ii])
-                    )[0]
+        for expert, rows in enumerate(rows_by_expert):
+            if not rows:
+                continue
+            rows = np.asarray(rows, dtype=int)
+            scaled_prediction[rows] += self.gp[expert].predict(emu_call[rows])
+            counts[rows] += 1
 
-            # print(ii, jj, num, mF, self.bin_mF_bot[jj], self.bin_mF_top[jj])
+        return (
+            scaled_prediction / counts[:, None]
+        ) * self.tscalings_std + self.tscalings_mean
 
-            out_pred[ii] = (
-                pred / num
-            ) * self.tscalings_std + self.tscalings_mean
+    def prime_prediction_cache(self, emulator_calls):
+        """Predict all unique rows required by one batched likelihood call."""
 
-        return out_pred
+        unique_rows = {}
+        for model in emulator_calls:
+            rows, _ = self._prepare_model_input(model)
+            for row in rows:
+                unique_rows.setdefault(self._prediction_key(row), row)
+        if not unique_rows:
+            self._prediction_cache = {}
+            return
+        keys = list(unique_rows)
+        predictions = self._predict_rows(np.asarray([unique_rows[key] for key in keys]))
+        self._prediction_cache = {
+            key: predictions[index] for index, key in enumerate(keys)
+        }
+
+    def clear_prediction_cache(self):
+        """Discard predictions retained for one batched likelihood call."""
+
+        self._prediction_cache = None
+
+    def predict(self, model):
+        """Return polynomial or k-bin predictions for one or more inputs."""
+
+        physical_rows, _ = self._prepare_model_input(model)
+        if self._prediction_cache is None:
+            return self._predict_rows(physical_rows)
+        return np.asarray(
+            [
+                self._prediction_cache[self._prediction_key(row)]
+                for row in physical_rows
+            ]
+        )
 
     def emulate_p1d_Mpc(self, model, k_Mpc, verbose=False, return_coeff=False):
         """
         Return the trained P(k) for an arbitrary set of k bins by interpolating the trained data.
 
-        Optionally compute covariance if `return_covar` is True.
-
         :param model: Dictionary containing parameter values with keys as parameter names.
         :type model: dict
         :param k_Mpc: Array of k values in Mpc^-1 for which to predict P(k).
         :type k_Mpc: numpy.ndarray
-        :param return_covar: Whether to return the covariance matrix. Defaults to False.
-        :type return_covar: bool, optional
-        :param z: Optional parameter for rescaling, not fully tested.
-        :type z: optional
-        :return: Tuple containing:
-            - Predicted P1D values.
-            - Covariance matrix if `return_covar` is True.
-        :rtype: tuple
-            - numpy.ndarray: Predicted P1D values.
-            - numpy.ndarray (optional): Covariance matrix if `return_covar` is True.
+        :param verbose: Emit warnings for requested wavenumbers outside the
+            training range.
+        :param return_coeff: Also return the GP polynomial/bin coefficients.
+        :return: Predicted P1D values, optionally with GP coefficients.
         """
 
         for param in self.emu_params:
@@ -686,3 +696,31 @@ class GPEmulator(base_emulator.BaseEmulator):
             return p1d, gp_pred
         else:
             return p1d
+
+    def emulate_P1D_Mpc(
+        self,
+        model,
+        k_iMpc,
+        verbose=False,
+        return_coeff=False,
+        return_covar=False,
+        z=None,
+    ):
+        """Evaluate P1D at ``k_iMpc`` using the canonical unit-bearing API.
+
+        ``return_covar`` and ``z`` belonged to a retired generic interface.
+        This GP emulator does not implement either feature, so accepting them
+        would silently change the meaning of other arguments.
+        """
+
+        if return_covar:
+            raise NotImplementedError(
+                "GPEmulator does not provide P1D covariance predictions"
+            )
+        if z is not None:
+            raise NotImplementedError(
+                "GPEmulator does not support redshift overrides in P1D predictions"
+            )
+        return self.emulate_p1d_Mpc(
+            model, k_iMpc, verbose=verbose, return_coeff=return_coeff
+        )

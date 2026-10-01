@@ -2,7 +2,6 @@ from lace.archive.nyx_archive import NyxArchive
 from lace.configuration import get_nyx_path
 from lace.cosmo.thermal_broadening import thermal_broadening_kms
 import numpy as np
-import os
 
 
 def main():

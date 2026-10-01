@@ -50,7 +50,15 @@ pip install --upgrade pip
 git clone https://github.com/igmhub/LaCE.git
 cd LaCE
 make install
-``` 
+```
+
+This minimal installation contains the supported GP emulators, cosmology,
+archives, and notebook utilities. Developer torch scripts and optional corner
+plots are available only when needed:
+
+```bash
+make install-extended
+```
 
 #### Nyx users:
 

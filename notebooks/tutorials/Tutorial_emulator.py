@@ -37,7 +37,7 @@ from lace.plotting import plot_emulator_predictions, plot_parameter_corner
 # #### Load mpg simulations (Pedersen+21; Cabayol-Garcia+23)
 
 # %%
-archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
+archive = gadget_archive.GadgetArchive(postproc="Cabayol23_fixp3d")
 
 # %% [markdown]
 # #### Load Emulator
@@ -72,25 +72,30 @@ plot_emulator_predictions(
 )
 
 # %% [markdown]
-# ### For some random parameters
+# ### Batch predictions for several input models
 #
-# For a better performance, check that these are within the range of values used to train the emulator
+# Pass one value per model for every emulator parameter. Here the three-element
+# arrays request three P1D predictions in one emulator call. A one-dimensional
+# `k_Mpc` grid is shared by every model; the returned array has shape
+# `(n_models, n_k)`. For a better performance, keep parameters within the
+# range covered by the training set.
 
 # %%
 k_Mpc = np.geomspace(0.1, 4, 100)
 # we only change Delta2_p, the rest of the parameters are fixed to the central values of the training set
-input_params = {
-    'Delta2_p': [0.30, 0.35, 0.40],
-    'n_p': [-2.3, -2.3, -2.3],
-    'alpha_p': [-0.215, -0.215, -0.215],
-    'mF': [0.66, 0.66, 0.66],
-    'gamma': [1.5, 1.5, 1.5],
-    'sigT_Mpc': [0.128, 0.128, 0.128],
-    'kF_Mpc': [10.5, 10.5, 10.5]
+batch_input_params = {
+    "Delta2_p": np.array([0.30, 0.35, 0.40]),
+    "n_p": np.array([-2.3, -2.3, -2.3]),
+    "alpha_p": np.array([-0.215, -0.215, -0.215]),
+    "mF": np.array([0.66, 0.66, 0.66]),
+    "gamma": np.array([1.5, 1.5, 1.5]),
+    "sigT_Mpc": np.array([0.128, 0.128, 0.128]),
+    "kF_Mpc": np.array([10.5, 10.5, 10.5]),
 }
-p1d = emulator.emulate_p1d_Mpc(input_params, k_Mpc)
+p1d_batch = emulator.emulate_p1d_Mpc(batch_input_params, k_Mpc)
+print(p1d_batch.shape)  # (3, len(k_Mpc))
 
-plot_emulator_predictions(k_Mpc, p1d, divide_by_pi=True)
+plot_emulator_predictions(k_Mpc, p1d_batch, divide_by_pi=True)
 
 # %% [markdown]
 # To check the range of values of the parameters in the training set, we can do:

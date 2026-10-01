@@ -79,6 +79,7 @@ def select_training(
         training_data = archive.get_training_data(
             emu_params=emu_params,
             drop_sim=drop_sim,
+            drop_z=drop_z,
             z_max=z_max,
             average=average,
         )

@@ -1,6 +1,5 @@
 import numpy as np
 from lace.archive.gadget_archive import GadgetArchive
-from lace.setup_simulations import read_genic
 
 
 def main():

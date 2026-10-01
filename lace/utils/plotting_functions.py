@@ -4,7 +4,6 @@ New code should import from :mod:`lace.plotting`.
 """
 
 from lace.plotting.corner import plot_parameter_corner
-from lace.plotting.emulator import plot_p1d_vs_emulator
 
 
 def create_corner_plot(list_of_dfs, params_to_plot, **kwargs):

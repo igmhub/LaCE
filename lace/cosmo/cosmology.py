@@ -35,7 +35,9 @@ class Cosmology(base_cosmology.BaseCosmology):
 
         self.input_cosmo_label = cosmo_label
         self.input_cosmo_params_dict = normalize_cosmology_params(cosmo_params_dict)
-        self.CAMBparams = self._build_camb_params(self.input_cosmo_params_dict)
+        self.CAMBparams, self._resolved_camb_params = self._build_camb_params(
+            self.input_cosmo_params_dict
+        )
         self.ks_Mpc = self.CAMBparams.InitPower.pivot_scalar
 
         self.background_params = self.get_background_params()
@@ -118,7 +120,7 @@ class Cosmology(base_cosmology.BaseCosmology):
             r=values.get("r", 0.0),
             pivot_scalar=values["pivot_scalar"],
         )
-        return camb_params
+        return camb_params, values
 
     # BaseCosmology implementation
 
@@ -157,10 +159,10 @@ class Cosmology(base_cosmology.BaseCosmology):
                 f"Requested z range [{z.min()}, {z.max()}] is outside "
                 f"interpolation range [{interp.zmin}, {interp.zmax}]"
             )
-        if k_Mpc.max() > interp.kmax:
+        if k_Mpc.min() < interp.kmin or k_Mpc.max() > interp.kmax:
             raise ValueError(
-                f"Requested k_Mpc={k_Mpc.max()} exceeds "
-                f"interpolation range kmax_Mpc={interp.kmax}"
+                f"Requested k_Mpc range [{k_Mpc.min()}, {k_Mpc.max()}] is outside "
+                f"interpolation range [{interp.kmin}, {interp.kmax}]"
             )
 
         if z.ndim == 0:
@@ -178,7 +180,14 @@ class Cosmology(base_cosmology.BaseCosmology):
         sig8 = np.asarray(self.CAMBdata.get_sigma8())
         f = fsig8 / sig8
         ind_sort = np.argsort(z_transfer)
-        return np.interp(z, z_transfer[ind_sort], f[ind_sort])
+        z = np.asarray(z, dtype=float)
+        z_grid = z_transfer[ind_sort]
+        if not np.all(np.isfinite(z)) or np.any(z < z_grid.min()) or np.any(z > z_grid.max()):
+            raise ValueError(
+                f"Requested z range [{z.min()}, {z.max()}] is outside "
+                f"growth-rate interpolation range [{z_grid.min()}, {z_grid.max()}]"
+            )
+        return np.interp(z, z_grid, f[ind_sort])
 
     def get_mnu(self):
         """Return the total neutrino mass in eV."""
@@ -207,6 +216,19 @@ class Cosmology(base_cosmology.BaseCosmology):
             "omk": self.CAMBparams.omk,
             "omnuh2": self.CAMBparams.omnuh2,
             "mnu": self.get_mnu(),
+            # ``nnu`` changes the radiation content and transfer functions;
+            # it is not a primordial-spectrum parameter.
+            "nnu": self._resolved_camb_params["nnu"],
+            # These values are accepted by CAMB and can alter the transfer
+            # calculation directly or through BBN helium inference.
+            "YHe": self._resolved_camb_params["YHe"],
+            "TCMB": self._resolved_camb_params["TCMB"],
+            "standard_neutrino_neff": self._resolved_camb_params[
+                "standard_neutrino_neff"
+            ],
+            # Reionization does not normally alter late-time matter power, but
+            # primordial-only rescaling must not silently ignore a CAMB input.
+            "tau": self._resolved_camb_params["tau"],
             "w": self.CAMBparams.DarkEnergy.w,
             "wa": self.CAMBparams.DarkEnergy.wa,
         }
@@ -216,6 +238,21 @@ class Cosmology(base_cosmology.BaseCosmology):
 
         if cosmo_params is None:
             return True
+        # Angular-size parameterizations determine H0 through a CAMB solve.
+        # A primordial-only rescaling cannot verify that they preserve the
+        # fiducial transfer/background calculation.
+        if any(
+            name in cosmo_params
+            for name in ("theta", "cosmomc_theta", "theta_MC_100")
+        ):
+            return False
+        if "pivot_scalar" in cosmo_params and not np.isclose(
+            self.CAMBparams.InitPower.pivot_scalar,
+            cosmo_params["pivot_scalar"],
+            rtol=0.0,
+            atol=1e-12,
+        ):
+            return False
         back_params = self.get_background_params()
         for name, value in back_params.items():
             if name not in cosmo_params:

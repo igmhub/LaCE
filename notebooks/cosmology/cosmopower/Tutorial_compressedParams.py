@@ -28,7 +28,6 @@
 #
 
 # +
-import numpy as np
 import cosmopower as cp
 import pandas as pd
 import logging
@@ -52,7 +51,7 @@ from lace.cosmo.train_linP_cosmopower import (create_LH_sample,
 test_sim = "mpg_neutrino"
 emulator_mnu = True
 
-archive = gadget_archive.GadgetArchive(postproc="Cabayol23")
+archive = gadget_archive.GadgetArchive(postproc="Cabayol23_fixp3d")
 
 testing_data = archive.get_testing_data(sim_label=test_sim)
 

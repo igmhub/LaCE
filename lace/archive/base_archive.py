@@ -470,7 +470,7 @@ class BaseArchive(object):
             invalid_axis = [
                 sim for sim in drop_axis if sim not in self.list_sim_axes
             ]
-            if invalid_zs:
+            if invalid_axis:
                 msg = f"Invalid drop_axis value(s). Available options:"
                 raise ExceptionList(msg, self.list_sim_axes.astype("str"))
 
