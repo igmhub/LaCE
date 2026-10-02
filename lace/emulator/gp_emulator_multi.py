@@ -11,6 +11,7 @@ from lace.emulator.model_manifest import ModelBundleError, load_manifest, write_
 
 
 def func_poly(x, a, b, c, d, e):
+    """Evaluate the five-component sigmoid basis used for P1D fitting."""
     return (
         a / (1 + np.exp(0.5 * x))
         + b / (1 + np.exp(1 * x))
@@ -21,6 +22,7 @@ def func_poly(x, a, b, c, d, e):
 
 
 def optimizer(obj_func, x0, bounds):
+    """Minimize an objective with its analytic gradient using L-BFGS-B."""
     res = minimize(
         obj_func,
         x0,

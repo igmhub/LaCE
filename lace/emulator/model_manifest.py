@@ -30,6 +30,7 @@ def _sha256(path: Path) -> str:
 
 
 def runtime_versions() -> dict[str, str]:
+    """Return versions of Python and serialized-model runtime dependencies."""
     result = {"python": ".".join(map(str, sys.version_info[:3]))}
     for package in ("numpy", "scipy", "scikit-learn"):
         try:
@@ -87,6 +88,22 @@ def load_manifest(folder, emulator_label, label, normalization_path):
 
 
 def write_manifest(folder, emulator_label, label, files, normalization_path, drop_sim, provenance=None):
+    """Write the checksum inventory accompanying a serialized GP bundle.
+
+    Parameters
+    ----------
+    folder : str or pathlib.Path
+        Destination model directory.
+    emulator_label, label : str
+        Emulator family and full or leave-one-out model label.
+    files : sequence of pathlib.Path
+        Serialized model and metadata files covered by the manifest.
+
+    Returns
+    -------
+    pathlib.Path
+        Written JSON manifest path.
+    """
     folder = Path(folder)
     import lace
     manifest = {

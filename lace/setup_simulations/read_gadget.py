@@ -42,6 +42,7 @@ def read_gadget_paramfile(paramfile, verbose=False):
 
 
 def snapshot_redshifts(config):
+    """Return output redshifts, including the final MP-Gadget snapshot."""
     scale_factors = [float(astr) for astr in config["OutputList"].split(",")]
     # add last snapshot, when simulation ends
     scale_factors.append(float(config["TimeMax"]))
@@ -50,6 +51,7 @@ def snapshot_redshifts(config):
 
 
 def redshifts_from_paramfile(paramfile, verbose=False):
+    """Read an MP-Gadget file and return its output redshifts."""
     config = read_gadget_paramfile(paramfile, verbose)
     return snapshot_redshifts(config)
 

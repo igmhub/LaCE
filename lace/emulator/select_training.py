@@ -4,6 +4,15 @@ from scipy.interpolate import interp1d
 
 
 def interp_k_Mpc_central(sim: list[dict], k_Mpc: list[float]) -> None:
+    """Interpolate central simulation P1D arrays onto a common k grid.
+
+    Parameters
+    ----------
+    sim : list of dict
+        Simulation dictionaries modified in place.
+    k_Mpc : array_like
+        Target comoving wavenumber grid in 1/Mpc.
+    """
     for sim_dict in sim:
         # Create interpolation function for this simulation's P1D
         p1d_interp = interp1d(
@@ -31,6 +40,22 @@ def select_training(
     z_star: float = 3,
     kp_kms: float = 0.009,
 ) -> tuple[gadget_archive.GadgetArchive | nyx_archive.NyxArchive, list[dict]]:
+    """Select and preprocess simulations for emulator training.
+
+    Parameters
+    ----------
+    archive : GadgetArchive or NyxArchive, optional
+        Existing simulation archive.
+    training_set : str or TrainingSet, optional
+        Named training collection when ``archive`` is not supplied.
+
+    Returns
+    -------
+    archive : GadgetArchive or NyxArchive
+        Selected archive.
+    training_data : list of dict
+        Emulator-ready simulation measurements.
+    """
     if (archive is None) and (training_set is None):
         raise ValueError("Archive or training_set must be provided")
 

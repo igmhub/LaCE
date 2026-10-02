@@ -28,6 +28,20 @@ PrimordialRunning = float(default=0.0)""".split(
 
 
 def L_Mpc_from_paramfile(paramfile, verbose=False):
+    """Return the comoving GenIC box length in Mpc.
+
+    Parameters
+    ----------
+    paramfile : str or pathlib.Path
+        GenIC configuration file.
+    verbose : bool, default=False
+        Print the parsed intermediate units when true.
+
+    Returns
+    -------
+    float
+        Box side length converted from h kpc to Mpc.
+    """
     config = read_genic_paramfile(paramfile, verbose)
     L_hkpc = config["BoxSize"]
     h = config["HubbleParam"]
