@@ -11,7 +11,20 @@ from lace.emulator.model_manifest import ModelBundleError, load_manifest, write_
 
 
 def func_poly(x, a, b, c, d, e):
-    """Evaluate the five-component sigmoid basis used for P1D fitting."""
+    """Evaluate the five-component sigmoid basis used for P1D fitting.
+
+    Parameters
+    ----------
+    x : array-like
+        Dimensionless wavenumber ``k / kmax``.
+    a, b, c, d, e : float or array-like
+        Coefficients of sigmoid components with fixed exponents.
+
+    Returns
+    -------
+    ndarray
+        Fitted logarithmic P1D shape with NumPy broadcasting.
+    """
     return (
         a / (1 + np.exp(0.5 * x))
         + b / (1 + np.exp(1 * x))
@@ -22,7 +35,22 @@ def func_poly(x, a, b, c, d, e):
 
 
 def optimizer(obj_func, x0, bounds):
-    """Minimize an objective with its analytic gradient using L-BFGS-B."""
+    """Minimize a differentiable objective with L-BFGS-B.
+
+    Parameters
+    ----------
+    obj_func : callable
+        Objective returning ``(value, gradient)``.
+    x0 : array-like
+        Initial parameter vector.
+    bounds : sequence
+        Bounds accepted by :func:`scipy.optimize.minimize`.
+
+    Returns
+    -------
+    x, fun : tuple
+        Optimized coordinates and final scalar objective value.
+    """
     res = minimize(
         obj_func,
         x0,
@@ -35,8 +63,10 @@ def optimizer(obj_func, x0, bounds):
 
 
 class GPEmulator:
-    """
-    Initialize the Gaussian Process emulator.
+    """Gaussian-process emulator for normalized one-dimensional flux power.
+
+    The emulator predicts P1D in Mpc units from the suite-specific linear,
+    thermal, and mean-flux parameter vectors selected by ``emulator_label``.
     """
 
     def __init__(
@@ -52,6 +82,32 @@ class GPEmulator:
         data_path=None,
         normalization_path=None,
     ):
+        """Load a production bundle or train a GP emulator from archive entries.
+
+        Parameters
+        ----------
+        archive, archive2 : BaseArchive, optional
+            Training archive(s); ``archive2`` is used only by the combined
+            ``CH24_gpr`` model.
+        emulator_label : str, default="CH24_nyx_gpr"
+            Supported GP model family.
+        drop_sim : str, optional
+            Simulation omitted for a leave-one-out model.
+        train, save : bool, default=False
+            Train a model instead of loading it; ``save`` is retained for API
+            compatibility while trained models are written by this class.
+        n_restarts_optimizer : int, default=0
+            Number of GP kernel optimizer restarts.
+        model_path, data_path, normalization_path : path-like, optional
+            Explicit model root, data root, and normalization-file locations.
+
+        Raises
+        ------
+        ValueError
+            If model labels or training inputs are invalid.
+        FileNotFoundError
+            If a required production bundle or normalization asset is absent.
+        """
         self.emulator_label = emulator_label
         self.drop_sim = drop_sim
         self.n_restarts_optimizer = n_restarts_optimizer
@@ -282,6 +338,11 @@ class GPEmulator:
         self._prediction_cache = None
 
     def _normalization_path(self, normalization_path, folder_save):
+        """Resolve the normalization asset for this model bundle.
+
+        Explicit paths take precedence; otherwise a self-contained external
+        model root is preferred before the configured LaCE data directory.
+        """
         if normalization_path is not None:
             if isinstance(normalization_path, str) and not normalization_path.strip():
                 raise ValueError("normalization_path must not be blank")
@@ -292,6 +353,18 @@ class GPEmulator:
 
     @staticmethod
     def _load_normalization(path):
+        """Load and validate the trusted normalization dictionary from disk.
+
+        Parameters
+        ----------
+        path : path-like
+            NumPy serialization containing normalization arrays.
+
+        Returns
+        -------
+        dict
+            Stored normalization data.
+        """
         path = Path(path)
         if not path.is_file():
             raise FileNotFoundError(
@@ -306,6 +379,7 @@ class GPEmulator:
             raise ModelBundleError(f"Corrupt normalization file {path}: {error}") from error
 
     def _save_emu(self):
+        """Serialize trained GP experts, metadata, and a provenance manifest."""
         # save emulator
         for ii in range(len(self.gp)):
             path_save_gp = os.path.join(
@@ -349,6 +423,7 @@ class GPEmulator:
         )
 
     def _load_emu(self):
+        """Load checked metadata and serialized GP experts for this bundle."""
         # The manifest was validated before normalization and model deserialization.
         path_meta = Path(self.path_save_meta)
         if not path_meta.is_file():
@@ -390,11 +465,18 @@ class GPEmulator:
                 raise ModelBundleError(f"Cannot load model checkpoint {path_save_gp}: {error}") from error
 
     def _training_points_gpolyfit(self, training_data):
-        """
-        Get the training points for polynomial fitting in the form of polynomial coefficients.
+        """Fit every archive row and return its GP training targets.
 
-        :return: Array of polynomial coefficients for each training data set.
-        :rtype: numpy.ndarray
+        Parameters
+        ----------
+        training_data : sequence of mapping
+            Archive entries containing P1D, k grid, and emulator inputs.
+
+        Returns
+        -------
+        ndarray
+            Polynomial coefficients or sampled normalized shapes, one row per
+            input archive entry.
         """
 
         store_fit = self._gfit_p1d_in_archive(training_data)
@@ -402,15 +484,19 @@ class GPEmulator:
         return store_fit
 
     def _buildTrainingSets(self, training_data):
-        """
-        Build training sets containing the parameter grid and corresponding training points.
+        """Build finite emulator-input and target arrays from archive entries.
 
-        :return: Tuple containing:
-            - Parameter grid for training.
-            - Training points.
-        :rtype: tuple
-            - numpy.ndarray: Parameter grid for training.
-            - numpy.ndarray: Training points.
+        Parameters
+        ----------
+        training_data : sequence of mapping
+            Archive rows from which emulator parameters and P1D targets are
+            extracted.
+
+        Returns
+        -------
+        params, training_points : tuple of ndarray
+            Finite physical input matrix of shape ``(nrow, nparam)`` and
+            matching target matrix.
         """
         ## Grid that will contain all training params
         params = np.zeros((len(training_data), len(self.emu_params)))
@@ -433,8 +519,18 @@ class GPEmulator:
         return params, trainingPoints
 
     def _gfit_p1d_in_archive(self, training_data):
-        """
-        Fit a function to the logarithm of P1D for each entry in the archive.
+        """Fit normalized P1D shapes for all selected archive entries.
+
+        Parameters
+        ----------
+        training_data : sequence of mapping
+            Entries containing ``k_Mpc``, ``p1d_Mpc``, and mean flux.
+
+        Returns
+        -------
+        ndarray
+            Five sigmoid coefficients for ``gpolyfit`` or normalized P1D values
+            on ``k_Mpc_emu`` for ``gkbin``.
         """
 
         if self.emu_type == "gpolyfit":
@@ -467,15 +563,19 @@ class GPEmulator:
         return store_fit
 
     def _initialize(self, training_data):
-        """
-        Build Gaussian Process (GP) models from training data and parameter grid.
+        """Standardize training data and fit overlapping mean-flux GP experts.
 
-        This method constructs Gaussian Process models based on the training data and parameter grid.
-        It involves rescaling parameters, normalizing training data, and initializing the GP models.
-        Depending on the `emu_per_k` flag, it either builds a separate GP model for each k-bin
-        or a single GP model for all k-bins.
+        Parameters
+        ----------
+        training_data : sequence of mapping
+            Selected finite archive entries used to train the emulator.
 
-        :return: None
+        Returns
+        -------
+        None
+            Sets standardized training arrays, expert-bin boundaries, and
+            fitted :class:`~sklearn.gaussian_process.GaussianProcessRegressor`
+            instances.
         """
 
         self.xpoints, self.tpoints = self._buildTrainingSets(training_data)
@@ -540,7 +640,19 @@ class GPEmulator:
         print("GPs optimised in {0:.2f} seconds".format(end - start))
 
     def _prepare_model_input(self, model):
-        """Return a validated two-dimensional emulator input array and row count."""
+        """Validate scalar or columnar emulator inputs and stack their rows.
+
+        Parameters
+        ----------
+        model : mapping
+            Every emulator parameter as a scalar or matching one-dimensional
+            column.
+
+        Returns
+        -------
+        ndarray, int
+            Physical input matrix with shape ``(nrow, nparam)`` and ``nrow``.
+        """
         if not isinstance(model, dict):
             raise TypeError("model must be a dictionary of emulator parameters")
         values = []
@@ -564,12 +676,24 @@ class GPEmulator:
             raise ValueError("Emulator parameters must be numeric scalars or one-dimensional arrays") from error
 
     def _prediction_key(self, values):
-        """Return a stable cache key for one physical emulator input row."""
+        """Return a hashable cache key for one physical emulator-input row."""
 
         return tuple(float(value) for value in values)
 
     def _predict_rows(self, physical_rows):
-        """Predict many rows, grouping calls to each mean-flux GP expert."""
+        """Predict coefficient rows with overlapping mean-flux GP experts.
+
+        Parameters
+        ----------
+        physical_rows : ndarray
+            Input matrix with shape ``(nrow, nparam)`` in physical units.
+
+        Returns
+        -------
+        ndarray
+            Unstandardized polynomial coefficients or k-bin targets with one
+            row per input.
+        """
 
         emu_call = (physical_rows - self.xscalings_mean) / self.xscalings_std
         length = emu_call.shape[0]
@@ -603,7 +727,18 @@ class GPEmulator:
         ) * self.tscalings_std + self.tscalings_mean
 
     def prime_prediction_cache(self, emulator_calls):
-        """Predict all unique rows required by one batched likelihood call."""
+        """Precompute unique emulator rows needed by a batched caller.
+
+        Parameters
+        ----------
+        emulator_calls : iterable of mapping
+            Scalar or columnar emulator input mappings.
+
+        Returns
+        -------
+        None
+            Stores predictions keyed by their physical input rows.
+        """
 
         unique_rows = {}
         for model in emulator_calls:
@@ -620,12 +755,23 @@ class GPEmulator:
         }
 
     def clear_prediction_cache(self):
-        """Discard predictions retained for one batched likelihood call."""
+        """Discard transient predictions retained for a batched likelihood call."""
 
         self._prediction_cache = None
 
     def predict(self, model):
-        """Return polynomial or k-bin predictions for one or more inputs."""
+        """Return GP target predictions for scalar or columnar emulator inputs.
+
+        Parameters
+        ----------
+        model : mapping
+            Scalar or one-dimensional columns for every emulator parameter.
+
+        Returns
+        -------
+        ndarray
+            Coefficient or k-bin target matrix with shape ``(nrow, ntarget)``.
+        """
 
         physical_rows, _ = self._prepare_model_input(model)
         if self._prediction_cache is None:
@@ -638,17 +784,24 @@ class GPEmulator:
         )
 
     def emulate_p1d_Mpc(self, model, k_Mpc, verbose=False, return_coeff=False):
-        """
-        Return the trained P(k) for an arbitrary set of k bins by interpolating the trained data.
+        """Evaluate emulated one-dimensional flux power in comoving units.
 
-        :param model: Dictionary containing parameter values with keys as parameter names.
-        :type model: dict
-        :param k_Mpc: Array of k values in Mpc^-1 for which to predict P(k).
-        :type k_Mpc: numpy.ndarray
-        :param verbose: Emit warnings for requested wavenumbers outside the
-            training range.
-        :param return_coeff: Also return the GP polynomial/bin coefficients.
-        :return: Predicted P1D values, optionally with GP coefficients.
+        Parameters
+        ----------
+        model : mapping
+            Scalar or columnar emulator parameter inputs.
+        k_Mpc : array-like
+            One shared ``(nk,)`` grid or per-row ``(nrow, nk)`` grids in 1/Mpc.
+        verbose : bool, default=False
+            Warn when requested wavenumbers exceed the training interval.
+        return_coeff : bool, default=False
+            Also return GP polynomial or k-bin coefficients.
+
+        Returns
+        -------
+        ndarray or tuple of ndarray
+            P1D in Mpc, shape ``(nrow, nk)``, optionally followed by the GP
+            coefficient matrix.
         """
 
         for param in self.emu_params:
@@ -713,6 +866,20 @@ class GPEmulator:
         ``return_covar`` and ``z`` belonged to a retired generic interface.
         This GP emulator does not implement either feature, so accepting them
         would silently change the meaning of other arguments.
+
+        Parameters
+        ----------
+        model, k_iMpc, verbose, return_coeff
+            Forwarded to :meth:`emulate_p1d_Mpc`; ``k_iMpc`` is in 1/Mpc.
+        return_covar : bool, default=False
+            Unsupported covariance request.
+        z : float, optional
+            Unsupported redshift override.
+
+        Returns
+        -------
+        ndarray or tuple of ndarray
+            Emulated P1D in Mpc, optionally with GP coefficients.
         """
 
         if return_covar:

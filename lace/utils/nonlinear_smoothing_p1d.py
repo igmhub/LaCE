@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Nonlinear_Smoothing(object):
-    """Smooth P1D using a nonlinear approach"""
+    """Smooth one-dimensional flux-power spectra in log wavenumber space."""
 
     def __init__(
         self,
@@ -11,7 +11,19 @@ class Nonlinear_Smoothing(object):
         bandwidth=[0.8, 0.4, 0.2],
         krange=[0.15, 1, 2.5, 4],
     ):
-        """Setup object either by passing measured power, or coefficients"""
+        """Fit piecewise kernel smoothers from a reference P1D data set.
+
+        Parameters
+        ----------
+        data_set_kernel : sequence of mapping
+            Reference rows containing positive ``k_Mpc`` and ``p1d_Mpc`` arrays.
+        kmax_Mpc : float
+            Largest wavenumber retained for smoother construction, in 1/Mpc.
+        bandwidth : sequence of float
+            Kernel bandwidths, one for each wavenumber interval.
+        krange : sequence of float
+            Boundaries in 1/Mpc defining piecewise smoothing intervals.
+        """
 
         self.bandwidth = bandwidth
         self.krange = krange
@@ -21,7 +33,13 @@ class Nonlinear_Smoothing(object):
         self._set_kernel_smoothing(log_data)
 
     def _interp_for_smoothing(self, data):
-        """Interpolate in logspace P1D to smooth it"""
+        """Interpolate positive P1D rows onto a common logarithmic k grid.
+
+        Returns
+        -------
+        ndarray
+            Logarithmic P1D values with shape ``(nspectrum, ninterpolated_k)``.
+        """
 
         mask = np.argwhere(
             (data[0]["k_Mpc"] > 0) & (data[0]["k_Mpc"] < self.kmax_Mpc)
@@ -41,7 +59,7 @@ class Nonlinear_Smoothing(object):
         return log_data
 
     def _set_kernel_smoothing(self, log_data):
-        """Set kernel for smoothing"""
+        """Fit one Nadaraya-Watson smoother per configured k interval."""
         import skfda
         from skfda.preprocessing.smoothing import KernelSmoother
         from skfda.misc.hat_matrix import NadarayaWatsonHatMatrix
@@ -58,7 +76,21 @@ class Nonlinear_Smoothing(object):
             self.kernel.append(_.fit(dat))
 
     def apply_kernel_smoothing(self, k_Mpc, data):
-        """Apply kernel smoothing to data"""
+        """Apply piecewise smoothing and return P1D on a requested k grid.
+
+        Parameters
+        ----------
+        k_Mpc : ndarray
+            Positive output wavenumber grid in 1/Mpc.
+        data : mapping or list of mapping
+            One or more rows containing ``k_Mpc`` and ``p1d_Mpc`` arrays.
+
+        Returns
+        -------
+        ndarray
+            Smoothed P1D in Mpc, with shape ``(nk,)`` for one mapping or
+            ``(nrow, nk)`` for a list.
+        """
 
         type_data = type(data)
         if type_data is not list:

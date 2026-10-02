@@ -48,6 +48,24 @@ def select_training(
         Existing simulation archive.
     training_set : str or TrainingSet, optional
         Named training collection when ``archive`` is not supplied.
+    emu_params : sequence of str
+        Required emulator-input fields retained from archive entries.
+    drop_sim, drop_z : sequence, optional
+        Simulation or redshift selections excluded from training.
+    include_central : bool
+        Include the Nyx central simulation in the training cube.
+    z_max : float
+        Largest retained redshift.
+    nyx_file : path-like, optional
+        Explicit Nyx HDF5 file for named Nyx training sets.
+    train : bool, default=True
+        Reject simultaneous archive and training-set inputs during training.
+    print_func : callable, default=print
+        Progress-reporting callable.
+    average : str, default="both"
+        Archive averaging convention.
+    kp_Mpc, z_star, kp_kms : float, default=0.7, 3, 0.009
+        Linear-power pivots in 1/Mpc and s/km.
 
     Returns
     -------
@@ -55,6 +73,11 @@ def select_training(
         Selected archive.
     training_data : list of dict
         Emulator-ready simulation measurements.
+
+    Raises
+    ------
+    ValueError
+        If archive/training-set selection is ambiguous or invalid.
     """
     if (archive is None) and (training_set is None):
         raise ValueError("Archive or training_set must be provided")

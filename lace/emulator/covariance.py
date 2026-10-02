@@ -4,14 +4,24 @@ from lace.emulator.gp_emulator_multi import GPEmulator
 
 
 def data_for_l10_lace(archive, emulator_label, model_path, suite="nyx"):
-    """
-    Compute emulator covariance using externally stored L1O models.
+    """Collect leave-one-out inputs for emulator covariance estimation.
 
     Parameters
     ----------
-    model_path
-        Directory containing the leave-one-out model and metadata files for
-        ``emulator_label``.
+    archive : BaseArchive
+        Simulation archive providing leave-one-out test entries.
+    emulator_label : str
+        GP emulator label.
+    model_path : path-like
+        Root containing leave-one-out emulator model bundles.
+    suite : {"nyx", "mpg"}, default="nyx"
+        Simulation suite whose hypercube members define the covariance sample.
+
+    Returns
+    -------
+    tuple
+        Redshifts, retained comoving k grid in 1/Mpc, original and smoothed
+        P1D arrays in Mpc, emulator predictions, and availability mask.
     """
 
     # number of simulations

@@ -11,17 +11,46 @@ MODEL_SCHEMA_VERSION = 1
 
 
 class ModelBundleError(RuntimeError):
-    """A model bundle is absent, damaged, or incompatible."""
+    """Signal an absent, damaged, untrusted, or incompatible model bundle.
+
+    This is raised before unpickling serialized GP payloads when manifest
+    identity, checksums, schema, or required runtime compatibility fail.
+    """
 
 
 def manifest_path(folder: str | Path, model_label: str) -> Path:
-    """Return the manifest for one full or leave-one-out model."""
+    """Return the manifest path for one full or leave-one-out model.
+
+    Parameters
+    ----------
+    folder : path-like
+        Model-bundle directory.
+    model_label : str
+        Serialized model filename, such as ``full.pkl`` or ``drop_mpg_0.pkl``.
+
+    Returns
+    -------
+    pathlib.Path
+        Corresponding JSON manifest path.
+    """
     stem = Path(model_label).stem
     name = "manifest.json" if stem == "full" else f"manifest_{stem}.json"
     return Path(folder) / name
 
 
 def _sha256(path: Path) -> str:
+    """Return the SHA-256 digest of a model-bundle file.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Existing file read in bounded binary blocks.
+
+    Returns
+    -------
+    str
+        Hexadecimal SHA-256 digest.
+    """
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
@@ -30,7 +59,14 @@ def _sha256(path: Path) -> str:
 
 
 def runtime_versions() -> dict[str, str]:
-    """Return versions of Python and serialized-model runtime dependencies."""
+    """Return versions needed to assess serialized-model compatibility.
+
+    Returns
+    -------
+    dict of str to str
+        Python, NumPy, SciPy, and scikit-learn versions, with unavailable
+        dependencies explicitly marked.
+    """
     result = {"python": ".".join(map(str, sys.version_info[:3]))}
     for package in ("numpy", "scipy", "scikit-learn"):
         try:
@@ -41,7 +77,28 @@ def runtime_versions() -> dict[str, str]:
 
 
 def load_manifest(folder, emulator_label, label, normalization_path):
-    """Validate a JSON bundle inventory before loading object arrays or pickles."""
+    """Validate a model-bundle inventory before deserializing its payload.
+
+    Parameters
+    ----------
+    folder : path-like
+        Candidate GP bundle directory.
+    emulator_label, label : str
+        Expected emulator family and serialized model filename.
+    normalization_path : path-like
+        Trusted normalization asset covered by the manifest checksum.
+
+    Returns
+    -------
+    dict or None
+        Validated manifest, or ``None`` for an intentionally legacy bundle.
+
+    Raises
+    ------
+    ModelBundleError
+        If schema, identity, inventory, checksums, or runtime compatibility
+        is invalid.
+    """
     folder = Path(folder)
     path_manifest = manifest_path(folder, label)
     if not path_manifest.exists():
@@ -98,6 +155,12 @@ def write_manifest(folder, emulator_label, label, files, normalization_path, dro
         Emulator family and full or leave-one-out model label.
     files : sequence of pathlib.Path
         Serialized model and metadata files covered by the manifest.
+    normalization_path : path-like
+        Normalization asset whose checksum is bound to the bundle.
+    drop_sim : str or None
+        Omitted simulation for a leave-one-out bundle.
+    provenance : mapping, optional
+        Training inputs and configuration recorded alongside checksums.
 
     Returns
     -------

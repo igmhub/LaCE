@@ -18,7 +18,31 @@ def plot_parameter_corner(
     truth_values: Sequence[float] | None = None,
     save_path: str | Path | None = None,
 ):
-    """Create a corner plot for one or more ``(n_samples, n_parameters)`` arrays."""
+    """Create a corner plot for one or more posterior sample arrays.
+
+    Parameters
+    ----------
+    samples : ndarray or sequence of ndarray
+        One or more arrays with shape ``(n_samples, n_parameters)``.
+    labels : sequence of str
+        Parameter labels, one per sample column.
+    dataset_labels, colors : sequence of str, optional
+        Legend labels and plotting colors for the sample sets.
+    truth_values : sequence of float, optional
+        Reference values drawn on diagonal panels.
+    save_path : path-like, optional
+        Figure output path.
+
+    Returns
+    -------
+    figure, axes : tuple
+        Corner figure and ``(n_parameters, n_parameters)`` axes grid.
+
+    Raises
+    ------
+    ValueError
+        If sample shapes or color counts do not match supplied labels.
+    """
     import corner
 
     arrays = [np.asarray(samples)] if isinstance(samples, np.ndarray) else [np.asarray(item) for item in samples]

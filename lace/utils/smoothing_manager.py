@@ -5,7 +5,29 @@ from lace.utils import poly_p1d
 
 
 def apply_smoothing(emulator, data, fprint=print):
-    """Apply smoothing to the p1d"""
+    """Attach emulator-compatible smooth P1D arrays to archive entries.
+
+    Parameters
+    ----------
+    emulator : object
+        Emulator exposing ``emu_type``, k limits, and smoothing/normalization
+        attributes appropriate to that type.
+    data : mapping or list of mapping
+        Entry or entries with ``k_Mpc`` in 1/Mpc and ``p1d_Mpc`` in Mpc.
+        Entries are modified in place by adding ``p1d_Mpc_smooth``.
+    fprint : callable, default=print
+        Informational-output callable.
+
+    Returns
+    -------
+    None
+        The input containers carry the newly attached smoothed spectra.
+
+    Raises
+    ------
+    ValueError
+        If input spectra are absent or ``emu_type`` is unsupported.
+    """
 
     type_data = type(data)
     if type_data is not list:

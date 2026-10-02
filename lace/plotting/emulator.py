@@ -12,6 +12,15 @@ from lace.utils.poly_p1d import PolyP1D
 
 
 def _save(figure: plt.Figure, save_path: str | Path | None) -> None:
+    """Save an emulator diagnostic figure when an output path is supplied.
+
+    Parameters
+    ----------
+    figure : matplotlib.figure.Figure
+        Figure to serialize.
+    save_path : path-like or None
+        Destination path; parent directories are created as needed.
+    """
     if save_path is not None:
         path = Path(save_path)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -27,7 +36,33 @@ def plot_emulator_predictions(
     divide_by_pi: bool = False,
     save_path: str | Path | None = None,
 ) -> tuple[plt.Figure, plt.Axes]:
-    """Plot one or more emulator P1D predictions in comoving units."""
+    """Plot one or more emulator P1D predictions in comoving units.
+
+    Parameters
+    ----------
+    k_Mpc : ndarray
+        Comoving wavenumber grid in 1/Mpc.
+    p1d_Mpc : ndarray
+        One ``(nk,)`` spectrum or ``(nspectrum, nk)`` P1D array in Mpc.
+    labels : sequence of str, optional
+        Labels aligned with the plotted spectra.
+    ax : matplotlib.axes.Axes, optional
+        Existing axes to populate.
+    divide_by_pi : bool, default=False
+        Display ``k P1D / pi`` rather than ``k P1D``.
+    save_path : path-like, optional
+        Figure output path.
+
+    Returns
+    -------
+    figure, ax : tuple
+        Matplotlib figure and populated axes.
+
+    Raises
+    ------
+    ValueError
+        If spectra do not share the supplied wavenumber length.
+    """
     spectra = np.atleast_2d(np.asarray(p1d_Mpc, dtype=float))
     k_Mpc = np.asarray(k_Mpc, dtype=float)
     if spectra.shape[1] != k_Mpc.size:
@@ -52,7 +87,23 @@ def plot_emulator_predictions(
 def plot_p1d_vs_emulator(
     testing_data: Sequence[dict[str, Any]], emulator: Any, *, save_path: str | Path | None = None
 ) -> tuple[plt.Figure, np.ndarray]:
-    """Compare archive P1D spectra with emulator predictions and residuals."""
+    """Compare archive P1D spectra with emulator predictions and residuals.
+
+    Parameters
+    ----------
+    testing_data : sequence of mapping
+        Archive rows containing ``z``, ``k_Mpc``, ``p1d_Mpc``, and emulator
+        inputs.
+    emulator : object
+        Object exposing ``emulate_p1d_Mpc``.
+    save_path : path-like, optional
+        Figure output path.
+
+    Returns
+    -------
+    figure, axes : tuple
+        Figure and two-panel axes for P1D and fractional residuals.
+    """
     figure, axes = plt.subplots(2, 1, sharex=True, figsize=(8, 8), gridspec_kw={"height_ratios": [3, 1]})
     eligible = [entry for entry in testing_data if entry.get("z", np.inf) < 4.8 and "kF_Mpc" in entry]
     colors = plt.get_cmap("tab20")(np.linspace(0, 1, len(eligible)))

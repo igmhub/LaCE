@@ -25,6 +25,27 @@ class NyxArchive(BaseArchive):
         z_star=3,
         kp_kms=0.009,
     ):
+        """Load a Nyx flux-power archive and its simulation metadata.
+
+        Parameters
+        ----------
+        nyx_version : str, default="Sept2025_include_Nyx_fid_rseed"
+            Named Nyx archive release.
+        nyx_file, nyx_path : path-like, optional
+            Explicit archive file or root directory used to resolve it.
+        include_central : bool, default=False
+            Include the fiducial simulation in the training cube.
+        kp_Mpc : float, optional
+            Comoving pivot for linear-power summaries.
+        force_recompute_linP_params : bool, default=False
+            Recompute cached linear-power summary parameters.
+        verbose : bool, default=False
+            Print loading diagnostics.
+        nfiles : int, default=18
+            Number of cosmology-grid simulations.
+        z_star, kp_kms : float, default=3, 0.009
+            Velocity-pivot redshift and wavenumber in s/km.
+        """
         ## check input
         if isinstance(nyx_version, str) == False:
             raise TypeError("nyx_version must be a string")
@@ -91,6 +112,13 @@ class NyxArchive(BaseArchive):
         self._set_labels()
 
     def _set_info_sim(self, nfiles):
+        """Set Nyx archive conventions and simulation-label mappings.
+
+        Parameters
+        ----------
+        nfiles : int
+            Number of cosmology-grid simulations represented in the archive.
+        """
         # number of simulation phases (IC)
         self.n_phases = 1
         # number of simulation axes in the post-processing
@@ -191,25 +219,40 @@ class NyxArchive(BaseArchive):
         ]
 
     def _get_attrs(self, h5py_data):
+        """Copy an HDF5 group's attributes into a plain dictionary.
+
+        Parameters
+        ----------
+        h5py_data : h5py.Group or h5py.Dataset
+            Object exposing an ``attrs`` mapping.
+
+        Returns
+        -------
+        dict
+            Attribute names and stored values.
+        """
         dict_params = {}
         for ipar in h5py_data.attrs.keys():
             dict_params[ipar] = h5py_data.attrs[ipar]
         return dict_params
 
     def _get_emu_cosmo(self, nyx_data, sim_label, force_recompute_linP_params=False):
-        """
-        Get the cosmology and parameters describing linear power spectrum from simulation.
+        """Return Nyx cosmology and linear-power summaries for one simulation.
 
-        Args:
-            nyx_data: file containing nyx data
-            sim_label: selected simulation
-            force_recompute_linP_params: compute linP even if kp_Mpc match
+        Parameters
+        ----------
+        nyx_data : h5py.File
+            Open Nyx archive used when cached summaries must be rebuilt.
+        sim_label : str
+            Public Nyx simulation label.
+        force_recompute_linP_params : bool, default=False
+            Recompute summaries even for a cached matching pivot.
 
-        Returns:
-            tuple: A tuple containing the following info:
-                - cosmo_params (dict): contains cosmlogical parameters
-                - linP_params (dict): contains parameters describing linear power spectrum
-
+        Returns
+        -------
+        cosmo_params, linP_params, star_params : tuple of dict
+            Cosmology inputs, comoving pivot summaries, and velocity-pivot
+            summaries for the selected simulation.
         """
 
         isim = self.sim_conv[sim_label]
@@ -315,6 +358,27 @@ class NyxArchive(BaseArchive):
         return cosmo_params, linP_params, star_params
 
     def _load_data(self, nyx_file=None, force_recompute_linP_params=False):
+        """Read Nyx measurements into the archive's normalized entry list.
+
+        Parameters
+        ----------
+        nyx_file : path-like, optional
+            Explicit HDF5 archive. When omitted, the configured Nyx root and
+            ``nyx_version`` select the file.
+        force_recompute_linP_params : bool, default=False
+            Rebuild linear-power summary products while loading.
+
+        Returns
+        -------
+        None
+            Sets ``data`` to one dictionary per available simulation, snapshot,
+            axis, and scaling measurement.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the resolved Nyx HDF5 archive does not exist.
+        """
 
         import h5py
 

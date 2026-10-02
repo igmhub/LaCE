@@ -11,7 +11,7 @@ LaCE owns cosmological calculations, simulation archives, and P1D GP emulators. 
 
 ## Working rules
 
-- Inspect `git status`, the current branch, and applicable nested instructions before editing. The maintained development branch is `vectorize`; do not switch branches or discard user changes automatically.
+- Inspect `git status`, the current branch, and applicable nested instructions before editing. The maintained branch is `main`; do not switch branches or discard user changes automatically.
 - Read the relevant implementation, tests, and `docs/workflow*` before changing a public interface. Follow active imports rather than assuming every notebook defines supported behavior.
 - Make focused changes. Preserve scientific defaults, parameter ordering, serialization, and scalar/batch behavior unless the task explicitly changes them. Document intentional numerical changes and their validation.
 - Do not edit `old_code/`, notebook `old/`, `wip/`, or developer experiments by default. Historical/paper modules are not necessarily deprecated: check callers first. Never copy an obsolete API back into the active package without checking it.

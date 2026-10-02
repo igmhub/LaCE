@@ -7,7 +7,23 @@ from lace.plotting.corner import plot_parameter_corner
 
 
 def create_corner_plot(list_of_dfs, params_to_plot, **kwargs):
-    """Compatibility wrapper around :func:`lace.plotting.plot_parameter_corner`."""
+    """Create a corner plot from legacy pandas DataFrame inputs.
+
+    Parameters
+    ----------
+    list_of_dfs : sequence of pandas.DataFrame
+        Sample tables, one row per posterior sample.
+    params_to_plot : sequence of str
+        DataFrame columns and plotted parameter order.
+    **kwargs
+        Legacy ``labels``, ``legend_labels``, ``colors``, ``truth_values``,
+        and ``save_path`` options forwarded to the modern plotting helper.
+
+    Returns
+    -------
+    figure, axes : tuple
+        Result of :func:`lace.plotting.corner.plot_parameter_corner`.
+    """
     samples = [dataframe.loc[:, params_to_plot].to_numpy() for dataframe in list_of_dfs]
     return plot_parameter_corner(
         samples,

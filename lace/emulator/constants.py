@@ -5,6 +5,11 @@ PROJ_ROOT = Path(__file__).resolve().parents[2]
 
 
 class TrainingSet(StrEnum):
+    """Named simulation collections accepted by emulator-training selection.
+
+    Values select a specific Gadget postprocessing release or Nyx archive
+    release when constructing an archive implicitly.
+    """
     PEDERSEN21 = "Pedersen21"
     CABAYOL23 = "Cabayol23"
     NYX23_OCT2023 = "Nyx23_Oct2023"
@@ -12,7 +17,12 @@ class TrainingSet(StrEnum):
 
 
 class EmulatorLabel(StrEnum):
-    """List of emulators supported."""
+    """Historical emulator configuration labels used by the training stack.
+
+    These labels select entries of :data:`EMULATOR_PARAMS`; production loading
+    of current GP bundles uses the dedicated internal labels in the emulator
+    factory.
+    """
 
     PEDERSEN21 = "Pedersen21"
     PEDERSEN23 = "Pedersen23"

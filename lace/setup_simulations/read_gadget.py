@@ -20,7 +20,13 @@ Nmesh = integer(default=1)
 
 
 def _check_gadget_config(config):
-    """Check that the MP-Gadget config file is sensible."""
+    """Validate a parsed MP-Gadget configuration against its configspec.
+
+    Parameters
+    ----------
+    config : configobj.ConfigObj
+        Parsed MP-Gadget configuration modified with validated defaults.
+    """
     vtor = validate.Validator()
     config.validate(vtor)
     # Check unsupported configurations
@@ -29,7 +35,20 @@ def _check_gadget_config(config):
 
 
 def read_gadget_paramfile(paramfile, verbose=False):
-    """Parse a MP-Gadget parameter file and returns a dictionary"""
+    """Parse and validate an MP-Gadget parameter file.
+
+    Parameters
+    ----------
+    paramfile : path-like
+        MP-Gadget configuration file.
+    verbose : bool, default=False
+        Print successful validation diagnostics.
+
+    Returns
+    -------
+    configobj.ConfigObj
+        Parsed configuration with configspec defaults applied.
+    """
 
     config = configobj.ConfigObj(
         infile=paramfile, configspec=Gadget_configspec, file_error=True
@@ -42,7 +61,18 @@ def read_gadget_paramfile(paramfile, verbose=False):
 
 
 def snapshot_redshifts(config):
-    """Return output redshifts, including the final MP-Gadget snapshot."""
+    """Return scheduled and final MP-Gadget output redshifts.
+
+    Parameters
+    ----------
+    config : configobj.ConfigObj
+        Validated configuration containing scale-factor output times.
+
+    Returns
+    -------
+    ndarray
+        Redshifts converted from ``OutputList`` plus ``TimeMax``.
+    """
     scale_factors = [float(astr) for astr in config["OutputList"].split(",")]
     # add last snapshot, when simulation ends
     scale_factors.append(float(config["TimeMax"]))
@@ -51,13 +81,17 @@ def snapshot_redshifts(config):
 
 
 def redshifts_from_paramfile(paramfile, verbose=False):
-    """Read an MP-Gadget file and return its output redshifts."""
+    """Read an MP-Gadget file and return its scheduled output redshifts."""
     config = read_gadget_paramfile(paramfile, verbose)
     return snapshot_redshifts(config)
 
 
 def _build_cosmology_params_class(config):
-    """Build a correctly-named-for-class set of cosmology parameters."""
+    """Translate MP-Gadget density inputs into CLASS parameter names.
+
+    Returns a mapping with fractional densities, dimensionless ``h``, and
+    massive-neutrino settings inferred from the three mass entries.
+    """
     # Class takes omega_m h^2 as parameters
     h0 = config["HubbleParam"]
     # Compute sum of neutrino masses
@@ -95,7 +129,11 @@ def _build_cosmology_params_class(config):
 
 
 def _build_cosmology_params_camb(config):
-    """Build a correctly-named-for-camb set of cosmology parameters."""
+    """Translate MP-Gadget density inputs into CAMB physical parameters.
+
+    Returns ``H0`` in km/s/Mpc, physical densities, total neutrino mass in eV,
+    curvature, and constant dark-energy equation-of-state value.
+    """
     # Class takes omega_m h^2 as parameters
     h0 = config["HubbleParam"]
     # Compute sum of neutrino masses
@@ -127,7 +165,7 @@ def _build_cosmology_params_camb(config):
 
 
 def class_from_gadget(paramfile, verbose=False):
-    """Parse a Gadget parameter file and returns a dictionary to setup CLASS"""
+    """Parse an MP-Gadget file and return a CLASS-ready parameter mapping."""
 
     # read Gadget configuration file, and store information
     config = configobj.ConfigObj(
@@ -150,7 +188,7 @@ def class_from_gadget(paramfile, verbose=False):
 
 
 def camb_from_gadget(paramfile, verbose=False):
-    """Parse a Gadget parameter file and returns a dictionary to setup CAMB"""
+    """Parse an MP-Gadget file and return a CAMB-ready parameter mapping."""
 
     # read Gadget configuration file, and store information
     config = configobj.ConfigObj(

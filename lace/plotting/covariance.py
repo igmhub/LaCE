@@ -5,7 +5,20 @@ import numpy as np
 
 
 def plot_l1o_correlation(cov_zk, *, ax=None):
-    """Plot the redshift-wavenumber correlation matrix."""
+    """Plot the correlation matrix derived from L1O relative covariance.
+
+    Parameters
+    ----------
+    cov_zk : ndarray
+        Square relative covariance across flattened ``(z, k)`` bins.
+    ax : matplotlib.axes.Axes, optional
+        Existing axes to populate.
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        Axes containing the matrix image and colorbar.
+    """
     if ax is None:
         _, ax = plt.subplots()
 
@@ -19,7 +32,24 @@ def plot_l1o_correlation(cov_zk, *, ax=None):
 
 
 def plot_l1o_errors(zz, k_Mpc, rel_diff, cov_zk, *, ax=None):
-    """Plot L1O standard deviations and absolute mean biases by redshift."""
+    """Plot L1O relative standard deviations and absolute mean biases.
+
+    Parameters
+    ----------
+    zz, k_Mpc : array-like
+        Redshift values and shared comoving grid in 1/Mpc.
+    rel_diff : ndarray
+        Relative residuals with flattened redshift-wavenumber trailing shape.
+    cov_zk : ndarray
+        Relative covariance over the same flattened bins.
+    ax : matplotlib.axes.Axes, optional
+        Existing axes to populate.
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        Populated error/bias axes.
+    """
     if ax is None:
         _, ax = plt.subplots()
 
@@ -37,7 +67,21 @@ def plot_l1o_errors(zz, k_Mpc, rel_diff, cov_zk, *, ax=None):
 
 
 def plot_l1o_bias(zz, k_Mpc, rel_diff, cov_zk, *, ax=None):
-    """Plot the mean L1O residual normalized by its covariance error."""
+    """Plot mean L1O residuals normalized by covariance standard deviations.
+
+    Parameters
+    ----------
+    zz, k_Mpc, rel_diff, cov_zk
+        L1O grids, residuals, and covariance as accepted by
+        :func:`plot_l1o_errors`.
+    ax : matplotlib.axes.Axes, optional
+        Existing axes to populate.
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        Populated normalized-bias axes.
+    """
     if ax is None:
         _, ax = plt.subplots()
 
@@ -70,6 +114,24 @@ def plot_l1o_covariance_robustness(
     For every simulation, the diagonal covariance error is recomputed after
     removing that simulation. The plotted value is the standard deviation of
     its fractional change relative to the full-sample covariance error.
+
+    Parameters
+    ----------
+    zz, k_Mpc, rel_diff, cov_zk
+        L1O grids, residuals, and covariance as accepted by
+        :func:`plot_l1o_errors`.
+    ax : matplotlib.axes.Axes, optional
+        Existing axes to populate.
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        Populated covariance-robustness axes.
+
+    Raises
+    ------
+    ValueError
+        If fewer than three leave-one-out residual rows are available.
     """
     if ax is None:
         _, ax = plt.subplots()

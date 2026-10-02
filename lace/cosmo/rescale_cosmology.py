@@ -6,6 +6,13 @@ class IncompatibleBackgroundError(ValueError):
     """Raised when primordial rescaling cannot represent a cosmology."""
 
     def __init__(self, changes):
+        """Describe background changes that invalidate primordial rescaling.
+
+        Parameters
+        ----------
+        changes : mapping
+            Changed parameter names mapped to ``(fiducial, requested)`` pairs.
+        """
         self.changes = changes
         details = "; ".join(
             f"{name}: fiducial={old_value!r}, requested={new_value!r}"
@@ -24,6 +31,24 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
     """
 
     def __init__(self, fid_cosmo, new_params_dict=None, verbose=False):
+        """Construct a primordial-spectrum rescaling of a fiducial cosmology.
+
+        Parameters
+        ----------
+        fid_cosmo : BaseCosmology
+            Cosmology supplying unchanged background and transfer functions.
+        new_params_dict : mapping, optional
+            Allowed primordial amplitude, tilt, and running updates.
+        verbose : bool, default=False
+            Print construction diagnostics.
+
+        Raises
+        ------
+        IncompatibleBackgroundError
+            If requested values change a background or transfer parameter.
+        ValueError
+            If the fiducial primordial pivot is not 0.05 1/Mpc.
+        """
 
         if verbose:
             print("inside RescaledCosmology.__ini__")
@@ -52,7 +77,20 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
 
     @staticmethod
     def _get_background_changes(fid_cosmo, new_params_dict):
-        """Return requested background changes as old/new value pairs."""
+        """Identify requested changes incompatible with fixed transfers.
+
+        Parameters
+        ----------
+        fid_cosmo : BaseCosmology
+            Reference cosmology.
+        new_params_dict : mapping or None
+            Candidate parameter updates.
+
+        Returns
+        -------
+        dict
+            Changed names mapped to fiducial/requested value pairs.
+        """
 
         if new_params_dict is None:
             return {}
@@ -78,29 +116,41 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
     # overwrite virtual functions in base class
 
     def get_kmax_linP_Mpc(self):
-        """Return highest k for which we trust linear power"""
+        """Return the fiducial linear-power limit in 1/Mpc."""
         return self.fid_cosmo.get_kmax_linP_Mpc()
 
 
     def compute_hubble_parameter(self, z):
-        """Return H(z) in units of km/s/Mpc"""
+        """Delegate Hubble-rate evaluation to the unchanged fiducial background."""
 
         return self.fid_cosmo.compute_hubble_parameter(z)
 
     def compute_angular_diameter_distance(self, z):
-        """Return angular diameter distance (not comoving) in Mpc"""
+        """Delegate angular-diameter distance evaluation to the fiducial background."""
 
         return self.fid_cosmo.compute_angular_diameter_distance(z)
 
     def compute_linP_Mpc(self, z, k_Mpc, species="bc"):
-        """Return linear power at (z, k_Mpc) (will call CAMB if needed)"""
+        """Return fiducial linear power times the primordial rescaling.
+
+        Parameters
+        ----------
+        z, k_Mpc, species
+            Arguments forwarded to ``fid_cosmo.compute_linP_Mpc``; ``k_Mpc``
+            is in 1/Mpc.
+
+        Returns
+        -------
+        ndarray
+            Linear power in Mpc cubed.
+        """
 
         linP_Mpc = self.fid_cosmo.compute_linP_Mpc(z, k_Mpc, species=species)
         scaling = self.get_linP_Mpc_scaling(k_Mpc)
         return linP_Mpc * scaling
 
     def compute_growth_rate(self, z):
-        """Return logarithmic growth rate (f) at z"""
+        """Delegate the unchanged logarithmic growth rate to the fiducial model."""
 
         return self.fid_cosmo.compute_growth_rate(z)
 
@@ -112,14 +162,25 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
     # other functions specific to this class below
 
     def get_primordial_params(self):
-        """Return primordial parameters after applying the rescaling."""
+        """Return fiducial primordial parameters updated by requested values."""
 
         params = self.fid_cosmo.get_primordial_params()
         params.update(self.new_params)
         return params
 
     def get_linP_Mpc_scaling(self, k_Mpc):
-        """Multiplicative correction to fiducial primordial power"""
+        """Compute the multiplicative primordial-power correction.
+
+        Parameters
+        ----------
+        k_Mpc : float or array-like
+            Comoving wavenumber in 1/Mpc.
+
+        Returns
+        -------
+        float or ndarray
+            Dimensionless ratio of rescaled to fiducial linear power.
+        """
 
         # primordial power in fiducial cosmology
         fid_params = self.fid_cosmo.get_primordial_params()

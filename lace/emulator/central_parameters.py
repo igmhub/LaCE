@@ -30,7 +30,23 @@ CENTRAL_PARAMETERS_Z3 = {
 
 
 def get_central_parameters_z3(emulator_label: str) -> dict[str, float]:
-    """Return a copy of the central-simulation emulator inputs at ``z=3``."""
+    """Return central-simulation emulator inputs at redshift three.
+
+    Parameters
+    ----------
+    emulator_label : str
+        Supported central emulator bundle label.
+
+    Returns
+    -------
+    dict of str to float
+        Independent copy of the dimensionless/physical emulator inputs.
+
+    Raises
+    ------
+    ValueError
+        If no central parameter record is available for ``emulator_label``.
+    """
     try:
         return CENTRAL_PARAMETERS_Z3[emulator_label].copy()
     except KeyError as error:

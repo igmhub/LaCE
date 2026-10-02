@@ -22,6 +22,24 @@ class Cosmology(base_cosmology.BaseCosmology):
         camb_kmax_Mpc=200.0,
         verbose=False,
     ):
+        """Initialize a CAMB-backed linear cosmology.
+
+        Parameters
+        ----------
+        cosmo_params_dict : mapping, optional
+            Cosmological parameters in LaCE/CAMB public names.
+        cosmo_label : str, optional
+            Named fiducial cosmology used when explicit parameters are omitted.
+        camb_kmax_Mpc : float, default=200.0
+            Largest requested linear wavenumber in 1/Mpc.
+        verbose : bool, default=False
+            Print construction diagnostics.
+
+        Raises
+        ------
+        ValueError
+            If both explicit parameters and a named cosmology are supplied.
+        """
         if verbose:
             print("inside Cosmology.__init__")
 
@@ -50,13 +68,38 @@ class Cosmology(base_cosmology.BaseCosmology):
 
     @classmethod
     def from_dict(cls, params, **kwargs):
-        """Construct a cosmology from a parameter dictionary."""
+        """Construct a cosmology from an explicit parameter mapping.
+
+        Parameters
+        ----------
+        params : mapping
+            Cosmological parameter values accepted by :class:`Cosmology`.
+        **kwargs
+            Remaining :class:`Cosmology` construction options.
+
+        Returns
+        -------
+        Cosmology
+            Initialized CAMB-backed cosmology.
+        """
 
         return cls(cosmo_params_dict=params, **kwargs)
 
     @staticmethod
     def _build_camb_params(params):
-        """Build CAMB parameters from normalized input values."""
+        """Build CAMB parameters and retain their resolved public values.
+
+        Parameters
+        ----------
+        params : mapping
+            Normalized LaCE cosmological parameter values.
+
+        Returns
+        -------
+        camb.CAMBparams, dict
+            Configured CAMB parameter object and values after defaults/BBN
+            helium inference have been resolved.
+        """
 
         defaults = {
             "H0": 67.66,
@@ -125,24 +168,68 @@ class Cosmology(base_cosmology.BaseCosmology):
     # BaseCosmology implementation
 
     def get_kmax_linP_Mpc(self):
-        """Return highest k for which we trust linear power."""
+        """Return the configured linear-power wavenumber limit.
+
+        Returns
+        -------
+        float
+            Maximum supported comoving wavenumber in 1/Mpc.
+        """
 
         return self.camb_kmax_Mpc
 
     def compute_hubble_parameter(self, z):
-        """Return H(z) in units of km/s/Mpc."""
+        """Evaluate the expansion rate at one or more redshifts.
+
+        Parameters
+        ----------
+        z : float or array-like
+            Redshift values.
+
+        Returns
+        -------
+        float or ndarray
+            Hubble rate in km/s/Mpc.
+        """
 
         self._ensure_camb_results()
         return self.CAMBdata.hubble_parameter(z)
 
     def compute_angular_diameter_distance(self, z):
-        """Return angular diameter distance in Mpc."""
+        """Evaluate angular-diameter distance at one or more redshifts.
+
+        Parameters
+        ----------
+        z : float or array-like
+            Redshift values.
+
+        Returns
+        -------
+        float or ndarray
+            Angular-diameter distance in Mpc.
+        """
 
         self._ensure_camb_results()
         return self.CAMBdata.angular_diameter_distance(z)
 
     def compute_linP_Mpc(self, z, k_Mpc, species="bc"):
-        """Return linear power at ``(z, k_Mpc)``."""
+        """Evaluate linear matter power on the CAMB interpolation domain.
+
+        Parameters
+        ----------
+        z : float or ndarray
+            Scalar redshift or one-dimensional redshift grid.
+        k_Mpc : array-like
+            Comoving wavenumber(s) in 1/Mpc.
+        species : {"bc", "bcnu"}, default="bc"
+            CDM+baryon or total matter transfer field.
+
+        Returns
+        -------
+        ndarray
+            Linear power in Mpc cubed; a two-dimensional ``(nz, nk)`` grid
+            when both inputs are one-dimensional.
+        """
 
         self._ensure_camb_results(full=True)
         if species == "bc":
@@ -172,7 +259,18 @@ class Cosmology(base_cosmology.BaseCosmology):
         raise ValueError("z and k_Mpc must be 0D or 1D arrays")
 
     def compute_growth_rate(self, z):
-        """Return the logarithmic growth rate ``f`` at redshift ``z``."""
+        """Interpolate the logarithmic linear growth rate.
+
+        Parameters
+        ----------
+        z : float or array-like
+            Redshift values inside CAMB's transfer-redshift coverage.
+
+        Returns
+        -------
+        float or ndarray
+            Dimensionless growth rate ``f = d ln D / d ln a``.
+        """
 
         self._ensure_camb_results(full=True)
         z_transfer = np.asarray(self.CAMBdata.transfer_redshifts)
@@ -190,12 +288,24 @@ class Cosmology(base_cosmology.BaseCosmology):
         return np.interp(z, z_grid, f[ind_sort])
 
     def get_mnu(self):
-        """Return the total neutrino mass in eV."""
+        """Return the total massive-neutrino mass.
+
+        Returns
+        -------
+        float
+            Total neutrino mass in eV implied by CAMB's ``omnuh2``.
+        """
 
         return self.CAMBparams.omnuh2 * 93.14
 
     def get_primordial_params(self):
-        """Return public primordial-spectrum parameters."""
+        """Return primordial-spectrum parameters in LaCE naming.
+
+        Returns
+        -------
+        dict
+            Scalar amplitude, tilt, runnings, and pivot wavenumber.
+        """
 
         power = self.CAMBparams.InitPower
         return {
@@ -207,7 +317,14 @@ class Cosmology(base_cosmology.BaseCosmology):
         }
 
     def get_background_params(self):
-        """Return parameters that change the background expansion."""
+        """Return resolved parameters relevant to transfer/background identity.
+
+        Returns
+        -------
+        dict
+            Expansion, matter, neutrino, radiation, helium, and dark-energy
+            values used to decide whether a primordial-only rescaling is safe.
+        """
 
         return {
             "H0": self.CAMBparams.H0,
@@ -234,7 +351,20 @@ class Cosmology(base_cosmology.BaseCosmology):
         }
 
     def same_background(self, cosmo_params):
-        """Check whether parameters preserve the background expansion."""
+        """Test whether supplied updates preserve this transfer calculation.
+
+        Parameters
+        ----------
+        cosmo_params : mapping or None
+            Candidate changed parameters. Missing keys retain this cosmology's
+            resolved values.
+
+        Returns
+        -------
+        bool
+            False when a background, radiation, transfer, or angular-size
+            parameter would require rebuilding CAMB products.
+        """
 
         if cosmo_params is None:
             return True
@@ -265,7 +395,14 @@ class Cosmology(base_cosmology.BaseCosmology):
         return True
 
     def print_info(self, simulation=False):
-        """Print the relevant cosmological parameters."""
+        """Print a compact cosmology summary for interactive diagnostics.
+
+        Parameters
+        ----------
+        simulation : bool, default=False
+            Use simulation-style ``Omega_bc`` output instead of physical
+            density parameters.
+        """
 
         params = self.CAMBparams
         if simulation:
@@ -297,12 +434,25 @@ class Cosmology(base_cosmology.BaseCosmology):
             )
 
     def get_CAMBdata(self):
-        """Return raw CAMB data for backend-specific diagnostics."""
+        """Return fully initialized raw CAMB results for advanced diagnostics.
+
+        Returns
+        -------
+        camb.results.CAMBdata
+            Results including matter-power interpolation products.
+        """
 
         self._ensure_camb_results(full=True)
         return self.CAMBdata
 
     def _ensure_camb_results(self, full=False):
+        """Initialize cached CAMB background or full power products as needed.
+
+        Parameters
+        ----------
+        full : bool, default=False
+            Also initialize transfer functions and linear-power interpolators.
+        """
         if full and (
             self.linP_Mpc_bc_interp is None or self.linP_Mpc_bcnu_interp is None
         ):
@@ -311,9 +461,11 @@ class Cosmology(base_cosmology.BaseCosmology):
             self._call_camb_results_background()
 
     def _call_camb_results_background(self):
+        """Run CAMB for background-only quantities and cache the result."""
         self.CAMBdata = camb.get_results(self.CAMBparams)
 
     def _call_camb_results_full(self):
+        """Run CAMB with transfer outputs and construct matter-power splines."""
         zs = np.linspace(0, 10, 256)
         self.CAMBparams.set_matter_power(
             redshifts=zs,

@@ -1,0 +1,2899 @@
+{
+  "repository": "lace",
+  "revision": "0b2f8dac9bbddb6a46085b1a85ce5e7c3a28dea8",
+  "functions": [
+    {
+      "id": "lace-0001",
+      "file": "lace/archive/base_archive.py",
+      "qualified_name": "BaseArchive._set_labels",
+      "line": 22,
+      "signature": "_set_labels(self)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Returns:`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label extraction and documented derived attributes and archive-order alignment.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0002",
+      "file": "lace/archive/base_archive.py",
+      "qualified_name": "BaseArchive._average_over_samples",
+      "line": 48,
+      "signature": "_average_over_samples(self, average='both', drop_axis=None)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Args:`, `Returns:`.",
+        "Provide canonical `Parameters` entries for `average`, `drop_axis`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ExceptionList`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed averaging modes, excluded axes, mean-flux normalization, returned grouping, and invalid-mode error.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0003",
+      "file": "lace/archive/base_archive.py",
+      "qualified_name": "BaseArchive.get_training_data",
+      "line": 198,
+      "signature": "get_training_data(self, emu_params, average=None, val_scaling=None, drop_sim=None, drop_z=None, drop_snap=None, drop_axis=None, z_min=None, z_max=None, verbose=False)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Parameters:`, `Returns:`, `Raises:`, `Notes:`.",
+        "Provide canonical `Parameters` entries for `emu_params`, `average`, `val_scaling`, `drop_sim`, `drop_z`, `drop_snap`, `drop_axis`, `z_min`, `z_max`, `verbose`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ExceptionList`, `TypeError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed default resolution, selectors, averaging, missing/NaN filtering, and non-mutating training selection.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0004",
+      "file": "lace/archive/base_archive.py",
+      "qualified_name": "BaseArchive.get_testing_data",
+      "line": 414,
+      "signature": "get_testing_data(self, sim_label, ind_rescaling=None, z_min=None, z_max=None, drop_axis=None, emu_params=None, verbose=False)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Parameters:`, `Returns:`, `Raises:`.",
+        "Provide canonical `Parameters` entries for `sim_label`, `ind_rescaling`, `z_min`, `z_max`, `drop_axis`, `emu_params`, `verbose`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ExceptionList`, `TypeError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed held-out selection, rescaling/default branches, averaging, required-key filtering, and validation errors.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0005",
+      "file": "lace/archive/base_archive.py",
+      "qualified_name": "BaseArchive.plot_samples",
+      "line": 543,
+      "signature": "plot_samples(self, param_1, param_2)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `param_1`, `param_2`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed plotter delegation and documented keys and figure/axes result.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0006",
+      "file": "lace/archive/base_archive.py",
+      "qualified_name": "BaseArchive.plot_3D_samples",
+      "line": 555,
+      "signature": "plot_3D_samples(self, param_1, param_2, param_3)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `param_1`, `param_2`, `param_3`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed triplet plotter delegation and documented coordinate keys and result.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0007",
+      "file": "lace/archive/base_archive.py",
+      "qualified_name": "BaseArchive.print_entry",
+      "line": 563,
+      "signature": "print_entry(self, entry)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Parameters:`, `Returns:`, `Raises:`.",
+        "Provide canonical `Parameters` entries for `entry`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed printed fields and implemented range failure; removed the obsolete self parameter from documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0008",
+      "file": "lace/archive/gadget_archive.py",
+      "qualified_name": "GadgetArchive.__init__",
+      "line": 29,
+      "signature": "__init__(self, postproc='Cabayol23_fixp3d', kp_Mpc=None, force_recompute_linP_params=False, verbose=False, z_star=3, kp_kms=0.009, data_path=None)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Args:`, `Returns:`.",
+        "Provide canonical `Parameters` entries for `postproc`, `kp_Mpc`, `force_recompute_linP_params`, `verbose`, `z_star`, `kp_kms`, `data_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Review explicit raises `ExceptionList`, `TypeError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0009",
+      "file": "lace/archive/gadget_archive.py",
+      "qualified_name": "GadgetArchive._set_info_postproc",
+      "line": 125,
+      "signature": "_set_info_postproc(self, postproc)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Args:`, `Returns:`.",
+        "Provide canonical `Parameters` entries for `postproc`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0010",
+      "file": "lace/archive/gadget_archive.py",
+      "qualified_name": "GadgetArchive._sim2file_name",
+      "line": 236,
+      "signature": "_sim2file_name(self, sim_label)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Args:`, `Returns:`.",
+        "Provide canonical `Parameters` entries for `sim_label`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0011",
+      "file": "lace/archive/gadget_archive.py",
+      "qualified_name": "GadgetArchive._get_emu_cosmo",
+      "line": 300,
+      "signature": "_get_emu_cosmo(self, sim_label, force_recompute_linP_params=False)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Args:`, `Returns:`.",
+        "Provide canonical `Parameters` entries for `sim_label`, `force_recompute_linP_params`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `FileNotFoundError`, `IOError`, `PermissionError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0012",
+      "file": "lace/archive/gadget_archive.py",
+      "qualified_name": "GadgetArchive._get_file_names",
+      "line": 414,
+      "signature": "_get_file_names(self, sim_label, ind_phase, ind_z, ind_axis)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Args:`, `Returns:`, `Notes:`.",
+        "Provide canonical `Parameters` entries for `sim_label`, `ind_phase`, `ind_z`, `ind_axis`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0013",
+      "file": "lace/archive/gadget_archive.py",
+      "qualified_name": "GadgetArchive._get_file_names.<locals>.data_paths",
+      "line": 470,
+      "signature": "data_paths(labels)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `labels`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0014",
+      "file": "lace/archive/gadget_archive.py",
+      "qualified_name": "GadgetArchive._get_sim",
+      "line": 516,
+      "signature": "_get_sim(self, sim_label, ind_z, ind_axis)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Args:`, `Returns:`.",
+        "Provide canonical `Parameters` entries for `sim_label`, `ind_z`, `ind_axis`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0015",
+      "file": "lace/archive/gadget_archive.py",
+      "qualified_name": "GadgetArchive._load_data",
+      "line": 559,
+      "signature": "_load_data(self, force_recompute_linP_params)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Args:`, `Returns:`, `Notes:`.",
+        "Provide canonical `Parameters` entries for `force_recompute_linP_params`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0016",
+      "file": "lace/archive/nyx_archive.py",
+      "qualified_name": "NyxArchive.__init__",
+      "line": 15,
+      "signature": "__init__(self, nyx_version='Sept2025_include_Nyx_fid_rseed', nyx_file=None, nyx_path=None, include_central=False, kp_Mpc=None, force_recompute_linP_params=False, verbose=False, nfiles=18, z_star=3, kp_kms=0.009)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `nyx_version`, `nyx_file`, `nyx_path`, `include_central`, `kp_Mpc`, `force_recompute_linP_params`, `verbose`, `nfiles`, `z_star`, `kp_kms`.",
+        "Review explicit raises `TypeError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0017",
+      "file": "lace/archive/nyx_archive.py",
+      "qualified_name": "NyxArchive._set_info_sim",
+      "line": 93,
+      "signature": "_set_info_sim(self, nfiles)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `nfiles`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0018",
+      "file": "lace/archive/nyx_archive.py",
+      "qualified_name": "NyxArchive._get_attrs",
+      "line": 193,
+      "signature": "_get_attrs(self, h5py_data)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `h5py_data`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0019",
+      "file": "lace/archive/nyx_archive.py",
+      "qualified_name": "NyxArchive._get_emu_cosmo",
+      "line": 199,
+      "signature": "_get_emu_cosmo(self, nyx_data, sim_label, force_recompute_linP_params=False)",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Args:`, `Returns:`.",
+        "Provide canonical `Parameters` entries for `nyx_data`, `sim_label`, `force_recompute_linP_params`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `FileNotFoundError`, `IOError`, `PermissionError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0020",
+      "file": "lace/archive/nyx_archive.py",
+      "qualified_name": "NyxArchive._load_data",
+      "line": 317,
+      "signature": "_load_data(self, nyx_file=None, force_recompute_linP_params=False)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `nyx_file`, `force_recompute_linP_params`.",
+        "Review explicit raises `FileNotFoundError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive loading behavior and converted the callable contract to NumPy-style documentation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0021",
+      "file": "lace/configuration/cli.py",
+      "qualified_name": "set_nyx_path_command",
+      "line": 10,
+      "signature": "set_nyx_path_command() -> None",
+      "detected_gaps": [],
+      "status": "corrected",
+      "evidence": "Reviewed CLI parser, persistent Nyx update, and stdout side effect.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0022",
+      "file": "lace/configuration/paths.py",
+      "qualified_name": "_path_config",
+      "line": 15,
+      "signature": "_path_config(config_path: str | Path | None) -> Path",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `config_path`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed explicit/default configuration-path resolution.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0023",
+      "file": "lace/configuration/paths.py",
+      "qualified_name": "_configured_path",
+      "line": 19,
+      "signature": "_configured_path(key: str, default: Path, config_path: str | Path | None) -> Path",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `key`, `default`, `config_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `TypeError`, `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed TOML fallback, type/blank/TOML validation, and expanded result.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0024",
+      "file": "lace/configuration/paths.py",
+      "qualified_name": "_set_configured_path",
+      "line": 39,
+      "signature": "_set_configured_path(key: str, path: Path, config_path: str | Path | None) -> Path",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `key`, `path`, `config_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed non-destructive TOML table update and creation behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0025",
+      "file": "lace/configuration/paths.py",
+      "qualified_name": "get_path_repo",
+      "line": 67,
+      "signature": "get_path_repo() -> Path",
+      "detected_gaps": [
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "verified_unchanged",
+      "evidence": "Verified existing editable-install repository-root contract.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0026",
+      "file": "lace/configuration/paths.py",
+      "qualified_name": "get_paths_config_path",
+      "line": 80,
+      "signature": "get_paths_config_path() -> Path",
+      "detected_gaps": [
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed user-level path location.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0027",
+      "file": "lace/configuration/paths.py",
+      "qualified_name": "get_nyx_path",
+      "line": 86,
+      "signature": "get_nyx_path(nyx_path: str | Path | None=None, config_path: str | Path | None=None) -> Path",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `nyx_path`, `config_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed explicit/configured/default Nyx precedence and result.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0028",
+      "file": "lace/configuration/paths.py",
+      "qualified_name": "set_nyx_path",
+      "line": 102,
+      "signature": "set_nyx_path(nyx_path: str | Path, config_path: str | Path | None=None) -> Path",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `nyx_path`, `config_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed blank validation and persisted Nyx path update.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0029",
+      "file": "lace/configuration/paths.py",
+      "qualified_name": "get_data_path",
+      "line": 115,
+      "signature": "get_data_path(data_path: str | Path | None=None, config_path: str | Path | None=None) -> Path",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `data_path`, `config_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed explicit/configured/check-out data-root precedence and blank validation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0030",
+      "file": "lace/configuration/paths.py",
+      "qualified_name": "set_data_path",
+      "line": 129,
+      "signature": "set_data_path(data_path: str | Path, config_path: str | Path | None=None) -> Path",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `data_path`, `config_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed blank validation and persisted data-root update.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0031",
+      "file": "lace/conventions.py",
+      "qualified_name": "canonicalize_unit_keys",
+      "line": 25,
+      "signature": "canonicalize_unit_keys(values: dict[str, Any]) -> dict[str, Any]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `values`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed shallow-copy legacy-alias precedence and mutability contract.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0032",
+      "file": "lace/conventions.py",
+      "qualified_name": "validate_wavenumber",
+      "line": 34,
+      "signature": "validate_wavenumber(values: Any, *, name: str) -> np.ndarray",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `values`, `name`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed finite/positive/one-dimensional wavenumber validation.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0033",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.__init__",
+      "line": 10,
+      "signature": "__init__(self, verbose=False)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `verbose`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed base initialization and documented its sole diagnostic state.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0034",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_kmax_linP_Mpc",
+      "line": 22,
+      "signature": "get_kmax_linP_Mpc(self)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Review explicit raises `NotImplementedError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed abstract validity-limit contract and units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0035",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.compute_linP_Mpc",
+      "line": 26,
+      "signature": "compute_linP_Mpc(self, z, k_Mpc, species='bc')",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`, `k_Mpc`, `species`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Review explicit raises `NotImplementedError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed abstract linear-power contract, units, and species.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0036",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.compute_hubble_parameter",
+      "line": 30,
+      "signature": "compute_hubble_parameter(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Review explicit raises `NotImplementedError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed abstract background-expansion contract and units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0037",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.compute_angular_diameter_distance",
+      "line": 34,
+      "signature": "compute_angular_diameter_distance(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Review explicit raises `NotImplementedError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed abstract proper-distance contract and units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0038",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.compute_growth_rate",
+      "line": 38,
+      "signature": "compute_growth_rate(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Review explicit raises `NotImplementedError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed abstract logarithmic-growth contract.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0039",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_mnu",
+      "line": 42,
+      "signature": "get_mnu(self)",
+      "detected_gaps": [
+        "Review explicit raises `NotImplementedError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed abstract neutrino-mass contract and units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0040",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_primordial_params",
+      "line": 46,
+      "signature": "get_primordial_params(self)",
+      "detected_gaps": [
+        "Review explicit raises `NotImplementedError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed abstract primordial-parameter contract.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0041",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_H0",
+      "line": 53,
+      "signature": "get_H0(self)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed H0 delegation and units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0042",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_h",
+      "line": 58,
+      "signature": "get_h(self)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed reduced-Hubble normalization.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0043",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_growth_rate",
+      "line": 63,
+      "signature": "get_growth_rate(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed public growth-rate delegation and definition.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0044",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_linP_Mpc",
+      "line": 67,
+      "signature": "get_linP_Mpc(self, z, k_Mpc, species='bc')",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`, `k_Mpc`, `species`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed Mpc-grid linear-power wrapper, units, and species forwarding.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0045",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_linP_hMpc",
+      "line": 72,
+      "signature": "get_linP_hMpc(self, z, k_hMpc, species='bc')",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`, `k_hMpc`, `species`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "verified_unchanged",
+      "evidence": "Verified corrected h/Mpc coordinate and (Mpc/h)^3 conversion contract.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0046",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_sigma8",
+      "line": 82,
+      "signature": "get_sigma8(self, z, species='bcnu')",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`, `species`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed log-grid top-hat sigma8 integration and species default.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0047",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_sigma8.<locals>.fft_top_hat",
+      "line": 86,
+      "signature": "fft_top_hat(k_hMpc, R_hMpc=8.0)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `k_hMpc`, `R_hMpc`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed nested top-hat small-argument and general branches.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0048",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_linP_kms",
+      "line": 103,
+      "signature": "get_linP_kms(self, z, k_kms, species='bc')",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`, `k_kms`, `species`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "verified_unchanged",
+      "evidence": "Verified velocity-space P3D conversion and M-cubed units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0049",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_dkms_diMpc",
+      "line": 112,
+      "signature": "get_dkms_diMpc(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed H/(1+z) conversion and its wavenumber use.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0050",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_dkms_dMpc",
+      "line": 120,
+      "signature": "get_dkms_dMpc(self, z)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed legacy alias behavior and units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0051",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_dkms_dhMpc",
+      "line": 124,
+      "signature": "get_dkms_dhMpc(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed h-scaled velocity conversion.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0052",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_dAA_dMpc",
+      "line": 133,
+      "signature": "get_dAA_dMpc(self, z, lambda_rest_AA=1215.67)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`, `lambda_rest_AA`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed wavelength/radial conversion and rest-wavelength handling.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0053",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_drad_dMpc",
+      "line": 146,
+      "signature": "get_drad_dMpc(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed angular-diameter to transverse-comoving conversion.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0054",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_ddeg_dMpc",
+      "line": 155,
+      "signature": "get_ddeg_dMpc(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed degree conversion.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0055",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_darc_dMpc",
+      "line": 162,
+      "signature": "get_darc_dMpc(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed arcminute conversion.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0056",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_dkms_dMpc_for_cosmologies",
+      "line": 170,
+      "signature": "get_dkms_dMpc_for_cosmologies(cosmologies, zs)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `cosmologies`, `zs`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed single/batched cosmology shape dispatch and velocity-conversion axes.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0057",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_linP_Mpc_params_for_cosmologies",
+      "line": 185,
+      "signature": "get_linP_Mpc_params_for_cosmologies(cosmologies, zs, kp_Mpc, species='bc')",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `cosmologies`, `zs`, `kp_Mpc`, `species`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed Mpc pivot summary dispatch, keys, species, and returned axes.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0058",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_linP_kms_params_for_cosmologies",
+      "line": 212,
+      "signature": "get_linP_kms_params_for_cosmologies(cosmologies, zs, kp_kms, species='bc')",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `cosmologies`, `zs`, `kp_kms`, `species`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed velocity pivot summary dispatch, keys, species, and returned axes.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0059",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_linP_Mpc_params",
+      "line": 236,
+      "signature": "get_linP_Mpc_params(self, z, kp_Mpc, species='bc')",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`, `kp_Mpc`, `species`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed finite-window logarithmic polynomial fit, pivot amplitude, slope, and running definitions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0060",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology.get_linP_kms_params",
+      "line": 263,
+      "signature": "get_linP_kms_params(self, z, kp_kms, species='bc')",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`, `kp_kms`, `species`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed velocity-to-Mpc pivot mapping and renamed summary keys.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0061",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.__init__",
+      "line": 18,
+      "signature": "__init__(self, cosmo_params_dict=None, cosmo_label=None, camb_kmax_Mpc=200.0, verbose=False)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `cosmo_params_dict`, `cosmo_label`, `camb_kmax_Mpc`, `verbose`.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0062",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.from_dict",
+      "line": 52,
+      "signature": "from_dict(cls, params, **kwargs)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `params`, `kwargs`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0063",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology._build_camb_params",
+      "line": 58,
+      "signature": "_build_camb_params(params)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `params`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0064",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.get_kmax_linP_Mpc",
+      "line": 127,
+      "signature": "get_kmax_linP_Mpc(self)",
+      "detected_gaps": [
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0065",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.compute_hubble_parameter",
+      "line": 132,
+      "signature": "compute_hubble_parameter(self, z)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0066",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.compute_angular_diameter_distance",
+      "line": 138,
+      "signature": "compute_angular_diameter_distance(self, z)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0067",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.compute_linP_Mpc",
+      "line": 144,
+      "signature": "compute_linP_Mpc(self, z, k_Mpc, species='bc')",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `z`, `k_Mpc`, `species`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0068",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.compute_growth_rate",
+      "line": 174,
+      "signature": "compute_growth_rate(self, z)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0069",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.get_mnu",
+      "line": 192,
+      "signature": "get_mnu(self)",
+      "detected_gaps": [
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0070",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.get_primordial_params",
+      "line": 197,
+      "signature": "get_primordial_params(self)",
+      "detected_gaps": [
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0071",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.get_background_params",
+      "line": 209,
+      "signature": "get_background_params(self)",
+      "detected_gaps": [
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0072",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.same_background",
+      "line": 236,
+      "signature": "same_background(self, cosmo_params)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `cosmo_params`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0073",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.print_info",
+      "line": 267,
+      "signature": "print_info(self, simulation=False)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `simulation`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0074",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology.get_CAMBdata",
+      "line": 299,
+      "signature": "get_CAMBdata(self)",
+      "detected_gaps": [
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0075",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology._ensure_camb_results",
+      "line": 305,
+      "signature": "_ensure_camb_results(self, full=False)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `full`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0076",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology._call_camb_results_background",
+      "line": 313,
+      "signature": "_call_camb_results_background(self)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0077",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology._call_camb_results_full",
+      "line": 316,
+      "signature": "_call_camb_results_full(self)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed CAMB construction, caching, interpolation-domain validation, and physical-unit return contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0078",
+      "file": "lace/cosmo/labeled_cosmologies.py",
+      "qualified_name": "get_cosmo_params_dict_from_label",
+      "line": 4,
+      "signature": "get_cosmo_params_dict_from_label(label)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `label`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0079",
+      "file": "lace/cosmo/parameters.py",
+      "qualified_name": "normalize_cosmology_params",
+      "line": 8,
+      "signature": "normalize_cosmology_params(params)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `params`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `TypeError`, `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0080",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "IncompatibleBackgroundError.__init__",
+      "line": 8,
+      "signature": "__init__(self, changes)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `changes`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0081",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "RescaledCosmology.__init__",
+      "line": 26,
+      "signature": "__init__(self, fid_cosmo, new_params_dict=None, verbose=False)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `fid_cosmo`, `new_params_dict`, `verbose`.",
+        "Review explicit raises `IncompatibleBackgroundError`, `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0082",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "RescaledCosmology._get_background_changes",
+      "line": 54,
+      "signature": "_get_background_changes(fid_cosmo, new_params_dict)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `fid_cosmo`, `new_params_dict`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0083",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "RescaledCosmology.get_kmax_linP_Mpc",
+      "line": 80,
+      "signature": "get_kmax_linP_Mpc(self)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0084",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "RescaledCosmology.compute_hubble_parameter",
+      "line": 85,
+      "signature": "compute_hubble_parameter(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0085",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "RescaledCosmology.compute_angular_diameter_distance",
+      "line": 90,
+      "signature": "compute_angular_diameter_distance(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0086",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "RescaledCosmology.compute_linP_Mpc",
+      "line": 95,
+      "signature": "compute_linP_Mpc(self, z, k_Mpc, species='bc')",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`, `k_Mpc`, `species`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0087",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "RescaledCosmology.compute_growth_rate",
+      "line": 102,
+      "signature": "compute_growth_rate(self, z)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0088",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "RescaledCosmology.get_mnu",
+      "line": 107,
+      "signature": "get_mnu(self)",
+      "detected_gaps": [
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0089",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "RescaledCosmology.get_primordial_params",
+      "line": 114,
+      "signature": "get_primordial_params(self)",
+      "detected_gaps": [
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0090",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "RescaledCosmology.get_linP_Mpc_scaling",
+      "line": 121,
+      "signature": "get_linP_Mpc_scaling(self, k_Mpc)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `k_Mpc`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0091",
+      "file": "lace/cosmo/thermal_broadening.py",
+      "qualified_name": "thermal_broadening_kms",
+      "line": 4,
+      "signature": "thermal_broadening_kms(T_0)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `T_0`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0092",
+      "file": "lace/cosmo/thermal_broadening.py",
+      "qualified_name": "T0_from_broadening_kms",
+      "line": 11,
+      "signature": "T0_from_broadening_kms(sigma_T_kms)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `sigma_T_kms`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed label lookup, parameter normalization, primordial rescaling admissibility, and thermal-broadening unit contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0093",
+      "file": "lace/emulator/central_parameters.py",
+      "qualified_name": "get_central_parameters_z3",
+      "line": 32,
+      "signature": "get_central_parameters_z3(emulator_label: str) -> dict[str, float]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `emulator_label`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central parameter lookup, leave-one-out covariance sample construction, and supported emulator factory contract.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0094",
+      "file": "lace/emulator/covariance.py",
+      "qualified_name": "data_for_l10_lace",
+      "line": 6,
+      "signature": "data_for_l10_lace(archive, emulator_label, model_path, suite='nyx')",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `archive`, `emulator_label`, `model_path`, `suite`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central parameter lookup, leave-one-out covariance sample construction, and supported emulator factory contract.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0095",
+      "file": "lace/emulator/emulator_manager.py",
+      "qualified_name": "set_emulator",
+      "line": 9,
+      "signature": "set_emulator(emulator_label, *, model_path=None, data_path=None, normalization_path=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `emulator_label`, `model_path`, `data_path`, `normalization_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central parameter lookup, leave-one-out covariance sample construction, and supported emulator factory contract.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0096",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "func_poly",
+      "line": 13,
+      "signature": "func_poly(x, a, b, c, d, e)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `x`, `a`, `b`, `c`, `d`, `e`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0097",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "optimizer",
+      "line": 24,
+      "signature": "optimizer(obj_func, x0, bounds)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `obj_func`, `x0`, `bounds`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0098",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator.__init__",
+      "line": 42,
+      "signature": "__init__(self, archive=None, archive2=None, emulator_label='CH24_nyx_gpr', drop_sim=None, train=False, save=False, n_restarts_optimizer=0, model_path=None, data_path=None, normalization_path=None)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `archive`, `archive2`, `emulator_label`, `drop_sim`, `train`, `save`, `n_restarts_optimizer`, `model_path`, `data_path`, `normalization_path`.",
+        "Review explicit raises `'Must be same kp_Mpc for archive and archive2'`, `FileNotFoundError`, `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0099",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator._normalization_path",
+      "line": 284,
+      "signature": "_normalization_path(self, normalization_path, folder_save)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `normalization_path`, `folder_save`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0100",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator._load_normalization",
+      "line": 294,
+      "signature": "_load_normalization(path)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `path`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `FileNotFoundError`, `ModelBundleError`, `PermissionError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0101",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator._save_emu",
+      "line": 308,
+      "signature": "_save_emu(self)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0102",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator._load_emu",
+      "line": 351,
+      "signature": "_load_emu(self)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Review explicit raises `FileNotFoundError`, `ModelBundleError`, `PermissionError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0103",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator._training_points_gpolyfit",
+      "line": 392,
+      "signature": "_training_points_gpolyfit(self, training_data)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `training_data`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0104",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator._buildTrainingSets",
+      "line": 404,
+      "signature": "_buildTrainingSets(self, training_data)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `training_data`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0105",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator._gfit_p1d_in_archive",
+      "line": 435,
+      "signature": "_gfit_p1d_in_archive(self, training_data)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `training_data`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0106",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator._initialize",
+      "line": 469,
+      "signature": "_initialize(self, training_data)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `training_data`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0107",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator._prepare_model_input",
+      "line": 542,
+      "signature": "_prepare_model_input(self, model)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `model`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `TypeError`, `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0108",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator._prediction_key",
+      "line": 566,
+      "signature": "_prediction_key(self, values)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `values`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0109",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator._predict_rows",
+      "line": 571,
+      "signature": "_predict_rows(self, physical_rows)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `physical_rows`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0110",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator.prime_prediction_cache",
+      "line": 605,
+      "signature": "prime_prediction_cache(self, emulator_calls)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `emulator_calls`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0111",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator.clear_prediction_cache",
+      "line": 622,
+      "signature": "clear_prediction_cache(self)",
+      "detected_gaps": [],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0112",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator.predict",
+      "line": 627,
+      "signature": "predict(self, model)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `model`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0113",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator.emulate_p1d_Mpc",
+      "line": 640,
+      "signature": "emulate_p1d_Mpc(self, model, k_Mpc, verbose=False, return_coeff=False)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `model`, `k_Mpc`, `verbose`, `return_coeff`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0114",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator.emulate_P1D_Mpc",
+      "line": 702,
+      "signature": "emulate_P1D_Mpc(self, model, k_iMpc, verbose=False, return_coeff=False, return_covar=False, z=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `model`, `k_iMpc`, `verbose`, `return_coeff`, `return_covar`, `z`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `NotImplementedError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed GP bundle loading, training, batched cache behavior, array shapes, and P1D units; converted all callable contracts to NumPy style.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0115",
+      "file": "lace/emulator/model_manifest.py",
+      "qualified_name": "manifest_path",
+      "line": 17,
+      "signature": "manifest_path(folder: str | Path, model_label: str) -> Path",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `folder`, `model_label`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed model-bundle integrity checks and archive/training selection contracts; documented inputs, products, and caller-visible errors.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0116",
+      "file": "lace/emulator/model_manifest.py",
+      "qualified_name": "_sha256",
+      "line": 24,
+      "signature": "_sha256(path: Path) -> str",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `path`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed model-bundle integrity checks and archive/training selection contracts; documented inputs, products, and caller-visible errors.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0117",
+      "file": "lace/emulator/model_manifest.py",
+      "qualified_name": "runtime_versions",
+      "line": 32,
+      "signature": "runtime_versions() -> dict[str, str]",
+      "detected_gaps": [
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed model-bundle integrity checks and archive/training selection contracts; documented inputs, products, and caller-visible errors.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0118",
+      "file": "lace/emulator/model_manifest.py",
+      "qualified_name": "load_manifest",
+      "line": 43,
+      "signature": "load_manifest(folder, emulator_label, label, normalization_path)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `folder`, `emulator_label`, `label`, `normalization_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ModelBundleError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed model-bundle integrity checks and archive/training selection contracts; documented inputs, products, and caller-visible errors.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0119",
+      "file": "lace/emulator/model_manifest.py",
+      "qualified_name": "write_manifest",
+      "line": 90,
+      "signature": "write_manifest(folder, emulator_label, label, files, normalization_path, drop_sim, provenance=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `normalization_path`, `drop_sim`, `provenance`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed model-bundle integrity checks and archive/training selection contracts; documented inputs, products, and caller-visible errors.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0120",
+      "file": "lace/emulator/select_training.py",
+      "qualified_name": "interp_k_Mpc_central",
+      "line": 6,
+      "signature": "interp_k_Mpc_central(sim: list[dict], k_Mpc: list[float]) -> None",
+      "detected_gaps": [],
+      "status": "corrected",
+      "evidence": "Reviewed model-bundle integrity checks and archive/training selection contracts; documented inputs, products, and caller-visible errors.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0121",
+      "file": "lace/emulator/select_training.py",
+      "qualified_name": "select_training",
+      "line": 27,
+      "signature": "select_training(archive: gadget_archive.GadgetArchive | nyx_archive.NyxArchive | None, training_set: str | TrainingSet | None, emu_params: list[str], drop_sim: list[str] | None, drop_z: list[float] | None, include_central: bool, z_max: float, nyx_file: str | None=None, train: bool=True, print_func: callable=print, average: str='both', kp_Mpc: float=0.7, z_star: float=3, kp_kms: float=0.009) -> tuple[gadget_archive.GadgetArchive | nyx_archive.NyxArchive, list[dict]]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `emu_params`, `drop_sim`, `drop_z`, `include_central`, `z_max`, `nyx_file`, `train`, `print_func`, `average`, `kp_Mpc`, `z_star`, `kp_kms`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed model-bundle integrity checks and archive/training selection contracts; documented inputs, products, and caller-visible errors.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0122",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "parameter_matrix",
+      "line": 22,
+      "signature": "parameter_matrix(data: Sequence[Mapping[str, Any]], parameters: Sequence[str]) -> np.ndarray",
+      "detected_gaps": [
+        "Review explicit raises `KeyError`, `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "verified_unchanged",
+      "evidence": "Existing NumPy-style scalar archive matrix contract accurately documents shape and validation behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0123",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "_label",
+      "line": 54,
+      "signature": "_label(parameter: str, labels: Mapping[str, str] | None=None) -> str",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `parameter`, `labels`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive plotting helper and attached-archive data retrieval contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0124",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "_save_figure",
+      "line": 58,
+      "signature": "_save_figure(figure: plt.Figure, save_path: str | Path | None) -> None",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `figure`, `save_path`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive plotting helper and attached-archive data retrieval contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0125",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "_axes_grid",
+      "line": 65,
+      "signature": "_axes_grid(n_panels: int, nrows: int, axes: Any=None) -> tuple[plt.Figure, np.ndarray]",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `n_panels`, `nrows`, `axes`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive plotting helper and attached-archive data retrieval contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0126",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "ArchivePlotter.__init__",
+      "line": 88,
+      "signature": "__init__(self, archive: Any | None=None)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `archive`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive plotting helper and attached-archive data retrieval contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0127",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "ArchivePlotter.get_training_data",
+      "line": 91,
+      "signature": "get_training_data(self, parameters: Sequence[str], *, average: str | None=None) -> list[dict[str, Any]]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `parameters`, `average`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive plotting helper and attached-archive data retrieval contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0128",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "ArchivePlotter.plot_parameter_pair",
+      "line": 106,
+      "signature": "plot_parameter_pair(self, x_parameter: str, y_parameter: str, *, data: Sequence[Mapping[str, Any]] | None=None, color_parameter: str | None='z', ax: plt.Axes | None=None, label: str | None=None, marker: str='o', color: str | None=None, cmap: str='viridis', alpha: float=1.0, size: float=8, add_colorbar: bool=True, save_path: str | Path | None=None) -> tuple[plt.Figure, plt.Axes]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `x_parameter`, `y_parameter`, `data`, `color_parameter`, `ax`, `label`, `marker`, `color`, `cmap`, `alpha`, `size`, `add_colorbar`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive parameter-projection and IGM-history plots, their styling inputs, scalar-data requirements, units, and validation paths.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0129",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "ArchivePlotter.plot_parameter_sequence",
+      "line": 137,
+      "signature": "plot_parameter_sequence(self, parameters: Sequence[str], *, data: Sequence[Mapping[str, Any]] | None=None, labels: Mapping[str, str] | None=None, nrows: int=3, color: str | None=None, alpha: float=1.0, size: float=2, axes: Any=None, save_path: str | Path | None=None) -> tuple[plt.Figure, np.ndarray]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `parameters`, `data`, `labels`, `nrows`, `color`, `alpha`, `size`, `axes`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive parameter-projection and IGM-history plots, their styling inputs, scalar-data requirements, units, and validation paths.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0130",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "ArchivePlotter.plot_parameter_triplet",
+      "line": 158,
+      "signature": "plot_parameter_triplet(self, parameters: Sequence[str], *, data=None, cmap: str='viridis', size: float=8, ax=None, save_path=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `parameters`, `data`, `cmap`, `size`, `ax`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive parameter-projection and IGM-history plots, their styling inputs, scalar-data requirements, units, and validation paths.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0131",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "ArchivePlotter.compare_parameter_sequences",
+      "line": 175,
+      "signature": "compare_parameter_sequences(self, datasets: Mapping[str, Sequence[Mapping[str, Any]]] | Sequence[Sequence[Mapping[str, Any]]], parameters: Sequence[str], *, labels: Sequence[str] | None=None, parameter_labels: Mapping[str, str] | None=None, colors: Sequence[str] | None=None, alphas: Sequence[float] | None=None, sizes: Sequence[float] | None=None, nrows: int=3, axes: Any=None, save_path: str | Path | None=None) -> tuple[plt.Figure, np.ndarray]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `datasets`, `parameters`, `labels`, `parameter_labels`, `colors`, `alphas`, `sizes`, `nrows`, `axes`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive parameter-projection and IGM-history plots, their styling inputs, scalar-data requirements, units, and validation paths.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0132",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "ArchivePlotter.plot_p1d_dependence",
+      "line": 203,
+      "signature": "plot_p1d_dependence(self, parameter: str, *, data: Sequence[Mapping[str, Any]] | None=None, average: str | None='both', k_min_Mpc: float=0.0, k_max_Mpc: float=10.0, log_y: bool=True, cmap: str='viridis', alpha: float=0.25, max_curves: int | None=300, label_extrema: bool=True, add_colorbar: bool=True, ax: plt.Axes | None=None, save_path: str | Path | None=None) -> tuple[plt.Figure, plt.Axes]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `parameter`, `data`, `average`, `k_min_Mpc`, `k_max_Mpc`, `log_y`, `cmap`, `alpha`, `max_curves`, `label_extrema`, `add_colorbar`, `ax`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Review explicit raises `KeyError`, `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive parameter-projection and IGM-history plots, their styling inputs, scalar-data requirements, units, and validation paths.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0133",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "ArchivePlotter.plot_igm_histories",
+      "line": 341,
+      "signature": "plot_igm_histories(histories: Mapping[str, Mapping[str, Any]], *, parameters: Sequence[str] | None=None, labels: Mapping[str, str] | None=None, highlighted_simulations: Sequence[str] | None=None, excluded_simulations: Sequence[str] | None=None, default_color: str='black', highlight_color: str='red', default_alpha: float=0.2, highlight_alpha: float=1.0, axes: Any=None, save_path: str | Path | None=None) -> tuple[plt.Figure, np.ndarray]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `histories`, `parameters`, `labels`, `highlighted_simulations`, `excluded_simulations`, `default_color`, `highlight_color`, `default_alpha`, `highlight_alpha`, `axes`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive parameter-projection and IGM-history plots, their styling inputs, scalar-data requirements, units, and validation paths.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0134",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "ArchivePlotter.compare_igm_histories",
+      "line": 367,
+      "signature": "compare_igm_histories(history_sets: Mapping[str, Mapping[str, Mapping[str, Any]]], *, dataset_labels: Sequence[str] | None=None, parameters: Sequence[str] | None=None, parameter_labels: Mapping[str, str] | None=None, colors: Sequence[str] | None=None, alphas: Sequence[float] | None=None, excluded_simulations: Sequence[str] | None=None, rescaling_datasets: Sequence[str]=('Nyx',), base_rescaling_index: int=0, axes: Any=None, save_path: str | Path | None=None) -> tuple[plt.Figure, np.ndarray]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `history_sets`, `dataset_labels`, `parameters`, `parameter_labels`, `colors`, `alphas`, `excluded_simulations`, `rescaling_datasets`, `base_rescaling_index`, `axes`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed archive parameter-projection and IGM-history plots, their styling inputs, scalar-data requirements, units, and validation paths.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0135",
+      "file": "lace/plotting/corner.py",
+      "qualified_name": "plot_parameter_corner",
+      "line": 12,
+      "signature": "plot_parameter_corner(samples: np.ndarray | Sequence[np.ndarray], *, labels: Sequence[str], dataset_labels: Sequence[str] | None=None, colors: Sequence[str] | None=None, truth_values: Sequence[float] | None=None, save_path: str | Path | None=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `samples`, `labels`, `dataset_labels`, `colors`, `truth_values`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed plotting inputs, physical units, panel outputs, and validation branches; documented public figure contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0136",
+      "file": "lace/plotting/cosmology.py",
+      "qualified_name": "_save",
+      "line": 12,
+      "signature": "_save(figure, save_path)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `figure`, `save_path`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed plotting inputs, physical units, panel outputs, and validation branches; documented public figure contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0137",
+      "file": "lace/plotting/cosmology.py",
+      "qualified_name": "plot_ratio_curves",
+      "line": 17,
+      "signature": "plot_ratio_curves(k_Mpc: np.ndarray, ratios: Mapping[str, np.ndarray], *, ylabel: str, ax=None, save_path=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `k_Mpc`, `ratios`, `ylabel`, `ax`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed plotting inputs, physical units, panel outputs, and validation branches; documented public figure contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0138",
+      "file": "lace/plotting/cosmology.py",
+      "qualified_name": "plot_expansion_history",
+      "line": 26,
+      "signature": "plot_expansion_history(redshift: np.ndarray, hubble: Sequence[np.ndarray], labels: Sequence[str], *, reference_index: int=0, ratio: bool=True, ax=None, save_path=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `redshift`, `hubble`, `labels`, `reference_index`, `ratio`, `ax`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed plotting inputs, physical units, panel outputs, and validation branches; documented public figure contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0139",
+      "file": "lace/plotting/covariance.py",
+      "qualified_name": "plot_l1o_correlation",
+      "line": 7,
+      "signature": "plot_l1o_correlation(cov_zk, *, ax=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `cov_zk`, `ax`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed plotting inputs, physical units, panel outputs, and validation branches; documented public figure contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0140",
+      "file": "lace/plotting/covariance.py",
+      "qualified_name": "plot_l1o_errors",
+      "line": 21,
+      "signature": "plot_l1o_errors(zz, k_Mpc, rel_diff, cov_zk, *, ax=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `zz`, `k_Mpc`, `rel_diff`, `cov_zk`, `ax`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed plotting inputs, physical units, panel outputs, and validation branches; documented public figure contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0141",
+      "file": "lace/plotting/covariance.py",
+      "qualified_name": "plot_l1o_bias",
+      "line": 39,
+      "signature": "plot_l1o_bias(zz, k_Mpc, rel_diff, cov_zk, *, ax=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `zz`, `k_Mpc`, `rel_diff`, `cov_zk`, `ax`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed plotting inputs, physical units, panel outputs, and validation branches; documented public figure contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0142",
+      "file": "lace/plotting/covariance.py",
+      "qualified_name": "plot_l1o_covariance_robustness",
+      "line": 65,
+      "signature": "plot_l1o_covariance_robustness(zz, k_Mpc, rel_diff, cov_zk, *, ax=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `zz`, `k_Mpc`, `rel_diff`, `cov_zk`, `ax`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed plotting inputs, physical units, panel outputs, and validation branches; documented public figure contracts.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0143",
+      "file": "lace/plotting/emulator.py",
+      "qualified_name": "_save",
+      "line": 14,
+      "signature": "_save(figure: plt.Figure, save_path: str | Path | None) -> None",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `figure`, `save_path`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed emulator diagnostic plotting and precision-preparation contracts, including P1D units and array shapes.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0144",
+      "file": "lace/plotting/emulator.py",
+      "qualified_name": "plot_emulator_predictions",
+      "line": 21,
+      "signature": "plot_emulator_predictions(k_Mpc: np.ndarray, p1d_Mpc: np.ndarray, *, labels: Sequence[str] | None=None, ax: plt.Axes | None=None, divide_by_pi: bool=False, save_path: str | Path | None=None) -> tuple[plt.Figure, plt.Axes]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `k_Mpc`, `p1d_Mpc`, `labels`, `ax`, `divide_by_pi`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed emulator diagnostic plotting and precision-preparation contracts, including P1D units and array shapes.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0145",
+      "file": "lace/plotting/emulator.py",
+      "qualified_name": "plot_p1d_vs_emulator",
+      "line": 52,
+      "signature": "plot_p1d_vs_emulator(testing_data: Sequence[dict[str, Any]], emulator: Any, *, save_path: str | Path | None=None) -> tuple[plt.Figure, np.ndarray]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `testing_data`, `emulator`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed emulator diagnostic plotting and precision-preparation contracts, including P1D units and array shapes.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0146",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "complete_igm_parameters",
+      "line": 24,
+      "signature": "complete_igm_parameters(data: Sequence[dict[str, Any]], reference_data: Sequence[dict[str, Any]], *, parameter_names: Sequence[str]=IGM_PARAMETERS, redshift_tolerance: float=0.05) -> list[dict[str, Any]]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `data`, `reference_data`, `parameter_names`, `redshift_tolerance`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed emulator diagnostic plotting and precision-preparation contracts, including P1D units and array shapes.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0147",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter.__init__",
+      "line": 80,
+      "signature": "__init__(self, emulator: Any, *, archive: Any | None=None, emulator_label: str | None=None) -> None",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `emulator`, `archive`, `emulator_label`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed emulator diagnostic plotting and precision-preparation contracts, including P1D units and array shapes.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0148",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter._smooth_power",
+      "line": 92,
+      "signature": "_smooth_power(emulator: Any, entry: dict[str, Any], k_Mpc: np.ndarray, mask: np.ndarray) -> np.ndarray",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `emulator`, `entry`, `k_Mpc`, `mask`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed emulator diagnostic plotting and precision-preparation contracts, including P1D units and array shapes.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0149",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter._k_grid",
+      "line": 104,
+      "signature": "_k_grid(data: Sequence[dict[str, Any]], kmax_Mpc: float) -> tuple[np.ndarray, np.ndarray]",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `data`, `kmax_Mpc`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed emulator diagnostic plotting and precision-preparation contracts, including P1D units and array shapes.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0150",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter.compute_testing_precision",
+      "line": 109,
+      "signature": "compute_testing_precision(self, testing_data: Sequence[dict[str, Any]], *, kmax_Mpc: float=4.0) -> dict[str, np.ndarray | str]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `testing_data`, `kmax_Mpc`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed precision residual definitions, percentile shapes, leave-one-out model loading, optional export, and plotting products.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0151",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter.compute_smoothing_precision",
+      "line": 140,
+      "signature": "compute_smoothing_precision(self, training_data: Sequence[dict[str, Any]], *, kmax_Mpc: float=4.0) -> dict[str, np.ndarray | str]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `training_data`, `kmax_Mpc`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed precision residual definitions, percentile shapes, leave-one-out model loading, optional export, and plotting products.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0152",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter.compute_leave_one_out_precision",
+      "line": 164,
+      "signature": "compute_leave_one_out_precision(self, *, model_path: str | Path, testing_prefix: str | None=None, stop_simulation: str | None=None) -> dict[str, np.ndarray | str]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `model_path`, `testing_prefix`, `stop_simulation`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed precision residual definitions, percentile shapes, leave-one-out model loading, optional export, and plotting products.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0153",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter._save_zenodo",
+      "line": 213,
+      "signature": "_save_zenodo(plot_data: dict[str, np.ndarray | str], *, save_zenodo: bool, zenodo_filename: str | None, zenodo_directory: str | Path | None) -> None",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `plot_data`, `save_zenodo`, `zenodo_filename`, `zenodo_directory`.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed precision residual definitions, percentile shapes, leave-one-out model loading, optional export, and plotting products.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0154",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter._finalize",
+      "line": 223,
+      "signature": "_finalize(axis: plt.Axes, *, fontsize: int, ylabel: str, xlim: tuple[float, float] | None, legend_kwargs: dict[str, Any]) -> None",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `axis`, `fontsize`, `ylabel`, `xlim`, `legend_kwargs`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed precision residual definitions, percentile shapes, leave-one-out model loading, optional export, and plotting products.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0155",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter.plot_testing_precision",
+      "line": 237,
+      "signature": "plot_testing_precision(self, testing_data: Sequence[dict[str, Any]], *, kmax_Mpc: float=4.0, ax: plt.Axes | None=None, fontsize: int=24, save_zenodo: bool=False, zenodo_filename: str | None=None, zenodo_directory: str | Path | None=None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `testing_data`, `kmax_Mpc`, `ax`, `fontsize`, `save_zenodo`, `zenodo_filename`, `zenodo_directory`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed precision residual definitions, percentile shapes, leave-one-out model loading, optional export, and plotting products.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0156",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter._plot_percentile_precision",
+      "line": 250,
+      "signature": "_plot_percentile_precision(self, plot_data: dict[str, np.ndarray | str], *, ylabel: str, xlim: tuple[float, float] | None, ax: plt.Axes | None, fontsize: int, save_zenodo: bool, zenodo_filename: str | None, zenodo_directory: str | Path | None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `plot_data`, `ylabel`, `xlim`, `ax`, `fontsize`, `save_zenodo`, `zenodo_filename`, `zenodo_directory`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed precision residual definitions, percentile shapes, leave-one-out model loading, optional export, and plotting products.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0157",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter.plot_smoothing_precision",
+      "line": 263,
+      "signature": "plot_smoothing_precision(self, training_data: Sequence[dict[str, Any]], *, kmax_Mpc: float=4.0, ax: plt.Axes | None=None, fontsize: int=24, save_zenodo: bool=False, zenodo_filename: str | None=None, zenodo_directory: str | Path | None=None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `training_data`, `kmax_Mpc`, `ax`, `fontsize`, `save_zenodo`, `zenodo_filename`, `zenodo_directory`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed precision residual definitions, percentile shapes, leave-one-out model loading, optional export, and plotting products.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0158",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter.plot_leave_one_out_precision",
+      "line": 268,
+      "signature": "plot_leave_one_out_precision(self, *, model_path: str | Path, testing_prefix: str | None=None, stop_simulation: str | None=None, ax: plt.Axes | None=None, fontsize: int=24, save_zenodo: bool=False, zenodo_filename: str | None=None, zenodo_directory: str | Path | None=None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `model_path`, `testing_prefix`, `stop_simulation`, `ax`, `fontsize`, `save_zenodo`, `zenodo_filename`, `zenodo_directory`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed precision residual definitions, percentile shapes, leave-one-out model loading, optional export, and plotting products.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0159",
+      "file": "lace/setup_simulations/read_gadget.py",
+      "qualified_name": "_check_gadget_config",
+      "line": 22,
+      "signature": "_check_gadget_config(config)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `config`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0160",
+      "file": "lace/setup_simulations/read_gadget.py",
+      "qualified_name": "read_gadget_paramfile",
+      "line": 31,
+      "signature": "read_gadget_paramfile(paramfile, verbose=False)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `paramfile`, `verbose`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0161",
+      "file": "lace/setup_simulations/read_gadget.py",
+      "qualified_name": "snapshot_redshifts",
+      "line": 44,
+      "signature": "snapshot_redshifts(config)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `config`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0162",
+      "file": "lace/setup_simulations/read_gadget.py",
+      "qualified_name": "redshifts_from_paramfile",
+      "line": 53,
+      "signature": "redshifts_from_paramfile(paramfile, verbose=False)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `paramfile`, `verbose`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0163",
+      "file": "lace/setup_simulations/read_gadget.py",
+      "qualified_name": "_build_cosmology_params_class",
+      "line": 59,
+      "signature": "_build_cosmology_params_class(config)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `config`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0164",
+      "file": "lace/setup_simulations/read_gadget.py",
+      "qualified_name": "_build_cosmology_params_camb",
+      "line": 97,
+      "signature": "_build_cosmology_params_camb(config)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `config`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0165",
+      "file": "lace/setup_simulations/read_gadget.py",
+      "qualified_name": "class_from_gadget",
+      "line": 129,
+      "signature": "class_from_gadget(paramfile, verbose=False)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `paramfile`, `verbose`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0166",
+      "file": "lace/setup_simulations/read_gadget.py",
+      "qualified_name": "camb_from_gadget",
+      "line": 152,
+      "signature": "camb_from_gadget(paramfile, verbose=False)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `paramfile`, `verbose`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0167",
+      "file": "lace/setup_simulations/read_genic.py",
+      "qualified_name": "L_Mpc_from_paramfile",
+      "line": 30,
+      "signature": "L_Mpc_from_paramfile(paramfile, verbose=False)",
+      "detected_gaps": [],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0168",
+      "file": "lace/setup_simulations/read_genic.py",
+      "qualified_name": "read_genic_paramfile",
+      "line": 54,
+      "signature": "read_genic_paramfile(paramfile, verbose=False)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `paramfile`, `verbose`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0169",
+      "file": "lace/setup_simulations/read_genic.py",
+      "qualified_name": "_check_genic_config",
+      "line": 67,
+      "signature": "_check_genic_config(config)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `config`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0170",
+      "file": "lace/setup_simulations/read_genic.py",
+      "qualified_name": "_build_cosmology_params_class",
+      "line": 84,
+      "signature": "_build_cosmology_params_class(config)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `config`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0171",
+      "file": "lace/setup_simulations/read_genic.py",
+      "qualified_name": "_build_cosmology_params_camb",
+      "line": 121,
+      "signature": "_build_cosmology_params_camb(config)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `config`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0172",
+      "file": "lace/setup_simulations/read_genic.py",
+      "qualified_name": "class_from_genic",
+      "line": 147,
+      "signature": "class_from_genic(paramfile, verbose=False)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `paramfile`, `verbose`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0173",
+      "file": "lace/setup_simulations/read_genic.py",
+      "qualified_name": "camb_from_genic",
+      "line": 164,
+      "signature": "camb_from_genic(paramfile, verbose=False)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `paramfile`, `verbose`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed simulation configuration validation, time-to-redshift conversion, density/neutrino translation, and CLASS/CAMB export conventions.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0174",
+      "file": "lace/utils/distance_to_center.py",
+      "qualified_name": "calculate_distance_to_center",
+      "line": 7,
+      "signature": "calculate_distance_to_center(sim_test, sim_suite='mpg', archive=None, emu_params=['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc'])",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Parameters:`, `Returns:`.",
+        "Provide canonical `Parameters` entries for `sim_test`, `sim_suite`, `archive`, `emu_params`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central-distance diagnostics, exception/misc helpers, and nonlinear smoothing inputs, units, return shapes, and compatibility behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0175",
+      "file": "lace/utils/distance_to_center.py",
+      "qualified_name": "distances_to_dict",
+      "line": 83,
+      "signature": "distances_to_dict(sim_suite='mpg', save_path=None)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `sim_suite`, `save_path`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central-distance diagnostics, exception/misc helpers, and nonlinear smoothing inputs, units, return shapes, and compatibility behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0176",
+      "file": "lace/utils/distance_to_center.py",
+      "qualified_name": "get_distance_sim",
+      "line": 112,
+      "signature": "get_distance_sim(sim_id, path_to_dict, sim_suite='mpg')",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Parameters:`, `Returns:`.",
+        "Provide canonical `Parameters` entries for `sim_id`, `path_to_dict`, `sim_suite`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central-distance diagnostics, exception/misc helpers, and nonlinear smoothing inputs, units, return shapes, and compatibility behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0177",
+      "file": "lace/utils/distance_to_center.py",
+      "qualified_name": "get_distance_simsuite",
+      "line": 131,
+      "signature": "get_distance_simsuite(path_to_dict, sim_suite='mpg')",
+      "detected_gaps": [
+        "Convert non-NumPy section headings: `Parameters:`, `Returns:`.",
+        "Provide canonical `Parameters` entries for `path_to_dict`, `sim_suite`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central-distance diagnostics, exception/misc helpers, and nonlinear smoothing inputs, units, return shapes, and compatibility behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0178",
+      "file": "lace/utils/exceptions.py",
+      "qualified_name": "ExceptionList.__init__",
+      "line": 2,
+      "signature": "__init__(self, msg, values)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `msg`, `values`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central-distance diagnostics, exception/misc helpers, and nonlinear smoothing inputs, units, return shapes, and compatibility behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0179",
+      "file": "lace/utils/exceptions.py",
+      "qualified_name": "ExceptionList.__str__",
+      "line": 9,
+      "signature": "__str__(self)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central-distance diagnostics, exception/misc helpers, and nonlinear smoothing inputs, units, return shapes, and compatibility behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0180",
+      "file": "lace/utils/misc.py",
+      "qualified_name": "split_string",
+      "line": 1,
+      "signature": "split_string(string)",
+      "detected_gaps": [
+        "No docstring: write an implementation-specific summary and the applicable NumPy sections.",
+        "Provide canonical `Parameters` entries for `string`.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central-distance diagnostics, exception/misc helpers, and nonlinear smoothing inputs, units, return shapes, and compatibility behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0181",
+      "file": "lace/utils/nonlinear_smoothing_p1d.py",
+      "qualified_name": "Nonlinear_Smoothing.__init__",
+      "line": 7,
+      "signature": "__init__(self, data_set_kernel, kmax_Mpc, bandwidth=[0.8, 0.4, 0.2], krange=[0.15, 1, 2.5, 4])",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `data_set_kernel`, `kmax_Mpc`, `bandwidth`, `krange`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central-distance diagnostics, exception/misc helpers, and nonlinear smoothing inputs, units, return shapes, and compatibility behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0182",
+      "file": "lace/utils/nonlinear_smoothing_p1d.py",
+      "qualified_name": "Nonlinear_Smoothing._interp_for_smoothing",
+      "line": 23,
+      "signature": "_interp_for_smoothing(self, data)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `data`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central-distance diagnostics, exception/misc helpers, and nonlinear smoothing inputs, units, return shapes, and compatibility behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0183",
+      "file": "lace/utils/nonlinear_smoothing_p1d.py",
+      "qualified_name": "Nonlinear_Smoothing._set_kernel_smoothing",
+      "line": 43,
+      "signature": "_set_kernel_smoothing(self, log_data)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `log_data`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central-distance diagnostics, exception/misc helpers, and nonlinear smoothing inputs, units, return shapes, and compatibility behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0184",
+      "file": "lace/utils/nonlinear_smoothing_p1d.py",
+      "qualified_name": "Nonlinear_Smoothing.apply_kernel_smoothing",
+      "line": 60,
+      "signature": "apply_kernel_smoothing(self, k_Mpc, data)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `k_Mpc`, `data`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed central-distance diagnostics, exception/misc helpers, and nonlinear smoothing inputs, units, return shapes, and compatibility behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0185",
+      "file": "lace/utils/plotting_functions.py",
+      "qualified_name": "create_corner_plot",
+      "line": 9,
+      "signature": "create_corner_plot(list_of_dfs, params_to_plot, **kwargs)",
+      "detected_gaps": [
+        "Provide canonical `Parameters` entries for `list_of_dfs`, `params_to_plot`, `kwargs`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed logarithmic P1D polynomial fitting, legacy corner wrapper, and in-place smoothing semantics with physical units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0186",
+      "file": "lace/utils/poly_p1d.py",
+      "qualified_name": "PolyP1D.__init__",
+      "line": 8,
+      "signature": "__init__(self, k_Mpc=None, P_Mpc=None, lnP_fit=None, kmin_Mpc=0.001, kmax_Mpc=10.0, deg=4)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `k_Mpc`, `P_Mpc`, `lnP_fit`, `kmin_Mpc`, `kmax_Mpc`, `deg`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed logarithmic P1D polynomial fitting, legacy corner wrapper, and in-place smoothing semantics with physical units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0187",
+      "file": "lace/utils/poly_p1d.py",
+      "qualified_name": "PolyP1D._setup_from_measured",
+      "line": 24,
+      "signature": "_setup_from_measured(self, k_Mpc, P_Mpc, kmin_Mpc, kmax_Mpc, deg)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `k_Mpc`, `P_Mpc`, `kmin_Mpc`, `kmax_Mpc`, `deg`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed logarithmic P1D polynomial fitting, legacy corner wrapper, and in-place smoothing semantics with physical units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0188",
+      "file": "lace/utils/poly_p1d.py",
+      "qualified_name": "PolyP1D._setup_from_coefficients",
+      "line": 35,
+      "signature": "_setup_from_coefficients(self, lnP_fit, kmin_Mpc)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `lnP_fit`, `kmin_Mpc`. Existing prose may describe these, but there are no matching canonical entries."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed logarithmic P1D polynomial fitting, legacy corner wrapper, and in-place smoothing semantics with physical units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0189",
+      "file": "lace/utils/poly_p1d.py",
+      "qualified_name": "PolyP1D.P_Mpc",
+      "line": 43,
+      "signature": "P_Mpc(self, k_Mpc)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `k_Mpc`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed logarithmic P1D polynomial fitting, legacy corner wrapper, and in-place smoothing semantics with physical units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0190",
+      "file": "lace/utils/poly_p1d.py",
+      "qualified_name": "fit_polynomial",
+      "line": 52,
+      "signature": "fit_polynomial(xmin, xmax, x, y, deg=2)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `xmin`, `xmax`, `x`, `y`, `deg`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Add a `Returns` contract covering actual return branches, type/structure, shapes and units where relevant."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed logarithmic P1D polynomial fitting, legacy corner wrapper, and in-place smoothing semantics with physical units.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-0191",
+      "file": "lace/utils/smoothing_manager.py",
+      "qualified_name": "apply_smoothing",
+      "line": 7,
+      "signature": "apply_smoothing(emulator, data, fprint=print)",
+      "detected_gaps": [
+        "Summary does not end with a period.",
+        "Provide canonical `Parameters` entries for `emulator`, `data`, `fprint`. Existing prose may describe these, but there are no matching canonical entries.",
+        "Review explicit raises `ValueError`; document caller-relevant exceptions and triggering conditions in `Raises`."
+      ],
+      "status": "corrected",
+      "evidence": "Reviewed logarithmic P1D polynomial fitting, legacy corner wrapper, and in-place smoothing semantics with physical units.",
+      "blocker": ""
+    }
+  ],
+  "classes": [
+    {
+      "id": "lace-class-001",
+      "file": "lace/archive/base_archive.py",
+      "qualified_name": "BaseArchive",
+      "line": 8,
+      "status": "corrected",
+      "evidence": "Reviewed class implementation and documented its public responsibility, retained state, and domain-specific behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-002",
+      "file": "lace/archive/gadget_archive.py",
+      "qualified_name": "GadgetArchive",
+      "line": 15,
+      "status": "corrected",
+      "evidence": "Reviewed class implementation and documented its public responsibility, retained state, and domain-specific behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-003",
+      "file": "lace/archive/nyx_archive.py",
+      "qualified_name": "NyxArchive",
+      "line": 10,
+      "status": "corrected",
+      "evidence": "Reviewed class implementation and documented its public responsibility, retained state, and domain-specific behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-004",
+      "file": "lace/cosmo/base_cosmology.py",
+      "qualified_name": "BaseCosmology",
+      "line": 4,
+      "status": "corrected",
+      "evidence": "Reviewed class implementation and documented its public responsibility, retained state, and domain-specific behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-005",
+      "file": "lace/cosmo/cosmology.py",
+      "qualified_name": "Cosmology",
+      "line": 9,
+      "status": "corrected",
+      "evidence": "Reviewed class implementation and documented its public responsibility, retained state, and domain-specific behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-006",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "IncompatibleBackgroundError",
+      "line": 5,
+      "status": "corrected",
+      "evidence": "Reviewed class implementation and documented its public responsibility, retained state, and domain-specific behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-007",
+      "file": "lace/cosmo/rescale_cosmology.py",
+      "qualified_name": "RescaledCosmology",
+      "line": 20,
+      "status": "corrected",
+      "evidence": "Reviewed class implementation and documented its public responsibility, retained state, and domain-specific behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-008",
+      "file": "lace/emulator/constants.py",
+      "qualified_name": "TrainingSet",
+      "line": 7,
+      "status": "corrected",
+      "evidence": "Reviewed class implementation and documented its public responsibility, retained state, and domain-specific behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-009",
+      "file": "lace/emulator/constants.py",
+      "qualified_name": "EmulatorLabel",
+      "line": 14,
+      "status": "corrected",
+      "evidence": "Reviewed class implementation and documented its public responsibility, retained state, and domain-specific behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-010",
+      "file": "lace/emulator/gp_emulator_multi.py",
+      "qualified_name": "GPEmulator",
+      "line": 37,
+      "status": "corrected",
+      "evidence": "Reviewed GP emulator responsibility and physical prediction convention.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-011",
+      "file": "lace/emulator/model_manifest.py",
+      "qualified_name": "ModelBundleError",
+      "line": 13,
+      "status": "corrected",
+      "evidence": "Reviewed class implementation and documented its public responsibility, retained state, and domain-specific behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-012",
+      "file": "lace/plotting/archive.py",
+      "qualified_name": "ArchivePlotter",
+      "line": 78,
+      "status": "corrected",
+      "evidence": "Reviewed archive plotter attachment and rendering responsibility.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-013",
+      "file": "lace/plotting/emulator_precision.py",
+      "qualified_name": "EmulatorPrecisionPlotter",
+      "line": 68,
+      "status": "corrected",
+      "evidence": "Reviewed precision plotter state and diagnostic scope.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-014",
+      "file": "lace/utils/exceptions.py",
+      "qualified_name": "ExceptionList",
+      "line": 1,
+      "status": "corrected",
+      "evidence": "Reviewed utility class state and caller-visible behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-015",
+      "file": "lace/utils/nonlinear_smoothing_p1d.py",
+      "qualified_name": "Nonlinear_Smoothing",
+      "line": 4,
+      "status": "corrected",
+      "evidence": "Reviewed utility class state and caller-visible behavior.",
+      "blocker": ""
+    },
+    {
+      "id": "lace-class-016",
+      "file": "lace/utils/poly_p1d.py",
+      "qualified_name": "PolyP1D",
+      "line": 5,
+      "status": "corrected",
+      "evidence": "Reviewed logarithmic P1D polynomial representation and lower-k non-extrapolation convention.",
+      "blocker": ""
+    }
+  ],
+  "validation": [],
+  "progress_note": "Completed every LaCE checklist item; starting repository-wide source and documentation validation audit."
+}

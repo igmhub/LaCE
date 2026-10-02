@@ -52,7 +52,20 @@ def L_Mpc_from_paramfile(paramfile, verbose=False):
 
 
 def read_genic_paramfile(paramfile, verbose=False):
-    """Parse a GenIC parameter file and returns a dictionary"""
+    """Parse and validate a GenIC initial-condition parameter file.
+
+    Parameters
+    ----------
+    paramfile : path-like
+        GenIC configuration file.
+    verbose : bool, default=False
+        Print successful validation diagnostics.
+
+    Returns
+    -------
+    configobj.ConfigObj
+        Parsed configuration with configspec defaults applied.
+    """
 
     config = configobj.ConfigObj(
         infile=paramfile, configspec=GenICconfigspec, file_error=True
@@ -65,7 +78,15 @@ def read_genic_paramfile(paramfile, verbose=False):
 
 
 def _check_genic_config(config):
-    """Check that the MP-GenIC config file is sensible."""
+    """Validate supported MP-GenIC transfer and dark-energy assumptions.
+
+    Raises
+    ------
+    ValueError
+        If unsupported common transfer functions, input-redshift normalization,
+        sigma-eight normalization, evolving dark energy, or warm dark matter
+        is requested.
+    """
     vtor = validate.Validator()
     config.validate(vtor)
     # Check unsupported configurations
@@ -82,7 +103,7 @@ def _check_genic_config(config):
 
 
 def _build_cosmology_params_class(config):
-    """Build a correctly-named-for-class set of cosmology parameters."""
+    """Translate GenIC cosmology values into CLASS parameter names."""
     # Class takes omega_m h^2 as parameters
     h0 = config["HubbleParam"]
     # Compute sum of neutrino masses
@@ -119,7 +140,7 @@ def _build_cosmology_params_class(config):
 
 
 def _build_cosmology_params_camb(config):
-    """Build a correctly-named-for-camb set of cosmology parameters."""
+    """Translate GenIC cosmology values into CAMB physical parameters."""
     # Class takes omega_m h^2 as parameters
     h0 = config["HubbleParam"]
     # Compute sum of neutrino masses
@@ -145,7 +166,7 @@ def _build_cosmology_params_camb(config):
 
 
 def class_from_genic(paramfile, verbose=False):
-    """Parse a GenIC parameter file and returns a dictionary to setup CLASS"""
+    """Parse a GenIC file and return a CLASS-ready parameter mapping."""
 
     # read GenIC configuration file, and store information
     config = read_genic_paramfile(paramfile, verbose)
@@ -162,7 +183,7 @@ def class_from_genic(paramfile, verbose=False):
 
 
 def camb_from_genic(paramfile, verbose=False):
-    """Parse a GenIC parameter file and returns a dictionary to setup CAMB"""
+    """Parse a GenIC file and return a CAMB-ready parameter mapping."""
 
     # read GenIC configuration file, and store information
     config = read_genic_paramfile(paramfile, verbose)

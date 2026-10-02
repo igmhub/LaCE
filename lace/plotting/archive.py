@@ -52,10 +52,15 @@ def parameter_matrix(data: Sequence[Mapping[str, Any]], parameters: Sequence[str
 
 
 def _label(parameter: str, labels: Mapping[str, str] | None = None) -> str:
+    """Return a display label for an archive parameter.
+
+    Explicit ``labels`` override the module's physical-unit label registry.
+    """
     return (labels or PARAMETER_LABELS).get(parameter, parameter)
 
 
 def _save_figure(figure: plt.Figure, save_path: str | Path | None) -> None:
+    """Save a figure only when an explicit destination path is provided."""
     if save_path is not None:
         path = Path(save_path)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -63,6 +68,27 @@ def _save_figure(figure: plt.Figure, save_path: str | Path | None) -> None:
 
 
 def _axes_grid(n_panels: int, nrows: int, axes: Any = None) -> tuple[plt.Figure, np.ndarray]:
+    """Create or validate a flattened axes grid for a requested panel count.
+
+    Parameters
+    ----------
+    n_panels : int
+        Minimum number of visible plotting panels.
+    nrows : int
+        Number of rows when new axes are created.
+    axes : array-like of matplotlib.axes.Axes, optional
+        Caller-provided axes to reuse.
+
+    Returns
+    -------
+    figure, flat_axes : tuple
+        Owning figure and one-dimensional axes array.
+
+    Raises
+    ------
+    ValueError
+        If provided axes cannot cover every requested panel.
+    """
     if axes is None:
         ncols = int(np.ceil(n_panels / nrows))
         figure, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 3 * nrows))
@@ -86,6 +112,13 @@ class ArchivePlotter:
     """
 
     def __init__(self, archive: Any | None = None):
+        """Attach an optional archive used by data-free plotting calls.
+
+        Parameters
+        ----------
+        archive : BaseArchive, optional
+            Archive exposing ``get_training_data``.
+        """
         self.archive = archive
 
     def get_training_data(
@@ -96,6 +129,23 @@ class ArchivePlotter:
         ``average="both"`` averages phase and line-of-sight-axis repetitions.
         It is appropriate for diagnostic figures, whereas emulator training
         normally uses the full, unaveraged data set.
+
+        Parameters
+        ----------
+        parameters : sequence of str
+            Required archive fields.
+        average : str, optional
+            Phase/axis averaging convention forwarded to the archive.
+
+        Returns
+        -------
+        list of dict
+            Training entries satisfying the requested parameter list.
+
+        Raises
+        ------
+        ValueError
+            If no archive is attached.
         """
         if self.archive is None:
             raise ValueError("An archive is required when data is not supplied")
@@ -108,6 +158,28 @@ class ArchivePlotter:
 
         No files are written unless ``save_path`` is supplied. The returned
         figure and axes can be further customised by callers.
+
+        Parameters
+        ----------
+        x_parameter, y_parameter : str
+            Finite scalar archive fields on the horizontal and vertical axes.
+        data : sequence of mapping, optional
+            Explicit archive entries; otherwise attached training data are used.
+        color_parameter : str, optional
+            Scalar field mapped through ``cmap`` when ``color`` is not given.
+        ax : matplotlib.axes.Axes, optional
+            Existing axes to populate.
+        label, marker, color, cmap, alpha, size
+            Matplotlib scatter styling options.
+        add_colorbar : bool, default=True
+            Add a colorbar for varying scalar color values.
+        save_path : path-like, optional
+            Output path; no file is written by default.
+
+        Returns
+        -------
+        figure, ax : tuple
+            Matplotlib figure and populated axes.
         """
         required = [x_parameter, y_parameter]
         if color_parameter is not None and color is None:
@@ -139,6 +211,22 @@ class ArchivePlotter:
 
         The parameters must be finite scalar values. Unused panels are hidden;
         saving is opt-in through ``save_path``.
+
+        Parameters
+        ----------
+        parameters : sequence of str
+            Ordered scalar fields; adjacent pairs form panels.
+        data, labels, axes, save_path
+            Explicit entries, display labels, reusable axes, and optional output.
+        nrows : int, default=3
+            Number of rows in a newly created panel grid.
+        color, alpha, size
+            Matplotlib scatter styling options.
+
+        Returns
+        -------
+        figure, flat_axes : tuple
+            Figure and flattened axes grid, with unused axes hidden.
         """
         if len(parameters) < 2:
             raise ValueError("At least two parameters are required")
@@ -156,7 +244,33 @@ class ArchivePlotter:
         return figure, flat_axes
 
     def plot_parameter_triplet(self, parameters: Sequence[str], *, data=None, cmap: str = "viridis", size: float = 8, ax=None, save_path=None):
-        """Plot three archive parameters in 3D, coloured by redshift."""
+        """Plot three archive parameters in 3D, coloured by redshift.
+
+        Parameters
+        ----------
+        parameters : sequence of str
+            Exactly three finite scalar archive fields.
+        data : sequence of mapping, optional
+            Explicit entries; otherwise attached training data are used.
+        cmap : str, default="viridis"
+            Redshift color map.
+        size : float, default=8
+            Scatter marker area.
+        ax : matplotlib.axes.Axes, optional
+            Existing three-dimensional axes.
+        save_path : path-like, optional
+            Figure output path.
+
+        Returns
+        -------
+        figure, ax : tuple
+            Three-dimensional figure and axes.
+
+        Raises
+        ------
+        ValueError
+            If exactly three parameter names are not supplied.
+        """
         if len(parameters) != 3:
             raise ValueError("parameters must contain exactly three names")
         entries = list(data) if data is not None else self.get_training_data([*parameters, "z"])
@@ -173,7 +287,31 @@ class ArchivePlotter:
         return figure, ax
 
     def compare_parameter_sequences(self, datasets: Mapping[str, Sequence[Mapping[str, Any]]] | Sequence[Sequence[Mapping[str, Any]]], parameters: Sequence[str], *, labels: Sequence[str] | None = None, parameter_labels: Mapping[str, str] | None = None, colors: Sequence[str] | None = None, alphas: Sequence[float] | None = None, sizes: Sequence[float] | None = None, nrows: int = 3, axes: Any = None, save_path: str | Path | None = None) -> tuple[plt.Figure, np.ndarray]:
-        """Overlay adjacent parameter projections from several data sets."""
+        """Overlay adjacent parameter projections from several data sets.
+
+        Parameters
+        ----------
+        datasets : mapping or sequence of sequences
+            Named or ordered collections of archive entries.
+        parameters : sequence of str
+            Ordered scalar fields; adjacent pairs form panels.
+        labels, parameter_labels : sequence or mapping, optional
+            Dataset legend and parameter display labels.
+        colors, alphas, sizes : sequence, optional
+            Styling arrays, one entry per dataset.
+        nrows, axes, save_path
+            Panel-grid layout, reusable axes, and optional output path.
+
+        Returns
+        -------
+        figure, flat_axes : tuple
+            Figure and flattened panel axes.
+
+        Raises
+        ------
+        ValueError
+            If datasets, labels, style arrays, or parameters are inconsistent.
+        """
         if isinstance(datasets, Mapping):
             names, data_sets = list(datasets), list(datasets.values())
         else:
@@ -339,7 +477,29 @@ class ArchivePlotter:
 
     @staticmethod
     def plot_igm_histories(histories: Mapping[str, Mapping[str, Any]], *, parameters: Sequence[str] | None = None, labels: Mapping[str, str] | None = None, highlighted_simulations: Sequence[str] | None = None, excluded_simulations: Sequence[str] | None = None, default_color: str = "black", highlight_color: str = "red", default_alpha: float = 0.2, highlight_alpha: float = 1.0, axes: Any = None, save_path: str | Path | None = None) -> tuple[plt.Figure, np.ndarray]:
-        """Plot IGM histories, masking zero values marked unavailable in files."""
+        """Plot IGM histories, masking zero values marked unavailable in files.
+
+        Parameters
+        ----------
+        histories : mapping of str to mapping
+            Simulation labels mapped to redshift and IGM-history arrays.
+        parameters : sequence of str, optional
+            IGM quantities to plot; default fields retain their documented
+            temperature, velocity-width, and filtering-scale conventions.
+        labels : mapping, optional
+            Display-label overrides.
+        highlighted_simulations, excluded_simulations : sequence of str, optional
+            Labels drawn prominently or omitted entirely.
+        default_color, highlight_color, default_alpha, highlight_alpha
+            Styling for ordinary and highlighted simulations.
+        axes, save_path
+            Reusable axes and optional output path.
+
+        Returns
+        -------
+        figure, flat_axes : tuple
+            Figure and flattened history-panel axes.
+        """
         parameters = list(parameters or ["tau_eff", "gamma", "sigT_kms", "kF_kms"])
         highlighted, excluded = set(highlighted_simulations or []), set(excluded_simulations or [])
         figure, flat_axes = _axes_grid(len(parameters), 2, axes)
@@ -372,6 +532,33 @@ class ArchivePlotter:
         ``base_rescaling_index``. The base histories and named test simulations
         are drawn as lines; other rescalings are shown as unconnected dots to
         avoid overcrowding.
+
+        Parameters
+        ----------
+        history_sets : mapping
+            Dataset names mapped to their simulation-history mappings.
+        dataset_labels, parameters, parameter_labels : optional
+            Legend labels, plotted quantities, and display-label overrides.
+        colors, alphas : sequence, optional
+            One color and opacity per dataset.
+        excluded_simulations : sequence of str, optional
+            Simulation labels omitted from every dataset.
+        rescaling_datasets : sequence of str, default=("Nyx",)
+            Dataset names whose suffixed simulation labels encode rescalings.
+        base_rescaling_index : int, default=0
+            Rescaling index drawn as connected histories.
+        axes, save_path
+            Reusable axes and optional output path.
+
+        Returns
+        -------
+        figure, flat_axes : tuple
+            Figure and flattened comparison-panel axes.
+
+        Raises
+        ------
+        ValueError
+            If labels, colors, or alphas do not match dataset count.
         """
         parameters = list(parameters or ["tau_eff", "gamma", "sigT_kms", "kF_kms"])
         names, sets = list(history_sets), list(history_sets.values())
