@@ -10,6 +10,23 @@ def normalize_cosmology_params(params):
 
     The accepted aliases match the historical CAMB input interface, while the
     returned dictionary uses the names consumed by :class:`Cosmology`.
+
+    Parameters
+    ----------
+    params : mapping
+        Public cosmology names and values, including supported aliases.
+
+    Returns
+    -------
+    dict
+        Canonicalized independent parameter mapping.
+
+    Raises
+    ------
+    TypeError
+        If ``params`` is not a mapping.
+    ValueError
+        If incompatible angular-size or Hubble parameterizations are supplied.
     """
 
     if not isinstance(params, Mapping):

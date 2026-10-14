@@ -33,6 +33,25 @@ def complete_igm_parameters(
     A replacement is announced for each affected parameter. This is intended
     for preparing incomplete testing data before validation; plotting itself
     never mixes parameters from different simulations.
+
+    Parameters
+    ----------
+    data, reference_data : sequence of mapping
+        Incomplete testing entries and redshift-matched reference entries.
+    parameter_names : sequence of str, default=IGM_PARAMETERS
+        IGM fields filled only when the input value is non-finite.
+    redshift_tolerance : float, default=0.05
+        Maximum absolute redshift separation for a reference replacement.
+
+    Returns
+    -------
+    list of dict
+        Copied testing entries with finite requested IGM fields.
+
+    Raises
+    ------
+    ValueError
+        If no suitable finite reference value exists for a missing field.
     """
     completed_data = []
     for entry in data:
@@ -84,13 +103,41 @@ class EmulatorPrecisionPlotter:
         archive: Any | None = None,
         emulator_label: str | None = None,
     ) -> None:
+        """Initialize precision diagnostics around a loaded P1D emulator.
+
+        Parameters
+        ----------
+        emulator : object
+            Loaded emulator exposing P1D and normalization interfaces.
+        archive : BaseArchive, optional
+            Archive required for leave-one-out diagnostics.
+        emulator_label : str, optional
+            Label used to load each leave-one-out emulator.
+        """
         self.emulator = emulator
         self.archive = archive
         self.emulator_label = emulator_label
 
     @staticmethod
     def _smooth_power(emulator: Any, entry: dict[str, Any], k_Mpc: np.ndarray, mask: np.ndarray) -> np.ndarray:
-        """Fit the polynomial smoothing model used by the emulator diagnostics."""
+        """Fit the emulator's normalized polynomial smoothing model.
+
+        Parameters
+        ----------
+        emulator : object
+            Emulator providing normalization and polynomial basis attributes.
+        entry : mapping
+            Archive row with P1D in Mpc and mean flux.
+        k_Mpc : ndarray
+            Retained comoving grid in 1/Mpc.
+        mask : ndarray of bool
+            Indices mapping ``k_Mpc`` back to the original P1D grid.
+
+        Returns
+        -------
+        ndarray
+            Smoothed P1D in Mpc on ``k_Mpc``.
+        """
         normalization = np.interp(
             k_Mpc, emulator.input_norm["k_Mpc"], emulator.norm_imF(entry["mF"])
         )
@@ -102,6 +149,11 @@ class EmulatorPrecisionPlotter:
 
     @staticmethod
     def _k_grid(data: Sequence[dict[str, Any]], kmax_Mpc: float) -> tuple[np.ndarray, np.ndarray]:
+        """Select positive input wavenumbers below a requested maximum.
+
+        Returns the retained grid in 1/Mpc and its Boolean mask on the first
+        archive entry's native grid.
+        """
         raw_k = np.asarray(data[0]["k_Mpc"])
         mask = (raw_k > 0) & (raw_k < kmax_Mpc)
         return raw_k[mask], mask
@@ -112,7 +164,21 @@ class EmulatorPrecisionPlotter:
         *,
         kmax_Mpc: float = 4.0,
     ) -> dict[str, np.ndarray | str]:
-        """Compute ``P1D_smooth / P1D_emulator - 1`` at each valid redshift."""
+        """Compute redshift-resolved smooth-to-emulator P1D residuals.
+
+        Parameters
+        ----------
+        testing_data : sequence of mapping
+            Complete testing rows with P1D in Mpc and finite IGM inputs.
+        kmax_Mpc : float, default=4.0
+            Maximum retained comoving wavenumber in 1/Mpc.
+
+        Returns
+        -------
+        dict
+            Retained ``k_Mpc``, redshifts, and a ``(nz, nk)`` fractional array
+            defined as ``P1D_smooth / P1D_emulator - 1``.
+        """
         k_Mpc, mask = self._k_grid(testing_data, kmax_Mpc)
         redshifts, differences = [], []
         for entry in testing_data:
@@ -143,7 +209,26 @@ class EmulatorPrecisionPlotter:
         *,
         kmax_Mpc: float = 4.0,
     ) -> dict[str, np.ndarray | str]:
-        """Compute percentile bands of ``P1D_simulation / P1D_smooth - 1``."""
+        """Compute percentile bands for simulation-to-smooth P1D residuals.
+
+        Parameters
+        ----------
+        training_data : sequence of mapping
+            Training rows containing P1D in Mpc and finite filtering scales.
+        kmax_Mpc : float, default=4.0
+            Maximum retained comoving wavenumber in 1/Mpc.
+
+        Returns
+        -------
+        dict
+            Retained grid, percentile levels, and ``(4, nk)`` residual bands
+            defined as ``P1D_simulation / P1D_smooth - 1``.
+
+        Raises
+        ------
+        ValueError
+            If no valid training row is available.
+        """
         k_Mpc, mask = self._k_grid(training_data, kmax_Mpc)
         differences = []
         for entry in training_data:
@@ -168,7 +253,28 @@ class EmulatorPrecisionPlotter:
         testing_prefix: str | None = None,
         stop_simulation: str | None = None,
     ) -> dict[str, np.ndarray | str]:
-        """Compute L1O precision using models from ``model_path``."""
+        """Compute leave-one-out emulator precision from stored GP bundles.
+
+        Parameters
+        ----------
+        model_path : path-like
+            Directory containing one GP bundle per excluded simulation.
+        testing_prefix : str, optional
+            Simulation-label prefix; inferred from ``emulator_label`` by default.
+        stop_simulation : str, optional
+            Stop before this simulation, useful for partial diagnostics.
+
+        Returns
+        -------
+        dict
+            Retained grid, percentile levels, and residual bands defined as
+            ``P1D_emulator / P1D_smooth - 1``.
+
+        Raises
+        ------
+        ValueError
+            If archive/model identity is unset or no valid L1O row exists.
+        """
         if self.archive is None or self.emulator_label is None:
             raise ValueError("archive and emulator_label are required for leave-one-out precision.")
         prefix = testing_prefix or ("nyx" if self.emulator_label.startswith("CH24_nyx") else "mpg")
@@ -211,6 +317,7 @@ class EmulatorPrecisionPlotter:
 
     @staticmethod
     def _save_zenodo(plot_data: dict[str, np.ndarray | str], *, save_zenodo: bool, zenodo_filename: str | None, zenodo_directory: str | Path | None) -> None:
+        """Optionally persist reusable diagnostic data as a NumPy dictionary."""
         if not save_zenodo:
             return
         if zenodo_filename is None:
@@ -221,6 +328,7 @@ class EmulatorPrecisionPlotter:
 
     @staticmethod
     def _finalize(axis: plt.Axes, *, fontsize: int, ylabel: str, xlim: tuple[float, float] | None, legend_kwargs: dict[str, Any]) -> None:
+        """Apply shared precision-plot axes, limits, and legend formatting."""
         axis.axhline(0.0, linestyle=":", color="k")
         axis.axhline(0.01, linestyle="--", color="k")
         axis.axhline(-0.01, linestyle="--", color="k")
@@ -235,7 +343,11 @@ class EmulatorPrecisionPlotter:
         axis.figure.tight_layout()
 
     def plot_testing_precision(self, testing_data: Sequence[dict[str, Any]], *, kmax_Mpc: float = 4.0, ax: plt.Axes | None = None, fontsize: int = 24, save_zenodo: bool = False, zenodo_filename: str | None = None, zenodo_directory: str | Path | None = None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]:
-        """Plot redshift-resolved precision for self-contained testing data."""
+        """Plot redshift-resolved smooth-to-emulator residual curves.
+
+        Returns a figure, populated axes, and the reusable precision dictionary
+        from :meth:`compute_testing_precision`.
+        """
         plot_data = self.compute_testing_precision(testing_data, kmax_Mpc=kmax_Mpc)
         if ax is None:
             figure, ax = plt.subplots(figsize=(8, 6))
@@ -248,6 +360,7 @@ class EmulatorPrecisionPlotter:
         return figure, ax, plot_data
 
     def _plot_percentile_precision(self, plot_data: dict[str, np.ndarray | str], *, ylabel: str, xlim: tuple[float, float] | None, ax: plt.Axes | None, fontsize: int, save_zenodo: bool, zenodo_filename: str | None, zenodo_directory: str | Path | None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]:
+        """Render percentile bands from a precision-statistics dictionary."""
         if ax is None:
             figure, ax = plt.subplots(figsize=(8, 6))
         else:
@@ -261,11 +374,11 @@ class EmulatorPrecisionPlotter:
         return figure, ax, plot_data
 
     def plot_smoothing_precision(self, training_data: Sequence[dict[str, Any]], *, kmax_Mpc: float = 4.0, ax: plt.Axes | None = None, fontsize: int = 24, save_zenodo: bool = False, zenodo_filename: str | None = None, zenodo_directory: str | Path | None = None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]:
-        """Plot smooth-fit percentile precision and optionally export its data."""
+        """Plot simulation-to-smooth percentile precision and optional data export."""
         data = self.compute_smoothing_precision(training_data, kmax_Mpc=kmax_Mpc)
         return self._plot_percentile_precision(data, ylabel=r"$P_\mathrm{1D}^\mathrm{sim}/P_\mathrm{1D}^\mathrm{smooth}-1$", xlim=None, ax=ax, fontsize=fontsize, save_zenodo=save_zenodo, zenodo_filename=zenodo_filename, zenodo_directory=zenodo_directory)
 
     def plot_leave_one_out_precision(self, *, model_path: str | Path, testing_prefix: str | None = None, stop_simulation: str | None = None, ax: plt.Axes | None = None, fontsize: int = 24, save_zenodo: bool = False, zenodo_filename: str | None = None, zenodo_directory: str | Path | None = None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]:
-        """Plot leave-one-out percentile precision and optionally export its data."""
+        """Plot leave-one-out percentile precision and optional data export."""
         data = self.compute_leave_one_out_precision(model_path=model_path, testing_prefix=testing_prefix, stop_simulation=stop_simulation)
         return self._plot_percentile_precision(data, ylabel=r"$P_\mathrm{1D}^\mathrm{emu}/P_\mathrm{1D}^\mathrm{smooth}-1$", xlim=(0.08, 4.0), ax=ax, fontsize=fontsize, save_zenodo=save_zenodo, zenodo_filename=zenodo_filename, zenodo_directory=zenodo_directory)

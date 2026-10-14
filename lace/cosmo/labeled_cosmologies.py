@@ -2,7 +2,23 @@ import numpy as np
 
 
 def get_cosmo_params_dict_from_label(label):
+    """Return a mutable cosmology parameter dictionary for a named fiducial.
 
+    Parameters
+    ----------
+    label : {"Planck18", "Planck18_mnu", "Planck18_noBAO"}
+        Supported published cosmology selection.
+
+    Returns
+    -------
+    dict
+        CAMB/LaCE parameter values in physical units.
+
+    Raises
+    ------
+    ValueError
+        If ``label`` is not a supported selection.
+    """
     if label == "Planck18":
         # Table 2 of https://arxiv.org/abs/1807.06209.pdf (T&E+lensing+BAO) w/ mnu=0
         # Used as baseline cosmology in the DESI Lya P1D analysis

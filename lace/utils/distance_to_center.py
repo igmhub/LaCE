@@ -8,17 +8,24 @@ def calculate_distance_to_center(sim_test,
                            sim_suite='mpg',
                            archive=None,
                            emu_params=['Delta2_p', 'n_p', 'mF', 'sigT_Mpc', 'gamma', 'kF_Mpc']):
-    """
-    Calculate the normalized distance of a test simulation from the center of the parameter space defined by emulator parameters.
+    """Compute a mean normalized distance from a suite's central simulation.
 
-    Parameters:
-    - sim_test (str): Identifier for the test simulation whose distance to the parameter space center is to be calculated.
-    - sim_suite (str, optional): Specifies the simulation suite ('mpg' or 'nyx') to use for fetching the data. Defaults to 'mpg'.
-    - archive (object, optional): An already instantiated archive object to use, avoiding reinitialization if passed. Defaults to None.
-    - emu_params (list of str, optional): List of emulator parameter names to consider in the distance calculation. These parameters should be present in the simulation data.
+    Parameters
+    ----------
+    sim_test : str
+        Test simulation label.
+    sim_suite : {"mpg", "nyx"}, default="mpg"
+        Archive family used when ``archive`` is omitted.
+    archive : BaseArchive, optional
+        Preloaded archive, avoiding a second data load.
+    emu_params : sequence of str
+        Emulator coordinates whose training ranges normalize absolute offsets.
 
-    Returns:
-    - numpy.ndarray: The normalized distances of the test simulation data from the central values of the parameter space.
+    Returns
+    -------
+    float
+        Mean summed coordinate distance across available redshift entries, or
+        ``nan`` when the requested simulation has no data.
     """
     # Initialize the appropriate archive if not provided
     if archive==None:
@@ -81,7 +88,20 @@ def calculate_distance_to_center(sim_test,
             
 
 def distances_to_dict(sim_suite='mpg', save_path=None):
-    """- sim_suite (str, optional): Specifies the simulation suite ('mpg' or 'nyx') to use for fetching the data. Defaults to 'mpg'."""
+    """Compute central-distance metrics for every simulation in one suite.
+
+    Parameters
+    ----------
+    sim_suite : {"mpg", "nyx"}, default="mpg"
+        Simulation archive family.
+    save_path : path-like, optional
+        Directory where ``distances_<suite>.json`` is written.
+
+    Returns
+    -------
+    dict of str to float
+        Mean normalized distance keyed by simulation label.
+    """
 
     
     # Initialize the appropriate archive if not provided
@@ -110,16 +130,22 @@ def distances_to_dict(sim_suite='mpg', save_path=None):
     return distances
     
 def get_distance_sim(sim_id, path_to_dict, sim_suite='mpg'):
+    """Read one simulation's precomputed central-distance metric.
+
+    Parameters
+    ----------
+    sim_id : str
+        Simulation label.
+    path_to_dict : path-like
+        JSON file written by :func:`distances_to_dict`.
+    sim_suite : str, optional
+        Retained for backwards-compatible call signatures.
+
+    Returns
+    -------
+    float
+        Stored normalized distance.
     """
-    Retrieve the distance for a given simulation ID from the distances dictionary.
-
-    Parameters:
-    - sim_id (str): The simulation ID for which to retrieve the distance.
-    - sim_suite (str, optional): Specifies the simulation suite ('mpg' or 'nyx') to use for fetching the data. Defaults to 'mpg'.
-
-    Returns:
-    - float: The distance for the specified simulation ID.
-    """    
     try:
         with open(path_to_dict, 'r') as f:
             distances = json.load(f)
@@ -129,16 +155,20 @@ def get_distance_sim(sim_id, path_to_dict, sim_suite='mpg'):
     return d
 
 def get_distance_simsuite(path_to_dict, sim_suite='mpg'):
+    """Read every precomputed central-distance metric from a JSON file.
+
+    Parameters
+    ----------
+    path_to_dict : path-like
+        JSON file written by :func:`distances_to_dict`.
+    sim_suite : str, optional
+        Retained for backwards-compatible call signatures.
+
+    Returns
+    -------
+    dict of str to float
+        Stored normalized distances by simulation label.
     """
-    Retrieve the distance for a given simulation ID from the distances dictionary.
-
-    Parameters:
-    - sim_id (str): The simulation ID for which to retrieve the distance.
-    - sim_suite (str, optional): Specifies the simulation suite ('mpg' or 'nyx') to use for fetching the data. Defaults to 'mpg'.
-
-    Returns:
-    - float: The distance for the specified simulation ID.
-    """    
     try:
         with open(path_to_dict, 'r') as f:
             distances = json.load(f)

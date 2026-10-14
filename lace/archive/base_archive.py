@@ -6,26 +6,29 @@ from lace.utils.misc import split_string
 
 
 class BaseArchive(object):
-    """
-    A base class for archiving and processing data.
+    """Base container and selection interface for simulation archive entries.
 
-    Methods:
-        _set_labels(): Extract labels from self.data and set them as attributes.
-        _average_over_samples(average="both"): Compute averages over phases, axes, or both.
-        get_training_data(average=None, val_scaling=None, drop_sim=None, z_max=None):
-            Retrieves training data based on provided flags.
-        get_testing_data(sim_label, val_scaling=None, average=None, z_max=None):
-            Retrieves testing data based on provided flags.
+    Subclasses populate ``data`` with dictionaries containing simulation
+    labels, sample indices, cosmology metadata, and power-spectrum products.
+    This base class derives label arrays and provides non-mutating training
+    and testing selections from that archive.
 
+    Attributes
+    ----------
+    data : list of dict
+        Archive entries supplied by a subclass.
+    sim_label, ind_snap, ind_phase, ind_axis, ind_rescaling : ndarray
+        Label arrays derived from ``data`` by :meth:`_set_labels`.
     """
 
     def _set_labels(self):
-        """
-        Extract labels from self.data and set them as attributes.
+        """Extract archive labels into aligned NumPy arrays.
 
-        Returns:
-            None
-
+        Returns
+        -------
+        None
+            Sets ``sim_label``, ``ind_snap``, ``ind_phase``, ``ind_axis``,
+            and ``ind_rescaling`` attributes in archive-entry order.
         """
 
         list_labels = [
@@ -46,19 +49,28 @@ class BaseArchive(object):
             setattr(self, label, np.array(prop))
 
     def _average_over_samples(self, average="both", drop_axis=None):
-        """
-        Compute averages over either phases, axes, or both.
+        """Average archive samples over phases, axes, or both.
 
-        Args:
-            average (str): Flag indicating the type of averaging. Valid options are:
-                - "both": Compute averages over phases and axes.
-                - "phases": Compute averages over phases while holding axes fixed.
-                - "axes": Compute averages over axes while holding phases fixed.
-                (default: "both")
+        Parameters
+        ----------
+        average : {'both', 'phases', 'axes'}, default='both'
+            Sample dimensions to average while retaining the others in the
+            returned entry labels.
+        drop_axis : array-like, optional
+            Sightline-axis indices excluded before averaging. ``None`` keeps
+            every available axis.
 
-        Returns:
-            Averages
+        Returns
+        -------
+        list of dict
+            New averaged entries, one per retained simulation/rescaling/snap
+            combination and any unaveraged sample dimension. P1D/P3D are
+            mean-flux normalized before averaging and restored afterward.
 
+        Raises
+        ------
+        lace.utils.exceptions.ExceptionList
+            If ``average`` is not an available averaging mode.
         """
 
         average_avail = ["both", "axes", "phases"]
@@ -208,30 +220,41 @@ class BaseArchive(object):
         z_max=None,
         verbose=False,
     ):
-        """
-        Retrieves the training data based on the provided flags.
+        """Select archive entries suitable for emulator training.
 
-        Parameters:
-            emu_params (list): The parameters that must be defined for each
-                element of the training data. There are intended to be emulator parameters.
-            average (str, optional): The flag indicating the type of average computed.
-            val_scaling (int or None, optional): The scaling value. Defaults to None.
-            drop_sim (str, list, or None, optional): The simulation to drop. Defaults to None.
-            drop_z (str, list, or None, optional): The red to drop. Defaults to None.
-            drop_snap (str, list, or None, optional): The snapshot to drop. Defaults to None.
-            z_min (int, float or None, optional): The minimum redshift. Defaults to None.
-            z_max (int, float or None, optional): The maximum redshift. Defaults to None.
+        Parameters
+        ----------
+        emu_params : list of str
+            Keys required in every returned entry.
+        average : str, optional
+            Comma-separated averaging operations from ``"axes"``,
+            ``"phases"``, ``"both"``, and ``"individual"``. ``None`` uses
+            the archive's ``training_average`` default.
+        val_scaling : int, float, or None, optional
+            Optical-depth rescaling to retain. ``None`` uses
+            ``training_val_scaling``; explicit values must be available in the
+            archive.
+        drop_sim, drop_z, drop_snap, drop_axis : str, number, or list, optional
+            Simulation labels, redshifts, ``"simulation_redshift"`` snapshots,
+            or sightline axes to exclude. ``None`` excludes none of that kind.
+        z_min, z_max : float or None, optional
+            Inclusive redshift limits. ``None`` uses the archive training
+            defaults.
+        verbose : bool, default=False
+            Report entries rejected for missing keys or NaN values.
 
-        Returns:
-            List: The retrieved training data.
+        Returns
+        -------
+        list of dict
+            Selected archive entries. The archive itself is not modified.
 
-        Raises:
-            TypeError: If the input arguments have invalid types.
-            ExceptionList: If the input arguments contain invalid values.
-
-        Notes:
-            The retrieved training data is stored in the 'training_data' attribute of the parent class.
-
+        Raises
+        ------
+        TypeError
+            If a selector has an unsupported type.
+        ExceptionList
+            If a requested averaging mode, simulation, redshift, axis, or
+            rescaling is unavailable.
         """
 
         ## check input
@@ -421,25 +444,37 @@ class BaseArchive(object):
         emu_params=None,
         verbose=False,
     ):
-        """
-        Retrieves the testing data based on the provided flags.
+        """Select averaged archive entries for one held-out simulation.
 
-        Parameters:
-            sim_label (str): The simulation label.
-            val_scaling (int or None, optional): The scaling value. Defaults to None.
-            z_min (int, float or None, optional): The minimum redshift (included). Defaults to None.
-            z_max (int, float or None, optional): The maximum redshift (included). Defaults to None.
-            emu_params (list, optional): The parameters that must be defined for each
-                element of the training data. There are intended to be emulator parameters.
-                Only relevant if evaluating the emulator for the testing data.
+        Parameters
+        ----------
+        sim_label : str
+            Available simulation label, including central and held-out suites.
+        ind_rescaling : int, optional
+            Optical-depth rescaling index. ``None`` selects the archive test
+            default (with a Nyx-central/seed compatibility override).
+        z_min, z_max : float, optional
+            Inclusive redshift limits. ``None`` selects archive test defaults.
+        drop_axis : int or sequence of int, optional
+            Sightline axes excluded before phase/axis averaging.
+        emu_params : list of str, optional
+            Required entry keys for emulator testing; entries with missing or
+            NaN required values/power arrays are excluded.
+        verbose : bool, default=False
+            Report exclusions caused by missing values.
 
-        Returns:
-            List: The retrieved testing data.
+        Returns
+        -------
+        list of dict
+            Averaged testing entries in archive order. The archive is not
+            modified.
 
-        Raises:
-            TypeError: If the input arguments have invalid types.
-            ExceptionList: If the input arguments contain invalid values.
-
+        Raises
+        ------
+        TypeError
+            If a selector has an unsupported type.
+        ExceptionList
+            If simulation, rescaling, or dropped axes are unavailable.
         """
 
         ## check input
@@ -543,6 +578,18 @@ class BaseArchive(object):
     def plot_samples(self, param_1, param_2):
         """Plot a training-data parameter pair coloured by redshift.
 
+        Parameters
+        ----------
+        param_1, param_2 : str
+            Archive parameter keys used as horizontal and vertical axes.
+
+        Returns
+        -------
+        tuple
+            Matplotlib figure and axes returned by the archive plotter.
+
+        Notes
+        -----
         This compatibility wrapper delegates plotting to
         :class:`lace.plotting.ArchivePlotter` and returns the figure and axes
         instead of displaying or saving a figure implicitly.
@@ -553,7 +600,18 @@ class BaseArchive(object):
         return ArchivePlotter(self).plot_parameter_pair(param_1, param_2)
 
     def plot_3D_samples(self, param_1, param_2, param_3):
-        """Plot a three-parameter training-data projection coloured by redshift."""
+        """Plot a three-parameter training-data projection coloured by redshift.
+
+        Parameters
+        ----------
+        param_1, param_2, param_3 : str
+            Archive parameter keys used for the three plotted coordinates.
+
+        Returns
+        -------
+        tuple
+            Matplotlib figure and axes returned by the archive plotter.
+        """
         from lace.plotting import ArchivePlotter
 
         return ArchivePlotter(self).plot_parameter_triplet(
@@ -561,19 +619,22 @@ class BaseArchive(object):
         )
 
     def print_entry(self, entry):
-        """
-        Print basic information about a particular entry in the archive.
+        """Print redshift and emulator parameters for one archive entry.
 
-        Parameters:
-            self (object): The object instance.
-            entry (int): The index of the entry to print.
+        Parameters
+        ----------
+        entry : int
+            Zero-based index into ``data``.
 
-        Returns:
-            None
+        Returns
+        -------
+        None
+            Writes a one-line summary to standard output.
 
-        Raises:
-            ValueError: If the provided entry index is out of range.
-
+        Raises
+        ------
+        ValueError
+            If ``entry`` is greater than or equal to the number of entries.
         """
 
         if entry >= len(self.data):

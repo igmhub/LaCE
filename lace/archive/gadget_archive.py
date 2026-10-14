@@ -36,21 +36,28 @@ class GadgetArchive(BaseArchive):
         kp_kms=0.009,
         data_path=None,
     ):
-        """
-        Initialize the archive object.
+        """Load an MP-Gadget flux-power archive.
 
-        Args:
-            postproc (str): Specify post-processing run. Defaults to
-                "Cabayol23_fixp3d", which uses corrected training P3D files
-                while retaining the legacy test-simulation files. Raises a
-                ValueError if the postproc is not available.
-            kp_Mpc (None or float): Optional. Pivot point used in linear power parameters.
-                If specified, the parameters will be recomputed in the archive. Default is None.
-            fore_recompute_linP_params (boolean). If set, it will recompute linear power parameters even if kp_Mpc match. Default is False.
-
-        Returns:
-            None
-
+        Parameters
+        ----------
+        postproc : {"Pedersen21", "Cabayol23", "Cabayol23_fixp3d", "768_768"}, default="Cabayol23_fixp3d"
+            Post-processing collection to load. The corrected default uses
+            corrected training P3D measurements while retaining legacy test
+            simulation files.
+        kp_Mpc : float or None, optional
+            Comoving linear-power pivot in 1/Mpc. Required when
+            ``force_recompute_linP_params`` is true.
+        force_recompute_linP_params : bool, default=False
+            Recompute stored linear-power summaries even when their pivot
+            matches ``kp_Mpc``.
+        verbose : bool, default=False
+            Print archive-loading diagnostics.
+        z_star : float, default=3
+            Velocity-space linear-power pivot redshift.
+        kp_kms : float, default=0.009
+            Velocity-space linear-power pivot in s/km.
+        data_path : str or pathlib.Path, optional
+            Override for the configured simulation-data root.
         """
 
         ## check input
@@ -123,14 +130,18 @@ class GadgetArchive(BaseArchive):
         self._set_labels()
 
     def _set_info_postproc(self, postproc):
-        """
-        Set information about the post-processing suite and set corresponding attributes.
+        """Configure paths, labels, and sampling conventions for one postprocessor.
 
-        Args:
-            postproc (str): Name of the simulation suite.
+        Parameters
+        ----------
+        postproc : str
+            Validated MP-Gadget post-processing collection.
 
-        Returns:
-            None
+        Returns
+        -------
+        None
+            Sets archive paths, file labels, available scalings, and default
+            training/testing selections.
         """
 
         self.postproc = postproc
@@ -234,15 +245,18 @@ class GadgetArchive(BaseArchive):
         }
 
     def _sim2file_name(self, sim_label):
-        """
-        Convert simulation labels to file names.
+        """Map a public MP-Gadget simulation label to stored file components.
 
-        Args:
-            sim_label (int or str): Selected simulation.
+        Parameters
+        ----------
+        sim_label : str
+            Label in ``list_sim``.
 
-        Returns:
-            tuple: A tuple containing the simulation file names and parameter file tag.
-
+        Returns
+        -------
+        tuple of str
+            Post-processing simulation name, parameter-source simulation name,
+            and parameter filename.
         """
         if self.postproc == "Pedersen21":
             dict_conv = {
@@ -298,18 +312,21 @@ class GadgetArchive(BaseArchive):
         return dict_conv[sim_label], dict_conv_params[sim_label], tag_param
 
     def _get_emu_cosmo(self, sim_label, force_recompute_linP_params=False):
-        """
-        Get the cosmology and parameters describing linear power spectrum from simulation.
+        """Return simulation cosmology and linear-power summary parameters.
 
-        Args:
-            sim_label: Selected simulation.
-            force_recompute_linP_params: recompute linP even if kp_Mpc matches
+        Parameters
+        ----------
+        sim_label : str
+            MP-Gadget simulation label.
+        force_recompute_linP_params : bool, default=False
+            Rebuild linear-power summaries rather than reusing a matching
+            cached pivot.
 
-        Returns:
-            tuple: A tuple containing the following info:
-                - cosmo_params (dict): contains cosmlogical parameters
-                - linP_params (dict): contains parameters describing linear power spectrum
-
+        Returns
+        -------
+        cosmo_params, linP_params, star_params : tuple of dict
+            Native cosmology inputs, comoving pivot summaries, and velocity
+            pivot summaries for the selected simulation.
         """
 
         # figure out whether we need to compute linP params
@@ -412,6 +429,20 @@ class GadgetArchive(BaseArchive):
         return cosmo_params, linP_params, star_params
 
     def _get_file_names(self, sim_label, ind_phase, ind_z, ind_axis):
+        """Return measurement and parameter paths for one simulation snapshot.
+
+        Parameters
+        ----------
+        sim_label : str
+            MP-Gadget simulation label.
+        ind_phase, ind_z, ind_axis : int
+            Paired-phase, redshift, and sight-line-axis indices.
+
+        Returns
+        -------
+        tuple of str
+            Paths to the flux-power measurement and its simulation parameters.
+        """
         """
         Get the file names for the specified simulation parameters and snapshot.
 
@@ -514,6 +545,20 @@ class GadgetArchive(BaseArchive):
         return data_json, param_json
 
     def _get_sim(self, sim_label, ind_z, ind_axis):
+        """Load all phase/scaling entries for one simulation redshift and axis.
+
+        Parameters
+        ----------
+        sim_label : str
+            MP-Gadget simulation label.
+        ind_z, ind_axis : int
+            Redshift and sight-line-axis indices.
+
+        Returns
+        -------
+        list of dict
+            Archive entries for available phases and thermal/mean-flux scalings.
+        """
         """
         Get the data and parameter information for the specified simulation parameters and snapshot.
 
@@ -557,6 +602,19 @@ class GadgetArchive(BaseArchive):
         return phase_data, phase_params, arr_phase
 
     def _load_data(self, force_recompute_linP_params):
+        """Populate ``data`` with all readable MP-Gadget archive entries.
+
+        Parameters
+        ----------
+        force_recompute_linP_params : bool
+            Forwarded to :meth:`_get_emu_cosmo` for each simulation.
+
+        Returns
+        -------
+        None
+            Sets the archive data list and records unavailable files as
+            diagnostic messages when applicable.
+        """
         """
         Setup the archive by gathering information from all measured power spectra in the simulations.
 

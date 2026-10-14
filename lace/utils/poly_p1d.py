@@ -3,7 +3,7 @@ import copy
 
 
 class PolyP1D(object):
-    """Polynomial describing P1D measured in a simulation."""
+    """Log-polynomial representation of simulation P1D in comoving units."""
 
     def __init__(
         self,
@@ -14,7 +14,21 @@ class PolyP1D(object):
         kmax_Mpc=10.0,
         deg=4,
     ):
-        """Setup object either by passing measured power, or coefficients"""
+        """Fit measured P1D or reconstruct a log-polynomial representation.
+
+        Parameters
+        ----------
+        k_Mpc, P_Mpc : array-like, optional
+            Measured positive wavenumbers in 1/Mpc and P1D values in Mpc.
+            Supplying ``k_Mpc`` selects a new least-squares fit.
+        lnP_fit : array-like, optional
+            Polynomial coefficients in ``ln(k_Mpc)`` used when no measurements
+            are supplied.
+        kmin_Mpc, kmax_Mpc : float, default=1e-3, 10
+            Open fit interval in 1/Mpc.
+        deg : int, default=4
+            Polynomial degree for a measured-power fit.
+        """
 
         if k_Mpc is None:
             self._setup_from_coefficients(lnP_fit, kmin_Mpc)
@@ -22,7 +36,7 @@ class PolyP1D(object):
             self._setup_from_measured(k_Mpc, P_Mpc, kmin_Mpc, kmax_Mpc, deg)
 
     def _setup_from_measured(self, k_Mpc, P_Mpc, kmin_Mpc, kmax_Mpc, deg):
-        """Fit input power and store poly1d object"""
+        """Fit logarithmic P1D over the selected comoving k interval."""
 
         # we need to mask k=0 and high-k (or will dominate fit)
         kfit = (k_Mpc < kmax_Mpc) & (k_Mpc > kmin_Mpc)
@@ -33,7 +47,7 @@ class PolyP1D(object):
         self.kmin_Mpc = min(k_Mpc[kfit])
 
     def _setup_from_coefficients(self, lnP_fit, kmin_Mpc):
-        """Setup object from coefficients"""
+        """Initialize the polynomial directly from logarithmic coefficients."""
 
         # store poly1d object
         self.lnP = np.poly1d(lnP_fit)
@@ -41,7 +55,11 @@ class PolyP1D(object):
         self.kmin_Mpc = kmin_Mpc
 
     def P_Mpc(self, k_Mpc):
-        """Evaluate smooth power at input array k (in Mpc)"""
+        """Evaluate smooth P1D in Mpc on comoving input wavenumbers.
+
+        Values below the fitted lower boundary are evaluated at ``kmin_Mpc``
+        rather than extrapolated.
+        """
 
         # do not extrapolate below minimum k used in fit
         k = copy.copy(k_Mpc)
@@ -50,7 +68,22 @@ class PolyP1D(object):
 
 
 def fit_polynomial(xmin, xmax, x, y, deg=2):
-    """Fit a polynomial on the log of the function, within range"""
+    """Fit ``ln(y)`` as a polynomial of ``ln(x)`` inside an open interval.
+
+    Parameters
+    ----------
+    xmin, xmax : float
+        Open fitting interval in the units of ``x``.
+    x, y : array-like
+        Positive independent and dependent values.
+    deg : int, default=2
+        Polynomial degree.
+
+    Returns
+    -------
+    numpy.poly1d
+        Polynomial evaluated on ``ln(x)``.
+    """
     x_fit = (x > xmin) & (x < xmax)
     # We could make these less correlated by better choice of parameters
     poly = np.polyfit(np.log(x[x_fit]), np.log(y[x_fit]), deg=deg)
