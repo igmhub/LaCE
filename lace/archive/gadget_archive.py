@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import json
+import warnings
 from pathlib import Path
 
 from lace.configuration import get_data_path
@@ -35,6 +36,7 @@ class GadgetArchive(BaseArchive):
         z_star=3,
         kp_kms=0.009,
         data_path=None,
+        use_cache=True,
     ):
         """Load an MP-Gadget flux-power archive.
 
@@ -58,6 +60,12 @@ class GadgetArchive(BaseArchive):
             Velocity-space linear-power pivot in s/km.
         data_path : str or pathlib.Path, optional
             Override for the configured simulation-data root.
+        use_cache : bool, default=True
+            Read the whole archive from the single-file cache built by
+            ``scripts/developers/save_gadget_archive_cache.py`` when it exists
+            and matches the requested settings. If it is missing, a warning is
+            issued and the (much slower) per-snapshot JSON files are read.
+            Set to ``False`` to always read the JSON files.
         """
 
         ## check input
@@ -88,6 +96,7 @@ class GadgetArchive(BaseArchive):
         if isinstance(verbose, bool) == False:
             raise TypeError("verbose must be boolean")
         self.verbose = verbose
+        self.use_cache = bool(use_cache)
         ## done check input
 
         ## sets list simulations available for this suite
@@ -601,7 +610,121 @@ class GadgetArchive(BaseArchive):
 
         return phase_data, phase_params, arr_phase
 
+    def _cache_file(self):
+        """Return the path of the single-file archive cache for this postproc."""
+        return self.fulldir + "archive_cache_" + self.postproc + ".npy"
+
+    def _cache_signature(self):
+        """Describe the settings that determine the archive contents.
+
+        Returns
+        -------
+        dict
+            Post-processing, linear-power pivots and, for the corrected
+            post-processing, which corrected test-simulation files are
+            installed (these are picked up automatically when they appear).
+        """
+        corrected = []
+        if self.postproc == "Cabayol23_fixp3d":
+            for sim_label in ("mpg_central", "mpg_seed"):
+                first_file = self._get_file_names(sim_label, 0, 0, 0)[0][0]
+                corrected.append(Path(first_file).name.startswith("p1d_reshaped"))
+        return {
+            "postproc": self.postproc,
+            "z_star": self.z_star,
+            "kp_kms": self.kp_kms,
+            "corrected_tests": corrected,
+        }
+
+    def save_cache(self, fname=None):
+        """Save the loaded archive to a single file for fast reloading.
+
+        Parameters
+        ----------
+        fname : str or pathlib.Path, optional
+            Output path. Defaults to the cache file next to the simulation
+            data, which :meth:`_load_data` reads automatically.
+
+        Returns
+        -------
+        str
+            Path of the file written.
+        """
+        fname = str(fname) if fname is not None else self._cache_file()
+        payload = {
+            "signature": self._cache_signature(),
+            "kp_Mpc": self.kp_Mpc,
+            "cube_data": getattr(self, "cube_data", None),
+            "data": self.data,
+        }
+        np.save(fname, payload, allow_pickle=True)
+        return fname
+
+    def _read_cache(self):
+        """Load ``data`` from the cache if it exists and matches this archive.
+
+        Returns
+        -------
+        bool
+            Whether the archive was populated from the cache.
+        """
+        fname = self._cache_file()
+        if not Path(fname).is_file():
+            warnings.warn(
+                f"No archive cache found at {fname}. Loading the individual "
+                "JSON files is slow; run "
+                "lace/scripts/developers/save_gadget_archive_cache.py "
+                f"--postproc {self.postproc} to build it and speed up loading.",
+                UserWarning,
+                stacklevel=4,
+            )
+            return False
+        try:
+            payload = np.load(fname, allow_pickle=True).item()
+            mismatch = payload["signature"] != self._cache_signature()
+        except (OSError, ValueError, EOFError, KeyError, AttributeError):
+            warnings.warn(
+                f"Could not read the archive cache {fname}; rebuild it with "
+                "lace/scripts/developers/save_gadget_archive_cache.py. "
+                "Falling back to the JSON files.",
+                UserWarning,
+                stacklevel=4,
+            )
+            return False
+        if mismatch or (
+            self.kp_Mpc is not None and self.kp_Mpc != payload["kp_Mpc"]
+        ):
+            warnings.warn(
+                f"The archive cache {fname} does not match the requested "
+                "settings (post-processing, pivots or installed files); "
+                "ignoring it. Rebuild it with "
+                "lace/scripts/developers/save_gadget_archive_cache.py.",
+                UserWarning,
+                stacklevel=4,
+            )
+            return False
+        if self.kp_Mpc is None:
+            self.kp_Mpc = payload["kp_Mpc"]
+        self.data = payload["data"]
+        self.cube_data = payload["cube_data"]
+        if self.cube_data is not None:
+            self.nsamples = self.cube_data["nsamples"]
+        return True
+
     def _load_data(self, force_recompute_linP_params):
+        """Populate ``data``, from the single-file cache when available.
+
+        Parameters
+        ----------
+        force_recompute_linP_params : bool
+            Skips the cache and is forwarded to :meth:`_get_emu_cosmo`.
+        """
+        if self.use_cache and not force_recompute_linP_params:
+            if self._read_cache():
+                return
+        self._load_data_from_files(force_recompute_linP_params)
+
+    def _load_data_from_files(self, force_recompute_linP_params):
         """Populate ``data`` with all readable MP-Gadget archive entries.
 
         Parameters

@@ -48,7 +48,7 @@ from lace.plotting import ArchivePlotter, PARAMETER_LABELS
 # archive and its plotter once and reuse both throughout the notebook.
 
 # %%
-gadget_archive = GadgetArchive(postproc="Cabayol23_fixp3d")
+gadget_archive = GadgetArchive()
 gadget_plotter = ArchivePlotter(gadget_archive)
 
 
@@ -139,6 +139,16 @@ for parameter in ["mF"]:
 # archive selection rules.
 
 # %%
+training_parameters = [
+    "Delta2_p",
+    "n_p",
+    "alpha_p",
+    "mF",
+    "sigT_Mpc",
+    "gamma",
+    "kF_Mpc",
+]
+
 nyx_archive = NyxArchive()
 nyx_plotter = ArchivePlotter(nyx_archive)
 nyx_training_data = nyx_plotter.get_training_data(
@@ -209,5 +219,7 @@ ArchivePlotter.compare_igm_histories(
     alphas=[0.2, 0.2],
     excluded_simulations=["nyx_14"],
 )
+
+# %%
 
 # %%

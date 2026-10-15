@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from pathlib import Path
 
@@ -24,6 +26,7 @@ class NyxArchive(BaseArchive):
         nfiles=18,
         z_star=3,
         kp_kms=0.009,
+        use_cache=True,
     ):
         """Load a Nyx flux-power archive and its simulation metadata.
 
@@ -45,6 +48,12 @@ class NyxArchive(BaseArchive):
             Number of cosmology-grid simulations.
         z_star, kp_kms : float, default=3, 0.009
             Velocity-pivot redshift and wavenumber in s/km.
+        use_cache : bool, default=True
+            Read the whole archive from the single-file cache built by
+            ``scripts/developers/save_nyx_archive_cache.py`` when it exists
+            and matches the requested settings. If it is missing, a warning is
+            issued and the (slower) HDF5 file is read. Set to ``False`` to
+            always read the HDF5 file.
         """
         ## check input
         if isinstance(nyx_version, str) == False:
@@ -73,6 +82,7 @@ class NyxArchive(BaseArchive):
         if isinstance(verbose, bool) == False:
             raise TypeError("verbose must be boolean")
         self.verbose = verbose
+        self.use_cache = bool(use_cache)
         ## done check input
 
         ## sets list simulations available for this suite
@@ -357,7 +367,118 @@ class NyxArchive(BaseArchive):
 
         return cosmo_params, linP_params, star_params
 
+    def _resolve_nyx_file(self, nyx_file=None):
+        """Return the HDF5 archive path selected by ``nyx_file`` or the version."""
+        if nyx_file is None:
+            nyx_file = self.nyx_path / f"models_Nyx_{self.nyx_version}.hdf5"
+        return Path(nyx_file).expanduser()
+
+    def _cache_file(self, nyx_file=None):
+        """Return the single-file cache path next to the HDF5 archive."""
+        nyx_file = self._resolve_nyx_file(nyx_file)
+        return nyx_file.parent / f"archive_cache_{nyx_file.stem}.npy"
+
+    def _cache_signature(self, nyx_file=None):
+        """Describe the settings and source file the archive contents depend on."""
+        nyx_file = self._resolve_nyx_file(nyx_file)
+        return {
+            "nyx_version": self.nyx_version,
+            "z_star": self.z_star,
+            "kp_kms": self.kp_kms,
+            "source_size": nyx_file.stat().st_size,
+        }
+
+    def save_cache(self, fname=None, nyx_file=None):
+        """Save the loaded archive to a single file for fast reloading.
+
+        Parameters
+        ----------
+        fname : path-like, optional
+            Output path. Defaults to the cache file next to the HDF5 archive,
+            which :meth:`_load_data` reads automatically.
+        nyx_file : path-like, optional
+            HDF5 archive the data was read from, if it was passed explicitly.
+
+        Returns
+        -------
+        str
+            Path of the file written.
+        """
+        fname = str(fname) if fname is not None else str(self._cache_file(nyx_file))
+        payload = {
+            "signature": self._cache_signature(nyx_file),
+            "kp_Mpc": self.kp_Mpc,
+            "data": self.data,
+        }
+        np.save(fname, payload, allow_pickle=True)
+        return fname
+
+    def _read_cache(self, nyx_file=None):
+        """Load ``data`` from the cache if it exists and matches this archive.
+
+        Returns
+        -------
+        bool
+            Whether the archive was populated from the cache.
+        """
+        fname = self._cache_file(nyx_file)
+        script = "lace/scripts/developers/save_nyx_archive_cache.py"
+        if not fname.is_file():
+            warnings.warn(
+                f"No archive cache found at {fname}. Reading the HDF5 file is "
+                f"slow; run {script} --nyx-version {self.nyx_version} to build "
+                "it and speed up loading.",
+                UserWarning,
+                stacklevel=4,
+            )
+            return False
+        try:
+            payload = np.load(fname, allow_pickle=True).item()
+            mismatch = payload["signature"] != self._cache_signature(nyx_file)
+        except (OSError, ValueError, EOFError, KeyError, AttributeError):
+            warnings.warn(
+                f"Could not read the archive cache {fname}; rebuild it with "
+                f"{script}. Falling back to the HDF5 file.",
+                UserWarning,
+                stacklevel=4,
+            )
+            return False
+        if mismatch or (
+            self.kp_Mpc is not None and self.kp_Mpc != payload["kp_Mpc"]
+        ):
+            warnings.warn(
+                f"The archive cache {fname} does not match the requested "
+                "settings or the current HDF5 file; ignoring it. Rebuild it "
+                f"with {script}.",
+                UserWarning,
+                stacklevel=4,
+            )
+            return False
+        if self.kp_Mpc is None:
+            self.kp_Mpc = payload["kp_Mpc"]
+        self.data = payload["data"]
+        self.file_cosmo = (
+            self._resolve_nyx_file(nyx_file).parent
+            / f"nyx_emu_cosmo_models_Nyx_{self.nyx_version}.npy"
+        )
+        return True
+
     def _load_data(self, nyx_file=None, force_recompute_linP_params=False):
+        """Populate ``data``, from the single-file cache when available.
+
+        Parameters
+        ----------
+        nyx_file : path-like, optional
+            Explicit HDF5 archive; see :meth:`_load_data_from_file`.
+        force_recompute_linP_params : bool, default=False
+            Skips the cache and is forwarded to :meth:`_get_emu_cosmo`.
+        """
+        if self.use_cache and not force_recompute_linP_params:
+            if self._resolve_nyx_file(nyx_file).is_file() and self._read_cache(nyx_file):
+                return
+        self._load_data_from_file(nyx_file, force_recompute_linP_params)
+
+    def _load_data_from_file(self, nyx_file=None, force_recompute_linP_params=False):
         """Read Nyx measurements into the archive's normalized entry list.
 
         Parameters
