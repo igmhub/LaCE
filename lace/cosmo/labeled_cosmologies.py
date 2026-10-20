@@ -47,16 +47,15 @@ def get_cosmo_params_dict_from_label(label):
             "w": -1.0,
         }
     elif label == "Planck18_mnu":
-        # Table 2 of https://arxiv.org/abs/1807.06209.pdf (T&E+lensing+BAO) w/ mnu=0.06
-        # Used in on the of the variations of the DESI Lya P1D analysis
+        # Table 5 of https://arxiv.org/abs/1807.06209.pdf
         cosmo_params = {
-            "H0": 67.66,
+            "H0": 67.10,
             "mnu": 0.06,
-            "omch2": 0.11933,
-            "ombh2": 0.02242,
-            "omk": 0,
-            "As": np.exp(3.047) * 1e-10,
-            "ns": 0.9665,
+            "omch2": 0.1201,
+            "ombh2": 0.02236,
+            "omk": 0.,
+            "As": np.exp(3.046) * 1e-10,
+            "ns": 0.9647,
             "nrun": 0.0,
             "pivot_scalar": 0.05,
             "w": -1.0,
@@ -71,7 +70,7 @@ def get_cosmo_params_dict_from_label(label):
             "ombh2": 0.02237,
             "omk": 0,
             "As": np.exp(3.044) * 1e-10,
-            "ns": 0.9646,
+            "ns": 0.9649,
             "nrun": 0.0,
             "pivot_scalar": 0.05,
             "w": -1.0,
