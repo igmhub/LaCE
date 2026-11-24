@@ -1,6 +1,11 @@
 import numpy as np
 
 
+# k/kp grid on which get_linP_Mpc_params fits ln P (shared with the exact
+# primordial shifts in rescale_cosmology.RescaledCosmology).
+LINP_FIT_K_OVER_KP = np.logspace(np.log10(0.5), np.log10(2.0), 100)
+
+
 class BaseCosmology(object):
     """Abstract cosmology interface with shared coordinate conversions.
 
@@ -535,9 +540,7 @@ class BaseCosmology(object):
         """
 
         # specify wavenumber range to fit
-        kmin_over_kp = 0.5
-        kmax_over_kp = 2.0
-        k_over_kp = np.logspace(np.log10(kmin_over_kp), np.log10(kmax_over_kp), 100)
+        k_over_kp = LINP_FIT_K_OVER_KP
         k_Mpc = kp_Mpc * k_over_kp
 
         # get power spectrum in this range

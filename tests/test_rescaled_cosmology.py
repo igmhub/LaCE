@@ -136,3 +136,26 @@ def test_batch_cosmology_accessors_match_scalar(fiducial_cosmology):
                 np.testing.assert_allclose(mpc[name][index, redshift_index], value)
             for name, value in scalar_kms.items():
                 np.testing.assert_allclose(kms[name][index, redshift_index], value)
+
+
+def test_linP_params_shift_matches_direct_fit(fiducial_cosmology):
+    """Cached fiducial fit plus exact shifts equals fitting the rescaled power.
+
+    Alternating cosmologies and pivots exercises the fiducial-fit cache.
+    """
+    from lace.cosmo.base_cosmology import BaseCosmology
+
+    changes = [
+        {},
+        {"As": 2.5e-9, "ns": 0.93},
+        {"nrun": 0.02},
+        {"As": 1.8e-9, "ns": 0.99, "nrun": -0.03, "nrunrun": 0.01},
+        {"As": 2.5e-9, "ns": 0.93},
+    ]
+    for z, kp_Mpc in [(3.0, 0.7), (2.2, 0.7), (4.2, 1.1), (3.0, 0.7)]:
+        for params in changes + changes[::-1]:
+            rescaled = RescaledCosmology(fiducial_cosmology, params)
+            fast = rescaled.get_linP_Mpc_params(z, kp_Mpc)
+            direct = BaseCosmology.get_linP_Mpc_params(rescaled, z, kp_Mpc)
+            for key in ("Delta2_p", "n_p", "alpha_p"):
+                np.testing.assert_allclose(fast[key], direct[key], rtol=1e-9, atol=1e-11)

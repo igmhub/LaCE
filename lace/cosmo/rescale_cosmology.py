@@ -168,6 +168,66 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         params.update(self.new_params)
         return params
 
+    def get_linP_Mpc_params(self, z, kp_Mpc, species="bc"):
+        """Return pivot summaries from cached fiducial fits plus exact shifts.
+
+        Parameters
+        ----------
+        z : float
+            Redshift.
+        kp_Mpc : float
+            Pivot wavenumber in 1/Mpc.
+        species : {'bc', 'bcnu'}, default='bc'
+            Transfer-function species.
+
+        Returns
+        -------
+        dict
+            ``Delta2_p``, ``n_p``, and ``alpha_p`` as returned by
+            :meth:`BaseCosmology.get_linP_Mpc_params` for this cosmology.
+
+        Notes
+        -----
+        The base method fits a quadratic in ``x = ln(k/kp)`` to ``ln P`` on a
+        fixed grid; a least-squares fit is linear in ``ln P``. Rescaling adds
+        ``ln S = a + b L + c L**2 + d L**3`` with ``L = x + ln(kp/k_s)``, so the
+        rescaled fit is the fiducial fit (computed once per ``(z, kp, species)``
+        and cached on the fiducial cosmology) plus the fit of ``ln S``: exact
+        for the constant, linear and quadratic terms, and a fixed projection
+        of ``x**3`` onto the quadratic for ``nrunrun``.
+        """
+        cache = self.fid_cosmo.__dict__.setdefault("_linP_Mpc_params_cache", {})
+        key = (float(z), float(kp_Mpc), species)
+        fiducial = cache.get(key)
+        if fiducial is None:
+            fiducial = self.fid_cosmo.get_linP_Mpc_params(z, kp_Mpc, species=species)
+            cache[key] = fiducial
+
+        fid_params = self.fid_cosmo.get_primordial_params()
+        k_s = self.fid_cosmo.CAMBparams.InitPower.pivot_scalar
+        ell = np.log(kp_Mpc / k_s)
+        a = np.log(self.new_params.get("As", fid_params["As"]) / fid_params["As"])
+        b = self.new_params.get("ns", fid_params["ns"]) - fid_params["ns"]
+        c = 0.5 * (self.new_params.get("nrun", fid_params["nrun"]) - fid_params["nrun"])
+        d = (self.new_params.get("nrunrun", fid_params["nrunrun"]) - fid_params["nrunrun"]) / 6.0
+
+        # ln S expanded in x = ln(k/kp): const + lin x + quad x**2 + d x**3
+        const = a + b * ell + c * ell**2 + d * ell**3
+        lin = b + 2.0 * c * ell + 3.0 * d * ell**2
+        quad = c + 3.0 * d * ell
+        if d != 0.0:
+            q2, q1, q0 = _cubic_projection()
+            const += d * q0
+            lin += d * q1
+            quad += d * q2
+
+        return {
+            "Delta2_p": fiducial["Delta2_p"] * np.exp(const),
+            "n_p": fiducial["n_p"] + lin,
+            # the fitted curvature is alpha/2
+            "alpha_p": fiducial["alpha_p"] + 2.0 * quad,
+        }
+
     def get_linP_Mpc_scaling(self, k_Mpc):
         """Compute the multiplicative primordial-power correction.
 
@@ -210,3 +270,14 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         ln_scaling += (delta_nrunrun / 6.0) * ln_k_over_k_s**3
 
         return np.exp(ln_scaling)
+
+
+def _cubic_projection():
+    """Return the quadratic least-squares fit of ``x**3`` on the pivot grid.
+
+    The grid (100 log-spaced ``k/kp`` in ``[0.5, 2]``) is that of
+    :meth:`BaseCosmology.get_linP_Mpc_params`; coefficients are ordered
+    highest power first, as in :func:`numpy.polyfit`.
+    """
+    x = np.log(base_cosmology.LINP_FIT_K_OVER_KP)
+    return np.polyfit(x, x**3, deg=2)
