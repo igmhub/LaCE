@@ -13,9 +13,12 @@ from lace.plotting.emulator_precision import (
     EmulatorPrecisionPlotter,
     complete_igm_parameters,
 )
+from lace.plotting.style import apply_house_style, house_style
 
 __all__ = [
     "ArchivePlotter",
+    "apply_house_style",
+    "house_style",
     "PARAMETER_LABELS",
     "EmulatorPrecisionPlotter",
     "complete_igm_parameters",

@@ -58,17 +58,41 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def runtime_versions() -> dict[str, str]:
+def sha256(path: str | Path) -> str:
+    """Return the SHA-256 digest of a model-bundle file.
+
+    Public form of the checksum used by LaCE manifests, shared with other
+    packages' bundle formats (e.g. ForestFlow's cINN bundles).
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        Existing file.
+
+    Returns
+    -------
+    str
+        Hexadecimal SHA-256 digest.
+    """
+    return _sha256(Path(path))
+
+
+def runtime_versions(packages=("numpy", "scipy", "scikit-learn")) -> dict[str, str]:
     """Return versions needed to assess serialized-model compatibility.
+
+    Parameters
+    ----------
+    packages : sequence of str, optional
+        Distributions to report; by default those of LaCE GP bundles.
 
     Returns
     -------
     dict of str to str
-        Python, NumPy, SciPy, and scikit-learn versions, with unavailable
-        dependencies explicitly marked.
+        Python and package versions, with unavailable dependencies
+        explicitly marked.
     """
     result = {"python": ".".join(map(str, sys.version_info[:3]))}
-    for package in ("numpy", "scipy", "scikit-learn"):
+    for package in packages:
         try:
             result[package] = version(package)
         except PackageNotFoundError:

@@ -7,14 +7,14 @@ LaCE owns cosmological calculations, simulation archives, and P1D GP emulators. 
 - Cosmology: `lace/cosmo/`; archives: `lace/archive/`; production emulator factory: `lace/emulator/emulator_manager.py`; GP implementation: `lace/emulator/gp_emulator_multi.py`.
 - External paths: `lace/configuration/`; naming contracts: `lace/conventions.py`; model provenance: `lace/emulator/model_manifest.py`.
 - Supported factory labels currently include `CH24_mpgcen_gpr` and `CH24_nyxcen_gpr`. Other labels in old code or low-level classes do not automatically define a supported production interface.
-- Tutorials: `notebooks/tutorials/`; scientific regressions: `tests/`. `lace/old_code/` is deprecated; `notebooks/cosmology/wip/` is exploratory.
+- Tutorials: `notebooks/tutorials/`; scientific regressions: `tests/`. Removed legacy code (NN emulators, `old_code/`) lives only in Git history.
 
 ## Working rules
 
 - Inspect `git status`, the current branch, and applicable nested instructions before editing. The maintained branch is `main`; do not switch branches or discard user changes automatically.
 - Read the relevant implementation, tests, and `docs/workflow*` before changing a public interface. Follow active imports rather than assuming every notebook defines supported behavior.
 - Make focused changes. Preserve scientific defaults, parameter ordering, serialization, and scalar/batch behavior unless the task explicitly changes them. Document intentional numerical changes and their validation.
-- Do not edit `old_code/`, notebook `old/`, `wip/`, or developer experiments by default. Historical/paper modules are not necessarily deprecated: check callers first. Never copy an obsolete API back into the active package without checking it.
+- Do not edit notebook `old/`, `wip/`, or developer experiments by default. Historical/paper modules are not necessarily deprecated: check callers first. Never copy an obsolete API back into the active package without checking it.
 - Do not regenerate simulation archives, model weights, covariance products, chains, or publication outputs as part of a routine code change. Use configured external assets and report missing prerequisites. Never replace a scientific regression reference solely to make a test pass.
 - Use Python >=3.12 and editable installs. Install sibling IGMHub repositories explicitly from compatible revisions, rather than relying on the PyPI name `lace`. Record the three commit SHAs for cross-package validation.
 - Distinguish fast unit checks from model/data-dependent regression tests. A skipped or unavailable regression is not a pass. Prefer a small test of the failing scientific invariant over a test that merely reproduces the implementation.

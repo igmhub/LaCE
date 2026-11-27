@@ -10,9 +10,6 @@ notebooks. The main practical examples are in ``notebooks``:
 ``notebooks/tutorials/Tutorial_emulator.py``
    Load and evaluate a P1D emulator.
 
-``notebooks/cosmology/cosmopower/Tutorial_compressedParams.py``
-   Compute compressed linear-power parameters from a cosmology.
-
 ``notebooks/cosmology/compare_rescaled_cosmology.py``
    Compare fixed-background rescaling with fresh CAMB star parameters.
 

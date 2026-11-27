@@ -30,10 +30,6 @@ dependencies = [
     "configobj",
     "h5py",
     "camb",
-    "tqdm",
-    "strenum",
-    "PyYAML",
-    "jupytext",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -46,10 +42,11 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-# Torch is only used by developer scripts for legacy neural-emulator products;
-# the supported GP emulator does not require it.
-extended = ["torch", "corner"]
+# corner is only needed by lace.plotting.corner
+extended = ["corner"]
 test = ["pytest>=8"]
+# jupytext syncs the paired notebook sources (make notebooks)
+dev = ["pytest>=8", "jupytext"]
 docs = [
     "sphinx>=7",
     "numpydoc>=1.6",

@@ -39,14 +39,14 @@ Emulators
    :toctree: generated
 
    lace.emulator.set_emulator
+   lace.emulator.poly_p1d
+   lace.emulator.smoothing_manager
 
 Utilities
 ---------
 
 .. autosummary::
    :toctree: generated
-   :recursive:
 
-   lace.utils.poly_p1d
-   lace.utils.smoothing_manager
-   lace.utils.nonlinear_smoothing_p1d
+   lace.utils.misc
+   lace.plotting.style

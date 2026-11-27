@@ -23,12 +23,13 @@
 # %autoreload 2
 from lace.archive import gadget_archive, nyx_archive
 from lace.emulator import set_emulator
-from lace.plotting import EmulatorPrecisionPlotter, complete_igm_parameters
+from lace.plotting import (
+    EmulatorPrecisionPlotter,
+    apply_house_style,
+    complete_igm_parameters,
+)
 
-from matplotlib import rcParams
-
-rcParams["mathtext.fontset"] = "stix"
-rcParams["font.family"] = "STIXGeneral"
+apply_house_style()
 
 # %% [markdown]
 # ## Load emulator and data

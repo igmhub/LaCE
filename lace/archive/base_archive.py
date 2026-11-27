@@ -2,7 +2,6 @@ import numpy as np
 from itertools import product
 
 from lace.utils.exceptions import ExceptionList
-from lace.utils.misc import split_string
 
 
 class BaseArchive(object):
@@ -266,7 +265,7 @@ class BaseArchive(object):
         if average is None:
             average = self.training_average
 
-        operations = split_string(average)
+        operations = average.split("_")
         operations_avail = [
             "axes",
             "phases",
@@ -307,7 +306,7 @@ class BaseArchive(object):
             drop_snap_sim = []
             drop_snap_z = []
             for ii in range(len(drop_snap)):
-                _drop_snap = split_string(drop_snap[ii])
+                _drop_snap = drop_snap[ii].split("_")
                 drop_snap_sim.append(_drop_snap[0] + "_" + _drop_snap[1])
                 drop_snap_z.append(float(_drop_snap[2]))
             invalid_sims = [
@@ -574,76 +573,3 @@ class BaseArchive(object):
                         )
 
         return testing_data
-
-    def plot_samples(self, param_1, param_2):
-        """Plot a training-data parameter pair coloured by redshift.
-
-        Parameters
-        ----------
-        param_1, param_2 : str
-            Archive parameter keys used as horizontal and vertical axes.
-
-        Returns
-        -------
-        tuple
-            Matplotlib figure and axes returned by the archive plotter.
-
-        Notes
-        -----
-        This compatibility wrapper delegates plotting to
-        :class:`lace.plotting.ArchivePlotter` and returns the figure and axes
-        instead of displaying or saving a figure implicitly.
-        """
-
-        from lace.plotting import ArchivePlotter
-
-        return ArchivePlotter(self).plot_parameter_pair(param_1, param_2)
-
-    def plot_3D_samples(self, param_1, param_2, param_3):
-        """Plot a three-parameter training-data projection coloured by redshift.
-
-        Parameters
-        ----------
-        param_1, param_2, param_3 : str
-            Archive parameter keys used for the three plotted coordinates.
-
-        Returns
-        -------
-        tuple
-            Matplotlib figure and axes returned by the archive plotter.
-        """
-        from lace.plotting import ArchivePlotter
-
-        return ArchivePlotter(self).plot_parameter_triplet(
-            [param_1, param_2, param_3]
-        )
-
-    def print_entry(self, entry):
-        """Print redshift and emulator parameters for one archive entry.
-
-        Parameters
-        ----------
-        entry : int
-            Zero-based index into ``data``.
-
-        Returns
-        -------
-        None
-            Writes a one-line summary to standard output.
-
-        Raises
-        ------
-        ValueError
-            If ``entry`` is greater than or equal to the number of entries.
-        """
-
-        if entry >= len(self.data):
-            raise ValueError("{} entry does not exist in archive".format(entry))
-
-        list_print = ["z"] + self.emu_params
-
-        info = "entry = {}".format(entry)
-        for key in list_print:
-            info += ", {} = {:.4f}".format(key, self.data[entry][key])
-
-        print(info)

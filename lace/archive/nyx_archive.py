@@ -6,7 +6,6 @@ from pathlib import Path
 from lace.cosmo.thermal_broadening import thermal_broadening_kms
 from lace.configuration import get_nyx_path
 from lace.archive.base_archive import BaseArchive
-from lace.utils.misc import split_string
 
 
 class NyxArchive(BaseArchive):
@@ -544,7 +543,7 @@ class NyxArchive(BaseArchive):
             # loop over redshifts
             z_avail = list(ff[isim].keys())
             for iz in z_avail:
-                zval = float(split_string(iz)[1])
+                zval = float(iz.split("_")[1])
 
                 # find redshift index to read linear power parameters
                 try:

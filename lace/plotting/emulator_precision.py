@@ -17,6 +17,7 @@ from scipy.optimize import curve_fit
 
 from lace.configuration import get_path_repo
 from lace.emulator.gp_emulator_multi import GPEmulator
+from lace.plotting.style import apply_house_style
 
 IGM_PARAMETERS = ("mF", "sigT_Mpc", "gamma", "kF_Mpc")
 
@@ -348,6 +349,7 @@ class EmulatorPrecisionPlotter:
         Returns a figure, populated axes, and the reusable precision dictionary
         from :meth:`compute_testing_precision`.
         """
+        apply_house_style()
         plot_data = self.compute_testing_precision(testing_data, kmax_Mpc=kmax_Mpc)
         if ax is None:
             figure, ax = plt.subplots(figsize=(8, 6))
@@ -375,10 +377,12 @@ class EmulatorPrecisionPlotter:
 
     def plot_smoothing_precision(self, training_data: Sequence[dict[str, Any]], *, kmax_Mpc: float = 4.0, ax: plt.Axes | None = None, fontsize: int = 24, save_zenodo: bool = False, zenodo_filename: str | None = None, zenodo_directory: str | Path | None = None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]:
         """Plot simulation-to-smooth percentile precision and optional data export."""
+        apply_house_style()
         data = self.compute_smoothing_precision(training_data, kmax_Mpc=kmax_Mpc)
         return self._plot_percentile_precision(data, ylabel=r"$P_\mathrm{1D}^\mathrm{sim}/P_\mathrm{1D}^\mathrm{smooth}-1$", xlim=None, ax=ax, fontsize=fontsize, save_zenodo=save_zenodo, zenodo_filename=zenodo_filename, zenodo_directory=zenodo_directory)
 
     def plot_leave_one_out_precision(self, *, model_path: str | Path, testing_prefix: str | None = None, stop_simulation: str | None = None, ax: plt.Axes | None = None, fontsize: int = 24, save_zenodo: bool = False, zenodo_filename: str | None = None, zenodo_directory: str | Path | None = None) -> tuple[plt.Figure, plt.Axes, dict[str, np.ndarray | str]]:
         """Plot leave-one-out percentile precision and optional data export."""
+        apply_house_style()
         data = self.compute_leave_one_out_precision(model_path=model_path, testing_prefix=testing_prefix, stop_simulation=stop_simulation)
         return self._plot_percentile_precision(data, ylabel=r"$P_\mathrm{1D}^\mathrm{emu}/P_\mathrm{1D}^\mathrm{smooth}-1$", xlim=(0.08, 4.0), ax=ax, fontsize=fontsize, save_zenodo=save_zenodo, zenodo_filename=zenodo_filename, zenodo_directory=zenodo_directory)

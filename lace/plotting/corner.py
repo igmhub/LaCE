@@ -8,6 +8,8 @@ from typing import Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
+from lace.plotting.style import apply_house_style
+
 
 def plot_parameter_corner(
     samples: np.ndarray | Sequence[np.ndarray],
@@ -43,6 +45,7 @@ def plot_parameter_corner(
     ValueError
         If sample shapes or color counts do not match supplied labels.
     """
+    apply_house_style()
     import corner
 
     arrays = [np.asarray(samples)] if isinstance(samples, np.ndarray) else [np.asarray(item) for item in samples]

@@ -53,11 +53,12 @@ make install
 ```
 
 This minimal installation contains the supported GP emulators, cosmology,
-archives, and notebook utilities. Developer torch scripts and optional corner
-plots are available only when needed:
+archives, and notebook utilities. Optional corner plots, and jupytext for the
+paired notebook sources, are available only when needed:
 
 ```bash
 make install-extended
+python -m pip install -e ".[dev]"
 ```
 
 #### Nyx users:
@@ -122,7 +123,7 @@ These are the parameters that describe each individual P1D(kpar) power spectrum.
 ## Notebooks / tutorials
 
 
-- Notebook sources are maintained as Jupytext Python files. After `make install`, generate or refresh every notebook with:
+- Notebook sources are maintained as Jupytext Python files. After `make install` and `python -m pip install -e ".[dev]"` (jupytext), generate or refresh every notebook with:
 
 ```
 make notebooks
@@ -140,7 +141,6 @@ In the `Notebooks` folder, there are several tutorials one can run to learn how 
 
 - [Archive tutorial](notebooks/tutorials/Tutorial_bookkeeping.ipynb)
 - [Emulator tutorial](notebooks/tutorials/Tutorial_emulator.ipynb)
-- [Compressed-parameter tutorial](notebooks/cosmology/cosmopower/Tutorial_compressedParams.ipynb)
 
 For a complete archive-to-prediction example, see the
 [end-to-end workflow](https://igmhublace.readthedocs.io/en/latest/workflow.html).

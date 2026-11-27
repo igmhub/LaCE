@@ -15,3 +15,15 @@ the fixed-background comparison against fresh CAMB calculations, including the
 
 The API reference documents the available linear-power and compressed-parameter
 methods.
+
+Named cosmologies
+-----------------
+
+``Cosmology(cosmo_label=...)`` accepts every label defined in
+``lace.cosmo.labeled_cosmologies``: the Planck 2018 fiducials
+(``Planck18_wonu``, the default, ``Planck18_wnu`` and ``Planck18_noBAO_wnu``),
+reference variations around them (``Planck18_high_omh2``, ``Planck18_mnu03``,
+``DESIDR2_ACT``, ...), and the simulation cosmologies: ``mpg_<sim>`` (read from
+``sim_suites/Australia20/mpg_emu_cosmo.npy`` in the configured data path),
+``nyx_<sim>`` (read from the configured Nyx path), ``accel2`` and ``sherwood``.
+cup1d's ``set_cosmo`` uses the same labels.

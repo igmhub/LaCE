@@ -53,7 +53,7 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         if verbose:
             print("inside RescaledCosmology.__ini__")
 
-        changes = self._get_background_changes(fid_cosmo, new_params_dict)
+        changes = fid_cosmo.get_background_changes(new_params_dict)
         if changes:
             raise IncompatibleBackgroundError(changes)
 
@@ -74,44 +74,6 @@ class RescaledCosmology(base_cosmology.BaseCosmology):
         super().__init__(verbose)
 
         return
-
-    @staticmethod
-    def _get_background_changes(fid_cosmo, new_params_dict):
-        """Identify requested changes incompatible with fixed transfers.
-
-        Parameters
-        ----------
-        fid_cosmo : BaseCosmology
-            Reference cosmology.
-        new_params_dict : mapping or None
-            Candidate parameter updates.
-
-        Returns
-        -------
-        dict
-            Changed names mapped to fiducial/requested value pairs.
-        """
-
-        if new_params_dict is None:
-            return {}
-        changes = {}
-        for name, old_value in fid_cosmo.get_background_params().items():
-            if name not in new_params_dict:
-                continue
-            new_value = new_params_dict[name]
-            tolerance = 1e-4 if name == "mnu" else 0.0
-            if not np.isclose(old_value, new_value, rtol=0.0, atol=tolerance):
-                changes[name] = (old_value, new_value)
-        if "pivot_scalar" in new_params_dict:
-            old_value = fid_cosmo.CAMBparams.InitPower.pivot_scalar
-            new_value = new_params_dict["pivot_scalar"]
-            if not np.isclose(old_value, new_value, rtol=0.0, atol=1e-12):
-                changes["pivot_scalar"] = (old_value, new_value)
-        for name in ("theta", "cosmomc_theta", "theta_MC_100"):
-            if name in new_params_dict:
-                changes[name] = ("requires a CAMB angular-size solve", new_params_dict[name])
-        return changes
-
 
     # overwrite virtual functions in base class
 

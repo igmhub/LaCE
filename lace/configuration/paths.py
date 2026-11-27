@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import tomllib
@@ -113,17 +114,37 @@ def _set_configured_path(key: str, path: Path, config_path: str | Path | None) -
     return path
 
 
-def get_path_repo() -> Path:
-    """Return the LaCE repository root inferred from the installed package.
+def get_path_repo(name_repo: str = "lace") -> Path:
+    """Return the repository root of an installed package.
 
-    This is useful for developer scripts and notebooks that operate on the
-    repository's ``data`` directory.  It works naturally for an editable
-    installation, without requiring a ``LACE_REPO`` environment variable.
+    Useful for developer scripts and notebooks that operate on a repository's
+    ``data`` or ``configs`` directories; it works naturally for editable
+    installations, without environment variables.
+
+    Parameters
+    ----------
+    name_repo : str, default="lace"
+        Name of an installed top-level package (e.g. ``"lace"``, ``"cup1d"``,
+        ``"forestflow"``). The package is located with :mod:`importlib`
+        without being imported.
+
+    Returns
+    -------
+    pathlib.Path
+        Parent directory of the package source directory: the repository root
+        for an editable installation of a flat layout, ``<repo>/src`` for a
+        src layout.
+
+    Raises
+    ------
+    ImportError
+        If ``name_repo`` is not an installed package.
     """
 
-    import lace
-
-    return Path(lace.__path__[0]).parent
+    spec = importlib.util.find_spec(name_repo)
+    if spec is None or not spec.submodule_search_locations:
+        raise ImportError(f"{name_repo!r} is not an installed package")
+    return Path(list(spec.submodule_search_locations)[0]).parent
 
 
 def get_paths_config_path() -> Path:

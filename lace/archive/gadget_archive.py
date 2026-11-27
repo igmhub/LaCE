@@ -8,7 +8,7 @@ from lace.configuration import get_data_path
 
 # Canonical redshifts of the MP-Gadget simulation archive.
 MPG_SIM_REDSHIFTS = np.arange(2.0, 4.6, 0.25)
-from lace.setup_simulations import read_genic, read_gadget
+from lace.archive._gadget_io import camb_from_genic, read_gadget_paramfile, snapshot_redshifts
 from lace.archive.base_archive import BaseArchive
 from lace.utils.exceptions import ExceptionList
 
@@ -398,12 +398,12 @@ class GadgetArchive(BaseArchive):
 
             # read gadget file
             gadget_fname = pair_dir + "/sim_plus/paramfile.gadget"
-            gadget_cosmo = read_gadget.read_gadget_paramfile(gadget_fname)
-            zs = read_gadget.snapshot_redshifts(gadget_cosmo)
+            gadget_cosmo = read_gadget_paramfile(gadget_fname)
+            zs = snapshot_redshifts(gadget_cosmo)
 
             # setup cosmology from GenIC file
             genic_fname = pair_dir + "/sim_plus/paramfile.genic"
-            cosmo_params = read_genic.camb_from_genic(genic_fname)
+            cosmo_params = camb_from_genic(genic_fname)
 
             # setup CAMB object
             sim_cosmo = Cosmology(cosmo_params_dict=cosmo_params)

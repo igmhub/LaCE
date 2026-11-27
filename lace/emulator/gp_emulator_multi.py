@@ -72,7 +72,6 @@ class GPEmulator:
     def __init__(
         self,
         archive=None,
-        archive2=None,
         emulator_label="CH24_nyx_gpr",
         drop_sim=None,
         train=False,
@@ -86,9 +85,8 @@ class GPEmulator:
 
         Parameters
         ----------
-        archive, archive2 : BaseArchive, optional
-            Training archive(s); ``archive2`` is used only by the combined
-            ``CH24_gpr`` model.
+        archive : BaseArchive, optional
+            Training archive.
         emulator_label : str, default="CH24_nyx_gpr"
             Supported GP model family.
         drop_sim : str, optional
@@ -112,7 +110,6 @@ class GPEmulator:
         self.drop_sim = drop_sim
         self.n_restarts_optimizer = n_restarts_optimizer
         self.archive = archive
-        self.archive2 = archive2
 
         # check emulator
         emulator_label_all = [
@@ -120,7 +117,6 @@ class GPEmulator:
             "CH24_nyx_gpr",
             "CH24_mpgcen_gpr",
             "CH24_nyxcen_gpr",
-            "CH24_gpr",
         ]
         if self.emulator_label in emulator_label_all:
             print(f"Select emulator in {self.emulator_label}")
@@ -246,48 +242,6 @@ class GPEmulator:
             else:
                 self.add_central = True
 
-        elif self.emulator_label == "CH24_gpr":
-            self.emu_params = [
-                "Delta2_p",
-                "n_p",
-                "alpha_p",
-                "mF",
-                "sigT_Mpc",
-                "gamma",
-                # "kF_Mpc",
-            ]
-
-            # self.z_max, self.kmax_Mpc, self.emu_type = (5.5, 4.25, "gpolyfit")
-            self.z_max, self.kmin_Mpc, self.kmax_Mpc, self.emu_type = (
-                5.5,
-                0.02,
-                4.25,
-                "gkbin",
-            )
-            self.average = "both"
-            if "mpg" in archive.data[0]["sim_label"]:
-                self.val_scaling = 1
-            else:
-                self.val_scaling = None
-
-            if "mpg" in archive2.data[0]["sim_label"]:
-                self.val_scaling2 = 1
-            else:
-                self.val_scaling2 = None
-
-            self.kernel = Matern(
-                nu=0.5, length_scale=np.ones(len(self.emu_params))
-            )
-            # smoothing function
-            self.func_poly = func_poly
-            self.ndeg = 5
-            # normalization
-            self.input_norm = self._load_normalization(self.normalization_path)
-            self.norm_imF = interp1d(
-                self.input_norm["mF"], self.input_norm["p1d_Mpc_mF"], axis=0
-            )
-            self.add_central = False
-
         self.ind_mF = np.argwhere(np.array(self.emu_params) == "mF")[0, 0]
 
         if train == False:
@@ -319,18 +273,6 @@ class GPEmulator:
                         cen_lab = "nyx_central"
 
                     training_data += archive.get_testing_data(cen_lab)
-
-            if self.emulator_label == "CH24_gpr":
-                self.list_sim_cube += archive2.list_sim_cube
-                if self.kp_Mpc != archive2.kp_Mpc:
-                    raise ("Must be same kp_Mpc for archive and archive2")
-                training_data += archive2.get_training_data(
-                    emu_params=self.emu_params,
-                    drop_sim=self.drop_sim,
-                    average=self.average,
-                    val_scaling=self.val_scaling2,
-                    z_max=self.z_max,
-                )
 
             self._initialize(training_data)
             self._save_emu()

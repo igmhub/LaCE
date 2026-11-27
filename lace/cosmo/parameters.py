@@ -5,6 +5,19 @@ from collections.abc import Mapping
 import numpy as np
 
 
+# Names accepted by :class:`lace.cosmo.cosmology.Cosmology` (after
+# normalization) and their aliases: any other name is not cosmological.
+CAMB_PARAMETERS = (
+    "H0", "cosmomc_theta", "ombh2", "omch2", "omk", "mnu", "nnu",
+    "standard_neutrino_neff", "tau", "YHe", "TCMB", "w", "wa",
+    "As", "ns", "nrun", "nrunrun", "pivot_scalar", "r",
+)
+COSMOLOGY_PARAMETERS = CAMB_PARAMETERS + (
+    "omegabh2", "omegach2", "omegak", "logA", "theta", "theta_MC_100",
+)
+THETA_PARAMETERS = ("theta", "cosmomc_theta", "theta_MC_100")
+
+
 def normalize_cosmology_params(params):
     """Return a canonical copy of a cosmology parameter dictionary.
 
@@ -50,7 +63,7 @@ def normalize_cosmology_params(params):
         normalized["As"] = np.exp(normalized["logA"]) / 1e10
     normalized.pop("logA", None)
 
-    theta_names = ("theta", "cosmomc_theta", "theta_MC_100")
+    theta_names = THETA_PARAMETERS
     provided_theta_names = [name for name in theta_names if name in normalized]
     if len(provided_theta_names) > 1:
         raise ValueError(

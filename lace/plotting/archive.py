@@ -10,12 +10,16 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 
+from lace.plotting.style import apply_house_style
+
 PARAMETER_LABELS = {
     "Delta2_p": r"$\Delta_p^2$", "n_p": r"$n_p$", "alpha_p": r"$\alpha_p$",
     "mF": r"$\bar{F}$", "T0": r"$T_0$ [K]", "sigT_Mpc": r"$\sigma_T$ [Mpc]",
     "sigT_kms": r"$\sigma_T$ [km/s]", "gamma": r"$\gamma$",
     "kF_Mpc": r"$k_F$ [1/Mpc]", "kF_kms": r"$k_F$ [s/km]",
     "tau_eff": r"$\tau_{\rm eff}$", "z": r"$z$", "f_p": r"$f_p$",
+    "Delta2_star": r"$\Delta^2_\star$", "n_star": r"$n_\star$",
+    "alpha_star": r"$\alpha_\star$", "f_star": r"$f_\star$",
 }
 
 
@@ -181,6 +185,7 @@ class ArchivePlotter:
         figure, ax : tuple
             Matplotlib figure and populated axes.
         """
+        apply_house_style()
         required = [x_parameter, y_parameter]
         if color_parameter is not None and color is None:
             required.append(color_parameter)
@@ -228,6 +233,7 @@ class ArchivePlotter:
         figure, flat_axes : tuple
             Figure and flattened axes grid, with unused axes hidden.
         """
+        apply_house_style()
         if len(parameters) < 2:
             raise ValueError("At least two parameters are required")
         entries = list(data) if data is not None else self.get_training_data(parameters)
@@ -271,6 +277,7 @@ class ArchivePlotter:
         ValueError
             If exactly three parameter names are not supplied.
         """
+        apply_house_style()
         if len(parameters) != 3:
             raise ValueError("parameters must contain exactly three names")
         entries = list(data) if data is not None else self.get_training_data([*parameters, "z"])
@@ -312,6 +319,7 @@ class ArchivePlotter:
         ValueError
             If datasets, labels, style arrays, or parameters are inconsistent.
         """
+        apply_house_style()
         if isinstance(datasets, Mapping):
             names, data_sets = list(datasets), list(datasets.values())
         else:
@@ -388,6 +396,7 @@ class ArchivePlotter:
             Figure and axes containing ``k P1D(k)``. This product is
             dimensionless for ``k`` in ``1/Mpc`` and ``P1D`` in ``Mpc``.
         """
+        apply_house_style()
         if k_min_Mpc < 0 or k_max_Mpc <= k_min_Mpc:
             raise ValueError("Require 0 <= k_min_Mpc < k_max_Mpc")
         entries = (
@@ -500,6 +509,7 @@ class ArchivePlotter:
         figure, flat_axes : tuple
             Figure and flattened history-panel axes.
         """
+        apply_house_style()
         parameters = list(parameters or ["tau_eff", "gamma", "sigT_kms", "kF_kms"])
         highlighted, excluded = set(highlighted_simulations or []), set(excluded_simulations or [])
         figure, flat_axes = _axes_grid(len(parameters), 2, axes)
@@ -560,6 +570,7 @@ class ArchivePlotter:
         ValueError
             If labels, colors, or alphas do not match dataset count.
         """
+        apply_house_style()
         parameters = list(parameters or ["tau_eff", "gamma", "sigT_kms", "kF_kms"])
         names, sets = list(history_sets), list(history_sets.values())
         if dataset_labels is not None:

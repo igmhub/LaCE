@@ -2,11 +2,24 @@ Emulators
 =========
 
 The supported emulator factory is ``lace.emulator.set_emulator(emulator_label)``.
-Only ``CH24_mpgcen_gpr`` and ``CH24_nyxcen_gpr`` are supported. Legacy NN
-and GP implementations live in ``lace.old_code.old_nn_emulator`` and
-``lace.old_code.old_gp_emulator`` for historical training workflows; they are
-not part of the production API.
-They predict the flux P1D from cosmological and IGM parameters.
+Only ``CH24_mpgcen_gpr`` (MP-Gadget suite, central simulation included) and
+``CH24_nyxcen_gpr`` (Nyx suite, central simulation included) are supported;
+cup1d calls them ``lace_mpg`` and ``lace_nyx``. Both are
+:class:`lace.emulator.gp_emulator_multi.GPEmulator` instances that predict the
+flux P1D in Mpc units from linear-power (``Delta2_p``, ``n_p`` and, for Nyx,
+``alpha_p``) and IGM (``mF``, ``sigT_Mpc``, ``gamma``, ``kF_Mpc``) parameters.
+``GPEmulator`` also trains the variants without the central simulation
+(``CH24_mpg_gpr``, ``CH24_nyx_gpr``); their bundles are not distributed.
+The neural-network emulators of earlier releases were removed (see the Git
+history); the training workflow is ``notebooks/emulator/training_emulator.py``.
+
+Emulator errors
+---------------
+
+The leave-one-out relative covariance of each supported emulator is stored as
+``data/covariance/l1O_cov_<emulator_label>.npy`` and read by cup1d to add the
+emulator error to the likelihood. ``notebooks/emulator/compute_cov.py``
+regenerates it.
 
 The emulator training range, parameter conventions, and returned P1D units
 are defined by the selected training archive. Requesting wavenumbers outside

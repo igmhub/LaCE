@@ -8,6 +8,8 @@ from typing import Mapping, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
+from lace.plotting.style import apply_house_style
+
 
 def _save(figure, save_path):
     """Save a figure only when a destination path is requested.
@@ -44,6 +46,7 @@ def plot_ratio_curves(k_Mpc: np.ndarray, ratios: Mapping[str, np.ndarray], *, yl
     figure, ax : tuple
         Matplotlib figure and populated axes.
     """
+    apply_house_style()
     if ax is None: figure, ax = plt.subplots(figsize=(7, 4))
     else: figure = ax.figure
     for label, ratio in ratios.items(): ax.plot(k_Mpc, ratio, label=label)
@@ -76,6 +79,7 @@ def plot_expansion_history(redshift: np.ndarray, hubble: Sequence[np.ndarray], l
     figure, ax : tuple
         Matplotlib figure and populated axes.
     """
+    apply_house_style()
     values = np.asarray(hubble); values = values / values[reference_index] if ratio else values
     if ax is None: figure, ax = plt.subplots()
     else: figure = ax.figure

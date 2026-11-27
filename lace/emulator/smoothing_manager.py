@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import curve_fit
 
-from lace.utils import poly_p1d
+from lace.emulator import poly_p1d
 
 
 def apply_smoothing(emulator, data, fprint=print):

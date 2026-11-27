@@ -1,15 +1,21 @@
-def split_string(string):
-    """Split a string on underscore separators.
+import re
+
+
+def split_string(s):
+    """Split a trailing underscore-index from a parameter name.
 
     Parameters
     ----------
-    string : str
-        Input text.
+    s : str
+        Name optionally ending in ``_<integer>``, e.g. ``"f_SiIII_2"``.
 
     Returns
     -------
-    list of str
-        Underscore-delimited components, including empty components.
+    tuple of str and str or None
+        Base name and trailing index when present, e.g. ``("f_SiIII", "2")``;
+        ``(s, None)`` otherwise.
     """
-    parts = string.split("_")
-    return parts
+    match = re.match(r"^(.*)_(\d+)$", s)
+    if match:
+        return match.group(1), match.group(2)
+    return s, None

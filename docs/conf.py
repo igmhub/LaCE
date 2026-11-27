@@ -46,8 +46,6 @@ autodoc_mock_imports = [
     "configobj",
     "matplotlib",
     "sklearn",
-    "strenum",
-    "torch",
 ]
 
 html_theme = (

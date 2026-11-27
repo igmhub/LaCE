@@ -2,7 +2,7 @@ import numpy as np
 import camb
 
 from lace.cosmo import base_cosmology
-from lace.cosmo.parameters import normalize_cosmology_params
+from lace.cosmo.parameters import THETA_PARAMETERS, normalize_cosmology_params
 import lace.cosmo.labeled_cosmologies as lab_cosmo
 
 
@@ -48,7 +48,7 @@ class Cosmology(base_cosmology.BaseCosmology):
 
         if cosmo_params_dict is None:
             if cosmo_label is None:
-                cosmo_label = "Planck18"
+                cosmo_label = "Planck18_wonu"
             cosmo_params_dict = lab_cosmo.get_cosmo_params_dict_from_label(cosmo_label)
 
         self.input_cosmo_label = cosmo_label
@@ -120,6 +120,9 @@ class Cosmology(base_cosmology.BaseCosmology):
             "standard_neutrino_neff": camb.constants.default_nnu,
             "tau": 0.0,
         }
+        if params.get("cosmomc_theta") is not None:
+            # theta fixes H0
+            defaults["H0"] = None
         values = {**defaults, **params}
 
         if values["YHe"] is None:
@@ -155,6 +158,10 @@ class Cosmology(base_cosmology.BaseCosmology):
         camb_params.set_dark_energy(
             w=w, wa=wa, cs2=1.0, dark_energy_model=dark_energy_model
         )
+        # matter power only: without CMB, CAMB's k sampling is the one of
+        # Cobaya's CAMB with WantCls/Want_CMB off, so both give the same P(k)
+        camb_params.WantCls = False
+        camb_params.Want_CMB = False
         camb_params.InitPower.set_params(
             As=values["As"],
             ns=values["ns"],
@@ -269,14 +276,27 @@ class Cosmology(base_cosmology.BaseCosmology):
         Returns
         -------
         float or ndarray
-            Dimensionless growth rate ``f = d ln D / d ln a``.
+            Dimensionless growth rate ``f = d ln D_cb / d ln a`` of CDM plus
+            baryons, the field whose linear power the emulators use.
+
+        Notes
+        -----
+        CAMB's ``fsigma8`` uses CDM+baryon velocities, so it is divided by
+        sigma_8 of CDM+baryons, not of total matter: with massive neutrinos
+        the latter is smaller by about ``1 - f_nu`` (a ~2% bias in ``f`` for
+        0.3 eV). ``sigma8_tot / sigma8_cb`` comes from ``get_sigmaR`` for both
+        fields, so its integration accuracy cancels and ``mnu = 0`` is
+        unchanged.
         """
 
         self._ensure_camb_results(full=True)
-        z_transfer = np.asarray(self.CAMBdata.transfer_redshifts)
-        fsig8 = np.asarray(self.CAMBdata.get_fsigma8())
-        sig8 = np.asarray(self.CAMBdata.get_sigma8())
-        f = fsig8 / sig8
+        results = self.CAMBdata
+        z_transfer = np.asarray(results.transfer_redshifts)
+        fsig8 = np.asarray(results.get_fsigma8())
+        sig8 = np.asarray(results.get_sigma8())
+        sig8_tot = np.asarray(results.get_sigmaR(8, var1="delta_tot", var2="delta_tot"))
+        sig8_cb = np.asarray(results.get_sigmaR(8, var1="delta_nonu", var2="delta_nonu"))
+        f = fsig8 / sig8 * sig8_tot / sig8_cb
         ind_sort = np.argsort(z_transfer)
         z = np.asarray(z, dtype=float)
         z_grid = z_transfer[ind_sort]
@@ -363,6 +383,46 @@ class Cosmology(base_cosmology.BaseCosmology):
             "wa": self.CAMBparams.DarkEnergy.wa,
         }
 
+    def get_background_changes(self, cosmo_params):
+        """Return the supplied updates that change this transfer calculation.
+
+        Parameters
+        ----------
+        cosmo_params : mapping or None
+            Candidate changed parameters. Missing keys retain this cosmology's
+            resolved values.
+
+        Returns
+        -------
+        dict
+            Background, radiation, transfer, pivot, or angular-size parameter
+            names mapped to ``(fiducial, requested)`` pairs; empty when only
+            primordial parameters change.
+        """
+
+        if cosmo_params is None:
+            return {}
+        changes = {}
+        for name, old_value in self.get_background_params().items():
+            if name not in cosmo_params:
+                continue
+            new_value = cosmo_params[name]
+            tolerance = 1e-4 if name == "mnu" else 0.0
+            if not np.isclose(old_value, new_value, rtol=0.0, atol=tolerance):
+                changes[name] = (old_value, new_value)
+        if "pivot_scalar" in cosmo_params:
+            old_value = self.CAMBparams.InitPower.pivot_scalar
+            new_value = cosmo_params["pivot_scalar"]
+            if not np.isclose(old_value, new_value, rtol=0.0, atol=1e-12):
+                changes["pivot_scalar"] = (old_value, new_value)
+        # Angular-size parameterizations determine H0 through a CAMB solve.
+        # A primordial-only rescaling cannot verify that they preserve the
+        # fiducial transfer/background calculation.
+        for name in THETA_PARAMETERS:
+            if name in cosmo_params:
+                changes[name] = ("requires a CAMB angular-size solve", cosmo_params[name])
+        return changes
+
     def same_background(self, cosmo_params):
         """Test whether supplied updates preserve this transfer calculation.
 
@@ -376,11 +436,14 @@ class Cosmology(base_cosmology.BaseCosmology):
         -------
         bool
             False when a background, radiation, transfer, or angular-size
-            parameter would require rebuilding CAMB products.
+            parameter would require rebuilding CAMB products; see
+            :meth:`get_background_changes`.
         """
 
-        if cosmo_params is None:
-            return True
+        changes = self.get_background_changes(cosmo_params)
+        if changes and self.verbose:
+            print("background parameters differ", changes)
+        return not changes
         # Angular-size parameterizations determine H0 through a CAMB solve.
         # A primordial-only rescaling cannot verify that they preserve the
         # fiducial transfer/background calculation.
@@ -474,8 +537,12 @@ class Cosmology(base_cosmology.BaseCosmology):
             self._call_camb_results_background()
 
     def _call_camb_results_background(self):
-        """Run CAMB for background-only quantities and cache the result."""
-        self.CAMBdata = camb.get_results(self.CAMBparams)
+        """Run CAMB for background-only quantities and cache the result.
+
+        ``camb.get_background``: with the CMB switched off, ``get_results``
+        without transfer functions does not compute the background.
+        """
+        self.CAMBdata = camb.get_background(self.CAMBparams)
 
     def _call_camb_results_full(self):
         """Run CAMB with transfer outputs and construct matter-power splines."""

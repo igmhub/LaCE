@@ -8,7 +8,8 @@ from typing import Any, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
-from lace.utils.poly_p1d import PolyP1D
+from lace.emulator.poly_p1d import PolyP1D
+from lace.plotting.style import apply_house_style
 
 
 def _save(figure: plt.Figure, save_path: str | Path | None) -> None:
@@ -63,6 +64,7 @@ def plot_emulator_predictions(
     ValueError
         If spectra do not share the supplied wavenumber length.
     """
+    apply_house_style()
     spectra = np.atleast_2d(np.asarray(p1d_Mpc, dtype=float))
     k_Mpc = np.asarray(k_Mpc, dtype=float)
     if spectra.shape[1] != k_Mpc.size:
@@ -104,6 +106,7 @@ def plot_p1d_vs_emulator(
     figure, axes : tuple
         Figure and two-panel axes for P1D and fractional residuals.
     """
+    apply_house_style()
     figure, axes = plt.subplots(2, 1, sharex=True, figsize=(8, 8), gridspec_kw={"height_ratios": [3, 1]})
     eligible = [entry for entry in testing_data if entry.get("z", np.inf) < 4.8 and "kF_Mpc" in entry]
     colors = plt.get_cmap("tab20")(np.linspace(0, 1, len(eligible)))

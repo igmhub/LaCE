@@ -3,6 +3,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from lace.plotting.style import apply_house_style
+
 
 def plot_l1o_correlation(cov_zk, *, ax=None):
     """Plot the correlation matrix derived from L1O relative covariance.
@@ -19,6 +21,7 @@ def plot_l1o_correlation(cov_zk, *, ax=None):
     matplotlib.axes.Axes
         Axes containing the matrix image and colorbar.
     """
+    apply_house_style()
     if ax is None:
         _, ax = plt.subplots()
 
@@ -50,6 +53,7 @@ def plot_l1o_errors(zz, k_Mpc, rel_diff, cov_zk, *, ax=None):
     matplotlib.axes.Axes
         Populated error/bias axes.
     """
+    apply_house_style()
     if ax is None:
         _, ax = plt.subplots()
 
@@ -82,6 +86,7 @@ def plot_l1o_bias(zz, k_Mpc, rel_diff, cov_zk, *, ax=None):
     matplotlib.axes.Axes
         Populated normalized-bias axes.
     """
+    apply_house_style()
     if ax is None:
         _, ax = plt.subplots()
 
@@ -133,6 +138,7 @@ def plot_l1o_covariance_robustness(
     ValueError
         If fewer than three leave-one-out residual rows are available.
     """
+    apply_house_style()
     if ax is None:
         _, ax = plt.subplots()
 
