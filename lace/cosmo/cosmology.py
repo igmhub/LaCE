@@ -294,9 +294,22 @@ class Cosmology(base_cosmology.BaseCosmology):
         -------
         float
             Total neutrino mass in eV implied by CAMB's ``omnuh2``.
+
+        Notes
+        -----
+        Exact inverse of the conversion in ``camb.CAMBparams.set_cosmology``
+        (degenerate hierarchy, no sterile neutrinos), so the input ``mnu`` is
+        recovered. A fixed 93.14 eV factor returned 0.060063 for ``mnu=0.06``.
         """
 
-        return self.CAMBparams.omnuh2 * 93.14
+        values = self._resolved_camb_params
+        mass_fac = camb.constants.neutrino_mass_fac * (
+            camb.constants.COBE_CMBTemp / values["TCMB"]
+        ) ** 3
+        neff = values["standard_neutrino_neff"]
+        if values["nnu"] < neff:
+            neff = values["nnu"]
+        return self.CAMBparams.omnuh2 * mass_fac / (neff / 3.0) ** 0.75
 
     def get_primordial_params(self):
         """Return primordial-spectrum parameters in LaCE naming.
